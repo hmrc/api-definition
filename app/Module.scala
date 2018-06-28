@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.apidefinition.config
-
 import com.google.inject.AbstractModule
 import play.api.{Configuration, Environment}
+import uk.gov.hmrc.apidefinition.config.{AuditedWSHttp, ControllerConfiguration, WSHttp}
 
 class Module(environment: Environment, configuration: Configuration) extends AbstractModule {
 
