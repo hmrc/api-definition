@@ -147,7 +147,7 @@ class WSO2APIPublisherConnectorSpec extends UnitSpec
         .withHeader(CONTENT_TYPE, equalTo(FORM))
         .withHeader(COOKIE, equalTo(cookie))
         .withRequestBody(equalTo("""action=addAPI&name=calendar--1.0&visibility=public&version=1.0&description=
-              |&provider=admin&endpointType=nonsecured&http_checked=&https_checked=https&wsdl=
+              |&provider=admin&endpointType=nonsecured&http_checked=&https_checked=https
               |&tags=&thumbUrl=&context=calendar
               |&tiersCollection=BRONZE_SUBSCRIPTION,SILVER_SUBSCRIPTION,GOLD_SUBSCRIPTION,PLATINUM_SUBSCRIPTION
               |&endpoint_config={"production_endpoints":{"url":"http://localhost:9000/calendar/1.0"},"sandbox_endpoints":{"url":"http://localhost:9000/calendar/1.0/sandbox"},"endpoint_type":"http"}
@@ -177,7 +177,7 @@ class WSO2APIPublisherConnectorSpec extends UnitSpec
         .withHeader(COOKIE, equalTo(cookie))
         .withRequestBody(equalTo(
           """action=updateAPI&name=calendar--1.0&visibility=public&version=1.0&description=
-            |&provider=admin&endpointType=nonsecured&http_checked=&https_checked=https&wsdl=
+            |&provider=admin&endpointType=nonsecured&http_checked=&https_checked=https
             |&tags=&thumbUrl=&context=calendar
             |&tiersCollection=BRONZE_SUBSCRIPTION,SILVER_SUBSCRIPTION,GOLD_SUBSCRIPTION,PLATINUM_SUBSCRIPTION
             |&endpoint_config={"production_endpoints":{"url":"http://localhost:9000/calendar/1.0"},"sandbox_endpoints":{"url":"http://localhost:9000/calendar/1.0/sandbox"},"endpoint_type":"http"}
@@ -242,7 +242,6 @@ class WSO2APIPublisherConnectorSpec extends UnitSpec
                 |    "version": "1.0",
                 |    "description": "",
                 |    "endpoint": "",
-                |    "wsdl": "",
                 |    "tags": "",
                 |    "availableTiers": "Unlimited",
                 |    "status": "PUBLISHED",
