@@ -125,7 +125,6 @@ class WSO2APIPublisherConnector @Inject()(servicesConfig: DefaultServicesConfig,
                      |&endpointType=nonsecured
                      |&http_checked=
                      |&https_checked=https
-                     |&wsdl=
                      |&tags=
                      |&thumbUrl=
                      |&context=${wso2APIDefinition.context}
