@@ -97,6 +97,40 @@ class APIDefinitionSpec extends UnitSpec {
       versions = Seq(moneyApiVersion),
       requiresTrust = Some(false))
 
+    def assertContextValidation: String => Unit = { ctx: String =>
+      lazy val apiDefinition = moneyApiDefinition.copy(context = ctx)
+      assertValidationFailure(apiDefinition, s"invalid context for API 'Money API': $ctx")
+    }
+
+    // TODO: fix this test
+    "fail validation when the context starts with '/' " in {
+      assertContextValidation("/hi")
+    }
+
+    // TODO: fix this test
+    "fail validation when the context ends with '/' " in {
+      assertContextValidation("hi/")
+    }
+
+    // TODO: fix this test
+    "fail validation when the context contains '//' " in {
+      assertContextValidation("hi//aloha")
+    }
+
+    val specialChars = List(
+      ' ', '@', '%', '£', '*', '\\', '|', '$', '~', '^', ';', '=', ''',
+      '<', '>', '"', '?', '!', ',', '.', ':', '&', '[', ']', '(' ,')'
+    )
+
+    // TODO: fix this test
+    ('{' :: '}' :: specialChars).foreach { char: Char =>
+      s"fail validation if the API contains '$char' in the context" in {
+        lazy val ctx = s"my-context_$char"
+        lazy val apiDefinition = moneyApiDefinition.copy(context = ctx)
+        assertValidationFailure(apiDefinition, s"invalid context for API 'Money API': $ctx")
+      }
+    }
+
     "fail validation when the endpoint URI is empty" in {
 
       lazy val apiDefinition = moneyApiDefinition.copy(
@@ -112,6 +146,7 @@ class APIDefinitionSpec extends UnitSpec {
       '&' -> "/payments/tom&jerry"
     )
 
+    // TODO: re-use `specialChars` here
     invalidEndpointUriScenarios.foreach { case (char, endpointUri) =>
       s"fail validation if an Endpoint contains $char in the URI" in {
 
@@ -134,9 +169,7 @@ class APIDefinitionSpec extends UnitSpec {
       assertValidationFailure(apiDefinition, "query parameter name is required for endpoint 'Check Payments' in the API 'Money API' version '1.0'")
     }
 
-    val invalidQueryPamameterNameScenarios = Seq('/', '?', ':', '&', '}', '{')
-
-    invalidQueryPamameterNameScenarios.foreach { char =>
+    ('/' :: '{' :: '}' :: specialChars).foreach { char =>
       s"fail validation when a query parameter name contains $char in the name" in {
 
         lazy val apiDefinition = moneyApiDefinition.copy(

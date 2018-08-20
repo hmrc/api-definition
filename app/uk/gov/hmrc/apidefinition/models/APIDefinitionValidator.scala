@@ -23,18 +23,31 @@ object APIDefinitionValidator {
   private val queryParamRegex: Regex = "^[a-zA-Z0-9_\\-]+$".r
   private val contextRegex: Regex = "^[a-zA-Z0-9_\\-\\/]+$".r
   private val uriRegex: Regex = "^[a-zA-Z0-9_\\-\\/{}]+$".r
+
   private val nonEmptyApiDefinitionFields = Seq("name", "serviceName", "serviceBaseUrl", "context", "description")
 
   def validate(definition: APIDefinition): Unit = {
     validateNonEmptyFields(definition)
-    require(hasMatch(contextRegex, definition.context), s"invalid context for API '${definition.name}': ${definition.context}")
+    validateContext(definition.context)
     require(uniqueVersions(definition), s"version numbers must be unique for API '${definition.name}'")
-
     definition.versions.foreach(validateVersion(definition.name))
   }
 
+  private def validateContext(apiName: String): String => Unit = { context: String =>
+    lazy val errMsg = s"invalid context for API '$apiName': $context"
+
+    require(!context.startsWith("/"), errMsg)
+
+    require(!context.endsWith("/"), errMsg)
+
+    require(!context.contains("//"), errMsg)
+
+    require(hasMatch(contextRegex, context), errMsg)
+  }
+
   private def validateVersion(apiName: String): APIVersion => Unit = { version: APIVersion =>
-    forbidEmptyString(version.version, s"version is required for API '$apiName'")
+    forbidEmptyString(version.version, s"field 'version' is required for API '$apiName'")
+
     require(version.endpoints.nonEmpty, s"at least one endpoint is required for API '$apiName' version '${version.version}'")
 
     validateStatus(apiName, version)
@@ -51,13 +64,27 @@ object APIDefinitionValidator {
   }
 
   private def validateEndpoint(apiName: String, version: String): Endpoint => Unit = { endpoint: Endpoint =>
-    require(endpoint.uriPattern.nonEmpty, s"URI pattern is required for endpoint '${endpoint.endpointName}' in the API '$apiName' version '$version'")
-    require(hasMatch(uriRegex, endpoint.uriPattern),
-      s"invalid URI pattern for endpoint '${endpoint.endpointName}' in the API '$apiName' version '$version': ${endpoint.uriPattern}")
+    validateUriPattern(apiName, version, endpoint.endpointName, endpoint.uriPattern)
 
     endpoint.queryParameters.getOrElse(Nil).foreach(validateQueryParameter(apiName, version, endpoint.endpointName))
 
     validateAuthType(apiName, version, endpoint)
+  }
+
+  private def validateUriPattern(apiName: String, version: String, endpointName: String, uriPattern: String): Unit = {
+    require(uriPattern.nonEmpty, s"URI pattern is required for endpoint '$endpointName' in the API '$apiName' version '$version'")
+
+    // TODO: extra validation for URI patterns
+    // create separate method
+    // add unit tests
+    // number of '{'s matches the number of '}'s
+    // URI pattern does not contain "{}" (empty path parameter)
+    // there are no nested curly brackets (path parameters of path parameters are not allowed)
+    // at anytime in the string: #('}'s) == #('}'s) || #('}'s) == 1 + #('}'s)
+    // check look ahead - first look operators in the regex
+
+    require(hasMatch(uriRegex, uriPattern),
+      s"invalid URI pattern for endpoint '$endpointName' in the API '$apiName' version '$version': $uriPattern")
   }
 
   private def validateAuthType(apiName: String, version: String, endpoint: Endpoint): Unit = {
