@@ -163,7 +163,7 @@ class APIDefinitionControllerSpec extends UnitSpec
       val result = await(underTest.createOrUpdate()(request.withBody(Json.parse(body))))
 
       status(result) shouldBe UNPROCESSABLE_ENTITY
-      (jsonBodyOf(result) \ "message").as[String] shouldBe "requirement failed: name is required"
+      (jsonBodyOf(result) \ "message").as[String] shouldBe "requirement failed: field 'name' is required"
     }
 
     "fail with a 422 (Unprocessable entity) when same version appear multiple times" in new Setup {
@@ -212,7 +212,7 @@ class APIDefinitionControllerSpec extends UnitSpec
       val result = await(underTest.createOrUpdate()(request.withBody(Json.parse(body))))
 
       status(result) shouldBe UNPROCESSABLE_ENTITY
-      (jsonBodyOf(result) \ "message").as[String] shouldBe "requirement failed: version numbers must be unique"
+      (jsonBodyOf(result) \ "message").as[String] shouldBe "requirement failed: version numbers must be unique for API 'Calendar API'"
     }
 
     "parse an API definition with PUBLIC access type" in new Setup {

@@ -16,8 +16,8 @@
 
 package uk.gov.hmrc.apidefinition.models
 
-import uk.gov.hmrc.apidefinition.models.JsonFormatters._
 import play.api.libs.json.Json
+import uk.gov.hmrc.apidefinition.models.JsonFormatters._
 import uk.gov.hmrc.play.test.UnitSpec
 
 class APIDefinitionSpec extends UnitSpec {
@@ -26,12 +26,12 @@ class APIDefinitionSpec extends UnitSpec {
 
     "fail validation if an empty serviceBaseUrl is provided" in {
       lazy val apiDefinition: APIDefinition = APIDefinition("calendar", "", "Calendar API", "My Calendar API", "calendar", Seq(APIVersion("1.0", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)))), Some(false))
-      assertValidationFailure(apiDefinition, "serviceBaseUrl is required")
+      assertValidationFailure(apiDefinition, "field 'serviceBaseUrl' is required for API 'Calendar API'")
     }
 
     "fail validation if an empty serviceName is provided" in {
       lazy val apiDefinition: APIDefinition = APIDefinition("", "http://calendar", "Calendar API", "My Calendar API", "calendar", Seq(APIVersion("1.0", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)))), Some(false))
-      assertValidationFailure(apiDefinition, "serviceName is required")
+      assertValidationFailure(apiDefinition, "field 'serviceName' is required for API 'Calendar API'")
     }
 
     "fail validation if a version number is referenced more than once" in {
@@ -47,32 +47,32 @@ class APIDefinitionSpec extends UnitSpec {
           APIVersion("1.1", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))),
           APIVersion("1.2", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)))),
         Some(false))
-      assertValidationFailure(apiDefinition, "version numbers must be unique")
+      assertValidationFailure(apiDefinition, "version numbers must be unique for API 'Calendar API'")
     }
 
     "fail validation if an empty name is provided" in {
       lazy val apiDefinition: APIDefinition = APIDefinition("calendar", "http://calendar", "", "My Calendar API", "calendar", Seq(APIVersion("1.0", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)))), Some(false))
-      assertValidationFailure(apiDefinition, "name is required")
+      assertValidationFailure(apiDefinition, "field 'name' is required")
     }
 
     "fail validation if an empty context is provided" in {
       lazy val apiDefinition: APIDefinition = APIDefinition("calendar", "http://calendar", "Calendar API", "My Calendar API", "", Seq(APIVersion("1.0", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)))), Some(false))
-      assertValidationFailure(apiDefinition, "context is required")
+      assertValidationFailure(apiDefinition, "field 'context' is required for API 'Calendar API'")
     }
 
     "fail validation if an empty description is provided" in {
       lazy val apiDefinition: APIDefinition = APIDefinition("calendar", "http://calendar", "Calendar API", "", "calendar", Seq(APIVersion("1.0", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)))), Some(false))
-      assertValidationFailure(apiDefinition, "description is required")
+      assertValidationFailure(apiDefinition, "field 'description' is required for API 'Calendar API'")
     }
 
     "fail validation when no APIVersion is provided" in {
       lazy val apiDefinition: APIDefinition = APIDefinition("calendar", "http://calendar", "Calendar API", "My Calendar API", "calendar", Nil, None)
-      assertValidationFailure(apiDefinition, "at least one version is required")
+      assertValidationFailure(apiDefinition, "at least one version is required for API 'Calendar API'")
     }
 
     "fail validation when no Endpoint is provided" in {
       lazy val apiDefinition: APIDefinition = APIDefinition("calendar", "http://calendar", "Calendar API", "My Calendar API", "calendar", Seq(APIVersion("1.0", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Nil)), Some(false))
-      assertValidationFailure(apiDefinition, "at least one endpoint is required")
+      assertValidationFailure(apiDefinition, "at least one endpoint is required for API 'Calendar API' version '1.0'")
     }
 
     val moneyEndpoint = Endpoint(
@@ -97,20 +97,75 @@ class APIDefinitionSpec extends UnitSpec {
       versions = Seq(moneyApiVersion),
       requiresTrust = Some(false))
 
-    val invalidEndpointUriScenarios = Map(
-      ':' -> "/payments/:startDate",
-      '?' -> "/payments?startDate={startDate}",
-      '&' -> "/payments/tom&jerry"
+    def assertContextValidation: String => Unit = { ctx: String =>
+      lazy val apiDefinition = moneyApiDefinition.copy(context = ctx)
+      assertValidationFailure(apiDefinition, s"invalid context for API 'Money API': $ctx")
+    }
+
+    "fail validation when the context starts with '/' " in {
+      assertContextValidation("/hi")
+    }
+
+    "fail validation when the context ends with '/' " in {
+      assertContextValidation("hi/")
+    }
+
+    "fail validation when the context contains '//' " in {
+      assertContextValidation("hi//aloha")
+    }
+
+    val specialChars = List(
+      ' ', '@', '%', '£', '*', '\\', '|', '$', '~', '^', ';', '=', ''',
+      '<', '>', '"', '?', '!', ',', '.', ':', '&', '[', ']', '(' ,')'
     )
 
-    invalidEndpointUriScenarios.foreach { case (char, endpointUri) =>
-      s"fail validation if an Endpoint contains $char in the URI" in {
+    ('{' :: '}' :: specialChars).foreach { char: Char =>
+      s"fail validation if the API contains '$char' in the context" in {
+        lazy val ctx = s"my-context_$char"
+        lazy val apiDefinition = moneyApiDefinition.copy(context = ctx)
+        assertValidationFailure(apiDefinition, s"invalid context for API 'Money API': $ctx")
+      }
+    }
 
+    "fail validation when the endpoint URI is empty" in {
+
+      lazy val apiDefinition = moneyApiDefinition.copy(
+        versions = Seq(moneyApiVersion.copy(endpoints = Seq(moneyEndpoint.copy(uriPattern = ""))))
+      )
+
+      assertValidationFailure(apiDefinition, s"URI pattern is required for endpoint 'Check Payments' in the API 'Money API' version '1.0'")
+    }
+
+    specialChars.foreach { char: Char =>
+      s"fail validation if the endpoint contains $char in the URI" in {
+        lazy val endpointUri = s"/payments$char"
         lazy val apiDefinition = moneyApiDefinition.copy(
           versions = Seq(moneyApiVersion.copy(endpoints = Seq(moneyEndpoint.copy(uriPattern = endpointUri))))
         )
 
-        assertValidationFailure(apiDefinition, s"endpoint cannot contain $char in the URI")
+        assertValidationFailure(apiDefinition, s"invalid URI pattern for endpoint 'Check Payments' in the API 'Money API' version '1.0': $endpointUri")
+      }
+    }
+
+    "fail validation if the endpoint defines path parameters with ':'" in {
+
+      val endpoint =  "/hello/:friend"
+      lazy val apiDefinition = moneyApiDefinition.copy(
+        versions = Seq(moneyApiVersion.copy(endpoints = Seq(moneyEndpoint.copy(uriPattern = endpoint))))
+      )
+
+      assertValidationFailure(apiDefinition, s"invalid URI pattern for endpoint 'Check Payments' in the API 'Money API' version '1.0': $endpoint")
+    }
+
+    val pathParameterUris = List("/{}", "/}{", "/hello{{friend}}", "/hello/my{brother}", "/hello/}friend{",
+      "/hello/{0friend}", "/hello/{my_friend}", "/hello/{my-friend}", "/hello/{my/friend}")
+    pathParameterUris.foreach { endpointUri: String =>
+      s"fail validation if the endpoint ($endpointUri) defines path parameters incorrectly" in {
+        lazy val apiDefinition = moneyApiDefinition.copy(
+          versions = Seq(moneyApiVersion.copy(endpoints = Seq(moneyEndpoint.copy(uriPattern = endpointUri))))
+        )
+
+        assertValidationFailure(apiDefinition, s"invalid URI pattern for endpoint 'Check Payments' in the API 'Money API' version '1.0': $endpointUri")
       }
     }
 
@@ -122,25 +177,25 @@ class APIDefinitionSpec extends UnitSpec {
         versions = Seq(moneyApiVersion.copy(endpoints = Seq(moneyEndpoint.copy(queryParameters = Some(Seq(moneyQueryParameter.copy(name = "")))))))
       )
 
-      assertValidationFailure(apiDefinition, "query parameter name cannot be empty")
+      assertValidationFailure(apiDefinition, "query parameter name is required for endpoint 'Check Payments' in the API 'Money API' version '1.0'")
     }
 
-    val invalidQueryPamameterNameScenarios = Seq('/', '?', ':', '&', '}', '{')
-
-    invalidQueryPamameterNameScenarios.foreach { char =>
+    ('/' :: '{' :: '}' :: specialChars).foreach { char =>
       s"fail validation when a query parameter name contains $char in the name" in {
 
         lazy val apiDefinition = moneyApiDefinition.copy(
           versions = Seq(moneyApiVersion.copy(endpoints = Seq(moneyEndpoint.copy(queryParameters = Some(Seq(moneyQueryParameter.copy(name = s"param$char")))))))
         )
 
-        assertValidationFailure(apiDefinition, s"query parameter name cannot contain $char in the name")
+        assertValidationFailure(apiDefinition, s"invalid query parameter name for endpoint 'Check Payments' in the API 'Money API' version '1.0': param$char")
       }
     }
 
     "fail validation when a scope is provided but auth type is 'application'" in {
-      lazy val apiDefinition: APIDefinition = APIDefinition("calendar", "http://calendar", "Calendar API", "My Calendar API", "calendar", Seq(APIVersion("1.0", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Seq(Endpoint("uriPattern", "endpointName", HttpMethod.GET, AuthType.APPLICATION, ResourceThrottlingTier.UNLIMITED, Some("scope"))))), None)
-      assertValidationFailure(apiDefinition, "scope is not required if authType is APPLICATION")
+      lazy val apiDefinition: APIDefinition = APIDefinition("calendar", "http://calendar", "Calendar API", "My Calendar API", "calendar",
+        Seq(APIVersion("1.0", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Seq(Endpoint("/uriPattern", "endpointName", HttpMethod.GET,
+          AuthType.APPLICATION, ResourceThrottlingTier.UNLIMITED, Some("scope"))))), None)
+      assertValidationFailure(apiDefinition, "scope is not allowed for endpoint 'endpointName' in the API 'Calendar API' version '1.0'")
     }
 
     "read from JSON when the API access type is PUBLIC and there is no whitelist" in {
