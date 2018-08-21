@@ -22,13 +22,14 @@ object APIDefinitionValidator {
 
   private val queryParamRegex: Regex = "^[a-zA-Z0-9_\\-]+$".r
   private val contextRegex: Regex = "^[a-zA-Z0-9_\\-\\/]+$".r
-  private val uriRegex: Regex = "^[a-zA-Z0-9_\\-\\/{}]+$".r
+  private val uriRegex: Regex = "^/[a-zA-Z0-9_\\-\\/{}]+$".r
+  private val pathParameterRegex: Regex = "^\\{[a-zA-Z]+[a-zA-Z0-9]*\\}$".r
 
   private val nonEmptyApiDefinitionFields = Seq("name", "serviceName", "serviceBaseUrl", "context", "description")
 
   def validate(definition: APIDefinition): Unit = {
     validateNonEmptyFields(definition)
-    validateContext(definition.context)
+    validateContext(definition.name)(definition.context)
     require(uniqueVersions(definition), s"version numbers must be unique for API '${definition.name}'")
     definition.versions.foreach(validateVersion(definition.name))
   }
@@ -73,18 +74,18 @@ object APIDefinitionValidator {
 
   private def validateUriPattern(apiName: String, version: String, endpointName: String, uriPattern: String): Unit = {
     require(uriPattern.nonEmpty, s"URI pattern is required for endpoint '$endpointName' in the API '$apiName' version '$version'")
+    lazy val errMsg = s"invalid URI pattern for endpoint '$endpointName' in the API '$apiName' version '$version': $uriPattern"
 
-    // TODO: extra validation for URI patterns
-    // create separate method
-    // add unit tests
-    // number of '{'s matches the number of '}'s
-    // URI pattern does not contain "{}" (empty path parameter)
-    // there are no nested curly brackets (path parameters of path parameters are not allowed)
-    // at anytime in the string: #('}'s) == #('}'s) || #('}'s) == 1 + #('}'s)
-    // check look ahead - first look operators in the regex
+    require(hasMatch(uriRegex, uriPattern), errMsg)
+    validatePathParameters(uriPattern, errMsg)
+  }
 
-    require(hasMatch(uriRegex, uriPattern),
-      s"invalid URI pattern for endpoint '$endpointName' in the API '$apiName' version '$version': $uriPattern")
+  private def validatePathParameters(uriPattern: String, errMsg: => String): Unit = {
+    uriPattern.split("/").foreach { segment: String =>
+      if (segment.contains("{") || segment.contains("}")) {
+        require(hasMatch(pathParameterRegex, segment), errMsg)
+      }
+    }
   }
 
   private def validateAuthType(apiName: String, version: String, endpoint: Endpoint): Unit = {

@@ -102,17 +102,14 @@ class APIDefinitionSpec extends UnitSpec {
       assertValidationFailure(apiDefinition, s"invalid context for API 'Money API': $ctx")
     }
 
-    // TODO: fix this test
     "fail validation when the context starts with '/' " in {
       assertContextValidation("/hi")
     }
 
-    // TODO: fix this test
     "fail validation when the context ends with '/' " in {
       assertContextValidation("hi/")
     }
 
-    // TODO: fix this test
     "fail validation when the context contains '//' " in {
       assertContextValidation("hi//aloha")
     }
@@ -122,7 +119,6 @@ class APIDefinitionSpec extends UnitSpec {
       '<', '>', '"', '?', '!', ',', '.', ':', '&', '[', ']', '(' ,')'
     )
 
-    // TODO: fix this test
     ('{' :: '}' :: specialChars).foreach { char: Char =>
       s"fail validation if the API contains '$char' in the context" in {
         lazy val ctx = s"my-context_$char"
@@ -140,16 +136,21 @@ class APIDefinitionSpec extends UnitSpec {
       assertValidationFailure(apiDefinition, s"URI pattern is required for endpoint 'Check Payments' in the API 'Money API' version '1.0'")
     }
 
-    val invalidEndpointUriScenarios = Map(
-      ':' -> "/payments/:startDate",
-      '?' -> "/payments?startDate={startDate}",
-      '&' -> "/payments/tom&jerry"
-    )
+    specialChars.foreach { char: Char =>
+      s"fail validation if the endpoint contains $char in the URI" in {
+        lazy val endpointUri = s"/payments$char"
+        lazy val apiDefinition = moneyApiDefinition.copy(
+          versions = Seq(moneyApiVersion.copy(endpoints = Seq(moneyEndpoint.copy(uriPattern = endpointUri))))
+        )
 
-    // TODO: re-use `specialChars` here
-    invalidEndpointUriScenarios.foreach { case (char, endpointUri) =>
-      s"fail validation if an Endpoint contains $char in the URI" in {
+        assertValidationFailure(apiDefinition, s"invalid URI pattern for endpoint 'Check Payments' in the API 'Money API' version '1.0': $endpointUri")
+      }
+    }
 
+    val pathParameterUris = List("/{}", "/}{", "/hello{{friend}}", "/hello/my{brother}", "/hello/}friend{",
+      "/hello/{0friend}", "/hello/{my_friend}", "/hello/{my-friend}", "/hello/{my/friend}")
+    pathParameterUris.foreach { endpointUri: String =>
+      s"fail validation if the endpoint ($endpointUri) defines path parameters incorrectly" in {
         lazy val apiDefinition = moneyApiDefinition.copy(
           versions = Seq(moneyApiVersion.copy(endpoints = Seq(moneyEndpoint.copy(uriPattern = endpointUri))))
         )
@@ -181,7 +182,9 @@ class APIDefinitionSpec extends UnitSpec {
     }
 
     "fail validation when a scope is provided but auth type is 'application'" in {
-      lazy val apiDefinition: APIDefinition = APIDefinition("calendar", "http://calendar", "Calendar API", "My Calendar API", "calendar", Seq(APIVersion("1.0", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Seq(Endpoint("uriPattern", "endpointName", HttpMethod.GET, AuthType.APPLICATION, ResourceThrottlingTier.UNLIMITED, Some("scope"))))), None)
+      lazy val apiDefinition: APIDefinition = APIDefinition("calendar", "http://calendar", "Calendar API", "My Calendar API", "calendar",
+        Seq(APIVersion("1.0", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Seq(Endpoint("/uriPattern", "endpointName", HttpMethod.GET,
+          AuthType.APPLICATION, ResourceThrottlingTier.UNLIMITED, Some("scope"))))), None)
       assertValidationFailure(apiDefinition, "scope is not allowed for endpoint 'endpointName' in the API 'Calendar API' version '1.0'")
     }
 
