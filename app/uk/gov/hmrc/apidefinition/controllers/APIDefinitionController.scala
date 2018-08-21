@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.apidefinition.controllers
 
+import cats.data.Validated.{Invalid, Valid}
 import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.apidefinition.config.ControllerConfiguration
 import uk.gov.hmrc.apidefinition.models.ErrorCode._
@@ -75,9 +76,11 @@ class APIDefinitionController @Inject()(val apiDefinitionService: APIDefinitionS
   }
 
   def validate: Action[JsValue] = Action.async(BodyParsers.parse.json) { implicit request =>
-    handleRequest[APIDefinition](request) {
-      requestBody => APIDefinitionValidator.validate(requestBody)
-        Future.successful(NoContent)
+    handleRequest[APIDefinition](request) { requestBody =>
+      APIDefinitionValidator.validate(requestBody) match {
+        case Valid(x) => Future.successful(Accepted(x)) // TODO: improve message
+        case Invalid(y) => Future.successful(BadRequest(y.toList.mkString(", "))) // TODO: Future.failed?
+      }
     }
   }
 

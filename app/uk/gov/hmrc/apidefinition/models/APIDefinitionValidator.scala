@@ -32,33 +32,33 @@ object APIDefinitionValidator {
 
   private val nonEmptyApiDefinitionFields = Seq("name", "serviceName", "serviceBaseUrl", "context", "description")
 
-  def validate(definition: APIDefinition): HMRCValidated[APIDefinition] = {
-    validateNonEmptyFields(definition)
+  def validate(definition: APIDefinition) /*: HMRCValidated[APIDefinition] */ = {
+//    validateNonEmptyFields(definition)
     validateContext(definition.context)
-    require(uniqueVersions(definition), s"version numbers must be unique for API '${definition.name}'")
-    definition.versions.foreach(validateVersion(definition.name))
+//    require(uniqueVersions(definition), s"version numbers must be unique for API '${definition.name}'")
+//    definition.versions.foreach(validateVersion(definition.name))
 
-    definition.validNel
+//    definition.validNel
   }
 
-  type ApiContext = String
-      // case class ApiContext(value:String) extends AnyVal
-  private def validateContext(context: ApiContext): HMRCValidated[ApiContext] = {
-    def validate(b: Boolean, err: String): HMRCValidated[ApiContext] = {
-      if(b) err.invalidNel else context.validNel
-    }
-    val v2: HMRCValidated[ApiContext] = if(context.endsWith("/"))
-      "Context should not end with /".invalidNel
-    else
-      context.validNel
+  type ApiContext = String // TODO: we want => case class ApiContext(value:String) extends AnyVal
 
-    (validate(context.startsWith("/"), "Context should not start with /"),
-      v2).mapN( (a,b) => a )
-//    require(!context.endsWith("/"), errMsg)
-//
-//    require(!context.contains("//"), errMsg)
-//
-//    require(hasMatch(contextRegex, context), errMsg)
+  private def validateContext(context: ApiContext): HMRCValidated[ApiContext] = {
+
+    def validate(failingCondition: Boolean, err: String): HMRCValidated[ApiContext] = {
+      if (failingCondition) err.invalidNel else context.validNel
+    }
+
+    (
+      validate(context.startsWith("/"), "Context should not start with /"),
+      validate(context.endsWith("/"), "Context should not end with /"),
+      validate(context.contains("//"), "Context should not have empty path segments"),
+      validate(!hasMatch(contextRegex, context), "Context is invalid")
+    ).mapN {
+//      v: (ApiContext, ApiContext, ApiContext, ApiContext) => v._1
+      (a: ApiContext, _: ApiContext, _: ApiContext, _: ApiContext) => a // a == b == c == d
+    }
+
   }
 
   private def validateVersion(apiName: String): APIVersion => Unit = { version: APIVersion =>
