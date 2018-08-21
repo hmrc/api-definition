@@ -16,9 +16,14 @@
 
 package uk.gov.hmrc.apidefinition.models
 
+import cats.implicits._
+import cats.data.ValidatedNel
+
 import scala.util.matching.Regex
 
 object APIDefinitionValidator {
+
+  type HMRCValidated[A] = ValidatedNel[String, A]
 
   private val queryParamRegex: Regex = "^[a-zA-Z0-9_\\-]+$".r
   private val contextRegex: Regex = "^[a-zA-Z0-9_\\-\\/]+$".r
@@ -27,23 +32,33 @@ object APIDefinitionValidator {
 
   private val nonEmptyApiDefinitionFields = Seq("name", "serviceName", "serviceBaseUrl", "context", "description")
 
-  def validate(definition: APIDefinition): Unit = {
+  def validate(definition: APIDefinition): HMRCValidated[APIDefinition] = {
     validateNonEmptyFields(definition)
-    validateContext(definition.name)(definition.context)
+    validateContext(definition.context)
     require(uniqueVersions(definition), s"version numbers must be unique for API '${definition.name}'")
     definition.versions.foreach(validateVersion(definition.name))
+
+    definition.validNel
   }
 
-  private def validateContext(apiName: String): String => Unit = { context: String =>
-    lazy val errMsg = s"invalid context for API '$apiName': $context"
+  type ApiContext = String
+      // case class ApiContext(value:String) extends AnyVal
+  private def validateContext(context: ApiContext): HMRCValidated[ApiContext] = {
+    def validate(b: Boolean, err: String): HMRCValidated[ApiContext] = {
+      if(b) err.invalidNel else context.validNel
+    }
+    val v2: HMRCValidated[ApiContext] = if(context.endsWith("/"))
+      "Context should not end with /".invalidNel
+    else
+      context.validNel
 
-    require(!context.startsWith("/"), errMsg)
-
-    require(!context.endsWith("/"), errMsg)
-
-    require(!context.contains("//"), errMsg)
-
-    require(hasMatch(contextRegex, context), errMsg)
+    (validate(context.startsWith("/"), "Context should not start with /"),
+      v2).mapN( (a,b) => a )
+//    require(!context.endsWith("/"), errMsg)
+//
+//    require(!context.contains("//"), errMsg)
+//
+//    require(hasMatch(contextRegex, context), errMsg)
   }
 
   private def validateVersion(apiName: String): APIVersion => Unit = { version: APIVersion =>
@@ -104,12 +119,13 @@ object APIDefinitionValidator {
       s"invalid query parameter name for endpoint '$endpointName' in the API '$apiName' version '$version': ${queryParam.name}")
   }
 
-  private def validateNonEmptyFields(definition: APIDefinition): Unit = {
+  private def validateNonEmptyFields(definition: APIDefinition): HMRCValidated[APIDefinition] = {
 
     def errorMessageSuffix: String => String = { fieldName =>
       if (fieldName == "name") "" else s" for API '${definition.name}'"
     }
-
+    definition.validNel
+/*(
     require(definition.versions.nonEmpty, s"at least one version is required for API '${definition.name}'")
     definition.getClass.getDeclaredFields foreach { f =>
       val fieldName = f.getName
@@ -119,6 +135,7 @@ object APIDefinitionValidator {
         forbidEmptyString(f.get(definition).asInstanceOf[String], s"field '$fieldName' is required$suffix")
       }
     }
+    */
   }
 
   private def forbidEmptyString(item: String, errorMsg: String): Unit = {

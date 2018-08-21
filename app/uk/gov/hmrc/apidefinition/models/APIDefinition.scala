@@ -31,11 +31,7 @@ case class APIDefinition(serviceName: String,
                          versions: Seq[APIVersion],
                          requiresTrust: Option[Boolean],
                          isTestSupport: Option[Boolean] = None,
-                         lastPublishedAt: Option[DateTime] = None) {
-
-  validate(this)
-
-}
+                         lastPublishedAt: Option[DateTime] = None)
 
 case class ExtendedAPIDefinition(serviceName: String,
                                  serviceBaseUrl: String,

@@ -15,7 +15,8 @@ lazy val compile = Seq(
   "uk.gov.hmrc" %% "microservice-bootstrap" % "6.18.0",
   "uk.gov.hmrc" %% "play-reactivemongo" % "6.2.0",
   "uk.gov.hmrc" %% "mongo-lock" % "5.1.0",
-  "uk.gov.hmrc" %% "play-json-union-formatter" % "1.3.0"
+  "uk.gov.hmrc" %% "play-json-union-formatter" % "1.3.0",
+  "org.typelevel"     %% "cats-core" % "1.1.0"
 )
 
 lazy val test = Seq(
