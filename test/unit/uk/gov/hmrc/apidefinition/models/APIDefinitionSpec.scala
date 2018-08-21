@@ -147,6 +147,12 @@ class APIDefinitionSpec extends UnitSpec {
       }
     }
 
+    "pass validation if the API definition contains the root endpoint" in {
+      moneyApiDefinition.copy(
+        versions = Seq(moneyApiVersion.copy(endpoints = Seq(moneyEndpoint.copy(uriPattern = "/"))))
+      )
+    }
+
     "fail validation if the endpoint defines path parameters with ':'" in {
 
       val endpoint =  "/hello/:friend"
