@@ -181,7 +181,7 @@ class APIDefinitionSpec extends UnitSpec {
     }
 
     ('/' :: '{' :: '}' :: specialChars).foreach { char =>
-      s"fail validation when a query parameter name contains $char in the name" in {
+      s"fail validation when a query parameter name contains '$char' in the name" in {
 
         lazy val apiDefinition = moneyApiDefinition.copy(
           versions = Seq(moneyApiVersion.copy(endpoints = Seq(moneyEndpoint.copy(queryParameters = Some(Seq(moneyQueryParameter.copy(name = s"param$char")))))))
