@@ -163,8 +163,7 @@ class APIDefinitionSpec extends UnitSpec {
       assertValidationFailure(apiDefinition, s"invalid URI pattern for endpoint 'Check Payments' in the API 'Money API' version '1.0': $endpoint")
     }
 
-    val pathParameterUris = List("/{}", "/}{", "/hello{{friend}}", "/hello/my{brother}", "/hello/}friend{",
-      "/hello/{0friend}", "/hello/{my_friend}", "/hello/{my-friend}", "/hello/{my/friend}")
+    val pathParameterUris = List("/{}", "/}{", "/hello{{friend}}", "/hello/my{brother}", "/hello/}friend{", "/hello/{0friend}", "/hello/{my/friend}")
     pathParameterUris.foreach { endpointUri: String =>
       s"fail validation if the endpoint ($endpointUri) defines path parameters incorrectly" in {
         lazy val apiDefinition = moneyApiDefinition.copy(

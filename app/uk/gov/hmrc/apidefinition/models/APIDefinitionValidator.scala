@@ -23,7 +23,7 @@ object APIDefinitionValidator {
   private val queryParamRegex: Regex = "^[a-zA-Z0-9_\\-]+$".r
   private val contextRegex: Regex = "^[a-zA-Z0-9_\\-\\/]+$".r
   private val uriRegex: Regex = "^/[a-zA-Z0-9_\\-\\/{}]*$".r
-  private val pathParameterRegex: Regex = "^\\{[a-zA-Z]+[a-zA-Z0-9]*\\}$".r
+  private val pathParameterRegex: Regex = "^\\{[a-zA-Z]+[a-zA-Z0-9_\\-]*\\}$".r
 
   private val nonEmptyApiDefinitionFields = Seq("name", "serviceName", "serviceBaseUrl", "context", "description")
 
