@@ -164,7 +164,7 @@ trait APIAccess
 
 case class PublicAPIAccess() extends APIAccess
 
-case class PrivateAPIAccess(whitelistedApplicationIds: Seq[String]) extends APIAccess
+case class PrivateAPIAccess(whitelistedApplicationIds: Seq[String], isTrial: Option[Boolean] = None) extends APIAccess
 
 object APIStatus extends Enumeration {
   type APIStatus = Value
