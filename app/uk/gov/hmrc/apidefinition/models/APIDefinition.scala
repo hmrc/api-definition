@@ -17,6 +17,7 @@
 package uk.gov.hmrc.apidefinition.models
 
 import org.joda.time.DateTime
+import uk.gov.hmrc.apidefinition.models.APIDefinitionValidator.validate
 import uk.gov.hmrc.apidefinition.models.APIStatus.APIStatus
 import uk.gov.hmrc.apidefinition.models.AuthType.AuthType
 import uk.gov.hmrc.apidefinition.models.HttpMethod.HttpMethod
@@ -32,85 +33,7 @@ case class APIDefinition(serviceName: String,
                          isTestSupport: Option[Boolean] = None,
                          lastPublishedAt: Option[DateTime] = None) {
 
-  private def forbidEmptyString(item: String, errorMsg: String): Unit = {
-    require(item.nonEmpty, errorMsg)
-  }
-
-  private def forbidCharSequenceToItem(item: String, nonAllowedCharSeq: String, errorMsg: String): Unit = {
-    require(!item.contains(nonAllowedCharSeq), errorMsg)
-  }
-
-  private def uniqueVersions = {
-    !versions.map(_.version).groupBy(identity).mapValues(_.size).exists(_._2 > 1)
-  }
-
-  private val forbiddenCharSequencesInEndpointUri = Seq("?", "&", ":")
-  private val forbiddenCharSequencesInQueryParamName = Seq("?", "&", ":", "/", "{", "}")
-
-  private val nonEmptyApiDefinitionFields = Seq("serviceName", "serviceBaseUrl", "name", "context", "description")
-
-  getClass.getDeclaredFields foreach { f =>
-    val fieldName = f.getName
-    if (nonEmptyApiDefinitionFields.contains(fieldName)) {
-      f.setAccessible(true)
-      forbidEmptyString(f.get(this).asInstanceOf[String], s"$fieldName is required")
-    }
-  }
-
-  require(versions.nonEmpty, "at least one version is required")
-  require(uniqueVersions, "version numbers must be unique")
-
-  versions.foreach { version: APIVersion =>
-
-    forbidEmptyString(version.version, "version is required")
-    require(version.endpoints.nonEmpty, "at least one endpoint is required")
-
-    version.status match {
-      case APIStatus.ALPHA | APIStatus.BETA | APIStatus.STABLE =>
-        require(version.endpointsEnabled.nonEmpty, "endpointsEnabled is required if status is ALPHA, BETA or STABLE")
-      case _ => ()
-    }
-
-    version.endpoints.foreach { endpoint: Endpoint =>
-
-      def forbidCharSequenceToEndpointUri(charSeq: String): Unit = {
-        forbidCharSequenceToItem(
-          item = endpoint.uriPattern,
-          nonAllowedCharSeq = charSeq,
-          errorMsg = s"endpoint cannot contain $charSeq in the URI"
-        )
-      }
-
-      for (charSeq <- forbiddenCharSequencesInEndpointUri) {
-        forbidCharSequenceToEndpointUri(charSeq)
-      }
-      forbidEmptyString(endpoint.endpointName, "endpointName is required")
-
-      endpoint.queryParameters.getOrElse(Nil).foreach { queryParam: Parameter =>
-
-        def forbidCharSequenceToQueryParamName(charSeq: String): Unit = {
-          forbidCharSequenceToItem(
-            item = queryParam.name,
-            nonAllowedCharSeq = charSeq,
-            errorMsg = s"query parameter name cannot contain $charSeq in the name"
-          )
-        }
-
-        forbidEmptyString(queryParam.name, "query parameter name cannot be empty")
-        for (charSeq <- forbiddenCharSequencesInQueryParamName) {
-          forbidCharSequenceToQueryParamName(charSeq)
-        }
-      }
-
-      endpoint.authType match {
-        case AuthType.USER => require(endpoint.scope.nonEmpty, "scope is required if authType is USER")
-        case AuthType.APPLICATION => require(endpoint.scope.isEmpty, "scope is not required if authType is APPLICATION")
-        case _ => ()
-      }
-
-    }
-
-  }
+  validate(this)
 
 }
 
