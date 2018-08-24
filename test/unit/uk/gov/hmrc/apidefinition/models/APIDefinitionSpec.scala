@@ -333,6 +333,40 @@ class APIDefinitionSpec extends UnitSpec {
       apiDefinition.versions.head.access shouldBe Some(PrivateAPIAccess(Seq.empty))
     }
 
+    "read from JSON when the API access type is PRIVATE and there is an empty whitelist and isTrial is true" in {
+      val body =
+        """{
+          |   "serviceName":"calendar",
+          |   "name":"Calendar API",
+          |   "description":"My Calendar API",
+          |   "serviceBaseUrl":"http://calendar",
+          |   "context":"calendar",
+          |   "versions":[
+          |      {
+          |         "version":"1.0",
+          |         "status":"PUBLISHED",
+          |         "access": {
+          |           "type": "PRIVATE",
+          |           "whitelistedApplicationIds" : [],
+          |           "isTrial": true
+          |         },
+          |         "endpoints":[
+          |            {
+          |               "uriPattern":"/today",
+          |               "endpointName":"Get Today's Date",
+          |               "method":"GET",
+          |               "authType":"NONE",
+          |               "throttlingTier":"UNLIMITED"
+          |            }
+          |         ]
+          |      }
+          |   ]
+          |}""".stripMargin.replaceAll("\n", " ")
+
+      val apiDefinition = Json.parse(body).as[APIDefinition]
+      apiDefinition.versions.head.access shouldBe Some(PrivateAPIAccess(Seq.empty, Some(true)))
+    }
+
     "read from JSON when the API access type is PRIVATE and there is a non-empty whitelist" in {
       val body =
         """{

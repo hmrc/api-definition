@@ -35,17 +35,18 @@ object JsonFormatters {
   implicit object apiAccessWrites extends Writes[APIAccess] {
     override def writes(access: APIAccess) = access match {
       case _: PublicAPIAccess => Json.obj("type" -> PUBLIC)
-      case privApi: PrivateAPIAccess => Json.obj("type" -> PRIVATE, "whitelistedApplicationIds" -> privApi.whitelistedApplicationIds)
+      case privApi: PrivateAPIAccess => Json.obj("type" -> PRIVATE, "whitelistedApplicationIds" -> privApi.whitelistedApplicationIds, "isTrial" -> privApi.isTrial)
       case acc => throw new RuntimeException(s"Unknown API Access $acc")
     }
   }
 
   implicit val apiAccessReads: Reads[APIAccess] = (
     (JsPath \ "type").read[APIAccessType.APIAccessType] and
-      (JsPath \ "whitelistedApplicationIds").readNullable[Seq[String]] tupled) map {
-    case (PUBLIC, None | Some(Seq())) => PublicAPIAccess()
-    case (PRIVATE, Some(whitelistedApplicationIds: Seq[String])) => PrivateAPIAccess(whitelistedApplicationIds)
-    case (PRIVATE, None) => throw new RuntimeException("API Access 'PRIVATE' should define 'whitelistedApplicationIds'")
+      (JsPath \ "whitelistedApplicationIds").readNullable[Seq[String]] and
+        (JsPath \ "isTrial").readNullable[Boolean] tupled) map {
+    case (PUBLIC, None | Some(Seq()), _) => PublicAPIAccess()
+    case (PRIVATE, Some(whitelistedApplicationIds: Seq[String]), isTrial) => PrivateAPIAccess(whitelistedApplicationIds, isTrial)
+    case (PRIVATE, None, _) => throw new RuntimeException("API Access 'PRIVATE' should define 'whitelistedApplicationIds'")
     case unknownApiAccess => throw new RuntimeException(s"Unknown API Access $unknownApiAccess")
   }
 
