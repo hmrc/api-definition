@@ -196,7 +196,7 @@ class APIDefinitionService @Inject()(apiPublisher: WSO2APIPublisher,
   private def filterAPIForApplications(applicationIds: String*) : APIDefinition => Option[APIDefinition] = { api =>
 
     val filteredVersions = api.versions.filter(_.access.getOrElse(PublicAPIAccess) match {
-      case access: PrivateAPIAccess => access.whitelistedApplicationIds.exists(s => applicationIds.contains(s))
+      case access: PrivateAPIAccess => access.whitelistedApplicationIds.exists(s => applicationIds.contains(s)) || access.isTrial.getOrElse(false)
       case _ => true
     })
 
