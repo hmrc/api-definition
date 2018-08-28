@@ -781,11 +781,11 @@ class APIDefinitionControllerSpec extends UnitSpec
   }
 
   "validate" should {
-    "succeed with status 204 (NoContent) when the payload is valid" in new Setup {
+    "succeed with status 202 (Accepted) when the payload is valid" in new Setup {
 
       val result = await(underTest.validate()(request.withBody(Json.parse(calendarApiDefinition))))
 
-      status(result) shouldBe NO_CONTENT
+      status(result) shouldBe ACCEPTED
     }
 
     "fail with status 422 (UnprocessableEntity) when the payload is invalid" in new Setup {

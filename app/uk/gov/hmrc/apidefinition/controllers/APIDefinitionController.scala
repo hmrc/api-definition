@@ -16,21 +16,21 @@
 
 package uk.gov.hmrc.apidefinition.controllers
 
-import cats.data.Validated.{Invalid, Valid}
 import javax.inject.{Inject, Singleton}
-import uk.gov.hmrc.apidefinition.config.ControllerConfiguration
-import uk.gov.hmrc.apidefinition.models.ErrorCode._
-import uk.gov.hmrc.apidefinition.models.JsonFormatters._
 import play.api._
 import play.api.http.HeaderNames
 import play.api.libs.json._
 import play.api.mvc._
+import uk.gov.hmrc.apidefinition.config.ControllerConfiguration
+import uk.gov.hmrc.apidefinition.models.ErrorCode._
+import uk.gov.hmrc.apidefinition.models.JsonFormatters._
+import uk.gov.hmrc.apidefinition.models.{APIDefinition, ContextAlreadyDefinedForAnotherService, ErrorCode}
 import uk.gov.hmrc.apidefinition.services.APIDefinitionService
+import uk.gov.hmrc.apidefinition.utils.APIDefinitionMapper
+import uk.gov.hmrc.apidefinition.validators.ApiDefinitionValidator
 import uk.gov.hmrc.http.UnauthorizedException
-import uk.gov.hmrc.apidefinition.models.{APIDefinition, APIDefinitionValidator, ContextAlreadyDefinedForAnotherService, ErrorCode}
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 import uk.gov.hmrc.play.microservice.controller.BaseController
-import uk.gov.hmrc.apidefinition.utils.APIDefinitionMapper
 
 import scala.concurrent.Future
 
@@ -43,7 +43,6 @@ class APIDefinitionController @Inject()(val apiDefinitionService: APIDefinitionS
 
   def createOrUpdate(): Action[JsValue] = Action.async(BodyParsers.parse.json) { implicit request =>
     handleRequest[APIDefinition](request) { requestBody =>
-      APIDefinitionValidator.validate(requestBody)
       Logger.info(s"Create/Update API definition request: $requestBody")
       apiDefinitionService.createOrUpdate(apiDefinitionMapper.mapLegacyStatuses(requestBody)).map { result =>
         Logger.info(s"API definition successfully created/updated: $result")
@@ -77,9 +76,8 @@ class APIDefinitionController @Inject()(val apiDefinitionService: APIDefinitionS
 
   def validate: Action[JsValue] = Action.async(BodyParsers.parse.json) { implicit request =>
     handleRequest[APIDefinition](request) { requestBody =>
-      APIDefinitionValidator.validate(requestBody) match {
-        case Valid(x) => Future.successful(Accepted(x)) // TODO: improve message
-        case Invalid(y) => Future.successful(BadRequest(y.toList.mkString(", "))) // TODO: Future.failed?
+      ApiDefinitionValidator.validate(requestBody) { validatedDefinition =>
+        Future.successful(Accepted(Json.toJson(validatedDefinition)))
       }
     }
   }

@@ -17,7 +17,6 @@
 package uk.gov.hmrc.apidefinition.models
 
 import org.joda.time.DateTime
-import uk.gov.hmrc.apidefinition.models.APIDefinitionValidator.validate
 import uk.gov.hmrc.apidefinition.models.APIStatus.APIStatus
 import uk.gov.hmrc.apidefinition.models.AuthType.AuthType
 import uk.gov.hmrc.apidefinition.models.HttpMethod.HttpMethod
