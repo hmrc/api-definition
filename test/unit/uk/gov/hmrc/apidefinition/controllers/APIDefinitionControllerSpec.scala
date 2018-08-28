@@ -447,7 +447,7 @@ class APIDefinitionControllerSpec extends UnitSpec
       val userEmail = "user@email.com"
       val extendedApiDefinition = extDefinition(serviceName, Some(userEmail))
 
-      when(mockAPIDefinitionService.fetchExtended(isEq(serviceName), isEq(Some(userEmail)))(any[HeaderCarrier]))
+      when(mockAPIDefinitionService.fetchExtendedByServiceName(isEq(serviceName), isEq(Some(userEmail)))(any[HeaderCarrier]))
         .thenReturn(successful(extendedApiDefinition))
 
       val result = await(underTest.fetchExtended(serviceName)(FakeRequest("GET", s"?email=$userEmail")))
@@ -462,7 +462,7 @@ class APIDefinitionControllerSpec extends UnitSpec
       val userEmail = "user@email.com"
       val extendedApiDefinition = extDefinition(serviceName, None)
 
-      when(mockAPIDefinitionService.fetchExtended(isEq(serviceName), isEq(None))(any[HeaderCarrier]))
+      when(mockAPIDefinitionService.fetchExtendedByServiceName(isEq(serviceName), isEq(None))(any[HeaderCarrier]))
         .thenReturn(successful(extendedApiDefinition))
 
       val result = await(underTest.fetchExtended(serviceName)(FakeRequest("GET", "")))
@@ -475,7 +475,7 @@ class APIDefinitionControllerSpec extends UnitSpec
 
       val serviceName = "calendar"
 
-      when(mockAPIDefinitionService.fetchExtended(isEq(serviceName), isEq(None))(any[HeaderCarrier]))
+      when(mockAPIDefinitionService.fetchExtendedByServiceName(isEq(serviceName), isEq(None))(any[HeaderCarrier]))
         .thenReturn(successful(None))
 
       val result = await(underTest.fetchExtended(serviceName)(request))
@@ -487,7 +487,7 @@ class APIDefinitionControllerSpec extends UnitSpec
 
       val serviceName = "calendar"
 
-      when(mockAPIDefinitionService.fetchExtended(isEq(serviceName), isEq(None))(any[HeaderCarrier]))
+      when(mockAPIDefinitionService.fetchExtendedByServiceName(isEq(serviceName), isEq(None))(any[HeaderCarrier]))
         .thenReturn(failed(new RuntimeException("Something went wrong")))
 
       val result = await(underTest.fetchExtended(serviceName)(request))
@@ -511,7 +511,7 @@ class APIDefinitionControllerSpec extends UnitSpec
           Some(true))),
         requiresTrust = None, lastPublishedAt = Some(aTime))
 
-      when(mockAPIDefinitionService.fetch(isEq(serviceName), isEq(Some(userEmail)))(any[HeaderCarrier]))
+      when(mockAPIDefinitionService.fetchByServiceName(isEq(serviceName), isEq(Some(userEmail)))(any[HeaderCarrier]))
         .thenReturn(successful(Some(apiDefinition)))
 
       val result = await(underTest.fetch(serviceName)(FakeRequest("GET", s"?email=$userEmail")))
@@ -554,7 +554,7 @@ class APIDefinitionControllerSpec extends UnitSpec
           Some(true))),
         requiresTrust = None)
 
-      when(mockAPIDefinitionService.fetch(isEq(serviceName), isEq(None))(any[HeaderCarrier]))
+      when(mockAPIDefinitionService.fetchByServiceName(isEq(serviceName), isEq(None))(any[HeaderCarrier]))
         .thenReturn(successful(Some(apiDefinition)))
 
       val result = await(underTest.fetch(serviceName)(request))
@@ -566,7 +566,7 @@ class APIDefinitionControllerSpec extends UnitSpec
 
       val serviceName = "calendar"
 
-      when(mockAPIDefinitionService.fetch(isEq(serviceName), isEq(None))(any[HeaderCarrier]))
+      when(mockAPIDefinitionService.fetchByServiceName(isEq(serviceName), isEq(None))(any[HeaderCarrier]))
         .thenReturn(successful(None))
 
       val result = await(underTest.fetch(serviceName)(request))
@@ -579,7 +579,7 @@ class APIDefinitionControllerSpec extends UnitSpec
       val serviceName = "calendar"
       val userEmail = "user@email.com"
 
-      when(mockAPIDefinitionService.fetch(isEq(serviceName), isEq(Some(userEmail)))(any[HeaderCarrier]))
+      when(mockAPIDefinitionService.fetchByServiceName(isEq(serviceName), isEq(Some(userEmail)))(any[HeaderCarrier]))
         .thenReturn(successful(None))
 
       val result = await(underTest.fetch(serviceName)(FakeRequest("GET", s"?email=$userEmail")))
@@ -591,7 +591,7 @@ class APIDefinitionControllerSpec extends UnitSpec
 
       val serviceName = "calendar"
 
-      when(mockAPIDefinitionService.fetch(isEq(serviceName), isEq(None))(any[HeaderCarrier]))
+      when(mockAPIDefinitionService.fetchByServiceName(isEq(serviceName), isEq(None))(any[HeaderCarrier]))
         .thenReturn(failed(new RuntimeException("Something went wrong")))
 
       val result = await(underTest.fetch(serviceName)(request))

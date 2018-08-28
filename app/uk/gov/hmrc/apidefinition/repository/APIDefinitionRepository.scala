@@ -27,7 +27,7 @@ import uk.gov.hmrc.apidefinition.models.APIDefinition
 import uk.gov.hmrc.apidefinition.models.JsonFormatters._
 import uk.gov.hmrc.mongo.ReactiveRepository
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
-import uk.gov.hmrc.apidefinition.utils.IndexHelper._
+import uk.gov.hmrc.apidefinition.utils.IndexHelper.{createUniqueBackgroundSingleFieldAscendingIndex, _}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -43,7 +43,8 @@ class APIDefinitionRepository @Inject()(mongo: ReactiveMongoComponent)
   override def indexes: Seq[Index] = {
     Seq(
       createUniqueBackgroundSingleFieldAscendingIndex("serviceName", Some("serviceNameIndex")),
-      createUniqueBackgroundSingleFieldAscendingIndex("context", Some("contextIndex"))
+      createUniqueBackgroundSingleFieldAscendingIndex("context", Some("contextIndex")),
+      createUniqueBackgroundSingleFieldAscendingIndex("name", Some("nameIndex"))
     )
   }
 
@@ -51,22 +52,35 @@ class APIDefinitionRepository @Inject()(mongo: ReactiveMongoComponent)
     Json.obj("serviceName"-> serviceName)
   }
 
+  // TODO: vedi codice in `api-subscription-fields` (feat. Avinder)
+
   def save(apiDefinition: APIDefinition): Future[APIDefinition] = {
-    // `APIDefinitionService.createOrUpdate()` ensures that the API context is a unique field in the mongo collection
+    // `APIDefinitionService.createOrUpdate()` ensures that the context and name are unique fields in the mongo collection
     collection.find(selector = serviceNameSelector(apiDefinition.serviceName)).one[BSONDocument].flatMap {
       case Some(document) => collection.update(selector = BSONDocument("_id" -> document.get("_id")), update = apiDefinition)
       case _ => collection.insert(document = apiDefinition)
     } map (_ => apiDefinition)
   }
 
-  def fetch(serviceName: String): Future[Option[APIDefinition]] = {
+  def fetchByServiceName(serviceName: String): Future[Option[APIDefinition]] = {
     Logger.info(s"Fetching API $serviceName in mongo")
     collection.find(selector = serviceNameSelector(serviceName)).one[APIDefinition].map { api =>
       Logger.info(s"Retrieved API $serviceName in mongo: $api")
       api
     } recover {
       case e =>
-        Logger.error(s"An error occurred while retrieving $serviceName in mongo", e)
+        Logger.error(s"An error occurred while retrieving API with service name '$serviceName' in mongo", e)
+        throw e
+    }
+  }
+
+  def fetchByName(name: String): Future[Option[APIDefinition]] = {
+    collection.find(selector = Json.obj("name" -> name)).one[APIDefinition].map { api =>
+      Logger.debug(s"Retrieved API $api in mongo: $api")
+      api
+    } recover {
+      case e =>
+        Logger.error(s"An error occurred while retrieving API with name '$name' in mongo", e)
         throw e
     }
   }
@@ -77,7 +91,7 @@ class APIDefinitionRepository @Inject()(mongo: ReactiveMongoComponent)
       api
     } recover {
       case e =>
-        Logger.error(s"An error occurred while retrieving api with context $context in mongo", e)
+        Logger.error(s"An error occurred while retrieving API with context '$context' in mongo", e)
         throw e
     }
   }
@@ -88,7 +102,7 @@ class APIDefinitionRepository @Inject()(mongo: ReactiveMongoComponent)
 
   def delete(serviceName: String): Future[Unit] = {
     collection.remove(selector = serviceNameSelector(serviceName))
-      .map(_ => Logger.info(s"API $serviceName has been deleted successfully"))
+      .map(_ => Logger.info(s"API with service name '$serviceName' has been deleted successfully"))
   }
 
 }

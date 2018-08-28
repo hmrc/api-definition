@@ -75,7 +75,7 @@ class APIDefinitionRepositorySpec extends UnitSpec
       val apiDefinition = APIDefinition("calendar", "http://calendar", "Calendar API", "My Calendar API", "calendar", Seq(APIVersion("1.0", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)))), None, None, Some(aTime))
       await(repository.save(apiDefinition))
 
-      val retrieved = await(repository.fetch(apiDefinition.serviceName))
+      val retrieved = await(repository.fetchByServiceName(apiDefinition.serviceName))
 
       retrieved shouldBe Some(apiDefinition)
 
@@ -89,7 +89,7 @@ class APIDefinitionRepositorySpec extends UnitSpec
       val updatedAPIDefinition = APIDefinition("calendar", "http://calendar", "Calendar API", "My Updated Calendar API", "calendar", Seq(APIVersion("1.0", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)))), None)
       await(repository.save(updatedAPIDefinition))
 
-      val retrieved = await(repository.fetch(apiDefinition.serviceName)).get
+      val retrieved = await(repository.fetchByServiceName(apiDefinition.serviceName)).get
 
       retrieved shouldBe updatedAPIDefinition
 
@@ -114,6 +114,10 @@ class APIDefinitionRepositorySpec extends UnitSpec
     }
 
   }
+
+//  TODO: add scenario for "fetchByName"
+
+//  TODO: add scenario for "fetchByServiceName"
 
   "fetchByContext" should {
 
@@ -178,11 +182,25 @@ class APIDefinitionRepositorySpec extends UnitSpec
       collectionSize shouldBe 1
 
       val caught = intercept[DatabaseException] {
-        val inError = saveApi(repository, apiDefinition.copy(serviceName = "newServiceName"))
+        val inError = saveApi(repository, apiDefinition.copy(serviceName = "newServiceName", name = "newName"))
         await(inError)
       }
       caught.code shouldBe Some(11000)
       caught.message shouldBe "E11000 duplicate key error collection: test-APIDefinitionRepositorySpec.api index: contextIndex dup key: { : \"context\" }"
+
+      collectionSize shouldBe 1
+    }
+
+    "have a unique index based on `name`" in {
+      await(repository.save(apiDefinition))
+      collectionSize shouldBe 1
+
+      val caught = intercept[DatabaseException] {
+        val inError = saveApi(repository, apiDefinition.copy(context = "newContext", serviceName = "newServiceName"))
+        await(inError)
+      }
+      caught.code shouldBe Some(11000)
+      caught.message shouldBe "E11000 duplicate key error collection: test-APIDefinitionRepositorySpec.api index: nameIndex dup key: { : \"name\" }"
 
       collectionSize shouldBe 1
     }
@@ -192,7 +210,7 @@ class APIDefinitionRepositorySpec extends UnitSpec
       collectionSize shouldBe 1
 
       val caught = intercept[DatabaseException] {
-        val inError = saveApi(repository, apiDefinition.copy(context = "newContext"))
+        val inError = saveApi(repository, apiDefinition.copy(name = "newName", context = "newContext"))
         await(inError)
       }
       caught.code shouldBe Some(11000)
@@ -201,11 +219,11 @@ class APIDefinitionRepositorySpec extends UnitSpec
       collectionSize shouldBe 1
     }
 
-    "insert a new record when `context` and `serviceName` are unique" in {
+    "insert a new record when `context`, `name` and `serviceName` are unique" in {
       await(repository.save(apiDefinition))
       collectionSize shouldBe 1
 
-      await(saveApi(repository, apiDefinition.copy(context = "newContext", serviceName = "newServiceName")))
+      await(saveApi(repository, apiDefinition.copy(name = "newName", context = "newContext", serviceName = "newServiceName")))
       collectionSize shouldBe 2
     }
 
@@ -217,12 +235,13 @@ class APIDefinitionRepositorySpec extends UnitSpec
       val expectedIndexes = List(
         Index(key = Seq("context" -> Ascending), name = Some("contextIndex"), unique = true, background = true, version = indexVersion),
         Index(key = Seq("serviceName" -> Ascending), name = Some("serviceNameIndex"), unique = true, background = true, version = indexVersion),
+        Index(key = Seq("name" -> Ascending), name = Some("nameIndex"), unique = true, background = true, version = indexVersion),
         Index(key = Seq("_id" -> Ascending), name = Some("_id_"), version = indexVersion)
       )
 
       val repo = createRepository()
 
-      eventually(timeout(10.seconds), interval(100.milliseconds)) {
+      eventually(timeout(4.seconds), interval(100.milliseconds)) {
         getIndexes(repo).toSet shouldBe expectedIndexes.toSet
       }
 

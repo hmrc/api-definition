@@ -43,7 +43,7 @@ class WSO2APIPublisherSpec extends UnitSpec
 
     val underTest = new WSO2APIPublisher(mock[AppContext], mock[WSO2APIPublisherConnector])
 
-    when(underTest.wso2APIPublisherConnector.login()).thenReturn(successful(cookie))
+    when(underTest.wso2PublisherConnector.login()).thenReturn(successful(cookie))
 
     when(underTest.appContext.buildProductionUrlForPrototypedAPIs).thenReturn(successful(false))
 
@@ -54,45 +54,45 @@ class WSO2APIPublisherSpec extends UnitSpec
 
     "login to WSO2 and create the API when none exists" in new Setup {
 
-      when(underTest.wso2APIPublisherConnector.doesAPIExist(refEq(cookie), any(classOf[WSO2APIDefinition]))(any(classOf[HeaderCarrier])))
+      when(underTest.wso2PublisherConnector.doesAPIExist(refEq(cookie), any(classOf[WSO2APIDefinition]))(any(classOf[HeaderCarrier])))
         .thenReturn(successful(false))
-      when(underTest.wso2APIPublisherConnector.createAPI(refEq(cookie), any(classOf[WSO2APIDefinition]))(any(classOf[HeaderCarrier])))
+      when(underTest.wso2PublisherConnector.createAPI(refEq(cookie), any(classOf[WSO2APIDefinition]))(any(classOf[HeaderCarrier])))
         .thenReturn(successful(()))
-      when(underTest.wso2APIPublisherConnector.publishAPIStatus(refEq(cookie), any(classOf[WSO2APIDefinition]), refEq("PUBLISHED"))(any(classOf[HeaderCarrier])))
+      when(underTest.wso2PublisherConnector.publishAPIStatus(refEq(cookie), any(classOf[WSO2APIDefinition]), refEq("PUBLISHED"))(any(classOf[HeaderCarrier])))
         .thenReturn(successful(()))
 
       val result = await(underTest.publish(someAPIDefinition))
 
-      verify(underTest.wso2APIPublisherConnector)
+      verify(underTest.wso2PublisherConnector)
         .createAPI(refEq(cookie), any(classOf[WSO2APIDefinition]))(any(classOf[HeaderCarrier]))
-      verify(underTest.wso2APIPublisherConnector)
+      verify(underTest.wso2PublisherConnector)
         .publishAPIStatus(refEq(cookie), any(classOf[WSO2APIDefinition]), refEq("PUBLISHED"))(any(classOf[HeaderCarrier]))
     }
 
     "login to WSO2 and update the API when it already exists" in new Setup {
 
-      when(underTest.wso2APIPublisherConnector.doesAPIExist(refEq(cookie), any(classOf[WSO2APIDefinition]))(any(classOf[HeaderCarrier])))
+      when(underTest.wso2PublisherConnector.doesAPIExist(refEq(cookie), any(classOf[WSO2APIDefinition]))(any(classOf[HeaderCarrier])))
         .thenReturn(successful(true))
-      when(underTest.wso2APIPublisherConnector.updateAPI(refEq(cookie), any(classOf[WSO2APIDefinition]))(any(classOf[HeaderCarrier])))
+      when(underTest.wso2PublisherConnector.updateAPI(refEq(cookie), any(classOf[WSO2APIDefinition]))(any(classOf[HeaderCarrier])))
         .thenReturn(successful(()))
-      when(underTest.wso2APIPublisherConnector.publishAPIStatus(refEq(cookie), any(classOf[WSO2APIDefinition]), refEq("PUBLISHED"))(any(classOf[HeaderCarrier])))
+      when(underTest.wso2PublisherConnector.publishAPIStatus(refEq(cookie), any(classOf[WSO2APIDefinition]), refEq("PUBLISHED"))(any(classOf[HeaderCarrier])))
         .thenReturn(successful(()))
 
       val result = await(underTest.publish(someAPIDefinition))
 
-      verify(underTest.wso2APIPublisherConnector)
+      verify(underTest.wso2PublisherConnector)
         .updateAPI(refEq(cookie), any(classOf[WSO2APIDefinition]))(any(classOf[HeaderCarrier]))
-      verify(underTest.wso2APIPublisherConnector)
+      verify(underTest.wso2PublisherConnector)
         .publishAPIStatus(refEq(cookie), any(classOf[WSO2APIDefinition]), refEq("PUBLISHED"))(any(classOf[HeaderCarrier]))
     }
 
     "fail when an update to WSO2 responds with an error" in new Setup {
 
-      when(underTest.wso2APIPublisherConnector.doesAPIExist(refEq(cookie), any(classOf[WSO2APIDefinition]))(any(classOf[HeaderCarrier])))
+      when(underTest.wso2PublisherConnector.doesAPIExist(refEq(cookie), any(classOf[WSO2APIDefinition]))(any(classOf[HeaderCarrier])))
         .thenReturn(successful(false))
-      when(underTest.wso2APIPublisherConnector.createAPI(refEq(cookie), any(classOf[WSO2APIDefinition]))(any(classOf[HeaderCarrier])))
+      when(underTest.wso2PublisherConnector.createAPI(refEq(cookie), any(classOf[WSO2APIDefinition]))(any(classOf[HeaderCarrier])))
         .thenReturn(successful(()))
-      when(underTest.wso2APIPublisherConnector.publishAPIStatus(refEq(cookie), any(classOf[WSO2APIDefinition]), refEq("PUBLISHED"))(any(classOf[HeaderCarrier])))
+      when(underTest.wso2PublisherConnector.publishAPIStatus(refEq(cookie), any(classOf[WSO2APIDefinition]), refEq("PUBLISHED"))(any(classOf[HeaderCarrier])))
         .thenReturn(failed(new RuntimeException("Something went wrong")))
 
       underTest.publish(someAPIDefinition).map{
@@ -111,7 +111,7 @@ class WSO2APIPublisherSpec extends UnitSpec
 
       val wso2APIDefinition = WSO2PayloadHelper.buildWSO2APIDefinitions(someAPIDefinition).head.copy(subscribersCount = 4)
 
-      given(underTest.wso2APIPublisherConnector.fetchAPI(cookie, "calendar--1.0", "1.0"))
+      given(underTest.wso2PublisherConnector.fetchAPI(cookie, "calendar--1.0", "1.0"))
         .willReturn(successful(wso2APIDefinition))
 
       await(underTest.hasSubscribers(someAPIDefinition)) shouldEqual true
@@ -121,7 +121,7 @@ class WSO2APIPublisherSpec extends UnitSpec
 
       val wso2APIDefinition = WSO2PayloadHelper.buildWSO2APIDefinitions(someAPIDefinition).head.copy(subscribersCount = 0)
 
-      given(underTest.wso2APIPublisherConnector.fetchAPI(cookie, "calendar--1.0", "1.0"))
+      given(underTest.wso2PublisherConnector.fetchAPI(cookie, "calendar--1.0", "1.0"))
         .willReturn(successful(wso2APIDefinition))
 
       await(underTest.hasSubscribers(someAPIDefinition)) shouldEqual false
@@ -135,22 +135,22 @@ class WSO2APIPublisherSpec extends UnitSpec
       val apiDefinition1 = someAPIDefinition
       val apiDefinition2 = someAPIDefinition
 
-      when(underTest.wso2APIPublisherConnector.doesAPIExist(refEq(cookie), any(classOf[WSO2APIDefinition]))(any(classOf[HeaderCarrier])))
+      when(underTest.wso2PublisherConnector.doesAPIExist(refEq(cookie), any(classOf[WSO2APIDefinition]))(any(classOf[HeaderCarrier])))
         .thenReturn(successful(false))
-      when(underTest.wso2APIPublisherConnector.createAPI(refEq(cookie), any(classOf[WSO2APIDefinition]))(any(classOf[HeaderCarrier])))
+      when(underTest.wso2PublisherConnector.createAPI(refEq(cookie), any(classOf[WSO2APIDefinition]))(any(classOf[HeaderCarrier])))
         .thenReturn(successful(()))
-      when(underTest.wso2APIPublisherConnector.publishAPIStatus(refEq(cookie), any(classOf[WSO2APIDefinition]), refEq("PUBLISHED"))(any(classOf[HeaderCarrier])))
+      when(underTest.wso2PublisherConnector.publishAPIStatus(refEq(cookie), any(classOf[WSO2APIDefinition]), refEq("PUBLISHED"))(any(classOf[HeaderCarrier])))
         .thenReturn(successful(()))
 
       val result = await(underTest.publish(Seq(apiDefinition1, apiDefinition2)))
 
       result.isEmpty shouldBe true
 
-      verify(underTest.wso2APIPublisherConnector, times(2))
+      verify(underTest.wso2PublisherConnector, times(2))
         .doesAPIExist(refEq(cookie), any(classOf[WSO2APIDefinition]))(any(classOf[HeaderCarrier]))
-      verify(underTest.wso2APIPublisherConnector, times(2))
+      verify(underTest.wso2PublisherConnector, times(2))
         .createAPI(refEq(cookie), any(classOf[WSO2APIDefinition]))(any(classOf[HeaderCarrier]))
-      verify(underTest.wso2APIPublisherConnector, times(2))
+      verify(underTest.wso2PublisherConnector, times(2))
         .publishAPIStatus(refEq(cookie), any(classOf[WSO2APIDefinition]), refEq("PUBLISHED"))(any(classOf[HeaderCarrier]))
     }
 
@@ -158,11 +158,11 @@ class WSO2APIPublisherSpec extends UnitSpec
 
       val exception = new RuntimeException("Some error occurred")
 
-      when(underTest.wso2APIPublisherConnector.doesAPIExist(refEq(cookie), any(classOf[WSO2APIDefinition]))(any(classOf[HeaderCarrier])))
+      when(underTest.wso2PublisherConnector.doesAPIExist(refEq(cookie), any(classOf[WSO2APIDefinition]))(any(classOf[HeaderCarrier])))
         .thenReturn(successful(false))
-      when(underTest.wso2APIPublisherConnector.createAPI(refEq(cookie), any(classOf[WSO2APIDefinition]))(any(classOf[HeaderCarrier])))
+      when(underTest.wso2PublisherConnector.createAPI(refEq(cookie), any(classOf[WSO2APIDefinition]))(any(classOf[HeaderCarrier])))
         .thenReturn(successful(()))
-      when(underTest.wso2APIPublisherConnector.publishAPIStatus(refEq(cookie), any(classOf[WSO2APIDefinition]), refEq("PUBLISHED"))(any(classOf[HeaderCarrier])))
+      when(underTest.wso2PublisherConnector.publishAPIStatus(refEq(cookie), any(classOf[WSO2APIDefinition]), refEq("PUBLISHED"))(any(classOf[HeaderCarrier])))
         .thenReturn(failed(exception), failed(exception), successful(()))
 
       val result = await(underTest.publish(Seq(someAPIDefinition, someAPIDefinition, someAPIDefinition)))
@@ -175,11 +175,11 @@ class WSO2APIPublisherSpec extends UnitSpec
 
     "login to WSO2 and remove all expected APIs" in new Setup {
 
-      given(underTest.wso2APIPublisherConnector.removeAPI(cookie, "calendar--1.0", "1.0"))
+      given(underTest.wso2PublisherConnector.removeAPI(cookie, "calendar--1.0", "1.0"))
         .willReturn(successful(()))
-      given(underTest.wso2APIPublisherConnector.removeAPI(cookie, "calendar--2.0", "2.0"))
+      given(underTest.wso2PublisherConnector.removeAPI(cookie, "calendar--2.0", "2.0"))
         .willReturn(successful(()))
-      given(underTest.wso2APIPublisherConnector.removeAPI(cookie, "calendar--3.0", "3.0"))
+      given(underTest.wso2PublisherConnector.removeAPI(cookie, "calendar--3.0", "3.0"))
         .willReturn(successful(()))
 
       val apiDefinition = someAPIDefinition.copy(
@@ -192,7 +192,7 @@ class WSO2APIPublisherSpec extends UnitSpec
 
       await(underTest.delete(apiDefinition)) shouldEqual ((): Unit)
 
-      verify(underTest.wso2APIPublisherConnector, times(3))
+      verify(underTest.wso2PublisherConnector, times(3))
         .removeAPI(refEq(cookie), any(classOf[String]), any(classOf[String]))(any(classOf[HeaderCarrier]))
     }
   }

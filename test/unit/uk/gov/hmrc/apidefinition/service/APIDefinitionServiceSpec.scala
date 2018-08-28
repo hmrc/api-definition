@@ -65,7 +65,7 @@ class APIDefinitionServiceSpec extends UnitSpec
     val apiDefinition = someAPIDefinition
     val apiDefinitionWithSavingTime = apiDefinition.copy(lastPublishedAt = Some(fixedSavingTime))
 
-    when(mockAPIDefinitionRepository.fetch(apiDefinition.serviceName)).thenReturn(successful(Some(apiDefinition)))
+    when(mockAPIDefinitionRepository.fetchByServiceName(apiDefinition.serviceName)).thenReturn(successful(Some(apiDefinition)))
     when(mockWSO2APIPublisher.delete(apiDefinition)).thenReturn(successful(()))
     when(mockAPIDefinitionRepository.delete(apiDefinition.serviceName)).thenReturn(successful(()))
   }
@@ -75,22 +75,22 @@ class APIDefinitionServiceSpec extends UnitSpec
     "create or update the API Definition in both WSO2 and the repository" in new Setup {
 
       when(mockWSO2APIPublisher.publish(apiDefinition)).thenReturn(successful(()))
-      when(mockAPIDefinitionRepository.save(apiDefinitionWithSavingTime))
-        .thenReturn(successful(apiDefinitionWithSavingTime))
+      when(mockAPIDefinitionRepository.save(apiDefinitionWithSavingTime)).thenReturn(successful(apiDefinitionWithSavingTime))
       when(mockAPIDefinitionRepository.fetchByContext(apiDefinition.context)).thenReturn(successful(None))
+      when(mockAPIDefinitionRepository.fetchByName(apiDefinition.name)).thenReturn(successful(None))
 
       await(underTest.createOrUpdate(apiDefinition)) shouldBe apiDefinitionWithSavingTime
 
       verify(mockWSO2APIPublisher, times(1)).publish(apiDefinition)
       verify(mockAPIDefinitionRepository, times(1)).save(apiDefinitionWithSavingTime)
       verify(mockAPIDefinitionRepository, times(1)).fetchByContext(apiDefinition.context)
+      verify(mockAPIDefinitionRepository, times(1)).fetchByName(apiDefinition.name)
     }
 
     "propagate unexpected errors that happen when trying to publish an API" in new Setup {
-      when(mockAPIDefinitionRepository.fetchByContext(apiDefinition.context))
-        .thenReturn(successful(None))
-      when(mockWSO2APIPublisher.publish(apiDefinition))
-        .thenReturn(failed(new RuntimeException("Something went wrong")))
+      when(mockAPIDefinitionRepository.fetchByContext(apiDefinition.context)).thenReturn(successful(None))
+      when(mockAPIDefinitionRepository.fetchByName(apiDefinition.name)).thenReturn(successful(None))
+      when(mockWSO2APIPublisher.publish(apiDefinition)).thenReturn(failed(new RuntimeException("Something went wrong")))
 
       val thrown = intercept[RuntimeException] {
         await(underTest.createOrUpdate(apiDefinition))
@@ -100,33 +100,50 @@ class APIDefinitionServiceSpec extends UnitSpec
       verify(mockAPIDefinitionRepository, never()).save(any[APIDefinition])
       verify(mockWSO2APIPublisher, times(1)).publish(apiDefinition)
       verify(mockAPIDefinitionRepository, times(1)).fetchByContext(apiDefinition.context)
+      verify(mockAPIDefinitionRepository, times(1)).fetchByName(apiDefinition.name)
     }
 
-    "fail to create the definition in the repository if context for another service name already exists" in new Setup {
+    "fail to create the API definition in the repository if the context is used by another API" in new Setup {
+      when(mockAPIDefinitionRepository.fetchByName(apiDefinition.name)).thenReturn(successful(None))
       when(mockAPIDefinitionRepository.fetchByContext(apiDefinition.context))
         .thenReturn(successful(Some(apiDefinition.copy(serviceName = "differentServiceName"))))
 
-      intercept[ContextAlreadyDefinedForAnotherService] {
+      intercept[RuntimeException] {
         await(underTest.createOrUpdate(apiDefinition))
       }
 
+      verify(mockAPIDefinitionRepository, times(1)).fetchByName(apiDefinition.name)
       verify(mockAPIDefinitionRepository, times(1)).fetchByContext(apiDefinition.context)
       verifyZeroInteractions(mockWSO2APIPublisher)
     }
 
-    "create or update the API Definition if context is defined for the same service in both WSO2 and the repository" in new Setup {
+    "fail to create the API definition in the repository if the name is used by another API" in new Setup {
+      when(mockAPIDefinitionRepository.fetchByContext(apiDefinition.context)).thenReturn(successful(None))
+      when(mockAPIDefinitionRepository.fetchByName(apiDefinition.name))
+        .thenReturn(successful(Some(apiDefinition.copy(serviceName = "differentServiceName"))))
+
+      intercept[RuntimeException] {
+        await(underTest.createOrUpdate(apiDefinition))
+      }
+
+      verify(mockAPIDefinitionRepository, times(1)).fetchByName(apiDefinition.name)
+      verify(mockAPIDefinitionRepository, times(1)).fetchByContext(apiDefinition.context)
+      verifyZeroInteractions(mockWSO2APIPublisher)
+    }
+
+    "update the API Definition (in both WSO2 AM and the mongo repository)" in new Setup {
 
       when(mockWSO2APIPublisher.publish(apiDefinition)).thenReturn(successful(()))
-      when(mockAPIDefinitionRepository.save(apiDefinitionWithSavingTime))
-        .thenReturn(successful(apiDefinitionWithSavingTime))
-      when(mockAPIDefinitionRepository.fetchByContext(apiDefinition.context))
-        .thenReturn(successful(Some(apiDefinition)))
+      when(mockAPIDefinitionRepository.save(apiDefinitionWithSavingTime)).thenReturn(successful(apiDefinitionWithSavingTime))
+      when(mockAPIDefinitionRepository.fetchByContext(apiDefinition.context)).thenReturn(successful(Some(apiDefinition)))
+      when(mockAPIDefinitionRepository.fetchByName(apiDefinition.name)).thenReturn(successful(Some(apiDefinition)))
 
       await(underTest.createOrUpdate(apiDefinition)) shouldBe apiDefinitionWithSavingTime
 
       verify(mockWSO2APIPublisher, times(1)).publish(apiDefinition)
       verify(mockAPIDefinitionRepository, times(1)).save(apiDefinitionWithSavingTime)
       verify(mockAPIDefinitionRepository, times(1)).fetchByContext(apiDefinition.context)
+      verify(mockAPIDefinitionRepository, times(1)).fetchByName(apiDefinition.name)
     }
 
   }
@@ -155,7 +172,7 @@ class APIDefinitionServiceSpec extends UnitSpec
     "return all Versions of the API Definition with information on which versions the undefined user can see." in new Setup {
       val definition = anAPIDefinition("context", publicVersion, privateVersion, noAccessDefinedVersion)
 
-      when(mockAPIDefinitionRepository.fetch(serviceName)).thenReturn(successful(Some(definition)))
+      when(mockAPIDefinitionRepository.fetchByServiceName(serviceName)).thenReturn(successful(Some(definition)))
 
       val exp = Some(extAPIDefinition(
         "context",
@@ -169,14 +186,14 @@ class APIDefinitionServiceSpec extends UnitSpec
         )
       ))
 
-      val response = await(underTest.fetchExtended(serviceName, None))
+      val response = await(underTest.fetchExtendedByServiceName(serviceName, None))
       response shouldBe exp
     }
 
     "user cannot access the private endpoint" in new Setup {
       val definition = anAPIDefinition("context", publicVersion, privateVersion, noAccessDefinedVersion)
 
-      when(mockAPIDefinitionRepository.fetch(serviceName))
+      when(mockAPIDefinitionRepository.fetchByServiceName(serviceName))
         .thenReturn(successful(Some(definition)))
       when(mockThirdPartyApplicationConnector.fetchApplicationsByEmail("Bob"))
         .thenReturn(successful(Seq(Application(otherAppId, "App"))))
@@ -192,14 +209,14 @@ class APIDefinitionServiceSpec extends UnitSpec
             Some(noAccessDefinedVersionAvailability.copy(loggedIn = true, authorised = true)), None)
         )
       ))
-      val response = await(underTest.fetchExtended(serviceName, Some("Bob")))
+      val response = await(underTest.fetchExtendedByServiceName(serviceName, Some("Bob")))
       response shouldBe exp
     }
 
     "user can access the private endpoint" in new Setup {
       val definition = anAPIDefinition("context", publicVersion, privateVersion, noAccessDefinedVersion)
 
-      when(mockAPIDefinitionRepository.fetch(serviceName))
+      when(mockAPIDefinitionRepository.fetchByServiceName(serviceName))
         .thenReturn(successful(Some(definition)))
       when(mockThirdPartyApplicationConnector.fetchApplicationsByEmail("Bob"))
         .thenReturn(successful(Seq(Application(appId, "App"))))
@@ -215,14 +232,14 @@ class APIDefinitionServiceSpec extends UnitSpec
             Some(noAccessDefinedVersionAvailability.copy(loggedIn = true, authorised = true)), None)
         )
       ))
-      val response = await(underTest.fetchExtended(serviceName, Some("Bob")))
+      val response = await(underTest.fetchExtendedByServiceName(serviceName, Some("Bob")))
       response shouldBe exp
     }
 
     "return all versions of the API Definition with information that the logged in user can access one private version" in new Setup {
       val definition = anAPIDefinition("context", publicVersion, privateVersion, noAccessDefinedVersion, privateVersionOtherApplications)
 
-      when(mockAPIDefinitionRepository.fetch(serviceName))
+      when(mockAPIDefinitionRepository.fetchByServiceName(serviceName))
         .thenReturn(successful(Some(definition)))
       when(mockThirdPartyApplicationConnector.fetchApplicationsByEmail("Bob"))
         .thenReturn(successful(Seq(Application(appId, "App"))))
@@ -240,14 +257,14 @@ class APIDefinitionServiceSpec extends UnitSpec
             Some(privateVersionOtherApplicationsAvailability.copy(loggedIn = true, authorised = false)), None)
         )
       ))
-      val response = await(underTest.fetchExtended(serviceName, Some("Bob")))
+      val response = await(underTest.fetchExtendedByServiceName(serviceName, Some("Bob")))
       response shouldBe exp
     }
 
     "default to public access when no access defined for an API version" in new Setup {
       val definition = anAPIDefinition("context", noAccessDefinedVersion)
 
-      when(mockAPIDefinitionRepository.fetch(serviceName)).thenReturn(successful(Some(definition)))
+      when(mockAPIDefinitionRepository.fetchByServiceName(serviceName)).thenReturn(successful(Some(definition)))
 
       val exp = Some(extAPIDefinition(
         "context",
@@ -256,7 +273,7 @@ class APIDefinitionServiceSpec extends UnitSpec
             Some(noAccessDefinedVersionAvailability.copy(loggedIn = false, authorised = true)), None)
         )
       ))
-      val response = await(underTest.fetchExtended(serviceName, None))
+      val response = await(underTest.fetchExtendedByServiceName(serviceName, None))
       response shouldBe exp
     }
 
@@ -264,7 +281,7 @@ class APIDefinitionServiceSpec extends UnitSpec
       val definition = anAPIDefinition("context", noAccessDefinedVersion)
 
       when(mockAppContext.isSandbox).thenReturn(true)
-      when(mockAPIDefinitionRepository.fetch(serviceName)).thenReturn(successful(Some(definition)))
+      when(mockAPIDefinitionRepository.fetchByServiceName(serviceName)).thenReturn(successful(Some(definition)))
 
       val exp = Some(extAPIDefinition(
         "context",
@@ -273,7 +290,7 @@ class APIDefinitionServiceSpec extends UnitSpec
             None, Some(noAccessDefinedVersionAvailability.copy(loggedIn = false, authorised = true)))
         )
       ))
-      val response = await(underTest.fetchExtended(serviceName, None))
+      val response = await(underTest.fetchExtendedByServiceName(serviceName, None))
       response shouldBe exp
     }
   }
@@ -293,9 +310,9 @@ class APIDefinitionServiceSpec extends UnitSpec
       val definition = anAPIDefinition("context", publicVersion, privateVersion, noAccessDefinedVersion).
         copy(lastPublishedAt = Some(aTime))
 
-      when(mockAPIDefinitionRepository.fetch(serviceName)).thenReturn(successful(Some(definition)))
+      when(mockAPIDefinitionRepository.fetchByServiceName(serviceName)).thenReturn(successful(Some(definition)))
 
-      val response = await(underTest.fetch(serviceName, None))
+      val response = await(underTest.fetchByServiceName(serviceName, None))
 
       val expected = anAPIDefinition("context", publicVersion, noAccessDefinedVersion).copy(lastPublishedAt = Some(aTime))
 
@@ -307,9 +324,9 @@ class APIDefinitionServiceSpec extends UnitSpec
 
       val definition = anAPIDefinition("context", privateVersion)
 
-      when(mockAPIDefinitionRepository.fetch(serviceName)).thenReturn(successful(Some(definition)))
+      when(mockAPIDefinitionRepository.fetchByServiceName(serviceName)).thenReturn(successful(Some(definition)))
 
-      val response = await(underTest.fetch(serviceName, None))
+      val response = await(underTest.fetchByServiceName(serviceName, None))
 
       response shouldBe None
     }
@@ -320,12 +337,12 @@ class APIDefinitionServiceSpec extends UnitSpec
       val email = "user@email.com"
       val definition = anAPIDefinition("context", publicVersion, privateVersion, noAccessDefinedVersion, privateVersionOtherApplications)
 
-      when(mockAPIDefinitionRepository.fetch(serviceName))
+      when(mockAPIDefinitionRepository.fetchByServiceName(serviceName))
         .thenReturn(successful(Some(definition)))
       when(mockThirdPartyApplicationConnector.fetchApplicationsByEmail(email))
         .thenReturn(successful(Seq(Application(appId, "App"))))
 
-      val response = await(underTest.fetch(serviceName, Some(email)))
+      val response = await(underTest.fetchByServiceName(serviceName, Some(email)))
 
       response shouldBe Some(anAPIDefinition("context", publicVersion, privateVersion, noAccessDefinedVersion))
     }
@@ -482,7 +499,7 @@ class APIDefinitionServiceSpec extends UnitSpec
 
     "return success when the API doesnt exist" in new Setup {
 
-      when(mockAPIDefinitionRepository.fetch("service")).thenReturn(successful(None))
+      when(mockAPIDefinitionRepository.fetchByServiceName("service")).thenReturn(successful(None))
 
       await(underTest.delete("service"))
     }

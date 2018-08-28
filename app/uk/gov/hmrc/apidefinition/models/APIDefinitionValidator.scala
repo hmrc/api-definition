@@ -25,6 +25,7 @@ object APIDefinitionValidator {
   private val uriRegex: Regex = "^/[a-zA-Z0-9_\\-\\/{}]*$".r
   private val pathParameterRegex: Regex = "^\\{[a-zA-Z]+[a-zA-Z0-9_\\-]*\\}$".r
 
+  // remove reflection
   private val nonEmptyApiDefinitionFields = Seq("name", "serviceName", "serviceBaseUrl", "context", "description")
 
   def validate(definition: APIDefinition): Unit = {
@@ -78,6 +79,11 @@ object APIDefinitionValidator {
 
     require(hasMatch(uriRegex, uriPattern), errMsg)
     validatePathParameters(uriPattern, errMsg)
+
+//    require(uriPattern.nonEmpty, s"URI pattern is required for endpoint '$endpointName' in the API '$apiName' version '$version'")
+//
+//    require(hasMatch(uriRegex, uriPattern), s"invalid URI pattern for endpoint '$endpointName' in the API '$apiName' version '$version': $uriPattern")
+//    validatePathParameters(uriPattern, s"invalid path parameter for endpoint '$endpointName' in the API '$apiName' version '$version': $uriPattern")
   }
 
   private def validatePathParameters(uriPattern: String, errMsg: => String): Unit = {

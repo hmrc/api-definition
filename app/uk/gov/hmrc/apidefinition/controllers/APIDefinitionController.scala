@@ -60,14 +60,14 @@ class APIDefinitionController @Inject()(val apiDefinitionService: APIDefinitionS
   }
 
   def fetchExtended(serviceName: String):  Action[AnyContent] = Action.async { implicit request =>
-    apiDefinitionService.fetchExtended(serviceName, request.queryString.get("email").flatMap(_.headOption)) map {
+    apiDefinitionService.fetchExtendedByServiceName(serviceName, request.queryString.get("email").flatMap(_.headOption)) map {
       case Some(extendedApiDefinition) => Ok(Json.toJson(extendedApiDefinition))
       case _ => NotFound(error(API_DEFINITION_NOT_FOUND, "No API Definition was found"))
     } recover recovery
   }
 
   def fetch(serviceName: String):  Action[AnyContent] = Action.async { implicit request =>
-    apiDefinitionService.fetch(serviceName, request.queryString.get("email").flatMap(_.headOption)) map {
+    apiDefinitionService.fetchByServiceName(serviceName, request.queryString.get("email").flatMap(_.headOption)) map {
       case Some(apiDefinition) => Ok(Json.toJson(apiDefinition))
       case _ => NotFound(error(API_DEFINITION_NOT_FOUND, "No API Definition was found"))
     } recover recovery
