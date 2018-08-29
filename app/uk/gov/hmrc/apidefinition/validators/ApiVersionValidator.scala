@@ -23,10 +23,10 @@ import uk.gov.hmrc.apidefinition.validators.ApiDefinitionValidator.HMRCValidated
 object ApiVersionValidator extends Validator[APIVersion] {
 
   def validate(ec: String)(implicit version: APIVersion): HMRCValidated[APIVersion] = {
-    val errorContext: String = if (version.version.isEmpty) ec else s"$ec and version '${version.version}'"
+    val errorContext: String = if (version.version.isEmpty) ec else s"$ec version '${version.version}'"
     (
-      validateThat(_.version.nonEmpty, _ => s"Field 'version' is required $errorContext"),
-      validateThat(_.endpoints.nonEmpty, _ => s"At least one endpoint is required $errorContext"),
+      validateThat(_.version.nonEmpty, _ => s"Field 'versions.version' is required $errorContext"),
+      validateThat(_.endpoints.nonEmpty, _ => s"Field 'versions.endpoints' must not be empty $errorContext"),
       validateStatus(errorContext),
       validateAll[Endpoint](u => ApiEndpointValidator.validate(errorContext)(u))(version.endpoints)
     ).mapN((_,_,_,_) => version)
@@ -35,7 +35,7 @@ object ApiVersionValidator extends Validator[APIVersion] {
   private def validateStatus(errorContext: String)(implicit version: APIVersion): HMRCValidated[APIVersion] = {
     version.status match {
       case APIStatus.ALPHA | APIStatus.BETA | APIStatus.STABLE =>
-        validateThat(_ => version.endpointsEnabled.nonEmpty, _ => s"Field 'endpointsEnabled' is required $errorContext")
+        validateThat(_ => version.endpointsEnabled.nonEmpty, _ => s"Field 'versions.endpointsEnabled' is required $errorContext")
       case _ => version.validNel
     }
   }

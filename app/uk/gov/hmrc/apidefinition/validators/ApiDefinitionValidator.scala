@@ -19,9 +19,10 @@ package uk.gov.hmrc.apidefinition.validators
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.ValidatedNel
 import cats.implicits._
-import play.api.libs.json.Json
+import play.api.libs.json.Json.toJson
 import play.api.mvc.Result
 import play.api.mvc.Results.UnprocessableEntity
+import uk.gov.hmrc.apidefinition.models.ErrorCode.INVALID_REQUEST_PAYLOAD
 import uk.gov.hmrc.apidefinition.models._
 
 import scala.concurrent.Future
@@ -33,12 +34,15 @@ object ApiDefinitionValidator extends Validator[APIDefinition] {
   def validate(apiDefinition: APIDefinition)(f: APIDefinition => Future[Result]): Future[Result] = {
     validateDefinition(apiDefinition) match {
       case Valid(validDefinition) => f(validDefinition)
-      case Invalid(errors) => Future.successful(UnprocessableEntity(Json.toJson(errors.toList)))
+      case Invalid(errors) => Future.successful(UnprocessableEntity(toJson(ValidationErrors(INVALID_REQUEST_PAYLOAD, errors.toList))))
     }
   }
 
   def validateDefinition(implicit apiDefinition: APIDefinition): HMRCValidated[APIDefinition] = {
-    val errorContext: String = if (apiDefinition.name.isEmpty) "" else s"for API '${apiDefinition.name}'"
+    val errorContext: String =
+      if (apiDefinition.name.isEmpty) s"for API with service name '${apiDefinition.serviceName}'"
+      else s"for API '${apiDefinition.name}'"
+
     (
       validateThat(_.serviceName.nonEmpty, _ => s"Field 'serviceName' should not be empty $errorContext"),
       validateThat(_.serviceBaseUrl.nonEmpty, _ => s"Field 'serviceBaseUrl' should not be empty $errorContext"),
@@ -50,13 +54,13 @@ object ApiDefinitionValidator extends Validator[APIDefinition] {
   }
 
   private def validateVersions(errorContext: String)(implicit apiDefinition: APIDefinition): HMRCValidated[APIDefinition] = {
-    validateThat(_.versions.nonEmpty, _ => s"At least one version is required $errorContext")
-      .andThen(validateUniqueVersions(errorContext)(_))
-      .andThen(validateAllVersions(errorContext)).map(_ => apiDefinition)
+    validateThat(_.versions.nonEmpty, _ => s"Field 'versions' must not be empty $errorContext")
+      .andThen(ad =>
+        (validateUniqueVersions(errorContext)(ad), validateAllVersions(errorContext)(ad)).mapN((_,_) => ad))
   }
 
   private def validateUniqueVersions(errorContext: String)(implicit apiDefinition: APIDefinition): HMRCValidated[APIDefinition] = {
-    validateThat(uniqueVersionsPredicate, _ => s"Version numbers must be unique $errorContext")
+    validateThat(uniqueVersionsPredicate, _ => s"Field 'version' must be unique $errorContext")
   }
 
   private def uniqueVersionsPredicate(definition: APIDefinition): Boolean = {

@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.apidefinition.models
 
-import play.api.libs.json.Json
+import play.api.libs.json.{Format, Json, OFormat}
 
 object ErrorCode extends Enumeration {
 
@@ -28,6 +28,13 @@ object ErrorCode extends Enumeration {
   val API_INVALID_JSON = Value("API_INVALID_JSON")
   val CONTEXT_ALREADY_DEFINED = Value("CONTEXT_ALREADY_DEFINED")
   val UNSUPPORTED_ACCESS_TYPE = Value("UNSUPPORTED_ACCESS_TYPE")
+}
+
+case class ValidationErrors(code: ErrorCode.Value, messages: Seq[String])
+
+object ValidationErrors {
+  implicit val format1: Format[ErrorCode.Value] = EnumJson.enumFormat(ErrorCode)
+  implicit val format2: OFormat[ValidationErrors] = Json.format[ValidationErrors]
 }
 
 case class ErrorResponse(code: ErrorCode.Value, message: String, details: Option[Seq[FieldErrorDescription]] = None)

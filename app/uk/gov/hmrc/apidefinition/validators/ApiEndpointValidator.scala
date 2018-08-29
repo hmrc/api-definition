@@ -25,9 +25,9 @@ object ApiEndpointValidator extends Validator[Endpoint] {
   private val pathParameterRegex: String = "^\\{[a-zA-Z]+[a-zA-Z0-9_\\-]*\\}$"
 
   def validate(ec: String)(implicit endpoint: Endpoint): HMRCValidated[Endpoint] = {
-    val errorContext: String = if (endpoint.endpointName.isEmpty) ec else s"$ec and endpoint name '${endpoint.endpointName}'"
+    val errorContext: String = if (endpoint.endpointName.isEmpty) ec else s"$ec endpoint '${endpoint.endpointName}'"
     (
-      validateThat(_.endpointName.nonEmpty, _ => s"Field 'endpointName' is required $errorContext"),
+      validateThat(_.endpointName.nonEmpty, _ => s"Field 'endpoints.endpointName' is required $errorContext"),
       validateUriPattern(errorContext),
       validateScope(errorContext),
       validatePathParameters(errorContext, endpoint),
@@ -36,15 +36,16 @@ object ApiEndpointValidator extends Validator[Endpoint] {
   }
 
   private def validateUriPattern(errorContext: String)(implicit endpoint: Endpoint): HMRCValidated[Endpoint] = {
-    validateThat(_.uriPattern.nonEmpty, _ => s"Field 'uriPattern' is required $errorContext").andThen(
-      validateField(_.uriPattern.matches(uriRegex), e => s"Invalid value '${e.uriPattern}' for field 'uriPattern' $errorContext")
+    validateThat(_.uriPattern.nonEmpty, _ => s"Field 'endpoints.uriPattern' is required $errorContext").andThen(
+      validateField(_.uriPattern.matches(uriRegex),
+        u => s"Field 'endpoints.uriPattern' with value '${u.uriPattern}' should match regular expression '$uriRegex' $errorContext")
     )
   }
 
   private def validateScope(errorContext: String)(implicit endpoint: Endpoint): HMRCValidated[Endpoint] = {
     endpoint.authType match {
-      case AuthType.USER => validateThat(_ => endpoint.scope.nonEmpty, _ => s"Field 'scope' is required $errorContext")
-      case AuthType.APPLICATION => validateThat(_ => endpoint.scope.isEmpty, _ => s"Field 'scope' is not allowed $errorContext")
+      case AuthType.USER => validateThat(_ => endpoint.scope.nonEmpty, _ => s"Field 'endpoints.scope' is required $errorContext")
+      case AuthType.APPLICATION => validateThat(_ => endpoint.scope.isEmpty, _ => s"Field 'endpoints.scope' is not allowed $errorContext")
       case _ => endpoint.validNel
     }
   }
@@ -54,7 +55,7 @@ object ApiEndpointValidator extends Validator[Endpoint] {
     val segments = endpoint.uriPattern.split("/").toList
     segments
       .filter(isPathParam)
-      .map(validateField[String](_.matches(pathParameterRegex), s => s"'$s' is not a valid segment $errorContext"))
+      .map(validateField(_.matches(pathParameterRegex), p => s"Curly-bracketed segment '$p' should match regular expression '$pathParameterRegex' $errorContext"))
       .combineAll
   }
 

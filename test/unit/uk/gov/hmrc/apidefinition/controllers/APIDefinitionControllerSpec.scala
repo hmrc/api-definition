@@ -31,6 +31,7 @@ import play.api.mvc.Result
 import play.api.test.FakeRequest
 import play.mvc.Http.HeaderNames
 import uk.gov.hmrc.apidefinition.config.ControllerConfiguration
+import uk.gov.hmrc.apidefinition.models.ErrorCode.INVALID_REQUEST_PAYLOAD
 import uk.gov.hmrc.http.HeaderNames.xRequestId
 import uk.gov.hmrc.http.{HeaderCarrier, UnauthorizedException}
 import uk.gov.hmrc.apidefinition.models.JsonFormatters._
@@ -163,7 +164,8 @@ class APIDefinitionControllerSpec extends UnitSpec
       val result = await(underTest.createOrUpdate()(request.withBody(Json.parse(body))))
 
       status(result) shouldBe UNPROCESSABLE_ENTITY
-      (jsonBodyOf(result) \ "message").as[String] shouldBe "requirement failed: field 'name' is required"
+      jsonBodyOf(result).as[ValidationErrors] shouldBe
+        ValidationErrors(INVALID_REQUEST_PAYLOAD, List("Field 'name' should not be empty for API with service name 'calendar'"))
     }
 
     "fail with a 422 (Unprocessable entity) when same version appear multiple times" in new Setup {
@@ -212,7 +214,8 @@ class APIDefinitionControllerSpec extends UnitSpec
       val result = await(underTest.createOrUpdate()(request.withBody(Json.parse(body))))
 
       status(result) shouldBe UNPROCESSABLE_ENTITY
-      (jsonBodyOf(result) \ "message").as[String] shouldBe "requirement failed: version numbers must be unique for API 'Calendar API'"
+      jsonBodyOf(result).as[ValidationErrors] shouldBe
+        ValidationErrors(INVALID_REQUEST_PAYLOAD, List("Field 'version' must be unique for API 'Calendar API'"))
     }
 
     "parse an API definition with PUBLIC access type" in new Setup {

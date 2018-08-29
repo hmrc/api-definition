@@ -24,7 +24,9 @@ object QueryParameterValidator extends Validator[Parameter] {
   private val queryParameterNameRegex: String = "^[a-zA-Z0-9_\\-]+$"
 
   def validate(errorContext: String)(implicit queryParameter: Parameter): HMRCValidated[Parameter] = {
-    validateThat(_.name.nonEmpty, _ => "Query parameter name is required")
-      .andThen(validateField(_.name.matches(queryParameterNameRegex), q => s"Query parameter has invalid name '${q.name}' $errorContext"))
+    validateThat(_.name.nonEmpty, _ => s"Field 'queryParameters.name' is required $errorContext").andThen {
+      validateField(_.name.matches(queryParameterNameRegex),
+        _ => s"Field 'queryParameters.name' should match regular expression '$queryParameterNameRegex' $errorContext")
+    }
   }
 }

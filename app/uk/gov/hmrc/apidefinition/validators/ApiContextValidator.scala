@@ -24,15 +24,15 @@ object ApiContextValidator extends Validator[String] {
   private val contextRegex: String = "^[a-zA-Z0-9_\\-\\/]+$"
 
   def validate(errorContext: String)(implicit context: String): HMRCValidated[String] = {
-    validateThat(_.nonEmpty, _ => s"Context should not be empty $errorContext").andThen(validateContext(errorContext)(_))
+    validateThat(_.nonEmpty, _ => s"Field 'context' should not be empty $errorContext").andThen(validateContext(errorContext)(_))
   }
 
   private def validateContext(errorContext: String)(implicit context: String): HMRCValidated[String] = {
     (
-      validateThat(!_.startsWith("/"), _ => s"Context should not start with / $errorContext"),
-      validateThat(!_.endsWith("/"), _ => s"Context should not end with / $errorContext"),
-      validateThat(!_.contains("//"), _ => s"Context should not have empty path segments $errorContext"),
-      validateThat(_.matches(contextRegex), _ => s"Context is invalid $errorContext")
+      validateThat(!_.startsWith("/"), _ => s"Field 'context' should not start with '/' $errorContext"),
+      validateThat(!_.endsWith("/"), _ => s"Field 'context' should not end with '/' $errorContext"),
+      validateThat(!_.contains("//"), _ => s"Field 'context' should not have empty path segments $errorContext"),
+      validateThat(_.matches(contextRegex), _ => s"Field 'context' should match regular expression '$contextRegex' $errorContext")
     ).mapN((_,_,_,_) => context)
   }
 

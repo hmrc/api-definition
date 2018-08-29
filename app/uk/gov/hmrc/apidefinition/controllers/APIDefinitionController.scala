@@ -43,14 +43,16 @@ class APIDefinitionController @Inject()(val apiDefinitionService: APIDefinitionS
 
   def createOrUpdate(): Action[JsValue] = Action.async(BodyParsers.parse.json) { implicit request =>
     handleRequest[APIDefinition](request) { requestBody =>
-      Logger.info(s"Create/Update API definition request: $requestBody")
-      apiDefinitionService.createOrUpdate(apiDefinitionMapper.mapLegacyStatuses(requestBody)).map { result =>
-        Logger.info(s"API definition successfully created/updated: $result")
-        Ok(Json.toJson(result))
-      } recover {
-        case _: ContextAlreadyDefinedForAnotherService =>
-          Conflict(error(CONTEXT_ALREADY_DEFINED, "Context is already defined for another service. It must be unique per service."))
-      } recover recovery
+      ApiDefinitionValidator.validate(requestBody) { validatedDefinition =>
+        Logger.info(s"Create/Update API definition request: $validatedDefinition")
+        apiDefinitionService.createOrUpdate(apiDefinitionMapper.mapLegacyStatuses(validatedDefinition)).map { result =>
+          Logger.info(s"API definition successfully created/updated: $result")
+          Ok(Json.toJson(result))
+        } recover {
+          case _: ContextAlreadyDefinedForAnotherService =>
+            Conflict(error(CONTEXT_ALREADY_DEFINED, "Context is already defined for another service. It must be unique per service."))
+        } recover recovery
+      }
     }
   }
 
