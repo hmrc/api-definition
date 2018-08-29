@@ -27,6 +27,7 @@ import uk.gov.hmrc.apidefinition.models._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.concurrent.Future.{failed, successful}
 
 @Singleton
 class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
@@ -36,53 +37,55 @@ class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
 
   def createOrUpdate(apiDefinition: APIDefinition)(implicit hc: HeaderCarrier): Future[APIDefinition] = {
 
-    def isContextAlreadyUsed: Future[Boolean] = {
-      apiDefinitionRepository.fetchByContext(apiDefinition.context).map {
-        case Some(a: APIDefinition) => a.serviceName != apiDefinition.serviceName
-        case _ => false
-      }
-    }
-
-    def isNameAlreadyUsed: Future[Boolean] = {
-      apiDefinitionRepository.fetchByName(apiDefinition.name).map {
-        case Some(a: APIDefinition) => a.serviceName != apiDefinition.serviceName
-        case _ => false
-      }
-    }
-
     def publish(): Future[Unit] = {
       wso2Publisher.publish(apiDefinition)
     } recover {
       case e: PublishingException =>
         Logger.error(s"Failed to create or update API [${apiDefinition.name}]", e)
-        Future.failed(new RuntimeException(s"Could not publish API: [${apiDefinition.name}]"))
+        failed(new RuntimeException(s"Could not publish API: [${apiDefinition.name}]"))
     }
 
-    // Future.sequence !?
-    val duplicateFields = for {
-      ctxOk <- isContextAlreadyUsed
-      nameOk <- isNameAlreadyUsed
-    } yield (ctxOk, nameOk)
+    val duplicateApiFields: Future[(Boolean, Boolean)] = for {
+      isDuplicateContext <- isContextAlreadyUsed(apiDefinition)
+      isDuplicateName <- isNameAlreadyUsed(apiDefinition)
+    } yield (isDuplicateContext, isDuplicateName)
 
-    duplicateFields.flatMap {
-
-      case (false, false) =>
-        val definitionWithPublishTime = apiDefinition.copy(lastPublishedAt = Some(DateTime.now(DateTimeZone.UTC)))
-        publish().flatMap { _ =>
-          apiDefinitionRepository.save(definitionWithPublishTime).map(_ => definitionWithPublishTime).recoverWith {
-            case e: Throwable =>
-              Logger.error(s"""API Definition for "${apiDefinition.name}" was published but not saved due to error: ${e.getMessage}""", e)
-              Future.failed(e)
-          }
+    def publishApiDefinitionToWso2: Future[APIDefinition] = {
+      val definitionWithPublishTime = apiDefinition.copy(lastPublishedAt = Some(DateTime.now(DateTimeZone.UTC)))
+      publish().flatMap { _ =>
+        apiDefinitionRepository.save(definitionWithPublishTime).map(_ => definitionWithPublishTime).recoverWith {
+          case e: Throwable =>
+            Logger.error(s"""API Definition for "${apiDefinition.name}" was published but not saved due to error: ${e.getMessage}""", e)
+            failed(e)
         }
-
-      case _ =>
-        // TODO: you can have 1 or 2 errors
-        // collect all errors!!
-        Future.failed(new RuntimeException("TODO: name and/or serviceName are already used by another API"))
-
+      }
     }
 
+    // TODO: this below validation should be done in the validators and should be checked in both the following routes:
+    //  - POST   /api-definition
+    //  - POST   /api-definition/validate
+
+    duplicateApiFields.flatMap {
+      case (true, true) => failed(new RuntimeException(s"Fields 'name' and 'context' must be unique for API with service name ${apiDefinition.serviceName}"))
+      case (true, false) => failed(new RuntimeException(s"Field 'context' must be unique for API ${apiDefinition.name}"))
+      case (false, true) => failed(new RuntimeException(s"Field 'name' must be unique for API with service name ${apiDefinition.serviceName}"))
+      case (false, false) => publishApiDefinitionToWso2
+    }
+
+  }
+
+  private def isContextAlreadyUsed(apiDefinition: APIDefinition): Future[Boolean] = {
+    apiDefinitionRepository.fetchByContext(apiDefinition.context).map {
+      case Some(found: APIDefinition) => found.serviceName != apiDefinition.serviceName
+      case _ => false
+    }
+  }
+
+  private def isNameAlreadyUsed(apiDefinition: APIDefinition): Future[Boolean] = {
+    apiDefinitionRepository.fetchByName(apiDefinition.name).map {
+      case Some(found: APIDefinition) => found.serviceName != apiDefinition.serviceName
+      case _ => false
+    }
   }
 
   def fetchByServiceName(serviceName: String, email: Option[String])
@@ -166,9 +169,9 @@ class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
 
   def delete(serviceName: String)(implicit hc: HeaderCarrier): Future[Unit] = {
     apiDefinitionRepository.fetchByServiceName(serviceName) flatMap {
-      case None => Future.successful(())
+      case None => successful(())
       case Some(definition) => wso2Publisher.hasSubscribers(definition) flatMap {
-        case true => Future.failed(new UnauthorizedException("API has subscribers"))
+        case true => failed(new UnauthorizedException("API has subscribers"))
         case false =>
           wso2Publisher.delete(definition) flatMap { _ =>
             apiDefinitionRepository.delete(definition.serviceName)
@@ -238,9 +241,8 @@ class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
     }
 
     allFailures().flatMap {
-      case f if f.nonEmpty =>
-        Future.failed(new RuntimeException(s"Could not republish the following APIs to WSO2: [${f.mkString(", ")}]"))
-      case _ => Future.successful(())
+      case f if f.nonEmpty => failed(new RuntimeException(s"Could not republish the following APIs to WSO2: [${f.mkString(", ")}]"))
+      case _ => successful(())
     }
   }
 

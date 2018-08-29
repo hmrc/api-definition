@@ -40,6 +40,15 @@ class APIDefinitionRepository @Inject()(mongo: ReactiveMongoComponent)
     domainFormat = formatAPIDefinition,
     idFormat = ReactiveMongoFormats.objectIdFormats) {
 
+  // TODO: add index and uniqueness also for `serviceBaseUrl` !!! important !
+  private val indexFields = Seq("context", "name", "serviceName")//, "serviceBaseUrl")
+
+  // TODO: capire cosa non funziona
+//  override def indexes: Seq[Index] = {
+//    val createIndex: String => Index = (f: String) => createUniqueBackgroundSingleFieldAscendingIndex(f, Some(s"${f}Index"))
+//    indexFields.map(createIndex)
+//  }
+
   override def indexes: Seq[Index] = {
     Seq(
       createUniqueBackgroundSingleFieldAscendingIndex("serviceName", Some("serviceNameIndex")),
@@ -55,7 +64,7 @@ class APIDefinitionRepository @Inject()(mongo: ReactiveMongoComponent)
   // TODO: vedi codice in `api-subscription-fields` (feat. Avinder)
 
   def save(apiDefinition: APIDefinition): Future[APIDefinition] = {
-    // `APIDefinitionService.createOrUpdate()` ensures that the context and name are unique fields in the mongo collection
+    // `APIDefinitionService.createOrUpdate()` ensures that `context` and `name` are unique fields in the mongo collection
     collection.find(selector = serviceNameSelector(apiDefinition.serviceName)).one[BSONDocument].flatMap {
       case Some(document) => collection.update(selector = BSONDocument("_id" -> document.get("_id")), update = apiDefinition)
       case _ => collection.insert(document = apiDefinition)

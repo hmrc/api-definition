@@ -35,6 +35,38 @@ class APIDefinitionRepositorySpec extends UnitSpec
   with MongoSpecSupport with BeforeAndAfterEach
   with BeforeAndAfterAll with Eventually {
 
+  private val helloApiVersion = APIVersion(
+    version = "1.0",
+    status = APIStatus.PROTOTYPED,
+    access = None,
+    endpoints = Seq(Endpoint("/world", "Say Hello to the World!", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
+  )
+
+  private val calendarApiVersion = APIVersion(
+    version = "2.0",
+    status = APIStatus.PUBLISHED,
+    access = None,
+    endpoints = Seq(Endpoint("/date", "Check current date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
+  )
+
+  private val helloApiDefinition = APIDefinition(
+    serviceName = "hello-service",
+    serviceBaseUrl = "hello.com",
+    name = "Hello",
+    description = "This is the Hello API",
+    context = "hello",
+    versions = Seq(helloApiVersion),
+    requiresTrust = None)
+
+  private val calendarApiDefinition = APIDefinition(
+    serviceName = "calendar-service",
+    serviceBaseUrl = "calendar.com",
+    name = "Calendar",
+    description = "This is the Calendar API",
+    context = "calendar",
+    versions = Seq(calendarApiVersion),
+    requiresTrust = None)
+
   private val reactiveMongoComponent = new ReactiveMongoComponent {
     override def mongoConnector: MongoConnector = mongoConnectorForTest
   }
@@ -50,7 +82,7 @@ class APIDefinitionRepositorySpec extends UnitSpec
     await(indexesFuture)
   }
 
-  private def createRepository() = {
+  private def createRepository(): APIDefinitionRepository = {
     new APIDefinitionRepository(reactiveMongoComponent)
   }
 
@@ -58,39 +90,37 @@ class APIDefinitionRepositorySpec extends UnitSpec
     await(repository.collection.count())
   }
 
-  override def beforeEach() {
+  override def beforeEach(): Unit = {
     await(repository.drop)
     await(repository.ensureIndexes)
   }
 
-  override protected def afterAll() {
+  override protected def afterAll(): Unit = {
     await(repository.drop)
   }
 
   "createOrUpdate" should {
 
-    "create a new API Definition in Mongo and fetch that same API Definition" in {
+    "create a new API definition in Mongo and fetch that same API definition" in {
+
       val aTime = DateTime.now(DateTimeZone.UTC)
 
-      val apiDefinition = APIDefinition("calendar", "http://calendar", "Calendar API", "My Calendar API", "calendar", Seq(APIVersion("1.0", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)))), None, None, Some(aTime))
+      val apiDefinition = calendarApiDefinition.copy(lastPublishedAt = Some(aTime))
       await(repository.save(apiDefinition))
 
       val retrieved = await(repository.fetchByServiceName(apiDefinition.serviceName))
-
       retrieved shouldBe Some(apiDefinition)
 
     }
 
     "update an existing API Definition in Mongo and fetch that same API Definition" in {
 
-      val apiDefinition = APIDefinition("calendar", "http://calendar", "Calendar API", "My Calendar API", "calendar", Seq(APIVersion("1.0", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)))), None)
-      await(repository.save(apiDefinition))
+      await(repository.save(helloApiDefinition))
 
-      val updatedAPIDefinition = APIDefinition("calendar", "http://calendar", "Calendar API", "My Updated Calendar API", "calendar", Seq(APIVersion("1.0", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)))), None)
+      val updatedAPIDefinition = helloApiDefinition.copy(name = "Ciao", description = "Ciao API", versions = Seq(calendarApiVersion))
       await(repository.save(updatedAPIDefinition))
 
-      val retrieved = await(repository.fetchByServiceName(apiDefinition.serviceName)).get
-
+      val retrieved = await(repository.fetchByServiceName(helloApiDefinition.serviceName)).get
       retrieved shouldBe updatedAPIDefinition
 
     }
@@ -101,43 +131,68 @@ class APIDefinitionRepositorySpec extends UnitSpec
 
     "return all API Definitions in Mongo" in {
 
-      val apiDefinition1 = APIDefinition("calendar", "http://calendar", "Calendar API", "My Calendar API", "calendar", Seq(APIVersion("1.0", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)))), None)
-      val apiDefinition2 = APIDefinition("employment", "http://employment", "Employment API", "My Calendar API", "employment", Seq(APIVersion("1.0", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Seq(Endpoint("/history", "Get Employment History", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)))), Some(true))
-
-      await(repository.save(apiDefinition1))
-      await(repository.save(apiDefinition2))
+      await(repository.save(helloApiDefinition))
+      await(repository.save(calendarApiDefinition))
 
       val retrieved = await(repository.fetchAll())
-
-      retrieved shouldBe Seq(apiDefinition1, apiDefinition2)
+      retrieved shouldBe Seq(helloApiDefinition, calendarApiDefinition)
 
     }
 
   }
 
-//  TODO: add scenario for "fetchByName"
+  // TODO: the 3 fetchBy* scenarios (6 tests in total) have stuff in common... Create common method
+  "fetchByServiceName" should {
 
-//  TODO: add scenario for "fetchByServiceName"
+    "return the expected API definition" in {
+      await(repository.save(helloApiDefinition))
+      await(repository.save(calendarApiDefinition))
+
+      val retrieved = await(repository.fetchByServiceName(calendarApiDefinition.serviceName))
+      retrieved shouldBe Some(calendarApiDefinition)
+    }
+
+    "return None when there are no APIs with that service name" in {
+      await(repository.save(calendarApiDefinition.copy(serviceName = "abc")))
+
+      val retrieved = await(repository.fetchByServiceName(calendarApiDefinition.serviceName))
+      retrieved shouldBe None
+    }
+  }
+
+  "fetchByName" should {
+
+    "return the expected API definition" in {
+      await(repository.save(helloApiDefinition))
+      await(repository.save(calendarApiDefinition))
+
+      val retrieved = await(repository.fetchByName(calendarApiDefinition.name))
+
+      retrieved shouldBe Some(calendarApiDefinition)
+    }
+
+    "return None when there are no APIs with that name" in {
+      await(repository.save(calendarApiDefinition.copy(name = "abc")))
+
+      val retrieved = await(repository.fetchByName(calendarApiDefinition.name))
+      retrieved shouldBe None
+    }
+  }
 
   "fetchByContext" should {
 
-    "return the API Definition" in {
+    "return the expected API definition" in {
+      await(repository.save(helloApiDefinition))
+      await(repository.save(calendarApiDefinition))
 
-      val apiDefinition1 = APIDefinition("calendar-api", "http://calendar", "Calendar API", "My Calendar API", "calendar", Seq(APIVersion("1.0", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)))), None)
-      val apiDefinition2 = APIDefinition("employment-api", "http://employment", "Employment API", "My Calendar API", "employment", Seq(APIVersion("1.0", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Seq(Endpoint("/history", "Get Employment History", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)))), Some(true))
-
-      await(repository.save(apiDefinition1))
-      await(repository.save(apiDefinition2))
-
-      val retrieved = await(repository.fetchByContext("calendar"))
-
-      retrieved shouldBe Some(apiDefinition1)
+      val retrieved = await(repository.fetchByContext(calendarApiDefinition.context))
+      retrieved shouldBe Some(calendarApiDefinition)
     }
 
-    "return None when no API exists for the context" in {
+    "return None when there are no APIs with that context" in {
+      await(repository.save(calendarApiDefinition.copy(context = "abc")))
 
-      val retrieved = await(repository.fetchByContext("calendar"))
-
+      val retrieved = await(repository.fetchByContext(calendarApiDefinition.context))
       retrieved shouldBe None
     }
   }
@@ -145,85 +200,69 @@ class APIDefinitionRepositorySpec extends UnitSpec
   "delete" should {
 
     "delete the API Definitions in Mongo" in {
+      await(repository.save(helloApiDefinition))
+      await(repository.save(calendarApiDefinition))
 
-      val apiDefinition1 = APIDefinition("calendar", "http://calendar", "Calendar API", "My Calendar API", "calendar", Seq(APIVersion("1.0", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)))), None)
-      val apiDefinition2 = APIDefinition("employment", "http://employment", "Employment API", "My Calendar API", "employment", Seq(APIVersion("1.0", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Seq(Endpoint("/history", "Get Employment History", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)))), Some(true))
-      await(repository.save(apiDefinition1))
-      await(repository.save(apiDefinition2))
-
-      await(repository.delete("calendar"))
+      await(repository.delete(calendarApiDefinition.serviceName))
 
       val retrieved = await(repository.fetchAll())
-      retrieved shouldBe Seq(apiDefinition2)
+      retrieved shouldBe Seq(helloApiDefinition)
     }
 
   }
 
   "The 'api' collection" should {
 
-    val apiVersion = APIVersion(
-      version = "1.0",
-      status = APIStatus.PROTOTYPED,
-      access = None,
-      endpoints = Seq(Endpoint("/hello", "Hello", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
-    )
+    def assertMongoError(caught: DatabaseException, fieldName: String, duplicateFieldValue: String): Unit = {
+      caught.code shouldBe Some(11000)
+      caught.message shouldBe s"""E11000 duplicate key error collection: test-APIDefinitionRepositorySpec.api index: ${fieldName}Index dup key: { : "$duplicateFieldValue" }"""
+    }
 
-    val apiDefinition = APIDefinition(
-      serviceName = "serviceName",
-      serviceBaseUrl = "serviceBaseUrl",
-      name = "name",
-      description = "description",
-      context = "context",
-      versions = Seq(apiVersion),
-      requiresTrust = None)
-
+    // TODO: the scenarios below have code in common... Create common method
     "have a unique index based on `context`" in {
-      await(repository.save(apiDefinition))
+      await(repository.save(helloApiDefinition))
       collectionSize shouldBe 1
 
       val caught = intercept[DatabaseException] {
-        val inError = saveApi(repository, apiDefinition.copy(serviceName = "newServiceName", name = "newName"))
+        val inError = saveApi(repository, helloApiDefinition.copy(serviceName = "newServiceName", name = "newName"))
         await(inError)
       }
-      caught.code shouldBe Some(11000)
-      caught.message shouldBe "E11000 duplicate key error collection: test-APIDefinitionRepositorySpec.api index: contextIndex dup key: { : \"context\" }"
+      assertMongoError(caught, "context", helloApiDefinition.context)
 
       collectionSize shouldBe 1
     }
 
     "have a unique index based on `name`" in {
-      await(repository.save(apiDefinition))
+      await(repository.save(helloApiDefinition))
       collectionSize shouldBe 1
 
       val caught = intercept[DatabaseException] {
-        val inError = saveApi(repository, apiDefinition.copy(context = "newContext", serviceName = "newServiceName"))
+        val inError = saveApi(repository, helloApiDefinition.copy(context = "newContext", serviceName = "newServiceName"))
         await(inError)
       }
-      caught.code shouldBe Some(11000)
-      caught.message shouldBe "E11000 duplicate key error collection: test-APIDefinitionRepositorySpec.api index: nameIndex dup key: { : \"name\" }"
+      assertMongoError(caught, "name", helloApiDefinition.name)
 
       collectionSize shouldBe 1
     }
 
     "have a unique index based on `serviceName`" in {
-      await(repository.save(apiDefinition))
+      await(repository.save(helloApiDefinition))
       collectionSize shouldBe 1
 
       val caught = intercept[DatabaseException] {
-        val inError = saveApi(repository, apiDefinition.copy(name = "newName", context = "newContext"))
+        val inError = saveApi(repository, helloApiDefinition.copy(name = "newName", context = "newContext"))
         await(inError)
       }
-      caught.code shouldBe Some(11000)
-      caught.message shouldBe "E11000 duplicate key error collection: test-APIDefinitionRepositorySpec.api index: serviceNameIndex dup key: { : \"serviceName\" }"
+      assertMongoError(caught, "serviceName", helloApiDefinition.serviceName)
 
       collectionSize shouldBe 1
     }
 
     "insert a new record when `context`, `name` and `serviceName` are unique" in {
-      await(repository.save(apiDefinition))
+      await(repository.save(helloApiDefinition))
       collectionSize shouldBe 1
 
-      await(saveApi(repository, apiDefinition.copy(name = "newName", context = "newContext", serviceName = "newServiceName")))
+      await(saveApi(repository, calendarApiDefinition))
       collectionSize shouldBe 2
     }
 
@@ -241,7 +280,7 @@ class APIDefinitionRepositorySpec extends UnitSpec
 
       val repo = createRepository()
 
-      eventually(timeout(4.seconds), interval(100.milliseconds)) {
+      eventually(timeout(3.seconds), interval(100.milliseconds)) {
         getIndexes(repo).toSet shouldBe expectedIndexes.toSet
       }
 
