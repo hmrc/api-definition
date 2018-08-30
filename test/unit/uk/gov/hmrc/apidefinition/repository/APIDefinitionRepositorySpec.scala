@@ -99,9 +99,11 @@ class APIDefinitionRepositorySpec extends UnitSpec
     await(repository.drop)
   }
 
-  "createOrUpdate" should {
+  // TODO: the test scenarios below have lot of code in common... try to extract common code in private methods
 
-    "create a new API definition in Mongo and fetch that same API definition" in {
+  "save()" should {
+
+    "create a new API definition in Mongo" in {
 
       val aTime = DateTime.now(DateTimeZone.UTC)
 
@@ -113,7 +115,7 @@ class APIDefinitionRepositorySpec extends UnitSpec
 
     }
 
-    "update an existing API Definition in Mongo and fetch that same API Definition" in {
+    "update an existing API definition in Mongo" in {
 
       await(repository.save(helloApiDefinition))
 
@@ -127,9 +129,9 @@ class APIDefinitionRepositorySpec extends UnitSpec
 
   }
 
-  "fetchAll" should {
+  "fetchAll()" should {
 
-    "return all API Definitions in Mongo" in {
+    "return all API definitions in Mongo" in {
 
       await(repository.save(helloApiDefinition))
       await(repository.save(calendarApiDefinition))
@@ -141,8 +143,7 @@ class APIDefinitionRepositorySpec extends UnitSpec
 
   }
 
-  // TODO: the 3 fetchBy* scenarios (6 tests in total) have stuff in common... Create common method
-  "fetchByServiceName" should {
+  "fetchByServiceName()" should {
 
     "return the expected API definition" in {
       await(repository.save(helloApiDefinition))
@@ -160,7 +161,25 @@ class APIDefinitionRepositorySpec extends UnitSpec
     }
   }
 
-  "fetchByName" should {
+  "fetchByServiceBaseUrl()" should {
+
+    "return the expected API definition" in {
+      await(repository.save(helloApiDefinition))
+      await(repository.save(calendarApiDefinition))
+
+      val retrieved = await(repository.fetchByServiceBaseUrl(calendarApiDefinition.serviceBaseUrl))
+      retrieved shouldBe Some(calendarApiDefinition)
+    }
+
+    "return None when there are no APIs with that service name" in {
+      await(repository.save(calendarApiDefinition.copy(serviceBaseUrl = "abc")))
+
+      val retrieved = await(repository.fetchByServiceBaseUrl(calendarApiDefinition.serviceBaseUrl))
+      retrieved shouldBe None
+    }
+  }
+
+  "fetchByName()" should {
 
     "return the expected API definition" in {
       await(repository.save(helloApiDefinition))
@@ -179,7 +198,7 @@ class APIDefinitionRepositorySpec extends UnitSpec
     }
   }
 
-  "fetchByContext" should {
+  "fetchByContext()" should {
 
     "return the expected API definition" in {
       await(repository.save(helloApiDefinition))
@@ -197,9 +216,9 @@ class APIDefinitionRepositorySpec extends UnitSpec
     }
   }
 
-  "delete" should {
+  "delete()" should {
 
-    "delete the API Definitions in Mongo" in {
+    "delete the API definitions in Mongo" in {
       await(repository.save(helloApiDefinition))
       await(repository.save(calendarApiDefinition))
 
@@ -211,20 +230,19 @@ class APIDefinitionRepositorySpec extends UnitSpec
 
   }
 
-  "The 'api' collection" should {
+  "The 'api' Mongo collection" should {
 
     def assertMongoError(caught: DatabaseException, fieldName: String, duplicateFieldValue: String): Unit = {
       caught.code shouldBe Some(11000)
       caught.message shouldBe s"""E11000 duplicate key error collection: test-APIDefinitionRepositorySpec.api index: ${fieldName}Index dup key: { : "$duplicateFieldValue" }"""
     }
 
-    // TODO: the scenarios below have code in common... Create common method
     "have a unique index based on `context`" in {
       await(repository.save(helloApiDefinition))
       collectionSize shouldBe 1
 
       val caught = intercept[DatabaseException] {
-        val inError = saveApi(repository, helloApiDefinition.copy(serviceName = "newServiceName", name = "newName"))
+        val inError = saveApi(repository, helloApiDefinition.copy(serviceName = "newServiceName", name = "newName", serviceBaseUrl = "newServiceBaseUrl"))
         await(inError)
       }
       assertMongoError(caught, "context", helloApiDefinition.context)
@@ -237,7 +255,7 @@ class APIDefinitionRepositorySpec extends UnitSpec
       collectionSize shouldBe 1
 
       val caught = intercept[DatabaseException] {
-        val inError = saveApi(repository, helloApiDefinition.copy(context = "newContext", serviceName = "newServiceName"))
+        val inError = saveApi(repository, helloApiDefinition.copy(context = "newContext", serviceName = "newServiceName", serviceBaseUrl = "newServiceBaseUrl"))
         await(inError)
       }
       assertMongoError(caught, "name", helloApiDefinition.name)
@@ -250,7 +268,7 @@ class APIDefinitionRepositorySpec extends UnitSpec
       collectionSize shouldBe 1
 
       val caught = intercept[DatabaseException] {
-        val inError = saveApi(repository, helloApiDefinition.copy(name = "newName", context = "newContext"))
+        val inError = saveApi(repository, helloApiDefinition.copy(name = "newName", context = "newContext", serviceBaseUrl = "newServiceBaseUrl"))
         await(inError)
       }
       assertMongoError(caught, "serviceName", helloApiDefinition.serviceName)
@@ -258,7 +276,20 @@ class APIDefinitionRepositorySpec extends UnitSpec
       collectionSize shouldBe 1
     }
 
-    "insert a new record when `context`, `name` and `serviceName` are unique" in {
+    "have a unique index based on `serviceBaseUrl`" in {
+      await(repository.save(helloApiDefinition))
+      collectionSize shouldBe 1
+
+      val caught = intercept[DatabaseException] {
+        val inError = saveApi(repository, helloApiDefinition.copy(name = "newName", context = "newContext", serviceName = "newServiceName"))
+        await(inError)
+      }
+      assertMongoError(caught, "serviceBaseUrl", helloApiDefinition.serviceBaseUrl)
+
+      collectionSize shouldBe 1
+    }
+
+    "insert a new record when `context`, `name`, `serviceName` and `serviceBaseUrl` are unique" in {
       await(repository.save(helloApiDefinition))
       collectionSize shouldBe 1
 
@@ -274,6 +305,7 @@ class APIDefinitionRepositorySpec extends UnitSpec
       val expectedIndexes = List(
         Index(key = Seq("context" -> Ascending), name = Some("contextIndex"), unique = true, background = true, version = indexVersion),
         Index(key = Seq("serviceName" -> Ascending), name = Some("serviceNameIndex"), unique = true, background = true, version = indexVersion),
+        Index(key = Seq("serviceBaseUrl" -> Ascending), name = Some("serviceBaseUrlIndex"), unique = true, background = true, version = indexVersion),
         Index(key = Seq("name" -> Ascending), name = Some("nameIndex"), unique = true, background = true, version = indexVersion),
         Index(key = Seq("_id" -> Ascending), name = Some("_id_"), version = indexVersion)
       )

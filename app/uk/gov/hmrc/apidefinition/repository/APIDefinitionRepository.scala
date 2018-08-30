@@ -40,31 +40,20 @@ class APIDefinitionRepository @Inject()(mongo: ReactiveMongoComponent)
     domainFormat = formatAPIDefinition,
     idFormat = ReactiveMongoFormats.objectIdFormats) {
 
-  // TODO: add index and uniqueness also for `serviceBaseUrl` !!! important !
-  private val indexFields = Seq("context", "name", "serviceName")//, "serviceBaseUrl")
-
-  // TODO: capire cosa non funziona
-//  override def indexes: Seq[Index] = {
-//    val createIndex: String => Index = (f: String) => createUniqueBackgroundSingleFieldAscendingIndex(f, Some(s"${f}Index"))
-//    indexFields.map(createIndex)
-//  }
-
   override def indexes: Seq[Index] = {
-    Seq(
-      createUniqueBackgroundSingleFieldAscendingIndex("serviceName", Some("serviceNameIndex")),
-      createUniqueBackgroundSingleFieldAscendingIndex("context", Some("contextIndex")),
-      createUniqueBackgroundSingleFieldAscendingIndex("name", Some("nameIndex"))
-    )
+    val indexFieldNames: Seq[String] = Seq("context", "name", "serviceName", "serviceBaseUrl")
+    indexFieldNames.map( fieldName => createUniqueBackgroundSingleFieldAscendingIndex(fieldName, Some(s"${fieldName}Index")) )
   }
 
   private def serviceNameSelector(serviceName: String) = {
-    Json.obj("serviceName"-> serviceName)
+    Json.obj("serviceName" -> serviceName)
   }
 
-  // TODO: vedi codice in `api-subscription-fields` (feat. Avinder)
-
   def save(apiDefinition: APIDefinition): Future[APIDefinition] = {
-    // `APIDefinitionService.createOrUpdate()` ensures that `context` and `name` are unique fields in the mongo collection
+    /*
+      TODO: who calls this method (`APIDefinitionService.createOrUpdate()`) should ensure that
+            `context`, `name` and `serviceBaseUrl` are all unique fields in the Mongo collection
+    */
     collection.find(selector = serviceNameSelector(apiDefinition.serviceName)).one[BSONDocument].flatMap {
       case Some(document) => collection.update(selector = BSONDocument("_id" -> document.get("_id")), update = apiDefinition)
       case _ => collection.insert(document = apiDefinition)
@@ -74,7 +63,7 @@ class APIDefinitionRepository @Inject()(mongo: ReactiveMongoComponent)
   def fetchByServiceName(serviceName: String): Future[Option[APIDefinition]] = {
     Logger.info(s"Fetching API $serviceName in mongo")
     collection.find(selector = serviceNameSelector(serviceName)).one[APIDefinition].map { api =>
-      Logger.info(s"Retrieved API $serviceName in mongo: $api")
+      Logger.info(s"Retrieved API with service name '$serviceName' in mongo: $api")
       api
     } recover {
       case e =>
@@ -83,9 +72,20 @@ class APIDefinitionRepository @Inject()(mongo: ReactiveMongoComponent)
     }
   }
 
+  def fetchByServiceBaseUrl(serviceBaseUrl: String): Future[Option[APIDefinition]] = {
+    collection.find(selector = Json.obj("serviceBaseUrl" -> serviceBaseUrl)).one[APIDefinition].map { api =>
+      Logger.debug(s"Retrieved API with service base url '$serviceBaseUrl' in mongo: $api")
+      api
+    } recover {
+      case e =>
+        Logger.error(s"An error occurred while retrieving API with service base url '$serviceBaseUrl' in mongo", e)
+        throw e
+    }
+  }
+
   def fetchByName(name: String): Future[Option[APIDefinition]] = {
     collection.find(selector = Json.obj("name" -> name)).one[APIDefinition].map { api =>
-      Logger.debug(s"Retrieved API $api in mongo: $api")
+      Logger.debug(s"Retrieved API with name '$name' in mongo: $api")
       api
     } recover {
       case e =>
@@ -96,7 +96,7 @@ class APIDefinitionRepository @Inject()(mongo: ReactiveMongoComponent)
 
   def fetchByContext(context: String): Future[Option[APIDefinition]] = {
     collection.find(selector = Json.obj("context" -> context)).one[APIDefinition].map { api =>
-      Logger.debug(s"Retrieved API $api in mongo: $api")
+      Logger.debug(s"Retrieved API with context '$context' in mongo: $api")
       api
     } recover {
       case e =>

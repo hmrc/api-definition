@@ -43,6 +43,7 @@ class WSO2APIPublisherConnectorSpec extends UnitSpec
   private val wireMockServer = new WireMockServer(wireMockConfig().port(stubPort))
   private val appName = "api-definition"
   private val requestId = "requestId"
+  private val encodedPassword = "a%25dmin"
 
   trait Setup {
     val serviceConfig = mock[DefaultServicesConfig]
@@ -59,8 +60,6 @@ class WSO2APIPublisherConnectorSpec extends UnitSpec
       override val password = "a%dmin"
       override val serviceUrl = s"$wireMockUrl/publisher/site/blocks"
     }
-
-    val encodedPassword = "a%25dmin"
   }
 
   override def beforeEach() {
@@ -87,10 +86,21 @@ class WSO2APIPublisherConnectorSpec extends UnitSpec
             .withHeader(CONTENT_TYPE, JSON)
             .withBody("""{"error":false}""")
             .withHeader(SET_COOKIE, "JSESSIONID=12345")
-            .withHeader(SET_COOKIE, "api-store=loadbalancercookie")))
+            .withHeader(SET_COOKIE, "api-store=loadbalancercookie")
+        )
+      )
 
       await(underTest.login()) shouldBe "JSESSIONID=12345;api-store=loadbalancercookie"
     }
+
+    "fail with RuntimeException when WSO2 AM throws an exception" in new Setup {
+      assertExceptionFromWso2(underTest, s"""{}""")
+    }
+
+    "fail with RuntimeException when WSO2 AM responds with an error" in new Setup {
+      assertExceptionFromWso2(underTest, s"""{"error":true}""")
+    }
+
   }
 
   "doesAPIExist" should {
@@ -357,6 +367,25 @@ class WSO2APIPublisherConnectorSpec extends UnitSpec
           info = WSO2APIInfo("calendar--1.0", "1.0"),
           `x-wso2-security` = None))
     )
+  }
+
+  private def assertExceptionFromWso2(wso2Connector: WSO2APIPublisherConnector, jsonResponse: String)(implicit headerCarrie: HeaderCarrier): Unit = {
+    stubFor(post(urlEqualTo("/publisher/site/blocks/user/login/ajax/login.jag"))
+      .withHeader(USER_AGENT, equalTo(appName))
+      .withHeader(xRequestId, equalTo(requestId))
+      .withHeader(CONTENT_TYPE, equalTo(FORM))
+      .withRequestBody(equalTo(s"action=login&username=admin&password=$encodedPassword"))
+      .willReturn(
+        aResponse()
+          .withStatus(OK)
+          .withHeader(CONTENT_TYPE, JSON)
+          .withBody(jsonResponse)
+      )
+    )
+
+    intercept[RuntimeException] {
+      await(wso2Connector.login())
+    }
   }
 
 }

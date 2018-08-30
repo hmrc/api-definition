@@ -65,6 +65,7 @@ class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
     //  - POST   /api-definition
     //  - POST   /api-definition/validate
 
+    // TODO: we need to check also `serviceBaseUrl`
     duplicateApiFields.flatMap {
       case (true, true) => failed(new RuntimeException(s"Fields 'name' and 'context' must be unique for API with service name ${apiDefinition.serviceName}"))
       case (true, false) => failed(new RuntimeException(s"Field 'context' must be unique for API ${apiDefinition.name}"))

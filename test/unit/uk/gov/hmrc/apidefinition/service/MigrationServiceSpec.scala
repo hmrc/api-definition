@@ -39,7 +39,7 @@ class MigrationServiceSpec extends UnitSpec
   }
 
   private def definition(serviceName: String, name: String, context: String, versions: Seq[APIVersion]) = {
-    APIDefinition(serviceName, serviceBaseUrl = "http://base.url", name, description = "API description", context, versions, None)
+    APIDefinition(serviceName, serviceBaseUrl = s"http://$name.url", name, description = "API description", context, versions, None)
   }
 
   val publishedApi = definition("published", "published", "published", Seq(version("1.0", APIStatus.PUBLISHED)))

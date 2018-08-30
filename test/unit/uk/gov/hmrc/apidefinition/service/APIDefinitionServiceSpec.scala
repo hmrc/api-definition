@@ -576,7 +576,7 @@ class APIDefinitionServiceSpec extends UnitSpec
     APIVersion(version, APIStatus.PROTOTYPED, access, Seq(Endpoint("/test", "test", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)))
   }
 
-  private def someAPIDefinition = {
+  private def someAPIDefinition: APIDefinition = {
     APIDefinition(
       "calendar",
       "http://calendar",
