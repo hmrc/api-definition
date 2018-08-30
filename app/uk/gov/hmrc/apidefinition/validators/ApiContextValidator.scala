@@ -19,9 +19,11 @@ package uk.gov.hmrc.apidefinition.validators
 import cats.implicits._
 import uk.gov.hmrc.apidefinition.validators.ApiDefinitionValidator.HMRCValidated
 
+import scala.util.matching.Regex
+
 object ApiContextValidator extends Validator[String] {
 
-  private val contextRegex: String = "^[a-zA-Z0-9_\\-\\/]+$"
+  private val contextRegex: Regex = "^[a-zA-Z0-9_\\-\\/]+$".r
 
   def validate(errorContext: String)(implicit context: String): HMRCValidated[String] = {
     validateThat(_.nonEmpty, _ => s"Field 'context' should not be empty $errorContext").andThen(validateContext(errorContext)(_))

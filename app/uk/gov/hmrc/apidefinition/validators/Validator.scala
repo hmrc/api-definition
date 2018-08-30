@@ -19,6 +19,8 @@ package uk.gov.hmrc.apidefinition.validators
 import uk.gov.hmrc.apidefinition.validators.ApiDefinitionValidator.HMRCValidated
 import cats.implicits._
 
+import scala.util.matching.Regex
+
 trait Validator[T] {
 
   type ShouldEvaluateToTrue = T => Boolean
@@ -34,6 +36,12 @@ trait Validator[T] {
 
   def validateAll[U](f: U => HMRCValidated[U])(us: Traversable[U]): HMRCValidated[List[U]] = {
     us.toList.map(u => f(u).map(_ :: Nil)).combineAll
+  }
+
+  implicit protected class RegexString(str: String) {
+    def matches(r: Regex): Boolean = {
+      r.findFirstIn(str).nonEmpty
+    }
   }
 
 }

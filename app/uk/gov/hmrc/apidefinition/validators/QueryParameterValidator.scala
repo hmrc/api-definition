@@ -19,9 +19,11 @@ package uk.gov.hmrc.apidefinition.validators
 import uk.gov.hmrc.apidefinition.models.Parameter
 import uk.gov.hmrc.apidefinition.validators.ApiDefinitionValidator._
 
+import scala.util.matching.Regex
+
 object QueryParameterValidator extends Validator[Parameter] {
 
-  private val queryParameterNameRegex: String = "^[a-zA-Z0-9_\\-]+$"
+  private val queryParameterNameRegex: Regex = "^[a-zA-Z0-9_\\-]+$".r
 
   def validate(errorContext: String)(implicit queryParameter: Parameter): HMRCValidated[Parameter] = {
     validateThat(_.name.nonEmpty, _ => s"Field 'queryParameters.name' is required $errorContext").andThen {

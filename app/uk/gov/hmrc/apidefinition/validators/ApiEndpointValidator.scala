@@ -19,10 +19,12 @@ import cats.implicits._
 import uk.gov.hmrc.apidefinition.models.{AuthType, Endpoint, Parameter}
 import uk.gov.hmrc.apidefinition.validators.ApiDefinitionValidator.HMRCValidated
 
+import scala.util.matching.Regex
+
 object ApiEndpointValidator extends Validator[Endpoint] {
 
-  private val uriRegex: String = "^/[a-zA-Z0-9_\\-\\/{}]*$"
-  private val pathParameterRegex: String = "^\\{[a-zA-Z]+[a-zA-Z0-9_\\-]*\\}$"
+  private val uriRegex: Regex = "^/[a-zA-Z0-9_\\-\\/{}]*$".r
+  private val pathParameterRegex: Regex = "^\\{[a-zA-Z]+[a-zA-Z0-9_\\-]*\\}$".r
 
   def validate(ec: String)(implicit endpoint: Endpoint): HMRCValidated[Endpoint] = {
     val errorContext: String = if (endpoint.endpointName.isEmpty) ec else s"$ec endpoint '${endpoint.endpointName}'"
