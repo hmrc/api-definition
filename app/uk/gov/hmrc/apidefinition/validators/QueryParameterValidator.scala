@@ -28,7 +28,7 @@ object QueryParameterValidator extends Validator[Parameter] {
   def validate(errorContext: String)(implicit queryParameter: Parameter): HMRCValidated[Parameter] = {
     validateThat(_.name.nonEmpty, _ => s"Field 'queryParameters.name' is required $errorContext").andThen {
       validateField(_.name.matches(queryParameterNameRegex),
-        _ => s"Field 'queryParameters.name' should match regular expression '$queryParameterNameRegex' $errorContext")
+        q => s"Field 'queryParameters.name' with value '${q.name}' should match regular expression '$queryParameterNameRegex' $errorContext")
     }
   }
 }

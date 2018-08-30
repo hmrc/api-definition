@@ -213,11 +213,12 @@ class ApiDefinitionValidatorSpec extends UnitSpec {
     ('/' :: '{' :: '}' :: specialChars).foreach { char =>
       s"fail validation when a query parameter name contains '$char' in the name" in {
 
+        val queryParamName = s"param$char"
         lazy val apiDefinition = moneyApiDefinition.copy(
-          versions = Seq(moneyApiVersion.copy(endpoints = Seq(moneyEndpoint.copy(queryParameters = Some(Seq(moneyQueryParameter.copy(name = s"param$char")))))))
+          versions = Seq(moneyApiVersion.copy(endpoints = Seq(moneyEndpoint.copy(queryParameters = Some(Seq(moneyQueryParameter.copy(name = queryParamName)))))))
         )
 
-        assertValidationFailure(apiDefinition, List("Field 'queryParameters.name' should match regular expression '^[a-zA-Z0-9_\\-]+$' for API 'Money API' version '1.0' endpoint 'Check Payments'"))
+        assertValidationFailure(apiDefinition, List(s"Field 'queryParameters.name' with value '$queryParamName' should match regular expression '^[a-zA-Z0-9_\\-]+$$' for API 'Money API' version '1.0' endpoint 'Check Payments'"))
       }
     }
 
@@ -237,7 +238,7 @@ class ApiDefinitionValidatorSpec extends UnitSpec {
   }
 
   private def assertValidationFailure(apiDefinition: => APIDefinition, failureMessages: Seq[String]): Unit = {
-    implicit val sys: ActorSystem = ActorSystem("MyTest")
+    implicit val sys: ActorSystem = ActorSystem("ApiDefinitionValidatorTest")
     implicit val mat: ActorMaterializer = ActorMaterializer()
 
     val result = await(ApiDefinitionValidator.validate(apiDefinition)(_ => Future.successful(NoContent)))

@@ -55,13 +55,19 @@ object ApiEndpointValidator extends Validator[Endpoint] {
   private def validatePathParameters(errorContext: String, endpoint: Endpoint): HMRCValidated[String] = {
     val isPathParam: String => Boolean =  { segment: String => segment.contains("{") || segment.contains("}") }
     val segments = endpoint.uriPattern.split("/").toList
+
+    def pathParamValidationError: String => String = {
+      s => s"Curly-bracketed segment '$s' should match regular expression '$pathParameterRegex' $errorContext"
+    }
+
     segments
       .filter(isPathParam)
-      .map(validateField(_.matches(pathParameterRegex), p => s"Curly-bracketed segment '$p' should match regular expression '$pathParameterRegex' $errorContext"))
+      .map( validateField( _.matches(pathParameterRegex), pathParamValidationError) )
       .combineAll
   }
 
   private def validateQueryParameters(errorContext: String, endpoint: Endpoint): HMRCValidated[List[Parameter]] = {
     validateAll[Parameter](u => QueryParameterValidator.validate(errorContext)(u))(endpoint.queryParameters.getOrElse(Seq()))
   }
+
 }
