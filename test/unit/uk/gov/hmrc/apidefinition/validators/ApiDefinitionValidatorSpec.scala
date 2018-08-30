@@ -168,6 +168,16 @@ class ApiDefinitionValidatorSpec extends UnitSpec {
       assertValidationSuccess(apiDefinition)
     }
 
+    "fail validation if the endpoint has no name" in {
+
+      val endpoint =  "/hello/friend"
+      lazy val apiDefinition = moneyApiDefinition.copy(
+        versions = Seq(moneyApiVersion.copy(endpoints = Seq(moneyEndpoint.copy(uriPattern = endpoint, endpointName = ""))))
+      )
+
+      assertValidationFailure(apiDefinition, List(s"Field 'endpoints.endpointName' is required for API 'Money API' version '1.0'"))
+    }
+
     "fail validation if the endpoint defines path parameters with ':'" in {
 
       val endpoint =  "/hello/:friend"
