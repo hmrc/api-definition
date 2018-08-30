@@ -85,6 +85,17 @@ class ApiDefinitionValidatorSpec extends UnitSpec {
       assertValidationFailure(apiDefinition, List("Field 'versions' must not be empty for API 'Calendar API'"))
     }
 
+    "fail validation when if there is an API version without version number" in {
+      lazy val versions: Seq[APIVersion] =
+        Seq(
+          APIVersion("1.0", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))),
+          APIVersion("", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)))
+        )
+
+      lazy val apiDefinition: APIDefinition = APIDefinition("calendar", "http://calendar", "Calendar API", "My Calendar API", "calendar", versions, None)
+      assertValidationFailure(apiDefinition, List("Field 'versions.version' is required for API 'Calendar API'"))
+    }
+
     "fail validation when no Endpoint is provided" in {
       lazy val apiDefinition: APIDefinition = APIDefinition("calendar", "http://calendar", "Calendar API", "My Calendar API", "calendar",
         Seq(APIVersion("1.0", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Nil)), Some(false))
