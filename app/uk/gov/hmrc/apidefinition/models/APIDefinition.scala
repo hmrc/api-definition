@@ -17,7 +17,6 @@
 package uk.gov.hmrc.apidefinition.models
 
 import org.joda.time.DateTime
-import uk.gov.hmrc.apidefinition.models.APIDefinitionValidator.validate
 import uk.gov.hmrc.apidefinition.models.APIStatus.APIStatus
 import uk.gov.hmrc.apidefinition.models.AuthType.AuthType
 import uk.gov.hmrc.apidefinition.models.HttpMethod.HttpMethod
@@ -31,11 +30,7 @@ case class APIDefinition(serviceName: String,
                          versions: Seq[APIVersion],
                          requiresTrust: Option[Boolean],
                          isTestSupport: Option[Boolean] = None,
-                         lastPublishedAt: Option[DateTime] = None) {
-
-  validate(this)
-
-}
+                         lastPublishedAt: Option[DateTime] = None)
 
 case class ExtendedAPIDefinition(serviceName: String,
                                  serviceBaseUrl: String,
@@ -90,7 +85,7 @@ trait APIAccess
 
 case class PublicAPIAccess() extends APIAccess
 
-case class PrivateAPIAccess(whitelistedApplicationIds: Seq[String]) extends APIAccess
+case class PrivateAPIAccess(whitelistedApplicationIds: Seq[String], isTrial: Option[Boolean] = None) extends APIAccess
 
 object APIStatus extends Enumeration {
   type APIStatus = Value

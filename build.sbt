@@ -15,7 +15,8 @@ lazy val compile = Seq(
   "uk.gov.hmrc" %% "microservice-bootstrap" % "6.18.0",
   "uk.gov.hmrc" %% "play-reactivemongo" % "6.2.0",
   "uk.gov.hmrc" %% "mongo-lock" % "5.1.0",
-  "uk.gov.hmrc" %% "play-json-union-formatter" % "1.3.0"
+  "uk.gov.hmrc" %% "play-json-union-formatter" % "1.3.0",
+  "org.typelevel" %% "cats-core" % "1.1.0"
 )
 
 lazy val test = Seq(
@@ -42,6 +43,7 @@ lazy val microservice = (project in file("."))
     name := appName,
     targetJvm := "jvm-1.8",
     scalaVersion := "2.11.11",
+    scalacOptions += "-Ypartial-unification",
     libraryDependencies ++= appDependencies,
     parallelExecution in Test := false,
     fork in Test := false,
@@ -61,6 +63,6 @@ lazy val microservice = (project in file("."))
   })
 
 // Coverage configuration
-coverageMinimum := 92
+coverageMinimum := 93
 coverageFailOnMinimum := true
 coverageExcludedPackages := "<empty>;com.kenshoo.play.metrics.*;prod.*;testOnlyDoNotUseInAppConf.*;app.*;uk.gov.hmrc.BuildInfo"

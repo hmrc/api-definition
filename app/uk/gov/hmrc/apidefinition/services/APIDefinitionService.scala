@@ -111,8 +111,8 @@ class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
     def availability(version: APIVersion, userApplicationIds: Seq[String], forSandbox: Boolean = false): Option[APIAvailability] = {
       if (forSandbox == playApplicationContext.isSandbox) {
         version.access match {
-          case Some(PrivateAPIAccess(whitelist)) => Some(APIAvailability(version.endpointsEnabled.getOrElse(false),
-            PrivateAPIAccess(whitelist),
+          case Some(PrivateAPIAccess(whitelist, isTrial)) => Some(APIAvailability(version.endpointsEnabled.getOrElse(false),
+            PrivateAPIAccess(whitelist, isTrial),
             email.isDefined,
             authorised = appIsWhitelisted(userApplicationIds, whitelist)))
 
@@ -188,7 +188,7 @@ class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
   def fetchAllPrivateAPIs(): Future[Seq[APIDefinition]] = {
 
     def hasPrivateAccess(apiVersion: APIVersion) = apiVersion.access match {
-      case Some(PrivateAPIAccess(_)) => true
+      case Some(PrivateAPIAccess(_, _)) => true
       case _ => false
     }
 
@@ -224,7 +224,7 @@ class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
   private def filterAPIForApplications(applicationIds: String*) : APIDefinition => Option[APIDefinition] = { api =>
 
     val filteredVersions = api.versions.filter(_.access.getOrElse(PublicAPIAccess) match {
-      case access: PrivateAPIAccess => access.whitelistedApplicationIds.exists(s => applicationIds.contains(s))
+      case access: PrivateAPIAccess => access.whitelistedApplicationIds.exists(s => applicationIds.contains(s)) || access.isTrial.getOrElse(false)
       case _ => true
     })
 

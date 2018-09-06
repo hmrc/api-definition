@@ -299,27 +299,28 @@ class APIDefinitionServiceSpec extends UnitSpec
     val appId = UUID.randomUUID()
     val publicVersion = aVersion("1.0", Some(PublicAPIAccess()))
     val privateVersion = aVersion("2.0", Some(PrivateAPIAccess(Seq(appId.toString))))
+    val privateTrialVersion = aVersion("2.5", Some(PrivateAPIAccess(Seq.empty, isTrial = Some(true))))
     val noAccessDefinedVersion = aVersion("3.0", None)
     val privateVersionOtherApplications = aVersion("4.0", Some(PrivateAPIAccess(Seq("OTHER_APP_ID"))))
 
-    "return the public Version of the API Definition when the user is not defined" in new Setup {
+    "return the public and private trial versions of the API Definition when the user is not defined" in new Setup {
       val serviceName = "calendar"
 
       val aTime = DateTime.now(DateTimeZone.UTC)
 
-      val definition = anAPIDefinition("context", publicVersion, privateVersion, noAccessDefinedVersion).
+      val definition = anAPIDefinition("context", publicVersion, privateTrialVersion, privateVersion, noAccessDefinedVersion).
         copy(lastPublishedAt = Some(aTime))
 
       when(mockAPIDefinitionRepository.fetchByServiceName(serviceName)).thenReturn(successful(Some(definition)))
 
       val response = await(underTest.fetchByServiceName(serviceName, None))
 
-      val expected = anAPIDefinition("context", publicVersion, noAccessDefinedVersion).copy(lastPublishedAt = Some(aTime))
+      val expected = anAPIDefinition("context", publicVersion, privateTrialVersion, noAccessDefinedVersion).copy(lastPublishedAt = Some(aTime))
 
       response shouldBe Some(expected)
     }
 
-    "return None when the user is not defined and none of the version of the API Definition is public" in new Setup {
+    "return None when the user is not defined and none of the version of the API Definition is public or private trial" in new Setup {
       val serviceName = "calendar"
 
       val definition = anAPIDefinition("context", privateVersion)
@@ -331,11 +332,11 @@ class APIDefinitionServiceSpec extends UnitSpec
       response shouldBe None
     }
 
-    "return the public Version of the API Definition and the private versions of the user when the user is defined" in new Setup {
+    "return the public, private and private trial versions of the user when the user is defined" in new Setup {
       val serviceName = "calendar"
 
       val email = "user@email.com"
-      val definition = anAPIDefinition("context", publicVersion, privateVersion, noAccessDefinedVersion, privateVersionOtherApplications)
+      val definition = anAPIDefinition("context", publicVersion, privateVersion, privateTrialVersion, noAccessDefinedVersion, privateVersionOtherApplications)
 
       when(mockAPIDefinitionRepository.fetchByServiceName(serviceName))
         .thenReturn(successful(Some(definition)))
@@ -344,7 +345,7 @@ class APIDefinitionServiceSpec extends UnitSpec
 
       val response = await(underTest.fetchByServiceName(serviceName, Some(email)))
 
-      response shouldBe Some(anAPIDefinition("context", publicVersion, privateVersion, noAccessDefinedVersion))
+      response shouldBe Some(anAPIDefinition("context", publicVersion, privateVersion, privateTrialVersion, noAccessDefinedVersion))
     }
   }
 
@@ -354,16 +355,17 @@ class APIDefinitionServiceSpec extends UnitSpec
       val applicationId = "APP_ID"
       val publicVersion = aVersion("1.0", Some(PublicAPIAccess()))
       val versionWithoutAccessDefined = aVersion("2.0", None)
+      val privateTrialVersion = aVersion("2.5", Some(PrivateAPIAccess(Seq.empty, isTrial = Some(true))))
       val privateVersion1 = aVersion("3.0", Some(PrivateAPIAccess(Seq(applicationId))))
       val privateVersion2 = aVersion("4.0", Some(PrivateAPIAccess(Seq("OTHER_APPID"))))
 
-      val api = anAPIDefinition("context", publicVersion, versionWithoutAccessDefined, privateVersion1, privateVersion2)
+      val api = anAPIDefinition("context", publicVersion, versionWithoutAccessDefined, privateTrialVersion, privateVersion1, privateVersion2)
 
       when(mockAPIDefinitionRepository.fetchAll()).thenReturn(successful(Seq(api)))
 
       val response = await(underTest.fetchAllAPIsForApplication(applicationId))
 
-      response shouldBe Seq(anAPIDefinition("context", publicVersion, versionWithoutAccessDefined, privateVersion1))
+      response shouldBe Seq(anAPIDefinition("context", publicVersion, versionWithoutAccessDefined, privateTrialVersion, privateVersion1))
     }
 
     "filter out APIs which do not have any version available for the application" in new Setup {
@@ -388,9 +390,10 @@ class APIDefinitionServiceSpec extends UnitSpec
 
       val publicVersion = aVersion("1.0", Some(PublicAPIAccess()))
       val versionWithoutAccessDefined = aVersion("2.0", None)
+      val privateTrialVersion = aVersion("2.5", Some(PrivateAPIAccess(Seq.empty, isTrial = Some(true))))
       val privateVersionWithAppWhitelisted = aVersion("3.0", Some(PrivateAPIAccess(Seq(applicationId.toString))))
       val privateVersionWithoutAppWhitelisted = aVersion("4.0", Some(PrivateAPIAccess(Seq(UUID.randomUUID().toString))))
-      val api = anAPIDefinition("context", publicVersion, versionWithoutAccessDefined, privateVersionWithAppWhitelisted, privateVersionWithoutAppWhitelisted)
+      val api = anAPIDefinition("context", publicVersion, versionWithoutAccessDefined, privateTrialVersion, privateVersionWithAppWhitelisted, privateVersionWithoutAppWhitelisted)
 
       when(mockThirdPartyApplicationConnector.fetchApplicationsByEmail(email))
         .thenReturn(successful(Seq(Application(applicationId, "App"))))
@@ -398,7 +401,7 @@ class APIDefinitionServiceSpec extends UnitSpec
 
       val response = await(underTest.fetchAllAPIsForCollaborator(email))
 
-      response shouldBe Seq(anAPIDefinition("context", publicVersion, versionWithoutAccessDefined, privateVersionWithAppWhitelisted))
+      response shouldBe Seq(anAPIDefinition("context", publicVersion, versionWithoutAccessDefined, privateTrialVersion, privateVersionWithAppWhitelisted))
     }
 
     "filter out APIs which do not have any version available for the user" in new Setup {
