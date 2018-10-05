@@ -50,10 +50,6 @@ class APIDefinitionRepository @Inject()(mongo: ReactiveMongoComponent)
   }
 
   def save(apiDefinition: APIDefinition): Future[APIDefinition] = {
-    /*
-      TODO: who calls this method (`APIDefinitionService.createOrUpdate()`) should ensure that
-            `context`, `name` and `serviceBaseUrl` are all unique fields in the Mongo collection
-    */
     collection.find(selector = serviceNameSelector(apiDefinition.serviceName)).one[BSONDocument].flatMap {
       case Some(document) => collection.update(selector = BSONDocument("_id" -> document.get("_id")), update = apiDefinition)
       case _ => collection.insert(document = apiDefinition)

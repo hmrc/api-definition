@@ -45,11 +45,6 @@ class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
         failed(new RuntimeException(s"Could not publish API: [${apiDefinition.name}]"))
     }
 
-    val duplicateApiFields: Future[(Boolean, Boolean)] = for {
-      isDuplicateContext <- isContextAlreadyUsed(apiDefinition)
-      isDuplicateName <- isNameAlreadyUsed(apiDefinition)
-    } yield (isDuplicateContext, isDuplicateName)
-
     def publishApiDefinitionToWso2: Future[APIDefinition] = {
       val definitionWithPublishTime = apiDefinition.copy(lastPublishedAt = Some(DateTime.now(DateTimeZone.UTC)))
       publish().flatMap { _ =>
@@ -61,32 +56,7 @@ class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
       }
     }
 
-    // TODO: this below validation should be done in the validators and should be checked in both the following routes:
-    //  - POST   /api-definition
-    //  - POST   /api-definition/validate
-
-    // TODO: we need to check also `serviceBaseUrl`
-    duplicateApiFields.flatMap {
-      case (true, true) => failed(new RuntimeException(s"Fields 'name' and 'context' must be unique for API with service name ${apiDefinition.serviceName}"))
-      case (true, false) => failed(new RuntimeException(s"Field 'context' must be unique for API ${apiDefinition.name}"))
-      case (false, true) => failed(new RuntimeException(s"Field 'name' must be unique for API with service name ${apiDefinition.serviceName}"))
-      case (false, false) => publishApiDefinitionToWso2
-    }
-
-  }
-
-  private def isContextAlreadyUsed(apiDefinition: APIDefinition): Future[Boolean] = {
-    apiDefinitionRepository.fetchByContext(apiDefinition.context).map {
-      case Some(found: APIDefinition) => found.serviceName != apiDefinition.serviceName
-      case _ => false
-    }
-  }
-
-  private def isNameAlreadyUsed(apiDefinition: APIDefinition): Future[Boolean] = {
-    apiDefinitionRepository.fetchByName(apiDefinition.name).map {
-      case Some(found: APIDefinition) => found.serviceName != apiDefinition.serviceName
-      case _ => false
-    }
+    publishApiDefinitionToWso2
   }
 
   def fetchByServiceName(serviceName: String, email: Option[String])
@@ -160,12 +130,16 @@ class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
     }
   }
 
-  def fetchByName(name: String)(implicit hc: HeaderCarrier): Future[Option[APIDefinition]] = {
+  def fetchByName(name: String): Future[Option[APIDefinition]] = {
     apiDefinitionRepository.fetchByName(name)
   }
 
-  def fetchByContext(context: String)(implicit hc: HeaderCarrier): Future[Option[APIDefinition]] = {
+  def fetchByContext(context: String): Future[Option[APIDefinition]] = {
     apiDefinitionRepository.fetchByContext(context)
+  }
+
+  def fetchByServiceBaseUrl(serviceBaseUrl: String): Future[Option[APIDefinition]] = {
+    apiDefinitionRepository.fetchByServiceBaseUrl(serviceBaseUrl)
   }
 
   def delete(serviceName: String)(implicit hc: HeaderCarrier): Future[Unit] = {

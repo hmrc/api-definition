@@ -76,20 +76,14 @@ class APIDefinitionServiceSpec extends UnitSpec
 
       when(mockWSO2APIPublisher.publish(apiDefinition)).thenReturn(successful(()))
       when(mockAPIDefinitionRepository.save(apiDefinitionWithSavingTime)).thenReturn(successful(apiDefinitionWithSavingTime))
-      when(mockAPIDefinitionRepository.fetchByContext(apiDefinition.context)).thenReturn(successful(None))
-      when(mockAPIDefinitionRepository.fetchByName(apiDefinition.name)).thenReturn(successful(None))
 
       await(underTest.createOrUpdate(apiDefinition)) shouldBe apiDefinitionWithSavingTime
 
       verify(mockWSO2APIPublisher, times(1)).publish(apiDefinition)
       verify(mockAPIDefinitionRepository, times(1)).save(apiDefinitionWithSavingTime)
-      verify(mockAPIDefinitionRepository, times(1)).fetchByContext(apiDefinition.context)
-      verify(mockAPIDefinitionRepository, times(1)).fetchByName(apiDefinition.name)
     }
 
     "propagate unexpected errors that happen when trying to publish an API" in new Setup {
-      when(mockAPIDefinitionRepository.fetchByContext(apiDefinition.context)).thenReturn(successful(None))
-      when(mockAPIDefinitionRepository.fetchByName(apiDefinition.name)).thenReturn(successful(None))
       when(mockWSO2APIPublisher.publish(apiDefinition)).thenReturn(failed(new RuntimeException("Something went wrong")))
 
       val thrown = intercept[RuntimeException] {
@@ -99,51 +93,17 @@ class APIDefinitionServiceSpec extends UnitSpec
 
       verify(mockAPIDefinitionRepository, never()).save(any[APIDefinition])
       verify(mockWSO2APIPublisher, times(1)).publish(apiDefinition)
-      verify(mockAPIDefinitionRepository, times(1)).fetchByContext(apiDefinition.context)
-      verify(mockAPIDefinitionRepository, times(1)).fetchByName(apiDefinition.name)
-    }
-
-    "fail to create the API definition in the repository if the context is used by another API" in new Setup {
-      when(mockAPIDefinitionRepository.fetchByName(apiDefinition.name)).thenReturn(successful(None))
-      when(mockAPIDefinitionRepository.fetchByContext(apiDefinition.context))
-        .thenReturn(successful(Some(apiDefinition.copy(serviceName = "differentServiceName"))))
-
-      intercept[RuntimeException] {
-        await(underTest.createOrUpdate(apiDefinition))
-      }
-
-      verify(mockAPIDefinitionRepository, times(1)).fetchByName(apiDefinition.name)
-      verify(mockAPIDefinitionRepository, times(1)).fetchByContext(apiDefinition.context)
-      verifyZeroInteractions(mockWSO2APIPublisher)
-    }
-
-    "fail to create the API definition in the repository if the name is used by another API" in new Setup {
-      when(mockAPIDefinitionRepository.fetchByContext(apiDefinition.context)).thenReturn(successful(None))
-      when(mockAPIDefinitionRepository.fetchByName(apiDefinition.name))
-        .thenReturn(successful(Some(apiDefinition.copy(serviceName = "differentServiceName"))))
-
-      intercept[RuntimeException] {
-        await(underTest.createOrUpdate(apiDefinition))
-      }
-
-      verify(mockAPIDefinitionRepository, times(1)).fetchByName(apiDefinition.name)
-      verify(mockAPIDefinitionRepository, times(1)).fetchByContext(apiDefinition.context)
-      verifyZeroInteractions(mockWSO2APIPublisher)
     }
 
     "update the API Definition (in both WSO2 AM and the mongo repository)" in new Setup {
 
       when(mockWSO2APIPublisher.publish(apiDefinition)).thenReturn(successful(()))
       when(mockAPIDefinitionRepository.save(apiDefinitionWithSavingTime)).thenReturn(successful(apiDefinitionWithSavingTime))
-      when(mockAPIDefinitionRepository.fetchByContext(apiDefinition.context)).thenReturn(successful(Some(apiDefinition)))
-      when(mockAPIDefinitionRepository.fetchByName(apiDefinition.name)).thenReturn(successful(Some(apiDefinition)))
 
       await(underTest.createOrUpdate(apiDefinition)) shouldBe apiDefinitionWithSavingTime
 
       verify(mockWSO2APIPublisher, times(1)).publish(apiDefinition)
       verify(mockAPIDefinitionRepository, times(1)).save(apiDefinitionWithSavingTime)
-      verify(mockAPIDefinitionRepository, times(1)).fetchByContext(apiDefinition.context)
-      verify(mockAPIDefinitionRepository, times(1)).fetchByName(apiDefinition.name)
     }
 
   }

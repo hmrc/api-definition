@@ -17,40 +17,70 @@
 package uk.gov.hmrc.apidefinition.validators
 
 import cats.data.Validated.{Invalid, Valid}
-import cats.data.ValidatedNel
 import cats.implicits._
+import javax.inject.{Inject, Singleton}
 import play.api.libs.json.Json.toJson
 import play.api.mvc.Result
 import play.api.mvc.Results.UnprocessableEntity
 import uk.gov.hmrc.apidefinition.models.ErrorCode.INVALID_REQUEST_PAYLOAD
 import uk.gov.hmrc.apidefinition.models._
+import uk.gov.hmrc.apidefinition.services.APIDefinitionService
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.concurrent.Future.successful
 
-object ApiDefinitionValidator extends Validator[APIDefinition] {
-
-  type HMRCValidated[A] = ValidatedNel[String, A]
+@Singleton
+class ApiDefinitionValidator @Inject()(apiDefinitionService: APIDefinitionService, apiContextValidator: ApiContextValidator)
+  extends Validator[APIDefinition] {
 
   def validate(apiDefinition: APIDefinition)(f: APIDefinition => Future[Result]): Future[Result] = {
-    validateDefinition(apiDefinition) match {
-      case Valid(validDefinition) => f(validDefinition)
-      case Invalid(errors) => Future.successful(UnprocessableEntity(toJson(ValidationErrors(INVALID_REQUEST_PAYLOAD, errors.toList))))
+    validateDefinition(apiDefinition).flatMap {
+      _ match {
+        case Valid(validDefinition) => f(validDefinition)
+        case Invalid(errors) => successful(UnprocessableEntity(toJson(ValidationErrors(INVALID_REQUEST_PAYLOAD, errors.toList))))
+      }
     }
   }
 
-  def validateDefinition(implicit apiDefinition: APIDefinition): HMRCValidated[APIDefinition] = {
+  def validateDefinition(implicit apiDefinition: APIDefinition): Future[HMRCValidated[APIDefinition]] = {
     val errorContext: String =
       if (apiDefinition.name.isEmpty) s"for API with service name '${apiDefinition.serviceName}'"
       else s"for API '${apiDefinition.name}'"
 
-    (
-      validateThat(_.serviceName.nonEmpty, _ => s"Field 'serviceName' should not be empty $errorContext"),
-      validateThat(_.serviceBaseUrl.nonEmpty, _ => s"Field 'serviceBaseUrl' should not be empty $errorContext"),
-      validateThat(_.name.nonEmpty, _ => s"Field 'name' should not be empty $errorContext"),
-      validateThat(_.description.nonEmpty, _ => s"Field 'description' should not be empty $errorContext"),
-      ApiContextValidator.validate(errorContext)(apiDefinition.context),
-      validateVersions(errorContext)
-    ).mapN((_, _, _, _, _, _) => apiDefinition)
+    for {
+      contextValidated <- apiContextValidator.validate(errorContext, apiDefinition)(apiDefinition.context)
+      nameValidated <- validateName(errorContext)
+      serviceBaseUrlValidated <- validateServiceBaseUrl(errorContext)
+
+      validated: HMRCValidated[APIDefinition] = (
+        validateThat(_.serviceName.nonEmpty, _ => s"Field 'serviceName' should not be empty $errorContext"),
+        validateThat(_.description.nonEmpty, _ => s"Field 'description' should not be empty $errorContext"),
+        contextValidated,
+        nameValidated,
+        serviceBaseUrlValidated,
+        validateVersions(errorContext)
+      ).mapN((_, _, _, _, _, _) => apiDefinition)
+
+    } yield validated
+  }
+
+  private def validateName(errorContext: String)(implicit apiDefinition: APIDefinition): Future[HMRCValidated[APIDefinition]] = {
+    val validated = validateThat(_.name.nonEmpty, _ => s"Field 'name' should not be empty $errorContext")
+    validated match {
+      case Invalid(_) => successful(validated)
+      case _ => validateFieldNotAlreadyUsed(apiDefinitionService.fetchByName(apiDefinition.name),
+        s"Field 'name' must be unique $errorContext")
+    }
+  }
+
+  private def validateServiceBaseUrl(errorContext: String)(implicit apiDefinition: APIDefinition): Future[HMRCValidated[APIDefinition]] ={
+    val validated = validateThat(_.serviceBaseUrl.nonEmpty, _ => s"Field 'serviceBaseUrl' should not be empty $errorContext")
+    validated match {
+      case Invalid(_) => successful(validated)
+      case _ => validateFieldNotAlreadyUsed(apiDefinitionService.fetchByServiceBaseUrl(apiDefinition.serviceBaseUrl),
+        s"Field 'serviceBaseUrl' must be unique $errorContext")
+    }
   }
 
   private def validateVersions(errorContext: String)(implicit apiDefinition: APIDefinition): HMRCValidated[APIDefinition] = {

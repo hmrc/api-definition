@@ -18,32 +18,68 @@ package uk.gov.hmrc.apidefinition.validators
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
+import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito.{never, verify, when}
+import org.scalatest.mockito.MockitoSugar
 import play.api.mvc.Results.{NoContent, UnprocessableEntity}
 import uk.gov.hmrc.apidefinition.models.ErrorCode.INVALID_REQUEST_PAYLOAD
 import uk.gov.hmrc.apidefinition.models._
+import uk.gov.hmrc.apidefinition.services.APIDefinitionService
 import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.Future
+import scala.concurrent.Future.successful
 
-class ApiDefinitionValidatorSpec extends UnitSpec {
+class ApiDefinitionValidatorSpec extends UnitSpec with MockitoSugar {
+
+  trait Setup {
+    val mockAPIDefinitionService: APIDefinitionService = mock[APIDefinitionService]
+    val apiContextValidator: ApiContextValidator = new ApiContextValidator(mockAPIDefinitionService)
+    val apiDefinitionValidator: ApiDefinitionValidator = new ApiDefinitionValidator(mockAPIDefinitionService, apiContextValidator)
+
+    when(mockAPIDefinitionService.fetchByContext(any[String])).thenReturn(successful(None))
+    when(mockAPIDefinitionService.fetchByName(any[String])).thenReturn(successful(None))
+    when(mockAPIDefinitionService.fetchByServiceBaseUrl(any[String])).thenReturn(successful(None))
+
+    def assertValidationSuccess(apiDefinition: => APIDefinition): Unit = {
+      val result = await(apiDefinitionValidator.validate(apiDefinition)(_ => Future.successful(NoContent)))
+      result.header.status shouldBe NoContent.header.status
+      result.body.isKnownEmpty shouldBe true
+    }
+
+    def assertValidationFailure(apiDefinition: => APIDefinition, failureMessages: Seq[String]): Unit = {
+      implicit val sys: ActorSystem = ActorSystem("ApiDefinitionValidatorTest")
+      implicit val mat: ActorMaterializer = ActorMaterializer()
+
+      val result = await(apiDefinitionValidator.validate(apiDefinition)(_ => Future.successful(NoContent)))
+      result.header.status shouldBe UnprocessableEntity.header.status
+
+      val validationErrors = jsonBodyOf(result).as[ValidationErrors]
+      validationErrors.code shouldBe INVALID_REQUEST_PAYLOAD
+      validationErrors.messages shouldBe failureMessages
+    }
+  }
 
   "ApiDefinitionValidator" should {
 
-    "fail validation if an empty serviceBaseUrl is provided" in {
+    "fail validation if an empty serviceBaseUrl is provided" in new Setup {
       lazy val apiDefinition: APIDefinition = APIDefinition("calendar", "", "Calendar API", "My Calendar API", "calendar",
         Seq(APIVersion("1.0", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Seq(Endpoint("/today", "Get Today's Date",
           HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)))), Some(false))
+
       assertValidationFailure(apiDefinition, List("Field 'serviceBaseUrl' should not be empty for API 'Calendar API'"))
+      verify(mockAPIDefinitionService, never()).fetchByServiceBaseUrl(any[String])
     }
 
-    "fail validation if an empty serviceName is provided" in {
+    "fail validation if an empty serviceName is provided" in new Setup {
       lazy val apiDefinition: APIDefinition = APIDefinition("", "http://calendar", "Calendar API", "My Calendar API", "calendar",
         Seq(APIVersion("1.0", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Seq(Endpoint("/today", "Get Today's Date",
           HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)))), Some(false))
+
       assertValidationFailure(apiDefinition, List("Field 'serviceName' should not be empty for API 'Calendar API'"))
     }
 
-    "fail validation if a version number is referenced more than once" in {
+    "fail validation if a version number is referenced more than once" in new Setup {
       lazy val apiDefinition: APIDefinition = APIDefinition(
         "calendar",
         "http://calendar",
@@ -56,36 +92,42 @@ class ApiDefinitionValidatorSpec extends UnitSpec {
           APIVersion("1.1", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))),
           APIVersion("1.2", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)))),
         Some(false))
+
       assertValidationFailure(apiDefinition, List("Field 'version' must be unique for API 'Calendar API'"))
     }
 
-    "fail validation if an empty name is provided" in {
+    "fail validation if an empty name is provided" in new Setup {
       lazy val apiDefinition: APIDefinition = APIDefinition("calendar", "http://calendar", "", "My Calendar API", "calendar",
         Seq(APIVersion("1.0", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Seq(Endpoint("/today", "Get Today's Date",
           HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)))), Some(false))
+
       assertValidationFailure(apiDefinition, List("Field 'name' should not be empty for API with service name 'calendar'"))
+      verify(mockAPIDefinitionService, never()).fetchByName(any[String])
     }
 
-    "fail validation if an empty context is provided" in {
+    "fail validation if an empty context is provided" in new Setup {
       lazy val apiDefinition: APIDefinition = APIDefinition("calendar", "http://calendar", "Calendar API", "My Calendar API", "",
         Seq(APIVersion("1.0", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Seq(Endpoint("/today", "Get Today's Date",
           HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)))), Some(false))
+
       assertValidationFailure(apiDefinition, List("Field 'context' should not be empty for API 'Calendar API'"))
+      verify(mockAPIDefinitionService, never()).fetchByContext(any[String])
     }
 
-    "fail validation if an empty description is provided" in {
+    "fail validation if an empty description is provided" in new Setup {
       lazy val apiDefinition: APIDefinition = APIDefinition("calendar", "http://calendar", "Calendar API", "", "calendar",
         Seq(APIVersion("1.0", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Seq(Endpoint("/today", "Get Today's Date",
           HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)))), Some(false))
+
       assertValidationFailure(apiDefinition, List("Field 'description' should not be empty for API 'Calendar API'"))
     }
 
-    "fail validation when no APIVersion is provided" in {
+    "fail validation when no APIVersion is provided" in new Setup {
       lazy val apiDefinition: APIDefinition = APIDefinition("calendar", "http://calendar", "Calendar API", "My Calendar API", "calendar", Nil, None)
       assertValidationFailure(apiDefinition, List("Field 'versions' must not be empty for API 'Calendar API'"))
     }
 
-    "fail validation when if there is an API version without version number" in {
+    "fail validation when if there is an API version without version number" in new Setup {
       lazy val versions: Seq[APIVersion] =
         Seq(
           APIVersion("1.0", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))),
@@ -96,7 +138,7 @@ class ApiDefinitionValidatorSpec extends UnitSpec {
       assertValidationFailure(apiDefinition, List("Field 'versions.version' is required for API 'Calendar API'"))
     }
 
-    "fail validation when no Endpoint is provided" in {
+    "fail validation when no Endpoint is provided" in new Setup {
       lazy val apiDefinition: APIDefinition = APIDefinition("calendar", "http://calendar", "Calendar API", "My Calendar API", "calendar",
         Seq(APIVersion("1.0", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Nil)), Some(false))
       assertValidationFailure(apiDefinition, List("Field 'versions.endpoints' must not be empty for API 'Calendar API' version '1.0'"))
@@ -124,18 +166,18 @@ class ApiDefinitionValidatorSpec extends UnitSpec {
       versions = Seq(moneyApiVersion),
       requiresTrust = Some(false))
 
-    "fail validation when the context starts with '/' " in {
-      lazy val apiDefinition = moneyApiDefinition.copy(context = "/hi")
+    "fail validation when the context starts with '/' " in new Setup {
+      lazy val apiDefinition: APIDefinition = moneyApiDefinition.copy(context = "/hi")
       assertValidationFailure(apiDefinition, List("Field 'context' should not start with '/' for API 'Money API'"))
     }
 
-    "fail validation when the context ends with '/' " in {
-      lazy val apiDefinition = moneyApiDefinition.copy(context = "hi/")
+    "fail validation when the context ends with '/' " in new Setup {
+      lazy val apiDefinition: APIDefinition = moneyApiDefinition.copy(context = "hi/")
       assertValidationFailure(apiDefinition, List("Field 'context' should not end with '/' for API 'Money API'"))
     }
 
-    "fail validation when the context contains '//' " in {
-      lazy val apiDefinition = moneyApiDefinition.copy(context = "hi//aloha")
+    "fail validation when the context contains '//' " in new Setup {
+      lazy val apiDefinition: APIDefinition = moneyApiDefinition.copy(context = "hi//aloha")
       assertValidationFailure(apiDefinition, List("Field 'context' should not have empty path segments for API 'Money API'"))
     }
 
@@ -145,16 +187,37 @@ class ApiDefinitionValidatorSpec extends UnitSpec {
     )
 
     ('{' :: '}' :: specialChars).foreach { char: Char =>
-      s"fail validation if the API contains '$char' in the context" in {
+      s"fail validation if the API contains '$char' in the context" in new Setup {
         lazy val ctx = s"my-context_$char"
-        lazy val apiDefinition = moneyApiDefinition.copy(context = ctx)
+        lazy val apiDefinition: APIDefinition = moneyApiDefinition.copy(context = ctx)
         assertValidationFailure(apiDefinition, List("Field 'context' should match regular expression '^[a-zA-Z0-9_\\-\\/]+$' for API 'Money API'"))
       }
     }
 
-    "fail validation when the endpoint URI is empty" in {
+    "fail validation when context already exist for another API" in new Setup {
+      when(mockAPIDefinitionService.fetchByContext("money"))
+        .thenReturn(successful(Some(moneyApiDefinition.copy(serviceName = "anotherService"))))
 
-      lazy val apiDefinition = moneyApiDefinition.copy(
+      assertValidationFailure(moneyApiDefinition, List("Field 'context' must be unique for API 'Money API'"))
+    }
+
+    "fail validation when name already exist for another API" in new Setup {
+      when(mockAPIDefinitionService.fetchByName("Money API"))
+        .thenReturn(successful(Some(moneyApiDefinition.copy(serviceName = "anotherService"))))
+
+      assertValidationFailure(moneyApiDefinition, List("Field 'name' must be unique for API 'Money API'"))
+    }
+
+    "fail validation when serviceBaseUrl already exists for another API" in new Setup {
+      when(mockAPIDefinitionService.fetchByServiceBaseUrl("http://www.money.com"))
+        .thenReturn(successful(Some(moneyApiDefinition.copy(serviceName = "anotherService"))))
+
+      assertValidationFailure(moneyApiDefinition, List("Field 'serviceBaseUrl' must be unique for API 'Money API'"))
+    }
+
+    "fail validation when the endpoint URI is empty" in new Setup {
+
+      lazy val apiDefinition: APIDefinition = moneyApiDefinition.copy(
         versions = Seq(moneyApiVersion.copy(endpoints = Seq(moneyEndpoint.copy(uriPattern = ""))))
       )
 
@@ -162,37 +225,36 @@ class ApiDefinitionValidatorSpec extends UnitSpec {
     }
 
     specialChars.foreach { char: Char =>
-      s"fail validation if the endpoint contains $char in the URI" in {
+      s"fail validation if the endpoint contains $char in the URI" in new Setup {
         lazy val endpointUri = s"/payments$char"
-        lazy val apiDefinition = moneyApiDefinition.copy(
+        lazy val apiDefinition: APIDefinition = moneyApiDefinition.copy(
           versions = Seq(moneyApiVersion.copy(endpoints = Seq(moneyEndpoint.copy(uriPattern = endpointUri))))
         )
 
-        assertValidationFailure(apiDefinition, List(s"Field 'endpoints.uriPattern' with value '$endpointUri' should match regular expression '^/[a-zA-Z0-9_\\-\\/{}]*$$' for API 'Money API' version '1.0' endpoint 'Check Payments'"))
+        assertValidationFailure(apiDefinition, List(s"Field 'endpoints.uriPattern' with value '$endpointUri' should" +
+          " match regular expression '^/[a-zA-Z0-9_\\-\\/{}]*$' for API 'Money API' version '1.0' endpoint 'Check Payments'"))
       }
     }
 
-    "pass validation if the API definition contains the root endpoint" in {
-      lazy val apiDefinition = moneyApiDefinition.copy(
+    "pass validation if the API definition contains the root endpoint" in new Setup {
+      lazy val apiDefinition: APIDefinition = moneyApiDefinition.copy(
         versions = Seq(moneyApiVersion.copy(endpoints = Seq(moneyEndpoint.copy(uriPattern = "/"))))
       )
       assertValidationSuccess(apiDefinition)
     }
 
-    "fail validation if the endpoint has no name" in {
-
+    "fail validation if the endpoint has no name" in new Setup {
       val endpoint =  "/hello/friend"
-      lazy val apiDefinition = moneyApiDefinition.copy(
+      lazy val apiDefinition: APIDefinition = moneyApiDefinition.copy(
         versions = Seq(moneyApiVersion.copy(endpoints = Seq(moneyEndpoint.copy(uriPattern = endpoint, endpointName = ""))))
       )
 
       assertValidationFailure(apiDefinition, List(s"Field 'endpoints.endpointName' is required for API 'Money API' version '1.0'"))
     }
 
-    "fail validation if the endpoint defines path parameters with ':'" in {
-
+    "fail validation if the endpoint defines path parameters with ':'" in new Setup {
       val endpoint =  "/hello/:friend"
-      lazy val apiDefinition = moneyApiDefinition.copy(
+      lazy val apiDefinition: APIDefinition = moneyApiDefinition.copy(
         versions = Seq(moneyApiVersion.copy(endpoints = Seq(moneyEndpoint.copy(uriPattern = endpoint))))
       )
 
@@ -202,17 +264,18 @@ class ApiDefinitionValidatorSpec extends UnitSpec {
     val pathParameterUris = Map("/{}" -> "{}", "/}{" -> "}{", "/hello{{friend}}" -> "hello{{friend}}",
       "/hello/my{brother}" -> "my{brother}", "/hello/}friend{" -> "}friend{", "/hello/{0friend}" -> "{0friend}")
     pathParameterUris.foreach { case (endpointUri: String, segment: String) =>
-      s"fail validation if the endpoint ($endpointUri) defines path parameters incorrectly" in {
-        lazy val apiDefinition = moneyApiDefinition.copy(
+      s"fail validation if the endpoint ($endpointUri) defines path parameters incorrectly" in new Setup {
+        lazy val apiDefinition: APIDefinition = moneyApiDefinition.copy(
           versions = Seq(moneyApiVersion.copy(endpoints = Seq(moneyEndpoint.copy(uriPattern = endpointUri))))
         )
 
-        assertValidationFailure(apiDefinition, List(s"Curly-bracketed segment '$segment' should match regular expression '^\\{[a-zA-Z]+[a-zA-Z0-9_\\-]*\\}$$' for API 'Money API' version '1.0' endpoint 'Check Payments'"))
+        assertValidationFailure(apiDefinition, List(s"Curly-bracketed segment '$segment' should match regular " +
+          "expression '^\\{[a-zA-Z]+[a-zA-Z0-9_\\-]*\\}$' for API 'Money API' version '1.0' endpoint 'Check Payments'"))
       }
     }
 
-    s"fail validation if the endpoint defines multiple path parameters incorrectly" in {
-      lazy val apiDefinition = moneyApiDefinition.copy(
+    s"fail validation if the endpoint defines multiple path parameters incorrectly" in new Setup {
+      lazy val apiDefinition: APIDefinition = moneyApiDefinition.copy(
         versions = Seq(moneyApiVersion.copy(endpoints = Seq(moneyEndpoint.copy(uriPattern = "/hello/{my/friend}"))))
       )
 
@@ -222,9 +285,9 @@ class ApiDefinitionValidatorSpec extends UnitSpec {
     }
 
     val moneyQueryParameter = Parameter("startDate")
-    "fail validation when a query parameter name is empty" in {
+    "fail validation when a query parameter name is empty" in new Setup {
 
-      lazy val apiDefinition = moneyApiDefinition.copy(
+      lazy val apiDefinition: APIDefinition = moneyApiDefinition.copy(
         versions = Seq(moneyApiVersion.copy(endpoints = Seq(moneyEndpoint.copy(queryParameters = Some(Seq(moneyQueryParameter.copy(name = "")))))))
       )
 
@@ -232,42 +295,43 @@ class ApiDefinitionValidatorSpec extends UnitSpec {
     }
 
     ('/' :: '{' :: '}' :: specialChars).foreach { char =>
-      s"fail validation when a query parameter name contains '$char' in the name" in {
+      s"fail validation when a query parameter name contains '$char' in the name" in new Setup {
 
         val queryParamName = s"param$char"
-        lazy val apiDefinition = moneyApiDefinition.copy(
+        lazy val apiDefinition: APIDefinition = moneyApiDefinition.copy(
           versions = Seq(moneyApiVersion.copy(endpoints = Seq(moneyEndpoint.copy(queryParameters = Some(Seq(moneyQueryParameter.copy(name = queryParamName)))))))
         )
 
-        assertValidationFailure(apiDefinition, List(s"Field 'queryParameters.name' with value '$queryParamName' should match regular expression '^[a-zA-Z0-9_\\-]+$$' for API 'Money API' version '1.0' endpoint 'Check Payments'"))
+        assertValidationFailure(apiDefinition, List(s"Field 'queryParameters.name' with value '$queryParamName' should" +
+          " match regular expression '^[a-zA-Z0-9_\\-]+$' for API 'Money API' version '1.0' endpoint 'Check Payments'"))
       }
     }
 
-    "fail validation when a scope is provided but auth type is 'application'" in {
+    "fail validation when a scope is provided but auth type is 'application'" in new Setup {
       lazy val apiDefinition: APIDefinition = APIDefinition("calendar", "http://calendar", "Calendar API", "My Calendar API", "calendar",
         Seq(APIVersion("1.0", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Seq(Endpoint("/uriPattern", "endpointName", HttpMethod.GET,
           AuthType.APPLICATION, ResourceThrottlingTier.UNLIMITED, Some("scope"))))), None)
       assertValidationFailure(apiDefinition, List("Field 'endpoints.scope' is not allowed for API 'Calendar API' version '1.0' endpoint 'endpointName'"))
     }
 
-  }
+    "accumulate multiple errors in the response" in new Setup {
+      lazy val apiDefinition: APIDefinition = moneyApiDefinition.copy(
+        versions = Seq(moneyApiVersion.copy(endpoints = Seq(moneyEndpoint.copy(uriPattern = ""))))
+      )
+      when(mockAPIDefinitionService.fetchByContext("money"))
+        .thenReturn(successful(Some(moneyApiDefinition.copy(serviceName = "anotherService"))))
+      when(mockAPIDefinitionService.fetchByName("Money API"))
+        .thenReturn(successful(Some(moneyApiDefinition.copy(serviceName = "anotherService"))))
+      when(mockAPIDefinitionService.fetchByServiceBaseUrl("http://www.money.com"))
+        .thenReturn(successful(Some(moneyApiDefinition.copy(serviceName = "anotherService"))))
 
-  private def assertValidationSuccess(apiDefinition: => APIDefinition): Unit = {
-    val result = await(ApiDefinitionValidator.validate(apiDefinition)(_ => Future.successful(NoContent)))
-    result.header.status shouldBe NoContent.header.status
-    result.body.isKnownEmpty shouldBe true
-  }
+      assertValidationFailure(apiDefinition, List(
+        "Field 'context' must be unique for API 'Money API'",
+        "Field 'name' must be unique for API 'Money API'",
+        "Field 'serviceBaseUrl' must be unique for API 'Money API'",
+        "Field 'endpoints.uriPattern' is required for API 'Money API' version '1.0' endpoint 'Check Payments'"))
+    }
 
-  private def assertValidationFailure(apiDefinition: => APIDefinition, failureMessages: Seq[String]): Unit = {
-    implicit val sys: ActorSystem = ActorSystem("ApiDefinitionValidatorTest")
-    implicit val mat: ActorMaterializer = ActorMaterializer()
-
-    val result = await(ApiDefinitionValidator.validate(apiDefinition)(_ => Future.successful(NoContent)))
-    result.header.status shouldBe UnprocessableEntity.header.status
-
-    val validationErrors = jsonBodyOf(result).as[ValidationErrors]
-    validationErrors.code shouldBe INVALID_REQUEST_PAYLOAD
-    validationErrors.messages shouldBe failureMessages
   }
 
 }
