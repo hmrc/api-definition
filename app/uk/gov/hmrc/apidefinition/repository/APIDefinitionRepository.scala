@@ -25,9 +25,9 @@ import reactivemongo.bson.{BSONDocument, BSONObjectID}
 import reactivemongo.play.json.ImplicitBSONHandlers._
 import uk.gov.hmrc.apidefinition.models.APIDefinition
 import uk.gov.hmrc.apidefinition.models.JsonFormatters._
+import uk.gov.hmrc.apidefinition.utils.IndexHelper.createUniqueBackgroundSingleFieldAscendingIndex
 import uk.gov.hmrc.mongo.ReactiveRepository
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
-import uk.gov.hmrc.apidefinition.utils.IndexHelper.{createUniqueBackgroundSingleFieldAscendingIndex, _}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
