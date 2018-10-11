@@ -70,9 +70,6 @@ case class Parameter(name: String, required: Boolean = false)
 
 case class PublishingException(message: String) extends Exception(message)
 
-case class ContextAlreadyDefinedForAnotherService(context: String, serviceName: String)
-  extends RuntimeException(s"Context '$context' was already defined for service '$serviceName'")
-
 object APIAccessType extends Enumeration {
   type APIAccessType = Value
   val PRIVATE, PUBLIC = Value

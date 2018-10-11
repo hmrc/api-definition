@@ -16,13 +16,17 @@
 
 package uk.gov.hmrc.apidefinition.validators
 
-import uk.gov.hmrc.apidefinition.validators.ApiDefinitionValidator.HMRCValidated
+import cats.data.ValidatedNel
 import cats.implicits._
+import uk.gov.hmrc.apidefinition.models.APIDefinition
 
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import scala.util.matching.Regex
 
 trait Validator[T] {
 
+  type HMRCValidated[A] = ValidatedNel[String, A]
   type ShouldEvaluateToTrue = T => Boolean
   type ConstructError = T => String
 
@@ -42,6 +46,14 @@ trait Validator[T] {
     def matches(r: Regex): Boolean = {
       r.findFirstIn(str).nonEmpty
     }
+  }
+
+  def validateFieldNotAlreadyUsed(fetchApi: => Future[Option[APIDefinition]], errorMessage: String)
+                                 (implicit t: T, apiDefinition: APIDefinition): Future[HMRCValidated[T]] = {
+    fetchApi.map {
+      case Some(found: APIDefinition) => found.serviceName != apiDefinition.serviceName
+      case _ => false
+    }.map(alreadyUsed => validateThat(_ => !alreadyUsed, _ => errorMessage))
   }
 
 }

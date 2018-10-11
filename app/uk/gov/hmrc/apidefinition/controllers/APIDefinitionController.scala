@@ -24,7 +24,7 @@ import play.api.mvc._
 import uk.gov.hmrc.apidefinition.config.ControllerConfiguration
 import uk.gov.hmrc.apidefinition.models.ErrorCode._
 import uk.gov.hmrc.apidefinition.models.JsonFormatters._
-import uk.gov.hmrc.apidefinition.models.{APIDefinition, ContextAlreadyDefinedForAnotherService, ErrorCode}
+import uk.gov.hmrc.apidefinition.models.{APIDefinition, ErrorCode}
 import uk.gov.hmrc.apidefinition.services.APIDefinitionService
 import uk.gov.hmrc.apidefinition.utils.APIDefinitionMapper
 import uk.gov.hmrc.apidefinition.validators.ApiDefinitionValidator
@@ -35,22 +35,20 @@ import uk.gov.hmrc.play.microservice.controller.BaseController
 import scala.concurrent.Future
 
 @Singleton
-class APIDefinitionController @Inject()(val apiDefinitionService: APIDefinitionService,
-                                        val controllerConfiguration: ControllerConfiguration,
-                                        val apiDefinitionMapper: APIDefinitionMapper) extends BaseController {
+class APIDefinitionController @Inject()(apiDefinitionValidator: ApiDefinitionValidator,
+                                        apiDefinitionService: APIDefinitionService,
+                                        controllerConfiguration: ControllerConfiguration,
+                                        apiDefinitionMapper: APIDefinitionMapper) extends BaseController {
 
-  val fetchByContextTtlInSeconds = controllerConfiguration.fetchByContextTtlInSeconds
+  val fetchByContextTtlInSeconds: String = controllerConfiguration.fetchByContextTtlInSeconds
 
   def createOrUpdate(): Action[JsValue] = Action.async(BodyParsers.parse.json) { implicit request =>
     handleRequest[APIDefinition](request) { requestBody =>
-      ApiDefinitionValidator.validate(requestBody) { validatedDefinition =>
+      apiDefinitionValidator.validate(requestBody) { validatedDefinition =>
         Logger.info(s"Create/Update API definition request: $validatedDefinition")
         apiDefinitionService.createOrUpdate(apiDefinitionMapper.mapLegacyStatuses(validatedDefinition)).map { result =>
           Logger.info(s"API definition successfully created/updated: $result")
           Ok(Json.toJson(result))
-        } recover {
-          case _: ContextAlreadyDefinedForAnotherService =>
-            Conflict(error(CONTEXT_ALREADY_DEFINED, "Context is already defined for another service. It must be unique per service."))
         } recover recovery
       }
     }
@@ -63,14 +61,14 @@ class APIDefinitionController @Inject()(val apiDefinitionService: APIDefinitionS
   }
 
   def fetchExtended(serviceName: String):  Action[AnyContent] = Action.async { implicit request =>
-    apiDefinitionService.fetchExtended(serviceName, request.queryString.get("email").flatMap(_.headOption)) map {
+    apiDefinitionService.fetchExtendedByServiceName(serviceName, request.queryString.get("email").flatMap(_.headOption)) map {
       case Some(extendedApiDefinition) => Ok(Json.toJson(extendedApiDefinition))
       case _ => NotFound(error(API_DEFINITION_NOT_FOUND, "No API Definition was found"))
     } recover recovery
   }
 
   def fetch(serviceName: String):  Action[AnyContent] = Action.async { implicit request =>
-    apiDefinitionService.fetch(serviceName, request.queryString.get("email").flatMap(_.headOption)) map {
+    apiDefinitionService.fetchByServiceName(serviceName, request.queryString.get("email").flatMap(_.headOption)) map {
       case Some(apiDefinition) => Ok(Json.toJson(apiDefinition))
       case _ => NotFound(error(API_DEFINITION_NOT_FOUND, "No API Definition was found"))
     } recover recovery
@@ -78,7 +76,7 @@ class APIDefinitionController @Inject()(val apiDefinitionService: APIDefinitionS
 
   def validate: Action[JsValue] = Action.async(BodyParsers.parse.json) { implicit request =>
     handleRequest[APIDefinition](request) { requestBody =>
-      ApiDefinitionValidator.validate(requestBody) { validatedDefinition =>
+      apiDefinitionValidator.validate(requestBody) { validatedDefinition =>
         Future.successful(Accepted(Json.toJson(validatedDefinition)))
       }
     }

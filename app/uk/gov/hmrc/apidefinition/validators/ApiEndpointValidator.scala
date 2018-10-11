@@ -17,7 +17,6 @@
 package uk.gov.hmrc.apidefinition.validators
 import cats.implicits._
 import uk.gov.hmrc.apidefinition.models.{AuthType, Endpoint, Parameter}
-import uk.gov.hmrc.apidefinition.validators.ApiDefinitionValidator.HMRCValidated
 
 import scala.util.matching.Regex
 

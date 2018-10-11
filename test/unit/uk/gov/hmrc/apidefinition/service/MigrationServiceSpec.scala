@@ -38,13 +38,13 @@ class MigrationServiceSpec extends UnitSpec
     )
   }
 
-  private def definition(serviceName: String, context: String, versions: Seq[APIVersion]) = {
-    APIDefinition(serviceName, "http://base.url", "API name", "API description", context, versions, None)
+  private def definition(serviceName: String, name: String, context: String, versions: Seq[APIVersion]) = {
+    APIDefinition(serviceName, serviceBaseUrl = s"http://$name.url", name, description = "API description", context, versions, None)
   }
 
-  val publishedApi = definition("published", "published", Seq(version("1.0", APIStatus.PUBLISHED)))
-  val prototypedApi = definition("prototyped", "prototyped", Seq(version("1.0", APIStatus.PROTOTYPED)))
-  val betaApi = definition("beta", "beta", Seq(version("1.0", APIStatus.BETA)))
+  val publishedApi = definition("published", "published", "published", Seq(version("1.0", APIStatus.PUBLISHED)))
+  val prototypedApi = definition("prototyped", "prototyped", "prototyped", Seq(version("1.0", APIStatus.PROTOTYPED)))
+  val betaApi = definition("beta", "beta", "beta", Seq(version("1.0", APIStatus.BETA)))
 
   val reactiveMongoComponent = new ReactiveMongoComponent { override def mongoConnector: MongoConnector = mongoConnectorForTest }
   val repository = new APIDefinitionRepository(reactiveMongoComponent)
@@ -72,11 +72,12 @@ class MigrationServiceSpec extends UnitSpec
 
       await(underTest.migrate())
 
-      val migratedPublishedApi = await(repository.fetch(publishedApi.serviceName))
-      migratedPublishedApi.get.versions(0).status shouldBe APIStatus.STABLE
+      val migratedPublishedApi = await(repository.fetchByServiceName(publishedApi.serviceName))
+      migratedPublishedApi.get.versions.head.status shouldBe APIStatus.STABLE
 
-      val migratedPrototypedApi = await(repository.fetch(prototypedApi.serviceName))
-      migratedPrototypedApi.get.versions(0).status shouldBe APIStatus.BETA
+      val migratedPrototypedApi = await(repository.fetchByServiceName(prototypedApi.serviceName))
+      migratedPrototypedApi.get.versions.head.status shouldBe APIStatus.BETA
     }
   }
+
 }

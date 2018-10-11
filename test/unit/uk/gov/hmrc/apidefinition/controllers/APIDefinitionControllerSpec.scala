@@ -22,24 +22,25 @@ import org.mockito.ArgumentMatchers.{any, refEq, eq => isEq}
 import org.mockito.BDDMockito.given
 import org.mockito.Mockito.{verify, verifyZeroInteractions, when}
 import org.mockito.invocation.InvocationOnMock
-import org.mockito.stubbing.Answer
+import org.mockito.stubbing.{Answer, OngoingStubbing}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
 import play.api.http.Status._
 import play.api.libs.json.Json
-import play.api.mvc.Result
+import play.api.mvc.{AnyContentAsEmpty, Result}
 import play.api.test.FakeRequest
 import play.mvc.Http.HeaderNames
 import uk.gov.hmrc.apidefinition.config.ControllerConfiguration
 import uk.gov.hmrc.apidefinition.models.ErrorCode.INVALID_REQUEST_PAYLOAD
-import uk.gov.hmrc.http.HeaderNames.xRequestId
-import uk.gov.hmrc.http.{HeaderCarrier, UnauthorizedException}
 import uk.gov.hmrc.apidefinition.models.JsonFormatters._
 import uk.gov.hmrc.apidefinition.models._
-import uk.gov.hmrc.play.microservice.filters.MicroserviceFilterSupport
-import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 import uk.gov.hmrc.apidefinition.services.APIDefinitionService
 import uk.gov.hmrc.apidefinition.utils.APIDefinitionMapper
+import uk.gov.hmrc.apidefinition.validators.{ApiContextValidator, ApiDefinitionValidator}
+import uk.gov.hmrc.http.HeaderNames.xRequestId
+import uk.gov.hmrc.http.{HeaderCarrier, UnauthorizedException}
+import uk.gov.hmrc.play.microservice.filters.MicroserviceFilterSupport
+import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
@@ -48,22 +49,28 @@ class APIDefinitionControllerSpec extends UnitSpec
   with WithFakeApplication with ScalaFutures with MockitoSugar {
 
   trait Setup extends MicroserviceFilterSupport {
-    val mockAPIDefinitionService = mock[APIDefinitionService]
+    val mockAPIDefinitionService: APIDefinitionService = mock[APIDefinitionService]
+    when(mockAPIDefinitionService.fetchByContext(any[String])).thenReturn(successful(None))
+    when(mockAPIDefinitionService.fetchByName(any[String])).thenReturn(successful(None))
+    when(mockAPIDefinitionService.fetchByServiceBaseUrl(any[String])).thenReturn(successful(None))
 
-    implicit lazy val request = FakeRequest()
-    implicit val hc = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
+    implicit lazy val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
+    implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
 
-    val mockControllerConfiguration = mock[ControllerConfiguration]
+    val apiContextValidator: ApiContextValidator = new ApiContextValidator(mockAPIDefinitionService)
+    val apiDefinitionValidator: ApiDefinitionValidator = new ApiDefinitionValidator(mockAPIDefinitionService, apiContextValidator)
+
+    val mockControllerConfiguration: ControllerConfiguration = mock[ControllerConfiguration]
     when(mockControllerConfiguration.fetchByContextTtlInSeconds).thenReturn("1234")
 
-    val apiDefinitionMapper = fakeApplication.injector.instanceOf[APIDefinitionMapper]
+    val apiDefinitionMapper: APIDefinitionMapper = fakeApplication.injector.instanceOf[APIDefinitionMapper]
 
-    val underTest = new APIDefinitionController(mockAPIDefinitionService, mockControllerConfiguration, apiDefinitionMapper)
+    val underTest = new APIDefinitionController(apiDefinitionValidator, mockAPIDefinitionService, mockControllerConfiguration, apiDefinitionMapper)
 
-    def theServiceWillCreateOrUpdateTheAPIDefinition = {
+    def theServiceWillCreateOrUpdateTheAPIDefinition: OngoingStubbing[Future[APIDefinition]] = {
       when(mockAPIDefinitionService.createOrUpdate(any[APIDefinition])(any[HeaderCarrier])).thenAnswer(new Answer[Future[APIDefinition]] {
         override def answer(invocation: InvocationOnMock): Future[APIDefinition] = {
-          Future.successful(invocation.getArgument(0))
+          successful(invocation.getArgument(0))
         }
       })
     }
@@ -108,18 +115,6 @@ class APIDefinitionControllerSpec extends UnitSpec
       status(result) shouldBe UNPROCESSABLE_ENTITY
 
       verifyZeroInteractions(mockAPIDefinitionService)
-    }
-
-    "fail with a 409 (conflict) when the context was already defined for another service " in new Setup {
-      when(mockAPIDefinitionService.createOrUpdate(any[APIDefinition])(any[HeaderCarrier]))
-        .thenReturn(failed(ContextAlreadyDefinedForAnotherService("calendar", "calendar-api")))
-
-      val result = await(underTest.createOrUpdate()(request.withBody(Json.parse(calendarApiDefinition))))
-
-      status(result) shouldBe CONFLICT
-
-      (jsonBodyOf(result) \ "message").as[String] shouldBe "Context is already defined for another service. It must be unique per service."
-      (jsonBodyOf(result) \ "code").as[String] shouldBe "CONTEXT_ALREADY_DEFINED"
     }
 
     "fail with a 500 (internal server error) when the service throws an exception" in new Setup {
@@ -450,7 +445,7 @@ class APIDefinitionControllerSpec extends UnitSpec
       val userEmail = "user@email.com"
       val extendedApiDefinition = extDefinition(serviceName, Some(userEmail))
 
-      when(mockAPIDefinitionService.fetchExtended(isEq(serviceName), isEq(Some(userEmail)))(any[HeaderCarrier]))
+      when(mockAPIDefinitionService.fetchExtendedByServiceName(isEq(serviceName), isEq(Some(userEmail)))(any[HeaderCarrier]))
         .thenReturn(successful(extendedApiDefinition))
 
       val result = await(underTest.fetchExtended(serviceName)(FakeRequest("GET", s"?email=$userEmail")))
@@ -465,7 +460,7 @@ class APIDefinitionControllerSpec extends UnitSpec
       val userEmail = "user@email.com"
       val extendedApiDefinition = extDefinition(serviceName, None)
 
-      when(mockAPIDefinitionService.fetchExtended(isEq(serviceName), isEq(None))(any[HeaderCarrier]))
+      when(mockAPIDefinitionService.fetchExtendedByServiceName(isEq(serviceName), isEq(None))(any[HeaderCarrier]))
         .thenReturn(successful(extendedApiDefinition))
 
       val result = await(underTest.fetchExtended(serviceName)(FakeRequest("GET", "")))
@@ -478,7 +473,7 @@ class APIDefinitionControllerSpec extends UnitSpec
 
       val serviceName = "calendar"
 
-      when(mockAPIDefinitionService.fetchExtended(isEq(serviceName), isEq(None))(any[HeaderCarrier]))
+      when(mockAPIDefinitionService.fetchExtendedByServiceName(isEq(serviceName), isEq(None))(any[HeaderCarrier]))
         .thenReturn(successful(None))
 
       val result = await(underTest.fetchExtended(serviceName)(request))
@@ -490,7 +485,7 @@ class APIDefinitionControllerSpec extends UnitSpec
 
       val serviceName = "calendar"
 
-      when(mockAPIDefinitionService.fetchExtended(isEq(serviceName), isEq(None))(any[HeaderCarrier]))
+      when(mockAPIDefinitionService.fetchExtendedByServiceName(isEq(serviceName), isEq(None))(any[HeaderCarrier]))
         .thenReturn(failed(new RuntimeException("Something went wrong")))
 
       val result = await(underTest.fetchExtended(serviceName)(request))
@@ -514,7 +509,7 @@ class APIDefinitionControllerSpec extends UnitSpec
           Some(true))),
         requiresTrust = None, lastPublishedAt = Some(aTime))
 
-      when(mockAPIDefinitionService.fetch(isEq(serviceName), isEq(Some(userEmail)))(any[HeaderCarrier]))
+      when(mockAPIDefinitionService.fetchByServiceName(isEq(serviceName), isEq(Some(userEmail)))(any[HeaderCarrier]))
         .thenReturn(successful(Some(apiDefinition)))
 
       val result = await(underTest.fetch(serviceName)(FakeRequest("GET", s"?email=$userEmail")))
@@ -557,7 +552,7 @@ class APIDefinitionControllerSpec extends UnitSpec
           Some(true))),
         requiresTrust = None)
 
-      when(mockAPIDefinitionService.fetch(isEq(serviceName), isEq(None))(any[HeaderCarrier]))
+      when(mockAPIDefinitionService.fetchByServiceName(isEq(serviceName), isEq(None))(any[HeaderCarrier]))
         .thenReturn(successful(Some(apiDefinition)))
 
       val result = await(underTest.fetch(serviceName)(request))
@@ -569,7 +564,7 @@ class APIDefinitionControllerSpec extends UnitSpec
 
       val serviceName = "calendar"
 
-      when(mockAPIDefinitionService.fetch(isEq(serviceName), isEq(None))(any[HeaderCarrier]))
+      when(mockAPIDefinitionService.fetchByServiceName(isEq(serviceName), isEq(None))(any[HeaderCarrier]))
         .thenReturn(successful(None))
 
       val result = await(underTest.fetch(serviceName)(request))
@@ -582,7 +577,7 @@ class APIDefinitionControllerSpec extends UnitSpec
       val serviceName = "calendar"
       val userEmail = "user@email.com"
 
-      when(mockAPIDefinitionService.fetch(isEq(serviceName), isEq(Some(userEmail)))(any[HeaderCarrier]))
+      when(mockAPIDefinitionService.fetchByServiceName(isEq(serviceName), isEq(Some(userEmail)))(any[HeaderCarrier]))
         .thenReturn(successful(None))
 
       val result = await(underTest.fetch(serviceName)(FakeRequest("GET", s"?email=$userEmail")))
@@ -594,7 +589,7 @@ class APIDefinitionControllerSpec extends UnitSpec
 
       val serviceName = "calendar"
 
-      when(mockAPIDefinitionService.fetch(isEq(serviceName), isEq(None))(any[HeaderCarrier]))
+      when(mockAPIDefinitionService.fetchByServiceName(isEq(serviceName), isEq(None))(any[HeaderCarrier]))
         .thenReturn(failed(new RuntimeException("Something went wrong")))
 
       val result = await(underTest.fetch(serviceName)(request))
@@ -699,7 +694,7 @@ class APIDefinitionControllerSpec extends UnitSpec
           Some(true))),
         requiresTrust = Some(true))
 
-      when(mockAPIDefinitionService.fetchByContext(isEq("calendar"))(any[HeaderCarrier]))
+      when(mockAPIDefinitionService.fetchByContext(isEq("calendar")))
         .thenReturn(successful(Some(apiDefinition1)))
 
       val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?context=calendar")))
@@ -711,7 +706,7 @@ class APIDefinitionControllerSpec extends UnitSpec
 
     "return 404 Not Found when the context is defined and an API does not exist for the context" in new Setup {
 
-      when(mockAPIDefinitionService.fetchByContext(isEq("calendar"))(any[HeaderCarrier]))
+      when(mockAPIDefinitionService.fetchByContext(isEq("calendar")))
         .thenReturn(successful(None))
 
       val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?context=calendar")))
@@ -722,7 +717,7 @@ class APIDefinitionControllerSpec extends UnitSpec
 
     "fail with a 500 (internal server error) when the context is defined and the service throws an exception" in new Setup {
 
-      when(mockAPIDefinitionService.fetchByContext(isEq("calendar"))(any[HeaderCarrier]))
+      when(mockAPIDefinitionService.fetchByContext(isEq("calendar")))
         .thenReturn(failed(new RuntimeException("Something went wrong")))
 
       val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?context=calendar")))
@@ -808,7 +803,7 @@ class APIDefinitionControllerSpec extends UnitSpec
   "delete" should {
     "succeed with status 204 (NoContent) when the deletion succeeds" in new Setup {
 
-      given(underTest.apiDefinitionService.delete(isEq("service-name"))(any[HeaderCarrier]))
+      given(mockAPIDefinitionService.delete(isEq("service-name"))(any[HeaderCarrier]))
         .willReturn(successful(()))
 
       val result = await(underTest.delete("service-name")(request))
@@ -818,7 +813,7 @@ class APIDefinitionControllerSpec extends UnitSpec
 
     "fail with status 500 when the deletion fails" in new Setup {
 
-      given(underTest.apiDefinitionService.delete(isEq("service-name"))(any[HeaderCarrier]))
+      given(mockAPIDefinitionService.delete(isEq("service-name"))(any[HeaderCarrier]))
         .willReturn(failed(new RuntimeException("Something went wrong")))
 
       val result = await(underTest.delete("service-name")(request))
@@ -828,7 +823,7 @@ class APIDefinitionControllerSpec extends UnitSpec
 
     "fail with status 403 when the deletion is unauthorized" in new Setup {
 
-      given(underTest.apiDefinitionService.delete(isEq("service-name"))(any[HeaderCarrier]))
+      given(mockAPIDefinitionService.delete(isEq("service-name"))(any[HeaderCarrier]))
         .willReturn(failed(new UnauthorizedException("Unauthorized")))
 
       val result = await(underTest.delete("service-name")(request))
@@ -839,7 +834,7 @@ class APIDefinitionControllerSpec extends UnitSpec
 
   "republishAll" should {
     "succeed with status 204 when all APIs are republished" in new Setup {
-      given(underTest.apiDefinitionService.publishAll()(any[HeaderCarrier]))
+      given(mockAPIDefinitionService.publishAll()(any[HeaderCarrier]))
         .willReturn(successful(()))
 
       val result = await(underTest.publishAll()(request))
@@ -851,7 +846,7 @@ class APIDefinitionControllerSpec extends UnitSpec
     "fail with status 500 and return the list of APIs which failed to publish" in new Setup {
       val message = "Could not republish the following APIs to WSO2: [API-1, API-2]"
 
-      given(underTest.apiDefinitionService.publishAll()(any[HeaderCarrier]))
+      given(mockAPIDefinitionService.publishAll()(any[HeaderCarrier]))
         .willReturn(failed(new RuntimeException(message)))
 
       val result = await(underTest.publishAll()(request))

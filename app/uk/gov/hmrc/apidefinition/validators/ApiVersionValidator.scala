@@ -18,7 +18,6 @@ package uk.gov.hmrc.apidefinition.validators
 
 import cats.implicits._
 import uk.gov.hmrc.apidefinition.models.{APIStatus, APIVersion, Endpoint}
-import uk.gov.hmrc.apidefinition.validators.ApiDefinitionValidator.HMRCValidated
 
 object ApiVersionValidator extends Validator[APIVersion] {
 

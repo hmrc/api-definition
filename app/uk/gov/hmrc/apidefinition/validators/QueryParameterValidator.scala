@@ -17,7 +17,6 @@
 package uk.gov.hmrc.apidefinition.validators
 
 import uk.gov.hmrc.apidefinition.models.Parameter
-import uk.gov.hmrc.apidefinition.validators.ApiDefinitionValidator._
 
 import scala.util.matching.Regex
 

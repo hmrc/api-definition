@@ -27,48 +27,42 @@ import uk.gov.hmrc.apidefinition.models._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.concurrent.Future.{failed, successful}
 
 @Singleton
-class APIDefinitionService @Inject()(apiPublisher: WSO2APIPublisher,
+class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
                                      thirdPartyApplicationConnector: ThirdPartyApplicationConnector,
                                      apiDefinitionRepository: APIDefinitionRepository,
-                                     appContext: AppContext) {
+                                     playApplicationContext: AppContext) {
 
   def createOrUpdate(apiDefinition: APIDefinition)(implicit hc: HeaderCarrier): Future[APIDefinition] = {
 
-    def contextAlreadyDefinedForAnotherServiceName: Future[Boolean] = {
-      apiDefinitionRepository.fetchByContext(apiDefinition.context).map {
-        case Some(a: APIDefinition) => a.serviceName != apiDefinition.serviceName
-        case _ => false
-      }
-    }
-
     def publish(): Future[Unit] = {
-      apiPublisher.publish(apiDefinition)
+      wso2Publisher.publish(apiDefinition)
     } recover {
       case e: PublishingException =>
         Logger.error(s"Failed to create or update API [${apiDefinition.name}]", e)
-        Future.failed(new RuntimeException(s"Could not publish API: [${apiDefinition.name}]"))
+        failed(new RuntimeException(s"Could not publish API: [${apiDefinition.name}]"))
     }
 
-    contextAlreadyDefinedForAnotherServiceName.flatMap {
-      case true => Future.failed(ContextAlreadyDefinedForAnotherService(apiDefinition.context, apiDefinition.serviceName))
-      case false =>
-        val definitionWithPublishTime = apiDefinition.copy(lastPublishedAt = Some(DateTime.now(DateTimeZone.UTC)))
-        publish().flatMap {
-          _ => apiDefinitionRepository.save(definitionWithPublishTime).map(_ => definitionWithPublishTime).recoverWith {
+    def publishApiDefinitionToWso2: Future[APIDefinition] = {
+      val definitionWithPublishTime = apiDefinition.copy(lastPublishedAt = Some(DateTime.now(DateTimeZone.UTC)))
+      publish().flatMap { _ =>
+        apiDefinitionRepository.save(definitionWithPublishTime).map(_ => definitionWithPublishTime).recoverWith {
           case e: Throwable =>
             Logger.error(s"""API Definition for "${apiDefinition.name}" was published but not saved due to error: ${e.getMessage}""", e)
-            Future.failed(e)
+            failed(e)
         }
       }
     }
+
+    publishApiDefinitionToWso2
   }
 
-  def fetch(serviceName: String, email: Option[String])
-           (implicit hc: HeaderCarrier): Future[Option[APIDefinition]] = {
+  def fetchByServiceName(serviceName: String, email: Option[String])
+                        (implicit hc: HeaderCarrier): Future[Option[APIDefinition]] = {
 
-    val maybeApiDefinitionF = apiDefinitionRepository.fetch(serviceName)
+    val maybeApiDefinitionF = apiDefinitionRepository.fetchByServiceName(serviceName)
     val applicationIdsF = fetchApplicationIdsByEmail(email)
 
     for {
@@ -77,15 +71,15 @@ class APIDefinitionService @Inject()(apiPublisher: WSO2APIPublisher,
     } yield api.flatMap(filterAPIForApplications(userApplicationIds :_*))
   }
 
-  def fetchExtended(serviceName: String, email: Option[String])
-                   (implicit hc: HeaderCarrier): Future[Option[ExtendedAPIDefinition]] = {
+  def fetchExtendedByServiceName(serviceName: String, email: Option[String])
+                                (implicit hc: HeaderCarrier): Future[Option[ExtendedAPIDefinition]] = {
 
     def appIsWhitelisted(userApplication: Seq[String], whitelist: Seq[String]) = {
       userApplication.intersect(whitelist).nonEmpty
     }
 
     def availability(version: APIVersion, userApplicationIds: Seq[String], forSandbox: Boolean = false): Option[APIAvailability] = {
-      if (forSandbox == appContext.isSandbox) {
+      if (forSandbox == playApplicationContext.isSandbox) {
         version.access match {
           case Some(PrivateAPIAccess(whitelist, isTrial)) => Some(APIAvailability(version.endpointsEnabled.getOrElse(false),
             PrivateAPIAccess(whitelist, isTrial),
@@ -100,7 +94,7 @@ class APIDefinitionService @Inject()(apiPublisher: WSO2APIPublisher,
       } else None
     }
 
-    val maybeApiDefinitionF = apiDefinitionRepository.fetch(serviceName)
+    val maybeApiDefinitionF = apiDefinitionRepository.fetchByServiceName(serviceName)
     val applicationIdsF = fetchApplicationIdsByEmail(email)
 
     for {
@@ -136,17 +130,25 @@ class APIDefinitionService @Inject()(apiPublisher: WSO2APIPublisher,
     }
   }
 
-  def fetchByContext(context: String)(implicit hc: HeaderCarrier): Future[Option[APIDefinition]] = {
+  def fetchByName(name: String): Future[Option[APIDefinition]] = {
+    apiDefinitionRepository.fetchByName(name)
+  }
+
+  def fetchByContext(context: String): Future[Option[APIDefinition]] = {
     apiDefinitionRepository.fetchByContext(context)
   }
 
+  def fetchByServiceBaseUrl(serviceBaseUrl: String): Future[Option[APIDefinition]] = {
+    apiDefinitionRepository.fetchByServiceBaseUrl(serviceBaseUrl)
+  }
+
   def delete(serviceName: String)(implicit hc: HeaderCarrier): Future[Unit] = {
-    apiDefinitionRepository.fetch(serviceName) flatMap {
-      case None => Future.successful(())
-      case Some(definition) => apiPublisher.hasSubscribers(definition) flatMap {
-        case true => Future.failed(new UnauthorizedException("API has subscribers"))
+    apiDefinitionRepository.fetchByServiceName(serviceName) flatMap {
+      case None => successful(())
+      case Some(definition) => wso2Publisher.hasSubscribers(definition) flatMap {
+        case true => failed(new UnauthorizedException("API has subscribers"))
         case false =>
-          apiPublisher.delete(definition) flatMap { _ =>
+          wso2Publisher.delete(definition) flatMap { _ =>
             apiDefinitionRepository.delete(definition.serviceName)
           }
       }
@@ -190,7 +192,7 @@ class APIDefinitionService @Inject()(apiPublisher: WSO2APIPublisher,
   }
 
   private def filterAPIsForApplications(applicationIds: String*) : Seq[APIDefinition] => Seq[APIDefinition] = {
-    _ flatMap { api => filterAPIForApplications(applicationIds:_*)(api) }
+    _ flatMap { filterAPIForApplications(applicationIds:_*)(_) }
   }
 
   private def filterAPIForApplications(applicationIds: String*) : APIDefinition => Option[APIDefinition] = { api =>
@@ -200,11 +202,8 @@ class APIDefinitionService @Inject()(apiPublisher: WSO2APIPublisher,
       case _ => true
     })
 
-    if (filteredVersions.isEmpty) {
-      None
-    } else {
-      Some(api.copy(versions = filteredVersions))
-    }
+    if (filteredVersions.isEmpty) None
+    else Some(api.copy(versions = filteredVersions))
   }
 
   def publishAll()(implicit hc: HeaderCarrier): Future[Unit] = {
@@ -212,14 +211,13 @@ class APIDefinitionService @Inject()(apiPublisher: WSO2APIPublisher,
     def allFailures() = {
       for {
         definitions <- apiDefinitionRepository.fetchAll()
-        fs <- apiPublisher.publish(definitions)
+        fs <- wso2Publisher.publish(definitions)
       } yield fs
     }
 
     allFailures().flatMap {
-      case f if f.nonEmpty =>
-        Future.failed(new RuntimeException(s"Could not republish the following APIs to WSO2: [${f.mkString(", ")}]"))
-      case _ => Future.successful(())
+      case f if f.nonEmpty => failed(new RuntimeException(s"Could not republish the following APIs to WSO2: [${f.mkString(", ")}]"))
+      case _ => successful(())
     }
   }
 

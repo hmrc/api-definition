@@ -16,17 +16,28 @@
 
 package uk.gov.hmrc.apidefinition.validators
 
+import cats.data.Validated.Invalid
 import cats.implicits._
-import uk.gov.hmrc.apidefinition.validators.ApiDefinitionValidator.HMRCValidated
+import javax.inject.{Inject, Singleton}
+import uk.gov.hmrc.apidefinition.models.APIDefinition
+import uk.gov.hmrc.apidefinition.services.APIDefinitionService
 
+import scala.concurrent.Future
+import scala.concurrent.Future.successful
 import scala.util.matching.Regex
 
-object ApiContextValidator extends Validator[String] {
+@Singleton
+class ApiContextValidator @Inject()(apiDefinitionService: APIDefinitionService) extends Validator[String] {
 
   private val contextRegex: Regex = "^[a-zA-Z0-9_\\-\\/]+$".r
 
-  def validate(errorContext: String)(implicit context: String): HMRCValidated[String] = {
-    validateThat(_.nonEmpty, _ => s"Field 'context' should not be empty $errorContext").andThen(validateContext(errorContext)(_))
+  def validate(errorContext: String, apiDefinition: APIDefinition)(implicit context: String): Future[HMRCValidated[String]] = {
+    val validated = validateThat(_.nonEmpty, _ => s"Field 'context' should not be empty $errorContext").andThen(validateContext(errorContext)(_))
+    validated match {
+      case Invalid(_) => successful(validated)
+      case _ => validateFieldNotAlreadyUsed(apiDefinitionService.fetchByContext(apiDefinition.context),
+        s"Field 'context' must be unique $errorContext")(context, apiDefinition)
+    }
   }
 
   private def validateContext(errorContext: String)(implicit context: String): HMRCValidated[String] = {
