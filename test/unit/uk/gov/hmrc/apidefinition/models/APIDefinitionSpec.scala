@@ -24,22 +24,20 @@ import uk.gov.hmrc.play.test.UnitSpec
 class APIDefinitionSpec extends UnitSpec {
 
   "APIDefinition" should {
-
-    "read from JSON when the API access type is PUBLIC and there is no whitelist" in {
-      val body =
-        """{
+    val publicAccess = """ { "type": "PUBLIC" } """
+    def anApiDefinition(access: String = publicAccess, categories: String = "") = {
+      val body = s"""{
           |   "serviceName":"calendar",
           |   "name":"Calendar API",
           |   "description":"My Calendar API",
           |   "serviceBaseUrl":"http://calendar",
           |   "context":"calendar",
+          |   $categories
           |   "versions":[
           |      {
           |         "version":"1.0",
           |         "status":"PUBLISHED",
-          |         "access": {
-          |           "type": "PUBLIC"
-          |         },
+          |         "access": $access,
           |         "endpoints":[
           |            {
           |               "uriPattern":"/today",
@@ -53,303 +51,91 @@ class APIDefinitionSpec extends UnitSpec {
           |   ]
           |}""".stripMargin.replaceAll("\n", " ")
 
-      val apiDefinition = Json.parse(body).as[APIDefinition]
+      Json.parse(body).as[APIDefinition]
+    }
+
+    "read from JSON when the API access type is PUBLIC and there is no whitelist" in {
+      val access = publicAccess
+      val apiDefinition = anApiDefinition(access = access)
+
       apiDefinition.versions.head.access shouldBe Some(PublicAPIAccess())
     }
 
     "read from JSON when the API access type is PUBLIC and there is an empty whitelist" in {
-      val body =
-        """{
-          |   "serviceName":"calendar",
-          |   "name":"Calendar API",
-          |   "description":"My Calendar API",
-          |   "serviceBaseUrl":"http://calendar",
-          |   "context":"calendar",
-          |   "versions":[
-          |      {
-          |         "version":"1.0",
-          |         "status":"PUBLISHED",
-          |         "access": {
-          |           "type": "PUBLIC",
-          |           "whitelistedApplicationIds" : []
-          |         },
-          |         "endpoints":[
-          |            {
-          |               "uriPattern":"/today",
-          |               "endpointName":"Get Today's Date",
-          |               "method":"GET",
-          |               "authType":"NONE",
-          |               "throttlingTier":"UNLIMITED"
-          |            }
-          |         ]
-          |      }
-          |   ]
-          |}""".stripMargin.replaceAll("\n", " ")
+      val access = """{
+          |  "type": "PUBLIC",
+          |  "whitelistedApplicationIds": []
+      }""".stripMargin
+      val apiDefinition = anApiDefinition(access = access)
 
-      val apiDefinition = Json.parse(body).as[APIDefinition]
       apiDefinition.versions.head.access shouldBe Some(PublicAPIAccess())
     }
 
     "fail to read from JSON when the API access type is PUBLIC and there is a non-empty whitelist" in {
-      val body =
-        """{
-          |   "serviceName":"calendar",
-          |   "name":"Calendar API",
-          |   "description":"My Calendar API",
-          |   "serviceBaseUrl":"http://calendar",
-          |   "context":"calendar",
-          |   "versions":[
-          |      {
-          |         "version":"1.0",
-          |         "status":"PUBLISHED",
-          |         "access": {
-          |           "type": "PUBLIC",
-          |           "whitelistedApplicationIds" : [ "an-application-id" ]
-          |         },
-          |         "endpoints":[
-          |            {
-          |               "uriPattern":"/today",
-          |               "endpointName":"Get Today's Date",
-          |               "method":"GET",
-          |               "authType":"NONE",
-          |               "throttlingTier":"UNLIMITED"
-          |            }
-          |         ]
-          |      }
-          |   ]
-          |}""".stripMargin.replaceAll("\n", " ")
+      val access = """{
+          | "type": "PUBLIC",
+          | "whitelistedApplicationIds": ["an-application-id"]
+      }""".stripMargin
 
-      intercept[RuntimeException] { Json.parse(body).as[APIDefinition] }
+      intercept[RuntimeException] {  anApiDefinition(access = access) }
     }
 
     "read from JSON when the API access type is PRIVATE and there is an empty whitelist" in {
-      val body =
-        """{
-          |   "serviceName":"calendar",
-          |   "name":"Calendar API",
-          |   "description":"My Calendar API",
-          |   "serviceBaseUrl":"http://calendar",
-          |   "context":"calendar",
-          |   "versions":[
-          |      {
-          |         "version":"1.0",
-          |         "status":"PUBLISHED",
-          |         "access": {
-          |           "type": "PRIVATE",
-          |           "whitelistedApplicationIds" : []
-          |         },
-          |         "endpoints":[
-          |            {
-          |               "uriPattern":"/today",
-          |               "endpointName":"Get Today's Date",
-          |               "method":"GET",
-          |               "authType":"NONE",
-          |               "throttlingTier":"UNLIMITED"
-          |            }
-          |         ]
-          |      }
-          |   ]
-          |}""".stripMargin.replaceAll("\n", " ")
+      val access = """{
+          | "type": "PRIVATE",
+          | "whitelistedApplicationIds": []
+      }""".stripMargin
 
-      val apiDefinition = Json.parse(body).as[APIDefinition]
+      val apiDefinition = anApiDefinition(access = access)
+
       apiDefinition.versions.head.access shouldBe Some(PrivateAPIAccess(Seq.empty))
     }
 
     "read from JSON when the API access type is PRIVATE and there is an empty whitelist and isTrial is true" in {
-      val body =
-        """{
-          |   "serviceName":"calendar",
-          |   "name":"Calendar API",
-          |   "description":"My Calendar API",
-          |   "serviceBaseUrl":"http://calendar",
-          |   "context":"calendar",
-          |   "versions":[
-          |      {
-          |         "version":"1.0",
-          |         "status":"PUBLISHED",
-          |         "access": {
-          |           "type": "PRIVATE",
-          |           "whitelistedApplicationIds" : [],
-          |           "isTrial": true
-          |         },
-          |         "endpoints":[
-          |            {
-          |               "uriPattern":"/today",
-          |               "endpointName":"Get Today's Date",
-          |               "method":"GET",
-          |               "authType":"NONE",
-          |               "throttlingTier":"UNLIMITED"
-          |            }
-          |         ]
-          |      }
-          |   ]
-          |}""".stripMargin.replaceAll("\n", " ")
+      val access = """{
+          | "type": "PRIVATE",
+          | "whitelistedApplicationIds": [],
+          | "isTrial": true
+      }""".stripMargin
+      val apiDefinition = anApiDefinition(access = access)
 
-      val apiDefinition = Json.parse(body).as[APIDefinition]
       apiDefinition.versions.head.access shouldBe Some(PrivateAPIAccess(Seq.empty, Some(true)))
     }
 
     "read from JSON when the API access type is PRIVATE and there is a non-empty whitelist" in {
-      val body =
-        """{
-          |   "serviceName":"calendar",
-          |   "name":"Calendar API",
-          |   "description":"My Calendar API",
-          |   "serviceBaseUrl":"http://calendar",
-          |   "context":"calendar",
-          |   "versions":[
-          |      {
-          |         "version":"1.0",
-          |         "status":"PUBLISHED",
-          |         "access": {
-          |           "type": "PRIVATE",
-          |           "whitelistedApplicationIds" : [ "an-application-id" ]
-          |         },
-          |         "endpoints":[
-          |            {
-          |               "uriPattern":"/today",
-          |               "endpointName":"Get Today's Date",
-          |               "method":"GET",
-          |               "authType":"NONE",
-          |               "throttlingTier":"UNLIMITED"
-          |            }
-          |         ]
-          |      }
-          |   ]
-          |}""".stripMargin.replaceAll("\n", " ")
+      val access = """{
+          | "type": "PRIVATE",
+          | "whitelistedApplicationIds": ["an-application-id"]
+      }""".stripMargin
 
-      val apiDefinition = Json.parse(body).as[APIDefinition]
+      val apiDefinition = anApiDefinition(access = access)
+
       apiDefinition.versions.head.access shouldBe Some(PrivateAPIAccess(Seq("an-application-id")))
     }
 
     "fail to read from JSON when the API access type is PRIVATE and there is no whitelist" in {
-      val body =
-        """{
-          |   "serviceName":"calendar",
-          |   "name":"Calendar API",
-          |   "description":"My Calendar API",
-          |   "serviceBaseUrl":"http://calendar",
-          |   "context":"calendar",
-          |   "versions":[
-          |      {
-          |         "version":"1.0",
-          |         "status":"PUBLISHED",
-          |         "access": {
-          |           "type": "PRIVATE"
-          |         },
-          |         "endpoints":[
-          |            {
-          |               "uriPattern":"/today",
-          |               "endpointName":"Get Today's Date",
-          |               "method":"GET",
-          |               "authType":"NONE",
-          |               "throttlingTier":"UNLIMITED"
-          |            }
-          |         ]
-          |      }
-          |   ]
-          |}""".stripMargin.replaceAll("\n", " ")
+      val access = """ { "type": "PRIVATE" } """
 
-      intercept[RuntimeException] { Json.parse(body).as[APIDefinition] }
+      intercept[RuntimeException] { anApiDefinition(access = access) }
     }
 
     "read from JSON when the API categories are defined but empty" in {
-      val body =
-        """{
-          |   "serviceName":"calendar",
-          |   "name":"Calendar API",
-          |   "description":"My Calendar API",
-          |   "serviceBaseUrl":"http://calendar",
-          |   "context":"calendar",
-          |   "versions":[
-          |      {
-          |         "version":"1.0",
-          |         "status":"PUBLISHED",
-          |         "access": {
-          |           "type": "PUBLIC"
-          |         },
-          |         "endpoints":[
-          |            {
-          |               "uriPattern":"/today",
-          |               "endpointName":"Get Today's Date",
-          |               "method":"GET",
-          |               "authType":"NONE",
-          |               "throttlingTier":"UNLIMITED"
-          |            }
-          |         ]
-          |      }
-          |   ],
-          |   "categories": []
-          |}""".stripMargin.replaceAll("\n", " ")
+      val categories = """ "categories": [], """
+      val apiDefinition = anApiDefinition(categories = categories)
 
-      val apiDefinition = Json.parse(body).as[APIDefinition]
       apiDefinition.categories shouldBe Some(Seq.empty)
     }
 
     "read from JSON when the API categories are defined with correct values" in {
-      val body =
-        """{
-          |   "serviceName":"calendar",
-          |   "name":"Calendar API",
-          |   "description":"My Calendar API",
-          |   "serviceBaseUrl":"http://calendar",
-          |   "context":"calendar",
-          |   "versions":[
-          |      {
-          |         "version":"1.0",
-          |         "status":"PUBLISHED",
-          |         "access": {
-          |           "type": "PUBLIC"
-          |         },
-          |         "endpoints":[
-          |            {
-          |               "uriPattern":"/today",
-          |               "endpointName":"Get Today's Date",
-          |               "method":"GET",
-          |               "authType":"NONE",
-          |               "throttlingTier":"UNLIMITED"
-          |            }
-          |         ]
-          |      }
-          |   ],
-          |   "categories": ["CUSTOMS", "VAT"]
-          |}""".stripMargin.replaceAll("\n", " ")
+      val categories = """ "categories": ["CUSTOMS", "VAT"], """
+      val apiDefinition = anApiDefinition(categories = categories)
 
-      val apiDefinition = Json.parse(body).as[APIDefinition]
       apiDefinition.categories shouldBe Some(Seq(CUSTOMS, VAT))
     }
 
     "fail to read from JSON when the API categories are defined with incorrect values" in {
-      val body =
-        """{
-          |   "serviceName":"calendar",
-          |   "name":"Calendar API",
-          |   "description":"My Calendar API",
-          |   "serviceBaseUrl":"http://calendar",
-          |   "context":"calendar",
-          |   "versions":[
-          |      {
-          |         "version":"1.0",
-          |         "status":"PUBLISHED",
-          |         "access": {
-          |           "type": "PUBLIC"
-          |         },
-          |         "endpoints":[
-          |            {
-          |               "uriPattern":"/today",
-          |               "endpointName":"Get Today's Date",
-          |               "method":"GET",
-          |               "authType":"NONE",
-          |               "throttlingTier":"UNLIMITED"
-          |            }
-          |         ]
-          |      }
-          |   ],
-          |   "categories": ["NOT_A_VALID_CATEGORY"]
-          |}""".stripMargin.replaceAll("\n", " ")
-
-      intercept[RuntimeException] { Json.parse(body).as[APIDefinition] }
+      val categories = """ "categories": ["NOT_A_VALID_CATEGORY"], """
+      intercept[RuntimeException] { anApiDefinition(categories = categories) }
     }
   }
-
 }
