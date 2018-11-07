@@ -17,6 +17,7 @@
 package uk.gov.hmrc.apidefinition.models
 
 import play.api.libs.json.Json
+import uk.gov.hmrc.apidefinition.models.APICategory._
 import uk.gov.hmrc.apidefinition.models.JsonFormatters._
 import uk.gov.hmrc.play.test.UnitSpec
 
@@ -252,6 +253,103 @@ class APIDefinitionSpec extends UnitSpec {
       intercept[RuntimeException] { Json.parse(body).as[APIDefinition] }
     }
 
+    "read from JSON when the API categories are defined but empty" in {
+      val body =
+        """{
+          |   "serviceName":"calendar",
+          |   "name":"Calendar API",
+          |   "description":"My Calendar API",
+          |   "serviceBaseUrl":"http://calendar",
+          |   "context":"calendar",
+          |   "versions":[
+          |      {
+          |         "version":"1.0",
+          |         "status":"PUBLISHED",
+          |         "access": {
+          |           "type": "PUBLIC"
+          |         },
+          |         "endpoints":[
+          |            {
+          |               "uriPattern":"/today",
+          |               "endpointName":"Get Today's Date",
+          |               "method":"GET",
+          |               "authType":"NONE",
+          |               "throttlingTier":"UNLIMITED"
+          |            }
+          |         ]
+          |      }
+          |   ],
+          |   "categories": []
+          |}""".stripMargin.replaceAll("\n", " ")
+
+      val apiDefinition = Json.parse(body).as[APIDefinition]
+      apiDefinition.categories shouldBe Some(Seq.empty)
+    }
+
+    "read from JSON when the API categories are defined with correct values" in {
+      val body =
+        """{
+          |   "serviceName":"calendar",
+          |   "name":"Calendar API",
+          |   "description":"My Calendar API",
+          |   "serviceBaseUrl":"http://calendar",
+          |   "context":"calendar",
+          |   "versions":[
+          |      {
+          |         "version":"1.0",
+          |         "status":"PUBLISHED",
+          |         "access": {
+          |           "type": "PUBLIC"
+          |         },
+          |         "endpoints":[
+          |            {
+          |               "uriPattern":"/today",
+          |               "endpointName":"Get Today's Date",
+          |               "method":"GET",
+          |               "authType":"NONE",
+          |               "throttlingTier":"UNLIMITED"
+          |            }
+          |         ]
+          |      }
+          |   ],
+          |   "categories": ["CUSTOMS", "VAT"]
+          |}""".stripMargin.replaceAll("\n", " ")
+
+      val apiDefinition = Json.parse(body).as[APIDefinition]
+      apiDefinition.categories shouldBe Some(Seq(CUSTOMS, VAT))
+    }
+
+    "fail to read from JSON when the API categories are defined with incorrect values" in {
+      val body =
+        """{
+          |   "serviceName":"calendar",
+          |   "name":"Calendar API",
+          |   "description":"My Calendar API",
+          |   "serviceBaseUrl":"http://calendar",
+          |   "context":"calendar",
+          |   "versions":[
+          |      {
+          |         "version":"1.0",
+          |         "status":"PUBLISHED",
+          |         "access": {
+          |           "type": "PUBLIC"
+          |         },
+          |         "endpoints":[
+          |            {
+          |               "uriPattern":"/today",
+          |               "endpointName":"Get Today's Date",
+          |               "method":"GET",
+          |               "authType":"NONE",
+          |               "throttlingTier":"UNLIMITED"
+          |            }
+          |         ]
+          |      }
+          |   ],
+          |   "categories": ["NOT_A_VALID_CATEGORY"]
+          |}""".stripMargin.replaceAll("\n", " ")
+
+      intercept[RuntimeException] { Json.parse(body).as[APIDefinition] }
+    }
   }
 
 }
