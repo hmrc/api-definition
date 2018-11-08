@@ -17,6 +17,7 @@
 package uk.gov.hmrc.apidefinition.models
 
 import org.joda.time.DateTime
+import uk.gov.hmrc.apidefinition.models.APICategory.APICategory
 import uk.gov.hmrc.apidefinition.models.APIStatus.APIStatus
 import uk.gov.hmrc.apidefinition.models.AuthType.AuthType
 import uk.gov.hmrc.apidefinition.models.HttpMethod.HttpMethod
@@ -30,7 +31,8 @@ case class APIDefinition(serviceName: String,
                          versions: Seq[APIVersion],
                          requiresTrust: Option[Boolean],
                          isTestSupport: Option[Boolean] = None,
-                         lastPublishedAt: Option[DateTime] = None)
+                         lastPublishedAt: Option[DateTime] = None,
+                         categories: Option[Seq[APICategory]] = None)
 
 case class ExtendedAPIDefinition(serviceName: String,
                                  serviceBaseUrl: String,
@@ -80,6 +82,14 @@ trait APIAccess
 case class PublicAPIAccess() extends APIAccess
 
 case class PrivateAPIAccess(whitelistedApplicationIds: Seq[String], isTrial: Option[Boolean] = None) extends APIAccess
+
+object APICategory extends Enumeration {
+  type APICategory = Value
+
+  val EXAMPLE, AGENTS, CORPORATION_TAX, CUSTOMS, ESTATES, HELP_TO_SAVE, INCOME_TAX_MTD,
+    LIFETIME_ISA, MARRIAGE_ALLOWANCE, NATIONAL_INSURANCE, PAYE, PENSIONS, PRIVATE_GOVERNMENT,
+    RELIEF_AT_SOURCE, SELF_ASSESSMENT, STAMP_DUTY, TRUSTS, VAT, VAT_MTD, OTHER = Value
+}
 
 object APIStatus extends Enumeration {
   type APIStatus = Value
