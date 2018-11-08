@@ -24,118 +24,104 @@ import uk.gov.hmrc.play.test.UnitSpec
 class APIDefinitionSpec extends UnitSpec {
 
   "APIDefinition" should {
-    val publicAccess = """ { "type": "PUBLIC" } """
-    def anApiDefinition(access: String = publicAccess, categories: String = "") = {
-      val body = s"""{
-          |   "serviceName":"calendar",
-          |   "name":"Calendar API",
-          |   "description":"My Calendar API",
-          |   "serviceBaseUrl":"http://calendar",
-          |   "context":"calendar",
-          |   $categories
-          |   "versions":[
-          |      {
-          |         "version":"1.0",
-          |         "status":"PUBLISHED",
-          |         "access": $access,
-          |         "endpoints":[
-          |            {
-          |               "uriPattern":"/today",
-          |               "endpointName":"Get Today's Date",
-          |               "method":"GET",
-          |               "authType":"NONE",
-          |               "throttlingTier":"UNLIMITED"
-          |            }
-          |         ]
-          |      }
-          |   ]
-          |}""".stripMargin.replaceAll("\n", " ")
+    def anApiDefinition(accessType: String = "PUBLIC",
+                        whitelistedApplicationIds: Option[String] = None,
+                        isTrial: Option[Boolean] = None,
+                        categories: Option[String] = None) = {
+
+      val body =
+        s"""{
+           |   "serviceName":"calendar",
+           |   "name":"Calendar API",
+           |   "description":"My Calendar API",
+           |   "serviceBaseUrl":"http://calendar",
+           |   "context":"calendar",
+           |   ${categories.fold("")(c => s""" "categories": $c,""")}
+           |   "versions":[
+           |      {
+           |         "version":"1.0",
+           |         "status":"PUBLISHED",
+           |         "access": {
+           |           "type": "$accessType"
+           |            ${whitelistedApplicationIds.fold("")(w => s""" ,"whitelistedApplicationIds": $w""")}
+           |            ${isTrial.fold("")(t => s""","isTrial": $t""")}
+           |         },
+           |         "endpoints":[
+           |            {
+           |               "uriPattern":"/today",
+           |               "endpointName":"Get Today's Date",
+           |               "method":"GET",
+           |               "authType":"NONE",
+           |               "throttlingTier":"UNLIMITED"
+           |            }
+           |         ]
+           |      }
+           |   ]
+           |}""".stripMargin.replaceAll("\n", " ")
 
       Json.parse(body).as[APIDefinition]
     }
 
     "read from JSON when the API access type is PUBLIC and there is no whitelist" in {
-      val access = publicAccess
-      val apiDefinition = anApiDefinition(access = access)
+      val apiDefinition = anApiDefinition()
 
       apiDefinition.versions.head.access shouldBe Some(PublicAPIAccess())
     }
 
     "read from JSON when the API access type is PUBLIC and there is an empty whitelist" in {
-      val access = """{
-          |  "type": "PUBLIC",
-          |  "whitelistedApplicationIds": []
-      }""".stripMargin
-      val apiDefinition = anApiDefinition(access = access)
+      val apiDefinition = anApiDefinition(whitelistedApplicationIds = Some("[]"))
 
       apiDefinition.versions.head.access shouldBe Some(PublicAPIAccess())
     }
 
     "fail to read from JSON when the API access type is PUBLIC and there is a non-empty whitelist" in {
-      val access = """{
-          | "type": "PUBLIC",
-          | "whitelistedApplicationIds": ["an-application-id"]
-      }""".stripMargin
-
-      intercept[RuntimeException] {  anApiDefinition(access = access) }
+      intercept[RuntimeException] {
+        anApiDefinition(whitelistedApplicationIds = Some("[\"an-application-id\"]"))
+      }
     }
 
     "read from JSON when the API access type is PRIVATE and there is an empty whitelist" in {
-      val access = """{
-          | "type": "PRIVATE",
-          | "whitelistedApplicationIds": []
-      }""".stripMargin
-
-      val apiDefinition = anApiDefinition(access = access)
+      val apiDefinition = anApiDefinition(
+        accessType = "PRIVATE", whitelistedApplicationIds = Some("[]"))
 
       apiDefinition.versions.head.access shouldBe Some(PrivateAPIAccess(Seq.empty))
     }
 
     "read from JSON when the API access type is PRIVATE and there is an empty whitelist and isTrial is true" in {
-      val access = """{
-          | "type": "PRIVATE",
-          | "whitelistedApplicationIds": [],
-          | "isTrial": true
-      }""".stripMargin
-      val apiDefinition = anApiDefinition(access = access)
+      val apiDefinition = anApiDefinition(
+        accessType = "PRIVATE", whitelistedApplicationIds = Some("[]"), isTrial = Some(true))
 
       apiDefinition.versions.head.access shouldBe Some(PrivateAPIAccess(Seq.empty, Some(true)))
     }
 
     "read from JSON when the API access type is PRIVATE and there is a non-empty whitelist" in {
-      val access = """{
-          | "type": "PRIVATE",
-          | "whitelistedApplicationIds": ["an-application-id"]
-      }""".stripMargin
-
-      val apiDefinition = anApiDefinition(access = access)
+      val apiDefinition = anApiDefinition(accessType = "PRIVATE", whitelistedApplicationIds = Some("[\"an-application-id\"]"))
 
       apiDefinition.versions.head.access shouldBe Some(PrivateAPIAccess(Seq("an-application-id")))
     }
 
     "fail to read from JSON when the API access type is PRIVATE and there is no whitelist" in {
-      val access = """ { "type": "PRIVATE" } """
-
-      intercept[RuntimeException] { anApiDefinition(access = access) }
+      intercept[RuntimeException] {
+        anApiDefinition(accessType = "PRIVATE", whitelistedApplicationIds = None)
+      }
     }
 
     "read from JSON when the API categories are defined but empty" in {
-      val categories = """ "categories": [], """
-      val apiDefinition = anApiDefinition(categories = categories)
+      val apiDefinition = anApiDefinition(categories = Some("[]"))
 
       apiDefinition.categories shouldBe Some(Seq.empty)
     }
 
     "read from JSON when the API categories are defined with correct values" in {
-      val categories = """ "categories": ["CUSTOMS", "VAT"], """
-      val apiDefinition = anApiDefinition(categories = categories)
+      val apiDefinition = anApiDefinition(categories = Some("[\"CUSTOMS\", \"VAT\"]"))
 
       apiDefinition.categories shouldBe Some(Seq(CUSTOMS, VAT))
     }
 
     "fail to read from JSON when the API categories are defined with incorrect values" in {
-      val categories = """ "categories": ["NOT_A_VALID_CATEGORY"], """
-      intercept[RuntimeException] { anApiDefinition(categories = categories) }
+      intercept[RuntimeException] {
+        anApiDefinition(categories = Some("[\"NOT_A_VALID_CATEGORY\"]"))
+      }
     }
   }
 }
