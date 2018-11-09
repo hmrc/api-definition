@@ -54,7 +54,8 @@ lazy val microservice = (project in file("."))
   .settings(
     testOptions in Test := Seq(Tests.Filter(_ => true)),// this removes duplicated lines in HTML reports
     unmanagedSourceDirectories in Test := Seq(baseDirectory.value / "test" / "unit"),
-    addTestReportOption(Test, "test-reports")
+    addTestReportOption(Test, "test-reports"),
+    testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-eT")
   )
   .settings(
     resolvers += Resolver.bintrayRepo("hmrc", "releases"),
