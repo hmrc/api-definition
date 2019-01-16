@@ -301,7 +301,7 @@ class APIDefinitionRepositorySpec extends UnitSpec
 
       import scala.concurrent.duration._
 
-      val indexVersion = Some(1)
+      val indexVersion = Some(2)
       val expectedIndexes = List(
         Index(key = Seq("context" -> Ascending), name = Some("contextIndex"), unique = true, background = true, version = indexVersion),
         Index(key = Seq("serviceName" -> Ascending), name = Some("serviceNameIndex"), unique = true, background = true, version = indexVersion),
