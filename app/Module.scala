@@ -16,12 +16,11 @@
 
 import com.google.inject.AbstractModule
 import play.api.{Configuration, Environment}
-import uk.gov.hmrc.apidefinition.config.{AuditedWSHttp, ControllerConfiguration, WSHttp}
+import uk.gov.hmrc.apidefinition.config.ControllerConfiguration
 
 class Module(environment: Environment, configuration: Configuration) extends AbstractModule {
 
   override def configure(): Unit = {
-    bind(classOf[WSHttp]).toInstance(AuditedWSHttp)
     bind(classOf[ControllerConfiguration]).toInstance(ControllerConfiguration)
   }
 }

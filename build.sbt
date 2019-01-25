@@ -12,7 +12,7 @@ lazy val appDependencies: Seq[ModuleID] = compile ++ test
 
 lazy val compile = Seq(
   ws,
-  "uk.gov.hmrc" %% "microservice-bootstrap" % "6.18.0",
+  "uk.gov.hmrc" %% "microservice-bootstrap" % "9.1.0",
   "uk.gov.hmrc" %% "play-reactivemongo" % "6.2.0",
   "uk.gov.hmrc" %% "mongo-lock" % "5.1.0",
   "uk.gov.hmrc" %% "play-json-union-formatter" % "1.3.0",
@@ -21,10 +21,10 @@ lazy val compile = Seq(
 
 lazy val test = Seq(
   "uk.gov.hmrc" %% "reactivemongo-test" % "3.1.0" % "test",
-  "uk.gov.hmrc" %% "hmrctest" % "3.0.0" % "test",
+  "uk.gov.hmrc" %% "hmrctest" % "3.3.0" % "test",
   "org.scalaj" %% "scalaj-http" % "2.3.0" % "test",
-  "org.scalatest" %% "scalatest" % "3.0.0" % "test",
-  "org.scalatestplus.play" %% "scalatestplus-play" % "2.0.0" % "test",
+  "org.scalatest" %% "scalatest" % "3.0.5" % "test",
+  "org.scalatestplus.play" %% "scalatestplus-play" % "2.0.1" % "test",
   "org.mockito" % "mockito-core" % "2.13.0" % "test",
   "com.typesafe.play" %% "play-test" % PlayVersion.current % "test",
   "com.github.tomakehurst" % "wiremock" % "2.8.0" % "test"

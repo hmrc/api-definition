@@ -16,25 +16,25 @@
 
 package uk.gov.hmrc.apidefinition.connector
 
-import javax.inject.{Inject, Singleton}
 import com.google.common.base.Charsets
-import uk.gov.hmrc.apidefinition.config.WSHttp
-import uk.gov.hmrc.apidefinition.models.JsonFormatters._
+import javax.inject.{Inject, Singleton}
 import play.api.Logger
 import play.api.http.ContentTypes.FORM
 import play.api.http.HeaderNames._
 import play.api.libs.json._
 import play.utils.UriEncoding
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
+import uk.gov.hmrc.apidefinition.config.WSHttp
+import uk.gov.hmrc.apidefinition.models.JsonFormatters._
 import uk.gov.hmrc.apidefinition.models.{WSO2APIDefinition, WSO2EndpointConfig}
-import uk.gov.hmrc.play.config.inject.DefaultServicesConfig
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
+import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 
 @Singleton
-class WSO2APIPublisherConnector @Inject()(servicesConfig: DefaultServicesConfig, http: WSHttp) {
+class WSO2APIPublisherConnector @Inject()(servicesConfig: ServicesConfig, http: WSHttp) {
 
   val username: String = servicesConfig.getConfString("wso2-publisher.username", "admin")
   val password: String = servicesConfig.getConfString("wso2-publisher.password", "admin")

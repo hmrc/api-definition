@@ -20,17 +20,17 @@ import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration._
-import uk.gov.hmrc.apidefinition.config.WSHttp
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
 import play.api.http.ContentTypes.{FORM, JSON}
 import play.api.http.HeaderNames._
 import play.api.http.Status.OK
+import uk.gov.hmrc.apidefinition.config.WSHttp
+import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HeaderNames._
-import uk.gov.hmrc.apidefinition.models._
-import uk.gov.hmrc.play.config.inject.DefaultServicesConfig
+import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 
 class WSO2APIPublisherConnectorSpec extends UnitSpec
@@ -46,7 +46,7 @@ class WSO2APIPublisherConnectorSpec extends UnitSpec
   private val encodedPassword = "a%25dmin"
 
   trait Setup {
-    val serviceConfig = mock[DefaultServicesConfig]
+    val serviceConfig = mock[ServicesConfig]
 
     implicit val hc = HeaderCarrier()
       .withExtraHeaders(xRequestId -> requestId)

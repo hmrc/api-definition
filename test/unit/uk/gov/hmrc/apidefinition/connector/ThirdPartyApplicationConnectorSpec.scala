@@ -22,16 +22,16 @@ import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration._
-import uk.gov.hmrc.apidefinition.config.WSHttp
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
 import play.api.http.HeaderNames.USER_AGENT
 import play.api.libs.json.Json
+import uk.gov.hmrc.apidefinition.config.WSHttp
+import uk.gov.hmrc.apidefinition.models.Application
 import uk.gov.hmrc.http.HeaderNames.xRequestId
 import uk.gov.hmrc.http.{HeaderCarrier, Upstream5xxResponse}
-import uk.gov.hmrc.apidefinition.models.Application
-import uk.gov.hmrc.play.config.inject.DefaultServicesConfig
+import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 
 class ThirdPartyApplicationConnectorSpec extends UnitSpec
@@ -46,7 +46,7 @@ class ThirdPartyApplicationConnectorSpec extends UnitSpec
   private val requestId = "requestId"
 
   trait Setup {
-    val serviceConfig = mock[DefaultServicesConfig]
+    val serviceConfig = mock[ServicesConfig]
     implicit val hc = HeaderCarrier()
       .withExtraHeaders(xRequestId -> requestId)
 
