@@ -18,15 +18,15 @@ package uk.gov.hmrc.apidefinition.connector
 
 import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.apidefinition.config.WSHttp
-import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.apidefinition.models.Application
-import uk.gov.hmrc.play.config.inject.DefaultServicesConfig
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
 import scala.concurrent.Future
 
 @Singleton
-class ThirdPartyApplicationConnector @Inject()(servicesConfig: DefaultServicesConfig, http: WSHttp) {
+class ThirdPartyApplicationConnector @Inject()(servicesConfig: ServicesConfig, http: WSHttp) {
 
   lazy val serviceUrl = servicesConfig.baseUrl("third-party-application")
 
