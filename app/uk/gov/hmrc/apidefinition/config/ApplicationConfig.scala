@@ -14,18 +14,13 @@
  * limitations under the License.
  */
 
-package component
+package uk.gov.hmrc.apidefinition.config
 
-import play.api.http.Status.OK
+import play.api.Mode.Mode
+import play.api.{Configuration, Play}
+import uk.gov.hmrc.play.config.ServicesConfig
 
-class AppHealthSpec extends ComponentSpec {
-
-  "the application" when {
-    "the health check endpoint is called" should {
-      "respond with 200 OK" in {
-        val response = get("/ping/ping")
-        response.status shouldBe OK
-      }
-    }
-  }
+object ApplicationConfig extends ServicesConfig {
+  override protected def mode: Mode = Play.current.mode
+  override protected def runModeConfiguration: Configuration = Play.current.configuration
 }

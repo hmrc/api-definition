@@ -18,14 +18,11 @@ package component
 
 import play.api.http.Status.OK
 
-class AppHealthSpec extends ComponentSpec {
-
-  "the application" when {
-    "the health check endpoint is called" should {
-      "respond with 200 OK" in {
-        val response = get("/ping/ping")
-        response.status shouldBe OK
-      }
+class ApiDefinitionSpec extends ComponentSpec {
+  "GET /api-definition" should {
+    "respond OK" in {
+      val response = get("/api-definition")
+      response.status shouldBe OK
     }
   }
 }

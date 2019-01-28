@@ -16,11 +16,13 @@
 
 import com.google.inject.AbstractModule
 import play.api.{Configuration, Environment}
-import uk.gov.hmrc.apidefinition.config.ControllerConfiguration
+import uk.gov.hmrc.apidefinition.config.{ApplicationConfig, ControllerConfiguration}
+import uk.gov.hmrc.play.config.ServicesConfig
 
 class Module(environment: Environment, configuration: Configuration) extends AbstractModule {
 
   override def configure(): Unit = {
     bind(classOf[ControllerConfiguration]).toInstance(ControllerConfiguration)
+    bind(classOf[ServicesConfig]).toInstance(ApplicationConfig)
   }
 }
