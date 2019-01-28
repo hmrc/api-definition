@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.apidefinition.service
+package unit.uk.gov.hmrc.apidefinition.service
 
 import uk.gov.hmrc.apidefinition.models.APIStatus.APIStatus
 import org.scalatest.BeforeAndAfterEach

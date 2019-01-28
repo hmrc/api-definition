@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.apidefinition.connector
+package unit.uk.gov.hmrc.apidefinition.connector
 
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
@@ -27,6 +27,7 @@ import play.api.http.ContentTypes.{FORM, JSON}
 import play.api.http.HeaderNames._
 import play.api.http.Status.OK
 import uk.gov.hmrc.apidefinition.config.WSHttp
+import uk.gov.hmrc.apidefinition.connector.WSO2APIPublisherConnector
 import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HeaderNames._

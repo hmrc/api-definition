@@ -14,25 +14,25 @@
  * limitations under the License.
  */
 
-package unit.uk.gov.hmrc.apidefinition.models
+package component
 
-import uk.gov.hmrc.apidefinition.models.JsonFormatters.dateTimeReads
-import org.joda.time.{DateTime, DateTimeZone}
-import play.api.libs.json.{JsError, JsNumber, Json}
+import org.scalatestplus.play.guice.GuiceOneServerPerSuite
+import play.api.libs.ws.WSClient
 import uk.gov.hmrc.play.test.UnitSpec
+import play.api.http.Status.OK
 
-class JsonFormattersSpec extends UnitSpec {
+class AppHealthSpec extends UnitSpec with GuiceOneServerPerSuite {
 
-  "JsonFormatters" should {
+  "the application" when {
+    "the health check endpoint is called" should {
+      "respond with 200 OK" in {
+        val wsClient = app.injector.instanceOf[WSClient]
+        val appUrl = s"http://localhost:$port"
 
-    "fail to read a DateTime json value if not formatted in ISO 8601" in  {
-      val timeInMillis = DateTime.now(DateTimeZone.UTC).getMillis
-      val dateTime = JsNumber(timeInMillis)
+        val response = await(wsClient.url(s"$appUrl/ping/ping").get())
 
-      val expectedErrorMessage = JsError(s"Unexpected format for DateTime: $dateTime")
-      Json.fromJson[DateTime](json = dateTime)(fjs = dateTimeReads) shouldBe expectedErrorMessage
+        response.status shouldBe OK
+      }
     }
-
   }
-
 }

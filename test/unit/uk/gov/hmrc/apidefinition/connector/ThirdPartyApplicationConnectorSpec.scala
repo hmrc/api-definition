@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.apidefinition.connector
+package unit.uk.gov.hmrc.apidefinition.connector
 
 import java.util.UUID
 
@@ -28,6 +28,7 @@ import org.scalatest.mockito.MockitoSugar
 import play.api.http.HeaderNames.USER_AGENT
 import play.api.libs.json.Json
 import uk.gov.hmrc.apidefinition.config.WSHttp
+import uk.gov.hmrc.apidefinition.connector.ThirdPartyApplicationConnector
 import uk.gov.hmrc.apidefinition.models.Application
 import uk.gov.hmrc.http.HeaderNames.xRequestId
 import uk.gov.hmrc.http.{HeaderCarrier, Upstream5xxResponse}

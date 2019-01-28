@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.apidefinition.repository
+package unit.uk.gov.hmrc.apidefinition.repository
 
 import uk.gov.hmrc.apidefinition.models.JsonFormatters._
 import org.joda.time.{DateTime, DateTimeZone}
@@ -25,6 +25,7 @@ import reactivemongo.api.indexes.Index
 import reactivemongo.api.indexes.IndexType.Ascending
 import reactivemongo.core.errors.DatabaseException
 import uk.gov.hmrc.apidefinition.models._
+import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport}
 import uk.gov.hmrc.play.test.UnitSpec
 

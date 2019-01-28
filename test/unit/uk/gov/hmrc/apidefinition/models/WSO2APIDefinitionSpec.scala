@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.apidefinition.models
+package unit.uk.gov.hmrc.apidefinition.models
 
 import uk.gov.hmrc.apidefinition.models.APIStatus.APIStatus
 import uk.gov.hmrc.apidefinition.models.HttpMethod._
 import uk.gov.hmrc.apidefinition.models.WSO2APIDefinition._
 import org.mockito.Mockito._
 import org.scalatest.mockito.MockitoSugar
+import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.play.test.UnitSpec
 
 class WSO2APIDefinitionSpec extends UnitSpec with MockitoSugar {

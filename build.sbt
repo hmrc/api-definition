@@ -23,12 +23,15 @@ lazy val test = Seq(
   "uk.gov.hmrc" %% "reactivemongo-test" % "3.1.0" % "test",
   "uk.gov.hmrc" %% "hmrctest" % "3.3.0" % "test",
   "org.scalaj" %% "scalaj-http" % "2.3.0" % "test",
-  "org.scalatest" %% "scalatest" % "3.0.5" % "test",
+  "org.scalatest" %% "scalatest" % "3.0.5" % "test, component",
   "org.scalatestplus.play" %% "scalatestplus-play" % "2.0.1" % "test",
   "org.mockito" % "mockito-core" % "2.13.0" % "test",
   "com.typesafe.play" %% "play-test" % PlayVersion.current % "test",
   "com.github.tomakehurst" % "wiremock" % "2.8.0" % "test"
 )
+
+lazy val ComponentTest = config("component") extend Test
+val testConfig = Seq(ComponentTest, Test)
 
 lazy val plugins: Seq[Plugins] = Seq(PlayScala, SbtAutoBuildPlugin, SbtGitVersioning, SbtDistributablesPlugin, SbtArtifactory)
 lazy val playSettings: Seq[Setting[_]] = Seq.empty
@@ -39,6 +42,7 @@ lazy val microservice = (project in file("."))
   .settings(scalaSettings: _*)
   .settings(publishingSettings: _*)
   .settings(defaultSettings(): _*)
+  .configs(testConfig: _*)
   .settings(
     name := appName,
     majorVersion := 1,
@@ -46,16 +50,12 @@ lazy val microservice = (project in file("."))
     scalaVersion := "2.11.11",
     scalacOptions += "-Ypartial-unification",
     libraryDependencies ++= appDependencies,
-    parallelExecution in Test := false,
-    fork in Test := false,
     retrieveManaged := true,
     routesGenerator := StaticRoutesGenerator
   )
   .settings(
-    testOptions in Test := Seq(Tests.Filter(_ => true)),// this removes duplicated lines in HTML reports
-    unmanagedSourceDirectories in Test := Seq(baseDirectory.value / "test" / "unit"),
-    addTestReportOption(Test, "test-reports"),
-    testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-eT")
+    unitTestSettings,
+    componentTestSettings
   )
   .settings(
     resolvers += Resolver.bintrayRepo("hmrc", "releases"),
@@ -63,6 +63,29 @@ lazy val microservice = (project in file("."))
   .settings(ivyScala := ivyScala.value map {
     _.copy(overrideScalaVersion = true)
   })
+
+lazy val unitTestSettings =
+  inConfig(Test)(Defaults.testTasks) ++
+    Seq(
+      testOptions in Test := Seq(Tests.Filter(onPackageName("unit"))),
+      testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-oD"),
+      unmanagedSourceDirectories in Test := Seq((baseDirectory in Test).value / "test"),
+      addTestReportOption(Test, "test-reports")
+    )
+
+lazy val componentTestSettings =
+  inConfig(ComponentTest)(Defaults.testTasks) ++
+    Seq(
+      testOptions in ComponentTest := Seq(Tests.Filter(onPackageName("component"))),
+      testOptions in ComponentTest += Tests.Argument(TestFrameworks.ScalaTest, "-oD"),
+      fork in ComponentTest := false,
+      parallelExecution in ComponentTest := false,
+      addTestReportOption(ComponentTest, "component-reports")
+    )
+
+def onPackageName(rootPackage: String): String => Boolean = {
+  testName => testName startsWith rootPackage
+}
 
 // Coverage configuration
 coverageMinimum := 93

@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.apidefinition.config
+package unit.uk.gov.hmrc.apidefinition.config
 
 import org.mockito.Mockito._
 import org.scalatest.mockito.MockitoSugar
 import org.scalatest.{BeforeAndAfterEach, Matchers}
 import org.scalatestplus.play.OneAppPerTest
 import play.api.Configuration
+import uk.gov.hmrc.apidefinition.config.AppContext
 import uk.gov.hmrc.play.test.UnitSpec
 
 class AppContextSpec extends UnitSpec
