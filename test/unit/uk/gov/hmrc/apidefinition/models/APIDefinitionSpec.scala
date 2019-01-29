@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.apidefinition.models
+package unit.uk.gov.hmrc.apidefinition.models
 
 import play.api.libs.json.Json
 import uk.gov.hmrc.apidefinition.models.APICategory._
+import uk.gov.hmrc.apidefinition.models.{APIDefinition, PrivateAPIAccess, PublicAPIAccess}
 import uk.gov.hmrc.apidefinition.models.JsonFormatters._
 import uk.gov.hmrc.play.test.UnitSpec
 

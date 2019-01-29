@@ -14,15 +14,13 @@
  * limitations under the License.
  */
 
-import com.google.inject.AbstractModule
-import play.api.{Configuration, Environment}
-import uk.gov.hmrc.apidefinition.config.{ApplicationConfig, ControllerConfiguration}
+package uk.gov.hmrc.apidefinition.config
+
+import play.api.Mode.Mode
+import play.api.{Configuration, Play}
 import uk.gov.hmrc.play.config.ServicesConfig
 
-class Module(environment: Environment, configuration: Configuration) extends AbstractModule {
-
-  override def configure(): Unit = {
-    bind(classOf[ControllerConfiguration]).toInstance(ControllerConfiguration)
-    bind(classOf[ServicesConfig]).toInstance(ApplicationConfig)
-  }
+object ApplicationConfig extends ServicesConfig {
+  override protected def mode: Mode = Play.current.mode
+  override protected def runModeConfiguration: Configuration = Play.current.configuration
 }

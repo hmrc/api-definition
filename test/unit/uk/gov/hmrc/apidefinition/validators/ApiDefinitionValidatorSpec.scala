@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.apidefinition.validators
+package unit.uk.gov.hmrc.apidefinition.validators
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
@@ -25,6 +25,7 @@ import play.api.mvc.Results.{NoContent, UnprocessableEntity}
 import uk.gov.hmrc.apidefinition.models.ErrorCode.INVALID_REQUEST_PAYLOAD
 import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.services.APIDefinitionService
+import uk.gov.hmrc.apidefinition.validators.{ApiContextValidator, ApiDefinitionValidator}
 import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.Future

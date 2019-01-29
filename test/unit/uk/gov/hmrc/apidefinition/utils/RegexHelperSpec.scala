@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.apidefinition.utils
+package unit.uk.gov.hmrc.apidefinition.utils
 
 import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.apidefinition.utils.RegexHelper.extractPathParameters

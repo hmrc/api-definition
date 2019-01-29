@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.apidefinition.models
+package unit.uk.gov.hmrc.apidefinition.models
 
 import play.api.libs.json.Json
+import uk.gov.hmrc.apidefinition.models.EnumJson
 import uk.gov.hmrc.play.test.UnitSpec
 
 class EnumJsonSpec extends UnitSpec {

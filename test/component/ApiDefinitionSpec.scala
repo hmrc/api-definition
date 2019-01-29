@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-import com.google.inject.AbstractModule
-import play.api.{Configuration, Environment}
-import uk.gov.hmrc.apidefinition.config.{ApplicationConfig, ControllerConfiguration}
-import uk.gov.hmrc.play.config.ServicesConfig
+package component
 
-class Module(environment: Environment, configuration: Configuration) extends AbstractModule {
+import play.api.http.Status.OK
 
-  override def configure(): Unit = {
-    bind(classOf[ControllerConfiguration]).toInstance(ControllerConfiguration)
-    bind(classOf[ServicesConfig]).toInstance(ApplicationConfig)
+class ApiDefinitionSpec extends ComponentSpec {
+  "GET /api-definition" should {
+    "respond OK" in {
+      val response = get("/api-definition")
+      response.status shouldBe OK
+    }
   }
 }

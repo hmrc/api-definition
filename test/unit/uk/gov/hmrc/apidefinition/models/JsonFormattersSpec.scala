@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.apidefinition.models
+package unit.uk.gov.hmrc.apidefinition.models
 
 import uk.gov.hmrc.apidefinition.models.JsonFormatters.dateTimeReads
 import org.joda.time.{DateTime, DateTimeZone}

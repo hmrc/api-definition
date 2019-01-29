@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.apidefinition.service
+package unit.uk.gov.hmrc.apidefinition.service
 
 import uk.gov.hmrc.apidefinition.config.AppContext
 import uk.gov.hmrc.apidefinition.connector.WSO2APIPublisherConnector
