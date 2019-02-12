@@ -26,13 +26,14 @@ import uk.gov.hmrc.apidefinition.models.ErrorCode.INVALID_REQUEST_PAYLOAD
 import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.services.APIDefinitionService
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 import scala.concurrent.Future.successful
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class ApiDefinitionValidator @Inject()(apiDefinitionService: APIDefinitionService, apiContextValidator: ApiContextValidator)
-  extends Validator[APIDefinition] {
+class ApiDefinitionValidator @Inject()(apiDefinitionService: APIDefinitionService,
+                                       apiContextValidator: ApiContextValidator,
+                                       apiVersionValidator: ApiVersionValidator)
+                                      (implicit override val ec: ExecutionContext) extends Validator[APIDefinition] {
 
   def validate(apiDefinition: APIDefinition)(f: APIDefinition => Future[Result]): Future[Result] = {
     validateDefinition(apiDefinition).flatMap {
@@ -98,6 +99,6 @@ class ApiDefinitionValidator @Inject()(apiDefinitionService: APIDefinitionServic
   }
 
   private def validateAllVersions(errorContext: String)(apiDefinition: APIDefinition): HMRCValidated[List[APIVersion]] = {
-    validateAll[APIVersion](u => ApiVersionValidator.validate(errorContext)(u))(apiDefinition.versions)
+    validateAll[APIVersion](u => apiVersionValidator.validate(errorContext)(u))(apiDefinition.versions)
   }
 }

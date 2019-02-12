@@ -16,6 +16,7 @@
 
 package unit.uk.gov.hmrc.apidefinition.controllers
 
+import akka.stream.Materializer
 import org.joda.time.format.ISODateTimeFormat
 import org.joda.time.{DateTime, DateTimeZone}
 import org.mockito.ArgumentMatchers.{any, refEq, eq => isEq}
@@ -30,26 +31,28 @@ import play.api.libs.json.Json
 import play.api.mvc.{AnyContentAsEmpty, Result}
 import play.api.test.FakeRequest
 import play.mvc.Http.HeaderNames
-import uk.gov.hmrc.apidefinition.config.ControllerConfiguration
+import uk.gov.hmrc.apidefinition.config.AppContext
 import uk.gov.hmrc.apidefinition.controllers.APIDefinitionController
 import uk.gov.hmrc.apidefinition.models.ErrorCode.INVALID_REQUEST_PAYLOAD
 import uk.gov.hmrc.apidefinition.models.JsonFormatters._
 import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.services.APIDefinitionService
 import uk.gov.hmrc.apidefinition.utils.APIDefinitionMapper
-import uk.gov.hmrc.apidefinition.validators.{ApiContextValidator, ApiDefinitionValidator}
+import uk.gov.hmrc.apidefinition.validators._
 import uk.gov.hmrc.http.HeaderNames.xRequestId
 import uk.gov.hmrc.http.{HeaderCarrier, UnauthorizedException}
-import uk.gov.hmrc.play.microservice.filters.MicroserviceFilterSupport
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
 
 class APIDefinitionControllerSpec extends UnitSpec
   with WithFakeApplication with ScalaFutures with MockitoSugar {
 
-  trait Setup extends MicroserviceFilterSupport {
+  trait Setup {
+    implicit lazy val materializer: Materializer = fakeApplication.materializer
+
     val mockAPIDefinitionService: APIDefinitionService = mock[APIDefinitionService]
     when(mockAPIDefinitionService.fetchByContext(any[String])).thenReturn(successful(None))
     when(mockAPIDefinitionService.fetchByName(any[String])).thenReturn(successful(None))
@@ -59,14 +62,17 @@ class APIDefinitionControllerSpec extends UnitSpec
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
 
     val apiContextValidator: ApiContextValidator = new ApiContextValidator(mockAPIDefinitionService)
-    val apiDefinitionValidator: ApiDefinitionValidator = new ApiDefinitionValidator(mockAPIDefinitionService, apiContextValidator)
+    val queryParameterValidator: QueryParameterValidator = new QueryParameterValidator()
+    val apiEndpointValidator: ApiEndpointValidator = new ApiEndpointValidator(queryParameterValidator)
+    val apiVersionValidator: ApiVersionValidator = new ApiVersionValidator(apiEndpointValidator)
+    val apiDefinitionValidator: ApiDefinitionValidator = new ApiDefinitionValidator(mockAPIDefinitionService, apiContextValidator, apiVersionValidator)
 
-    val mockControllerConfiguration: ControllerConfiguration = mock[ControllerConfiguration]
-    when(mockControllerConfiguration.fetchByContextTtlInSeconds).thenReturn("1234")
+    val mockAppContext: AppContext = mock[AppContext]
+    when(mockAppContext.fetchByContextTtlInSeconds).thenReturn("1234")
 
     val apiDefinitionMapper: APIDefinitionMapper = fakeApplication.injector.instanceOf[APIDefinitionMapper]
 
-    val underTest = new APIDefinitionController(apiDefinitionValidator, mockAPIDefinitionService, mockControllerConfiguration, apiDefinitionMapper)
+    val underTest = new APIDefinitionController(apiDefinitionValidator, mockAPIDefinitionService, apiDefinitionMapper, mockAppContext)
 
     def theServiceWillCreateOrUpdateTheAPIDefinition: OngoingStubbing[Future[APIDefinition]] = {
       when(mockAPIDefinitionService.createOrUpdate(any[APIDefinition])(any[HeaderCarrier])).thenAnswer(new Answer[Future[APIDefinition]] {

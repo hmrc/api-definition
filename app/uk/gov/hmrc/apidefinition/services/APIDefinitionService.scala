@@ -17,23 +17,23 @@
 package uk.gov.hmrc.apidefinition.services
 
 import javax.inject.{Inject, Singleton}
-import uk.gov.hmrc.apidefinition.config.AppContext
-import uk.gov.hmrc.apidefinition.connector.ThirdPartyApplicationConnector
 import org.joda.time.{DateTime, DateTimeZone}
 import play.api.Logger
+import uk.gov.hmrc.apidefinition.config.AppContext
+import uk.gov.hmrc.apidefinition.connector.ThirdPartyApplicationConnector
+import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.http.{HeaderCarrier, UnauthorizedException}
-import uk.gov.hmrc.apidefinition.models._
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
                                      thirdPartyApplicationConnector: ThirdPartyApplicationConnector,
                                      apiDefinitionRepository: APIDefinitionRepository,
-                                     playApplicationContext: AppContext) {
+                                     playApplicationContext: AppContext)
+                                    (implicit val ec: ExecutionContext) {
 
   def createOrUpdate(apiDefinition: APIDefinition)(implicit hc: HeaderCarrier): Future[APIDefinition] = {
 

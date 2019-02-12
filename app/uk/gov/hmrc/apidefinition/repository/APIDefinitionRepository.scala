@@ -29,11 +29,11 @@ import uk.gov.hmrc.apidefinition.utils.IndexHelper.createUniqueBackgroundSingleF
 import uk.gov.hmrc.mongo.ReactiveRepository
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.collection.Seq
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class APIDefinitionRepository @Inject()(mongo: ReactiveMongoComponent)
+class APIDefinitionRepository @Inject()(mongo: ReactiveMongoComponent)(implicit val ec: ExecutionContext)
   extends ReactiveRepository[APIDefinition, BSONObjectID](
     collectionName = "api",
     mongo = mongo.mongoConnector.db,

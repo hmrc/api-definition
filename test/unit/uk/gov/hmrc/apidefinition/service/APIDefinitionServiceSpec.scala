@@ -18,23 +18,24 @@ package unit.uk.gov.hmrc.apidefinition.service
 
 import java.util.UUID
 
-import uk.gov.hmrc.apidefinition.config.AppContext
-import uk.gov.hmrc.apidefinition.connector.ThirdPartyApplicationConnector
 import org.joda.time.DateTimeUtils._
-import org.joda.time.{DateTime, DateTimeZone}
 import org.joda.time.format.ISODateTimeFormat
+import org.joda.time.{DateTime, DateTimeZone}
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
+import uk.gov.hmrc.apidefinition.config.AppContext
+import uk.gov.hmrc.apidefinition.connector.ThirdPartyApplicationConnector
+import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.services.{APIDefinitionService, WSO2APIPublisher}
 import uk.gov.hmrc.http.HeaderNames._
 import uk.gov.hmrc.http.{HeaderCarrier, UnauthorizedException}
-import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.play.test.UnitSpec
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.{failed, successful}
 
 class APIDefinitionServiceSpec extends UnitSpec

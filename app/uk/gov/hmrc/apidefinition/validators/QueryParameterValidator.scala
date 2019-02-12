@@ -16,11 +16,14 @@
 
 package uk.gov.hmrc.apidefinition.validators
 
+import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.apidefinition.models.Parameter
 
+import scala.concurrent.ExecutionContext
 import scala.util.matching.Regex
 
-object QueryParameterValidator extends Validator[Parameter] {
+@Singleton
+class QueryParameterValidator @Inject()(implicit override val ec: ExecutionContext) extends Validator[Parameter] {
 
   private val queryParameterNameRegex: Regex = "^[a-zA-Z0-9_\\-]+$".r
 

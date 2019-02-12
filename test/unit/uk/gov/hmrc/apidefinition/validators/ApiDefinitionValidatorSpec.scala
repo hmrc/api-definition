@@ -25,9 +25,10 @@ import play.api.mvc.Results.{NoContent, UnprocessableEntity}
 import uk.gov.hmrc.apidefinition.models.ErrorCode.INVALID_REQUEST_PAYLOAD
 import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.services.APIDefinitionService
-import uk.gov.hmrc.apidefinition.validators.{ApiContextValidator, ApiDefinitionValidator}
+import uk.gov.hmrc.apidefinition.validators._
 import uk.gov.hmrc.play.test.UnitSpec
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Future.successful
 
@@ -36,7 +37,10 @@ class ApiDefinitionValidatorSpec extends UnitSpec with MockitoSugar {
   trait Setup {
     val mockAPIDefinitionService: APIDefinitionService = mock[APIDefinitionService]
     val apiContextValidator: ApiContextValidator = new ApiContextValidator(mockAPIDefinitionService)
-    val apiDefinitionValidator: ApiDefinitionValidator = new ApiDefinitionValidator(mockAPIDefinitionService, apiContextValidator)
+    val queryParameterValidator: QueryParameterValidator = new QueryParameterValidator()
+    val apiEndpointValidator: ApiEndpointValidator = new ApiEndpointValidator(queryParameterValidator)
+    val apiVersionValidator: ApiVersionValidator = new ApiVersionValidator(apiEndpointValidator)
+    val apiDefinitionValidator: ApiDefinitionValidator = new ApiDefinitionValidator(mockAPIDefinitionService, apiContextValidator, apiVersionValidator)
 
     when(mockAPIDefinitionService.fetchByContext(any[String])).thenReturn(successful(None))
     when(mockAPIDefinitionService.fetchByName(any[String])).thenReturn(successful(None))

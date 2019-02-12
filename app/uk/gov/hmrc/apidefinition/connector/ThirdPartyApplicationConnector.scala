@@ -17,20 +17,26 @@
 package uk.gov.hmrc.apidefinition.connector
 
 import javax.inject.{Inject, Singleton}
-import uk.gov.hmrc.apidefinition.config.WSHttp
+import play.api.Mode.Mode
+import play.api.{Configuration, Environment}
 import uk.gov.hmrc.apidefinition.models.Application
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.play.config.ServicesConfig
-import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class ThirdPartyApplicationConnector @Inject()(servicesConfig: ServicesConfig, http: WSHttp) {
+class ThirdPartyApplicationConnector @Inject()(http: HttpClient,
+                                               environment: Environment,
+                                               override val runModeConfiguration: Configuration)
+                                              (implicit val ec: ExecutionContext) extends ServicesConfig {
 
-  lazy val serviceUrl = servicesConfig.baseUrl("third-party-application")
+  override protected val mode: Mode = environment.mode
+  lazy val serviceUrl: String = baseUrl("third-party-application")
 
   def fetchApplicationsByEmail(email: String)(implicit hc: HeaderCarrier): Future[Seq[Application]] = {
     http.GET[Seq[Application]](s"$serviceUrl/application", Seq("emailAddress" -> email))
   }
+
 }

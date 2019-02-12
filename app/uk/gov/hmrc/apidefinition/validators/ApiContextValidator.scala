@@ -22,12 +22,13 @@ import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.apidefinition.models.APIDefinition
 import uk.gov.hmrc.apidefinition.services.APIDefinitionService
 
-import scala.concurrent.Future
 import scala.concurrent.Future.successful
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.matching.Regex
 
 @Singleton
-class ApiContextValidator @Inject()(apiDefinitionService: APIDefinitionService) extends Validator[String] {
+class ApiContextValidator @Inject()(apiDefinitionService: APIDefinitionService)
+                                   (implicit override val ec: ExecutionContext) extends Validator[String] {
 
   private val contextRegex: Regex = "^[a-zA-Z0-9_\\-\\/]+$".r
 

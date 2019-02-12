@@ -21,7 +21,7 @@ import play.api._
 import play.api.http.HeaderNames
 import play.api.libs.json._
 import play.api.mvc._
-import uk.gov.hmrc.apidefinition.config.ControllerConfiguration
+import uk.gov.hmrc.apidefinition.config.AppContext
 import uk.gov.hmrc.apidefinition.models.ErrorCode._
 import uk.gov.hmrc.apidefinition.models.JsonFormatters._
 import uk.gov.hmrc.apidefinition.models.{APIDefinition, ErrorCode}
@@ -29,18 +29,18 @@ import uk.gov.hmrc.apidefinition.services.APIDefinitionService
 import uk.gov.hmrc.apidefinition.utils.APIDefinitionMapper
 import uk.gov.hmrc.apidefinition.validators.ApiDefinitionValidator
 import uk.gov.hmrc.http.UnauthorizedException
-import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
-import uk.gov.hmrc.play.microservice.controller.BaseController
+import uk.gov.hmrc.play.bootstrap.controller.BaseController
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class APIDefinitionController @Inject()(apiDefinitionValidator: ApiDefinitionValidator,
                                         apiDefinitionService: APIDefinitionService,
-                                        controllerConfiguration: ControllerConfiguration,
-                                        apiDefinitionMapper: APIDefinitionMapper) extends BaseController {
+                                        apiDefinitionMapper: APIDefinitionMapper,
+                                        appContext: AppContext)
+                                       (implicit val ec: ExecutionContext) extends BaseController {
 
-  val fetchByContextTtlInSeconds: String = controllerConfiguration.fetchByContextTtlInSeconds
+  val fetchByContextTtlInSeconds: String = appContext.fetchByContextTtlInSeconds
 
   def createOrUpdate(): Action[JsValue] = Action.async(BodyParsers.parse.json) { implicit request =>
     handleRequest[APIDefinition](request) { requestBody =>

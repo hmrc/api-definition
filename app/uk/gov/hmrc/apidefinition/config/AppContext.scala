@@ -17,11 +17,12 @@
 package uk.gov.hmrc.apidefinition.config
 
 import javax.inject.{Inject, Singleton}
-
+import net.ceedubs.ficus.Ficus._
 import play.api.Configuration
 
 @Singleton
 class AppContext @Inject()(val configuration: Configuration) {
   lazy val buildProductionUrlForPrototypedAPIs: Boolean = configuration.getBoolean("buildProductionUrlForPrototypedAPIs").getOrElse(false)
-  lazy val isSandbox = configuration.getBoolean("isSandbox").getOrElse(false)
+  lazy val isSandbox: Boolean = configuration.getBoolean("isSandbox").getOrElse(false)
+  lazy val fetchByContextTtlInSeconds: String = configuration.underlying.as[String]("fetchByContextTtlInSeconds")
 }
