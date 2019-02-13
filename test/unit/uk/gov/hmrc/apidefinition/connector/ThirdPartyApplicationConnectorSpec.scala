@@ -27,13 +27,15 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
 import play.api.http.HeaderNames.USER_AGENT
 import play.api.libs.json.Json
-import uk.gov.hmrc.apidefinition.config.WSHttp
+import play.api.{Configuration, Environment}
 import uk.gov.hmrc.apidefinition.connector.ThirdPartyApplicationConnector
 import uk.gov.hmrc.apidefinition.models.Application
 import uk.gov.hmrc.http.HeaderNames.xRequestId
 import uk.gov.hmrc.http.{HeaderCarrier, Upstream5xxResponse}
-import uk.gov.hmrc.play.config.ServicesConfig
+import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
+
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class ThirdPartyApplicationConnectorSpec extends UnitSpec
   with WithFakeApplication with MockitoSugar
@@ -47,15 +49,14 @@ class ThirdPartyApplicationConnectorSpec extends UnitSpec
   private val requestId = "requestId"
 
   trait Setup {
-    val serviceConfig = mock[ServicesConfig]
     implicit val hc = HeaderCarrier()
       .withExtraHeaders(xRequestId -> requestId)
 
-    val http = new WSHttp {
-      override val hooks = Seq()
-    }
+    val http: HttpClient = fakeApplication.injector.instanceOf[HttpClient]
+    val environment: Environment = fakeApplication.injector.instanceOf[Environment]
+    val runModeConfiguration: Configuration = fakeApplication.injector.instanceOf[Configuration]
 
-    val underTest = new ThirdPartyApplicationConnector(serviceConfig, http) {
+    val underTest = new ThirdPartyApplicationConnector(http, environment, runModeConfiguration) {
       override lazy val serviceUrl = s"$wireMockUrl"
     }
   }

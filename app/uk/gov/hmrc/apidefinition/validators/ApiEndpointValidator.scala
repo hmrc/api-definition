@@ -16,11 +16,15 @@
 
 package uk.gov.hmrc.apidefinition.validators
 import cats.implicits._
+import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.apidefinition.models.{AuthType, Endpoint, Parameter}
 
+import scala.concurrent.ExecutionContext
 import scala.util.matching.Regex
 
-object ApiEndpointValidator extends Validator[Endpoint] {
+@Singleton
+class ApiEndpointValidator @Inject()(queryParameterValidator: QueryParameterValidator)
+                                    (implicit override val ec: ExecutionContext) extends Validator[Endpoint] {
 
   private val uriRegex: Regex = "^/[a-zA-Z0-9_\\-\\/{}]*$".r
   private val pathParameterRegex: Regex = "^\\{[a-zA-Z]+[a-zA-Z0-9_\\-]*\\}$".r
@@ -66,7 +70,7 @@ object ApiEndpointValidator extends Validator[Endpoint] {
   }
 
   private def validateQueryParameters(errorContext: String, endpoint: Endpoint): HMRCValidated[List[Parameter]] = {
-    validateAll[Parameter](u => QueryParameterValidator.validate(errorContext)(u))(endpoint.queryParameters.getOrElse(Seq()))
+    validateAll[Parameter](u => queryParameterValidator.validate(errorContext)(u))(endpoint.queryParameters.getOrElse(Seq()))
   }
 
 }

@@ -26,13 +26,16 @@ import org.scalatest.mockito.MockitoSugar
 import play.api.http.ContentTypes.{FORM, JSON}
 import play.api.http.HeaderNames._
 import play.api.http.Status.OK
-import uk.gov.hmrc.apidefinition.config.WSHttp
+import play.api.{Configuration, Environment}
 import uk.gov.hmrc.apidefinition.connector.WSO2APIPublisherConnector
 import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HeaderNames._
+import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
+
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class WSO2APIPublisherConnectorSpec extends UnitSpec
   with WithFakeApplication with MockitoSugar
@@ -52,11 +55,11 @@ class WSO2APIPublisherConnectorSpec extends UnitSpec
     implicit val hc = HeaderCarrier()
       .withExtraHeaders(xRequestId -> requestId)
 
-    val http = new WSHttp {
-      override val hooks = Seq()
-    }
+    val http: HttpClient = fakeApplication.injector.instanceOf[HttpClient]
+    val environment: Environment = fakeApplication.injector.instanceOf[Environment]
+    val runModeConfiguration: Configuration = fakeApplication.injector.instanceOf[Configuration]
 
-    val underTest = new WSO2APIPublisherConnector(serviceConfig, http) {
+    val underTest = new WSO2APIPublisherConnector(http, environment, runModeConfiguration) {
       override val username = "admin"
       override val password = "a%dmin"
       override val serviceUrl = s"$wireMockUrl/publisher/site/blocks"

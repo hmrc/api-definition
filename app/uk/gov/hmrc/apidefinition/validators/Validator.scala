@@ -20,8 +20,7 @@ import cats.data.ValidatedNel
 import cats.implicits._
 import uk.gov.hmrc.apidefinition.models.APIDefinition
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.matching.Regex
 
 trait Validator[T] {
@@ -29,6 +28,8 @@ trait Validator[T] {
   type HMRCValidated[A] = ValidatedNel[String, A]
   type ShouldEvaluateToTrue = T => Boolean
   type ConstructError = T => String
+
+  implicit def ec: ExecutionContext
 
   def validateThat(f: ShouldEvaluateToTrue, errFn: ConstructError)(implicit t: T): HMRCValidated[T] = {
     if (f(t)) t.validNel else errFn(t).invalidNel

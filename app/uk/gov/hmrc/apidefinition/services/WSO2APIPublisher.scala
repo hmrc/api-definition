@@ -17,20 +17,20 @@
 package uk.gov.hmrc.apidefinition.services
 
 import javax.inject.{Inject, Singleton}
+import play.api.Logger
 import uk.gov.hmrc.apidefinition.config.AppContext
 import uk.gov.hmrc.apidefinition.connector.WSO2APIPublisherConnector
 import uk.gov.hmrc.apidefinition.models.WSO2APIDefinition._
-import play.api.Logger
-import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.apidefinition.models.{APIDefinition, PublishingException, WSO2APIDefinition}
-import uk.gov.hmrc.play.http.logging.MdcLoggingExecutionContext._
 import uk.gov.hmrc.apidefinition.utils.WSO2PayloadHelper.buildWSO2APIDefinitions
+import uk.gov.hmrc.http.HeaderCarrier
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class WSO2APIPublisher @Inject()(val appContext: AppContext,
-                                 val wso2PublisherConnector: WSO2APIPublisherConnector) {
+                                 val wso2PublisherConnector: WSO2APIPublisherConnector)
+                                (implicit val ec: ExecutionContext) {
 
   private def publish(apiDefinition: APIDefinition, cookie: String)(implicit hc: HeaderCarrier): Future[Unit] = {
 

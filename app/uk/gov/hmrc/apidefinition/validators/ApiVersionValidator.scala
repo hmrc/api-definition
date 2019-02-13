@@ -17,9 +17,14 @@
 package uk.gov.hmrc.apidefinition.validators
 
 import cats.implicits._
+import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.apidefinition.models.{APIStatus, APIVersion, Endpoint}
 
-object ApiVersionValidator extends Validator[APIVersion] {
+import scala.concurrent.ExecutionContext
+
+@Singleton
+class ApiVersionValidator @Inject()(apiEndpointValidator: ApiEndpointValidator)
+                                   (implicit override val ec: ExecutionContext) extends Validator[APIVersion] {
 
   def validate(ec: String)(implicit version: APIVersion): HMRCValidated[APIVersion] = {
     val errorContext: String = if (version.version.isEmpty) ec else s"$ec version '${version.version}'"
@@ -27,7 +32,7 @@ object ApiVersionValidator extends Validator[APIVersion] {
       validateThat(_.version.nonEmpty, _ => s"Field 'versions.version' is required $errorContext"),
       validateThat(_.endpoints.nonEmpty, _ => s"Field 'versions.endpoints' must not be empty $errorContext"),
       validateStatus(errorContext),
-      validateAll[Endpoint](u => ApiEndpointValidator.validate(errorContext)(u))(version.endpoints)
+      validateAll[Endpoint](u => apiEndpointValidator.validate(errorContext)(u))(version.endpoints)
     ).mapN((_,_,_,_) => version)
   }
 
