@@ -18,8 +18,9 @@ package uk.gov.hmrc.apidefinition.repository
 
 import javax.inject.{Inject, Singleton}
 import play.api.Logger
-import play.api.libs.json.Json
+import play.api.libs.json.{JsObject, Json}
 import play.modules.reactivemongo.ReactiveMongoComponent
+import reactivemongo.api.Cursor.FailOnError
 import reactivemongo.api.indexes.Index
 import reactivemongo.bson.{BSONDocument, BSONObjectID}
 import reactivemongo.play.json.ImplicitBSONHandlers._
@@ -29,6 +30,7 @@ import uk.gov.hmrc.apidefinition.utils.IndexHelper.createUniqueBackgroundSingleF
 import uk.gov.hmrc.mongo.ReactiveRepository
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 
+import scala.Option.empty
 import scala.collection.Seq
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -45,12 +47,12 @@ class APIDefinitionRepository @Inject()(mongo: ReactiveMongoComponent)(implicit 
     indexFieldNames.map( fieldName => createUniqueBackgroundSingleFieldAscendingIndex(fieldName, Some(s"${fieldName}Index")) )
   }
 
-  private def serviceNameSelector(serviceName: String) = {
+  private def serviceNameSelector(serviceName: String): JsObject = {
     Json.obj("serviceName" -> serviceName)
   }
 
   def save(apiDefinition: APIDefinition): Future[APIDefinition] = {
-    collection.find(selector = serviceNameSelector(apiDefinition.serviceName)).one[BSONDocument].flatMap {
+    collection.find[JsObject, JsObject](selector = serviceNameSelector(apiDefinition.serviceName), empty).one[BSONDocument].flatMap {
       case Some(document) => collection.update(selector = BSONDocument("_id" -> document.get("_id")), update = apiDefinition)
       case _ => collection.insert(document = apiDefinition)
     } map (_ => apiDefinition)
@@ -58,7 +60,7 @@ class APIDefinitionRepository @Inject()(mongo: ReactiveMongoComponent)(implicit 
 
   def fetchByServiceName(serviceName: String): Future[Option[APIDefinition]] = {
     Logger.info(s"Fetching API $serviceName in mongo")
-    collection.find(selector = serviceNameSelector(serviceName)).one[APIDefinition].map { api =>
+    collection.find[JsObject, JsObject](selector = serviceNameSelector(serviceName), empty).one[APIDefinition].map { api =>
       Logger.info(s"Retrieved API with service name '$serviceName' in mongo: $api")
       api
     } recover {
@@ -69,7 +71,7 @@ class APIDefinitionRepository @Inject()(mongo: ReactiveMongoComponent)(implicit 
   }
 
   def fetchByServiceBaseUrl(serviceBaseUrl: String): Future[Option[APIDefinition]] = {
-    collection.find(selector = Json.obj("serviceBaseUrl" -> serviceBaseUrl)).one[APIDefinition].map { api =>
+    collection.find[JsObject, JsObject](selector = Json.obj("serviceBaseUrl" -> serviceBaseUrl), empty).one[APIDefinition].map { api =>
       Logger.debug(s"Retrieved API with service base url '$serviceBaseUrl' in mongo: $api")
       api
     } recover {
@@ -80,7 +82,7 @@ class APIDefinitionRepository @Inject()(mongo: ReactiveMongoComponent)(implicit 
   }
 
   def fetchByName(name: String): Future[Option[APIDefinition]] = {
-    collection.find(selector = Json.obj("name" -> name)).one[APIDefinition].map { api =>
+    collection.find[JsObject, JsObject](selector = Json.obj("name" -> name), empty).one[APIDefinition].map { api =>
       Logger.debug(s"Retrieved API with name '$name' in mongo: $api")
       api
     } recover {
@@ -91,7 +93,7 @@ class APIDefinitionRepository @Inject()(mongo: ReactiveMongoComponent)(implicit 
   }
 
   def fetchByContext(context: String): Future[Option[APIDefinition]] = {
-    collection.find(selector = Json.obj("context" -> context)).one[APIDefinition].map { api =>
+    collection.find[JsObject, JsObject](selector = Json.obj("context" -> context), empty).one[APIDefinition].map { api =>
       Logger.debug(s"Retrieved API with context '$context' in mongo: $api")
       api
     } recover {
@@ -102,11 +104,13 @@ class APIDefinitionRepository @Inject()(mongo: ReactiveMongoComponent)(implicit 
   }
 
   def fetchAll(): Future[Seq[APIDefinition]] = {
-    collection.find(selector = Json.obj()).cursor[APIDefinition].collect[Seq]()
+    collection.find[JsObject, JsObject](selector = Json.obj(), empty)
+      .cursor[APIDefinition]()
+      .collect[Seq](-1, FailOnError[Seq[APIDefinition]]())
   }
 
   def delete(serviceName: String): Future[Unit] = {
-    collection.remove(selector = serviceNameSelector(serviceName))
+    collection.delete().one(serviceNameSelector(serviceName))
       .map(_ => Logger.info(s"API with service name '$serviceName' has been deleted successfully"))
   }
 
