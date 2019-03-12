@@ -1,8 +1,6 @@
 import _root_.play.core.PlayVersion
 import _root_.play.sbt.PlayImport._
 import _root_.play.sbt.PlayScala
-import play.routes.compiler.StaticRoutesGenerator
-import play.sbt.routes.RoutesKeys.routesGenerator
 import uk.gov.hmrc.DefaultBuildSettings._
 import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin._
 
@@ -20,9 +18,9 @@ lazy val compile = Seq(
 
 lazy val test = Seq(
   "uk.gov.hmrc" %% "reactivemongo-test" % "4.6.0-play-25" % "test",
-  "uk.gov.hmrc" %% "hmrctest" % "3.4.0-play-25" % "test",
+  "uk.gov.hmrc" %% "hmrctest" % "3.4.0-play-25" % "test, it",
   "org.scalaj" %% "scalaj-http" % "2.3.0" % "test",
-  "org.scalatest" %% "scalatest" % "3.0.5" % "test, component",
+  "org.scalatest" %% "scalatest" % "3.0.5" % "test, component, it",
   "org.scalatestplus.play" %% "scalatestplus-play" % "2.0.1" % "test",
   "org.mockito" % "mockito-core" % "2.13.0" % "test",
   "com.typesafe.play" %% "play-test" % PlayVersion.current % "test",
@@ -30,7 +28,8 @@ lazy val test = Seq(
 )
 
 lazy val ComponentTest = config("component") extend Test
-val testConfig = Seq(ComponentTest, Test)
+lazy val IntegrationTest = config("it") extend Test
+val testConfig = Seq(IntegrationTest, ComponentTest, Test)
 
 lazy val plugins: Seq[Plugins] = Seq(PlayScala, SbtAutoBuildPlugin, SbtGitVersioning, SbtDistributablesPlugin, SbtArtifactory)
 lazy val playSettings: Seq[Setting[_]] = Seq.empty
@@ -49,12 +48,12 @@ lazy val microservice = (project in file("."))
     scalaVersion := "2.11.11",
     scalacOptions += "-Ypartial-unification",
     libraryDependencies ++= appDependencies,
-    retrieveManaged := true,
-    routesGenerator := StaticRoutesGenerator
+    retrieveManaged := true
   )
   .settings(
     unitTestSettings,
-    componentTestSettings
+    componentTestSettings,
+    itTestSettings
   )
   .settings(
     resolvers += Resolver.bintrayRepo("hmrc", "releases"),
@@ -80,6 +79,16 @@ lazy val componentTestSettings =
       fork in ComponentTest := false,
       parallelExecution in ComponentTest := false,
       addTestReportOption(ComponentTest, "component-reports")
+    )
+
+lazy val itTestSettings =
+  inConfig(IntegrationTest)(Defaults.testTasks) ++
+    Seq(
+      testOptions in IntegrationTest := Seq(Tests.Filter(onPackageName("it"))),
+      testOptions in IntegrationTest += Tests.Argument(TestFrameworks.ScalaTest, "-oD"),
+      fork in IntegrationTest := false,
+      parallelExecution in IntegrationTest := false,
+      addTestReportOption(IntegrationTest, "integration-reports")
     )
 
 def onPackageName(rootPackage: String): String => Boolean = {

@@ -1,0 +1,22 @@
+@import uk.gov.hmrc.apidefinition.controllers.ApiDefinitionConfiguration
+@import play.api.libs.json.Json
+@import uk.gov.hmrc.apidefinition.models._
+@(config: ApiDefinitionConfiguration)
+{
+  "scopes":[],
+  "api": {
+    "name": "API Definition",
+    "description": "Internal API for use by the API Platform",
+    "context": "api-definition",
+    "versions": [
+      @for((version, index) <- config.versions.zipWithIndex) {
+      {
+        "version": "@version.version",
+        "status": "@version.status",
+        "endpointsEnabled": @version.endpointsEnabled,
+        "access": @Json.toJson(version.access)
+      }@if(index < config.versions.size - 1) {,}
+      }
+    ]
+  }
+}
