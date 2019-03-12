@@ -37,8 +37,10 @@ class PlatformIntegrationSpec extends UnitSpec with GuiceOneAppPerSuite with Ser
     serviceLocatorWillAcceptTheRegistration()
   }
 
+  val configuration = Map("publishApiDefinition" -> "true") ++ stubConfiguration()
+
   override def fakeApplication(): Application =
-    GuiceApplicationBuilder().configure(stubConfiguration()).in(Mode.Test).build()
+    GuiceApplicationBuilder().configure(configuration).in(Mode.Test).build()
 
   trait Setup {
     val controller = app.injector.instanceOf[APIDefinitionController]
@@ -55,7 +57,7 @@ class PlatformIntegrationSpec extends UnitSpec with GuiceOneAppPerSuite with Ser
         case Some(resultF) =>
           val result = await(resultF)
           status(result) shouldBe OK
-          bodyOf(result) should include(""""context": "api-scope"""")
+          bodyOf(result) should include(""""context": "api-definition"""")
 
         case _ => fail
       }

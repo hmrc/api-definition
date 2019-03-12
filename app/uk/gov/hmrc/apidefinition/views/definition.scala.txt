@@ -1,7 +1,8 @@
-@import uk.gov.hmrc.apidefinition.controllers.ApiDefinitionConfiguration
+@import uk.gov.hmrc.apidefinition.controllers.DocumentationConfig
 @import play.api.libs.json.Json
 @import uk.gov.hmrc.apidefinition.models._
-@(config: ApiDefinitionConfiguration)
+@import uk.gov.hmrc.apidefinition.models.JsonFormatters._
+@(config: DocumentationConfig)
 {
   "scopes":[],
   "api": {

@@ -17,7 +17,6 @@
 package uk.gov.hmrc.apidefinition.controllers
 
 import javax.inject.{Inject, Singleton}
-
 import play.api._
 import play.api.http.HeaderNames
 import play.api.libs.json._
@@ -32,7 +31,6 @@ import uk.gov.hmrc.apidefinition.utils.APIDefinitionMapper
 import uk.gov.hmrc.apidefinition.validators.ApiDefinitionValidator
 import uk.gov.hmrc.http.UnauthorizedException
 import uk.gov.hmrc.play.bootstrap.controller.BaseController
-import views.txt
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -40,8 +38,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class APIDefinitionController @Inject()(apiDefinitionValidator: ApiDefinitionValidator,
                                         apiDefinitionService: APIDefinitionService,
                                         apiDefinitionMapper: APIDefinitionMapper,
-                                        appContext: AppContext,
-                                        config: ApiDefinitionConfiguration)
+                                        appContext: AppContext)
                                        (implicit val ec: ExecutionContext) extends BaseController {
 
   val fetchByContextTtlInSeconds: String = appContext.fetchByContextTtlInSeconds
@@ -136,24 +133,4 @@ class APIDefinitionController @Inject()(apiDefinitionValidator: ApiDefinitionVal
     apiDefinitionService.publishAll().map { _ => NoContent } recover recovery
   }
 
-  def definition = Action {
-    if(config.publishApiDefinition) {
-      Ok(txt.definition(config)).withHeaders(CONTENT_TYPE -> JSON)
-    } else {
-      NotFound
-    }
-  }
-
-  def raml(version: String, file: String) = Action {
-    if(config.publishApiDefinition) {
-      Ok(txt.application())
-    } else {
-      NotFound
-    }
-  }
-
 }
-
-case class ApiDefinitionConfiguration(publishApiDefinition: Boolean, versions: Seq[ApiVersionConfiguration])
-
-case class ApiVersionConfiguration(version: String, status: APIStatus, access: APIAccess, endpointsEnabled: Boolean)
