@@ -17,6 +17,7 @@
 package uk.gov.hmrc.apidefinition.models
 
 import org.joda.time.DateTime
+import play.api.libs.json.{JsObject, Json, Reads, Writes}
 import uk.gov.hmrc.apidefinition.models.APICategory.APICategory
 import uk.gov.hmrc.apidefinition.models.APIStatus.APIStatus
 import uk.gov.hmrc.apidefinition.models.AuthType.AuthType
@@ -80,8 +81,14 @@ object APIAccessType extends Enumeration {
 trait APIAccess
 
 case class PublicAPIAccess() extends APIAccess
+object PublicAPIAccess {
+  implicit val strictReads = Reads[PublicAPIAccess](json => json.validate[JsObject].filter(_.values.isEmpty).map(_ => PublicAPIAccess()))
+}
 
 case class PrivateAPIAccess(whitelistedApplicationIds: Seq[String], isTrial: Option[Boolean] = None) extends APIAccess
+object PrivateAPIAccess {
+  implicit val format2 = Json.format[PrivateAPIAccess]
+}
 
 object APICategory extends Enumeration {
   type APICategory = Value

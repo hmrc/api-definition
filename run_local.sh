@@ -1,4 +1,4 @@
 #!/bin/bash
 
-sbt "~run -Drun.mode=Stub  -Dhttp.port=9604 $*"
+sbt "run -Drun.mode=Stub  -Dhttp.port=9604 $*"
 

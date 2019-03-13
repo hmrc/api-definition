@@ -22,9 +22,10 @@ import play.api.http.HeaderNames
 import play.api.libs.json._
 import play.api.mvc._
 import uk.gov.hmrc.apidefinition.config.AppContext
+import uk.gov.hmrc.apidefinition.models.APIStatus.APIStatus
 import uk.gov.hmrc.apidefinition.models.ErrorCode._
 import uk.gov.hmrc.apidefinition.models.JsonFormatters._
-import uk.gov.hmrc.apidefinition.models.{APIDefinition, ErrorCode}
+import uk.gov.hmrc.apidefinition.models.{APIAccess, APIDefinition, ErrorCode}
 import uk.gov.hmrc.apidefinition.services.APIDefinitionService
 import uk.gov.hmrc.apidefinition.utils.APIDefinitionMapper
 import uk.gov.hmrc.apidefinition.validators.ApiDefinitionValidator
