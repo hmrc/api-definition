@@ -71,7 +71,7 @@ class APIDefinitionServiceSpec extends UnitSpec
     when(mockAPIDefinitionRepository.delete(apiDefinition.serviceName)).thenReturn(successful(()))
   }
 
-  "createOrUpdate" should {
+  "createOrUpdate" when {
 
     "create or update the API Definition in both WSO2 and the repository" in new Setup {
 
@@ -90,23 +90,9 @@ class APIDefinitionServiceSpec extends UnitSpec
       val thrown = intercept[RuntimeException] {
         await(underTest.createOrUpdate(apiDefinition))
       }
+
       thrown.getMessage shouldBe "Something went wrong"
-
-      verify(mockAPIDefinitionRepository, never()).save(any[APIDefinition])
-      verify(mockWSO2APIPublisher, times(1)).publish(apiDefinition)
     }
-
-    "update the API Definition (in both WSO2 AM and the mongo repository)" in new Setup {
-
-      when(mockWSO2APIPublisher.publish(apiDefinition)).thenReturn(successful(()))
-      when(mockAPIDefinitionRepository.save(apiDefinitionWithSavingTime)).thenReturn(successful(apiDefinitionWithSavingTime))
-
-      await(underTest.createOrUpdate(apiDefinition)) shouldBe apiDefinitionWithSavingTime
-
-      verify(mockWSO2APIPublisher, times(1)).publish(apiDefinition)
-      verify(mockAPIDefinitionRepository, times(1)).save(apiDefinitionWithSavingTime)
-    }
-
   }
 
   "fetchExtended" should {
