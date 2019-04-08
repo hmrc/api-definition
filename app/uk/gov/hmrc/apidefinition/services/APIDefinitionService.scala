@@ -45,18 +45,14 @@ class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
         failed(new RuntimeException(s"Could not publish API: [${apiDefinition.name}]"))
     }
 
-    def publishApiDefinitionToWso2: Future[APIDefinition] = {
-      val definitionWithPublishTime = apiDefinition.copy(lastPublishedAt = Some(DateTime.now(DateTimeZone.UTC)))
-      publish().flatMap { _ =>
-        apiDefinitionRepository.save(definitionWithPublishTime).map(_ => definitionWithPublishTime).recoverWith {
-          case e: Throwable =>
-            Logger.error(s"""API Definition for "${apiDefinition.name}" was published but not saved due to error: ${e.getMessage}""", e)
-            failed(e)
-        }
+    val definitionWithPublishTime = apiDefinition.copy(lastPublishedAt = Some(DateTime.now(DateTimeZone.UTC)))
+    publish().flatMap { _ =>
+      apiDefinitionRepository.save(definitionWithPublishTime).map(_ => definitionWithPublishTime).recoverWith {
+        case e: Throwable =>
+          Logger.error(s"""API Definition for "${apiDefinition.name}" was published but not saved due to error: ${e.getMessage}""", e)
+          failed(e)
       }
     }
-
-    publishApiDefinitionToWso2
   }
 
   def fetchByServiceName(serviceName: String, email: Option[String])
