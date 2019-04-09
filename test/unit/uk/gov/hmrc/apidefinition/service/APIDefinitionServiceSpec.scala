@@ -55,7 +55,7 @@ class APIDefinitionServiceSpec extends UnitSpec
     implicit val hc = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
 
     val mockWSO2APIPublisher = mock[WSO2APIPublisher]
-    val mockAwsApiPublisher = mock [AwsApiPublisher]
+    val mockAwsApiPublisher = mock[AwsApiPublisher]
     val mockAPIDefinitionRepository = mock[APIDefinitionRepository]
     val mockThirdPartyApplicationConnector = mock[ThirdPartyApplicationConnector]
     val mockAppContext = mock[AppContext]
@@ -88,6 +88,7 @@ class APIDefinitionServiceSpec extends UnitSpec
 
     "propagate unexpected errors that happen when trying to publish an API" in new Setup {
       when(mockWSO2APIPublisher.publish(apiDefinition)).thenReturn(failed(new RuntimeException("Something went wrong")))
+      when(mockAwsApiPublisher.publish(apiDefinition)).thenReturn(successful())
 
       val thrown = intercept[RuntimeException] {
         await(underTest.createOrUpdate(apiDefinition))
@@ -506,7 +507,7 @@ class APIDefinitionServiceSpec extends UnitSpec
         .thenReturn(successful(Seq(apiDefinition1, apiDefinition2, apiDefinition3)))
       when(mockWSO2APIPublisher.publish(Seq(apiDefinition1, apiDefinition2, apiDefinition3)))
         .thenReturn(successful(Seq(apiDefinition1.name, apiDefinition2.name)))
-      when(mockAwsApiPublisher.publish(Seq(apiDefinition1, apiDefinition2))).thenReturn(successful(Seq()))
+      when(mockAwsApiPublisher.publish(Seq(apiDefinition1, apiDefinition2, apiDefinition3))).thenReturn(successful(Seq()))
       
       val future = underTest.publishAll()
 

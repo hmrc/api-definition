@@ -39,8 +39,10 @@ class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
   def createOrUpdate(apiDefinition: APIDefinition)(implicit hc: HeaderCarrier): Future[APIDefinition] = {
 
     def publish(): Future[Unit] = {
-      wso2Publisher.publish(apiDefinition)
-      awsApiPublisher.publish(apiDefinition)
+      for {
+        wso2 <- wso2Publisher.publish(apiDefinition)
+        aws <- awsApiPublisher.publish(apiDefinition)
+      } yield wso2
     } recover {
       case e: PublishingException =>
         Logger.error(s"Failed to create or update API [${apiDefinition.name}]", e)
