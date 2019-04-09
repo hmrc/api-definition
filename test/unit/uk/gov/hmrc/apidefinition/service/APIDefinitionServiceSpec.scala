@@ -21,7 +21,6 @@ import java.util.UUID
 import org.joda.time.DateTimeUtils._
 import org.joda.time.format.ISODateTimeFormat
 import org.joda.time.{DateTime, DateTimeZone}
-import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.ScalaFutures
@@ -30,7 +29,7 @@ import uk.gov.hmrc.apidefinition.config.AppContext
 import uk.gov.hmrc.apidefinition.connector.ThirdPartyApplicationConnector
 import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
-import uk.gov.hmrc.apidefinition.services.{APIDefinitionService, WSO2APIPublisher}
+import uk.gov.hmrc.apidefinition.services.{APIDefinitionService, AwsApiPublisher, WSO2APIPublisher}
 import uk.gov.hmrc.http.HeaderNames._
 import uk.gov.hmrc.http.{HeaderCarrier, UnauthorizedException}
 import uk.gov.hmrc.play.test.UnitSpec
@@ -56,11 +55,12 @@ class APIDefinitionServiceSpec extends UnitSpec
     implicit val hc = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
 
     val mockWSO2APIPublisher = mock[WSO2APIPublisher]
+    val mockAwsApiPublisher = mock [AwsApiPublisher]
     val mockAPIDefinitionRepository = mock[APIDefinitionRepository]
     val mockThirdPartyApplicationConnector = mock[ThirdPartyApplicationConnector]
     val mockAppContext = mock[AppContext]
 
-    val underTest = new APIDefinitionService(mockWSO2APIPublisher, mockThirdPartyApplicationConnector,
+    val underTest = new APIDefinitionService(mockWSO2APIPublisher, mockAwsApiPublisher, mockThirdPartyApplicationConnector,
       mockAPIDefinitionRepository, mockAppContext)
 
     val apiDefinition = someAPIDefinition
@@ -71,16 +71,18 @@ class APIDefinitionServiceSpec extends UnitSpec
     when(mockAPIDefinitionRepository.delete(apiDefinition.serviceName)).thenReturn(successful(()))
   }
 
-  "createOrUpdate" when {
+  "createOrUpdate" should {
 
     "create or update the API Definition in both WSO2 and the repository" in new Setup {
 
       when(mockWSO2APIPublisher.publish(apiDefinition)).thenReturn(successful(()))
+      when(mockAwsApiPublisher.publish(apiDefinition)).thenReturn(successful(()))
       when(mockAPIDefinitionRepository.save(apiDefinitionWithSavingTime)).thenReturn(successful(apiDefinitionWithSavingTime))
 
       await(underTest.createOrUpdate(apiDefinition)) shouldBe apiDefinitionWithSavingTime
 
       verify(mockWSO2APIPublisher, times(1)).publish(apiDefinition)
+      verify(mockAwsApiPublisher, times(1)).publish(apiDefinition)
       verify(mockAPIDefinitionRepository, times(1)).save(apiDefinitionWithSavingTime)
     }
 
@@ -487,10 +489,12 @@ class APIDefinitionServiceSpec extends UnitSpec
 
       when(mockAPIDefinitionRepository.fetchAll()).thenReturn(successful(Seq(apiDefinition1, apiDefinition2)))
       when(mockWSO2APIPublisher.publish(Seq(apiDefinition1, apiDefinition2))).thenReturn(successful(Seq()))
+      when(mockAwsApiPublisher.publish(Seq(apiDefinition1, apiDefinition2))).thenReturn(successful(Seq()))
 
       await(underTest.publishAll()) shouldBe ((): Unit)
 
       verify(mockWSO2APIPublisher, times(1)).publish(Seq(apiDefinition1, apiDefinition2))
+      verify(mockAwsApiPublisher, times(1)).publish(Seq(apiDefinition1, apiDefinition2))
     }
 
     "attempt to publish all APIs and report failures" in new Setup {
@@ -502,7 +506,8 @@ class APIDefinitionServiceSpec extends UnitSpec
         .thenReturn(successful(Seq(apiDefinition1, apiDefinition2, apiDefinition3)))
       when(mockWSO2APIPublisher.publish(Seq(apiDefinition1, apiDefinition2, apiDefinition3)))
         .thenReturn(successful(Seq(apiDefinition1.name, apiDefinition2.name)))
-
+      when(mockAwsApiPublisher.publish(Seq(apiDefinition1, apiDefinition2))).thenReturn(successful(Seq()))
+      
       val future = underTest.publishAll()
 
       whenReady(future.failed) { ex =>

@@ -30,6 +30,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
+                                     awsApiPublisher: AwsApiPublisher,
                                      thirdPartyApplicationConnector: ThirdPartyApplicationConnector,
                                      apiDefinitionRepository: APIDefinitionRepository,
                                      playApplicationContext: AppContext)
@@ -39,6 +40,7 @@ class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
 
     def publish(): Future[Unit] = {
       wso2Publisher.publish(apiDefinition)
+      awsApiPublisher.publish(apiDefinition)
     } recover {
       case e: PublishingException =>
         Logger.error(s"Failed to create or update API [${apiDefinition.name}]", e)
@@ -208,6 +210,7 @@ class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
       for {
         definitions <- apiDefinitionRepository.fetchAll()
         fs <- wso2Publisher.publish(definitions)
+        _ <- awsApiPublisher.publish(definitions)
       } yield fs
     }
 
