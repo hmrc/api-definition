@@ -16,17 +16,30 @@
 
 package uk.gov.hmrc.apidefinition.services
 
+import javax.inject.Inject
+
+import com.google.inject.Singleton
+import uk.gov.hmrc.apidefinition.config.AppContext
+import uk.gov.hmrc.apidefinition.connector.AWSAPIPublisherConnector
 import uk.gov.hmrc.apidefinition.models.APIDefinition
+import uk.gov.hmrc.apidefinition.utils.WSO2PayloadHelper
 import uk.gov.hmrc.http.HeaderCarrier
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
-class AwsApiPublisher {
-  def publish(apiDefinition: APIDefinition)(implicit hc: HeaderCarrier): Future[Unit] = {
-    Future.successful()
-  }
+@Singleton
+class AwsApiPublisher @Inject()(val appContext: AppContext, val awsAPIPublisherConnector: AWSAPIPublisherConnector)(implicit val ec: ExecutionContext) {
 
-  def publish(definitions: Seq[APIDefinition])(implicit hc: HeaderCarrier): Future[Seq[String]] = {
-    Future.successful(Seq())
+  def publish(apiDefinition: APIDefinition)(implicit hc: HeaderCarrier): Future[APIDefinition] = {
+    Future.sequence {
+      apiDefinition.versions.map { apiVersion =>
+        val swagger = WSO2PayloadHelper.buildWSO2SwaggerDetails(apiDefinition.name, apiVersion)
+
+        apiVersion.awsApiId match {
+          case Some(apiId) => awsAPIPublisherConnector.updateAPI(apiId, swagger).map(_ => apiVersion)
+          case None => awsAPIPublisherConnector.createAPI(swagger).map(s => apiVersion.copy(awsApiId = Some(s)))
+        }
+      }
+    } map(v => apiDefinition.copy(versions = v))
   }
 }

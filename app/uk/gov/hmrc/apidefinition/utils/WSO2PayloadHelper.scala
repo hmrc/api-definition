@@ -82,7 +82,7 @@ object WSO2PayloadHelper {
     TreeMap() ++ buildHttpVerbsDetails(groupEndpointsByResource(apiVersion.endpoints))
   }
 
-  private def buildWSO2SwaggerDetails(apiName: String, apiVersion: APIVersion): WSO2SwaggerDetails = {
+  def buildWSO2SwaggerDetails(apiName: String, apiVersion: APIVersion): WSO2SwaggerDetails = {
     WSO2SwaggerDetails(
       paths = buildWSO2Paths(apiVersion),
       info = WSO2APIInfo(apiName, apiVersion.version),

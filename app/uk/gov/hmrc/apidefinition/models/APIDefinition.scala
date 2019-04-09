@@ -57,7 +57,8 @@ case class APIVersion(version: String,
                       status: APIStatus,
                       access: Option[APIAccess] = Some(PublicAPIAccess()),
                       endpoints: Seq[Endpoint],
-                      endpointsEnabled: Option[Boolean] = None)
+                      endpointsEnabled: Option[Boolean] = None,
+                      awsApiId: Option[String] = None)
 
 // API resource (also called API endpoint)
 case class Endpoint(uriPattern: String,
