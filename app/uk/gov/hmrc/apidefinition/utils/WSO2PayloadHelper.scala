@@ -89,6 +89,13 @@ object WSO2PayloadHelper {
       `x-wso2-security` = buildWSO2Security(apiVersion.endpoints))
   }
 
+  def buildAWSSwaggerDetails(apiName: String, apiVersion: APIVersion, basePath: String): WSO2SwaggerDetails = {
+    WSO2SwaggerDetails(
+      paths = buildWSO2Paths(apiVersion),
+      info = WSO2APIInfo(apiName, apiVersion.version),
+      basePath = Some(basePath))
+  }
+
   private def buildWSO2EndpointConfig(apiDefinition: APIDefinition, apiVersion: APIVersion): WSO2EndpointConfig = {
     WSO2EndpointConfig(
       production_endpoints = buildProductionUrl(apiVersion, apiDefinition).map(WSO2Endpoint),

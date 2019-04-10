@@ -21,7 +21,7 @@ import javax.inject.Inject
 import play.api.Logger
 import uk.gov.hmrc.apidefinition.connector.AWSAPIPublisherConnector
 import uk.gov.hmrc.apidefinition.models.APIDefinition
-import uk.gov.hmrc.apidefinition.utils.WSO2PayloadHelper.buildWSO2SwaggerDetails
+import uk.gov.hmrc.apidefinition.utils.WSO2PayloadHelper.buildAWSSwaggerDetails
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.Future.sequence
@@ -34,7 +34,7 @@ class AwsApiPublisher @Inject()(val awsAPIPublisherConnector: AWSAPIPublisherCon
   def publish(apiDefinition: APIDefinition)(implicit hc: HeaderCarrier): Future[APIDefinition] = {
     sequence {
       apiDefinition.versions.map { apiVersion =>
-        val swagger = buildWSO2SwaggerDetails(apiDefinition.name, apiVersion)
+        val swagger = buildAWSSwaggerDetails(apiDefinition.name, apiVersion, apiDefinition.context)
 
         apiVersion.awsApiId match {
           case Some(apiId) => awsAPIPublisherConnector.updateAPI(apiId, swagger).map(_ => apiVersion)
