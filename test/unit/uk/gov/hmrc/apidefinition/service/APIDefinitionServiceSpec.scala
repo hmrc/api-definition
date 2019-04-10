@@ -73,7 +73,7 @@ class APIDefinitionServiceSpec extends UnitSpec
 
   "createOrUpdate" should {
 
-    "create or update the API Definition in both WSO2 and the repository" in new Setup {
+    "create or update the API Definition in all WSO2, AWS and the repository" in new Setup {
 
       when(mockWSO2APIPublisher.publish(apiDefinition)).thenReturn(successful(()))
       when(mockAwsApiPublisher.publish(apiDefinition)).thenReturn(successful(apiDefinition))
@@ -86,9 +86,20 @@ class APIDefinitionServiceSpec extends UnitSpec
       verify(mockAPIDefinitionRepository, times(1)).save(apiDefinitionWithSavingTime)
     }
 
-    "propagate unexpected errors that happen when trying to publish an API" in new Setup {
+    "propagate unexpected errors that happen when trying to publish an API to WSO2" in new Setup {
       when(mockWSO2APIPublisher.publish(apiDefinition)).thenReturn(failed(new RuntimeException("Something went wrong")))
       when(mockAwsApiPublisher.publish(apiDefinition)).thenReturn(successful(apiDefinition))
+
+      val thrown = intercept[RuntimeException] {
+        await(underTest.createOrUpdate(apiDefinition))
+      }
+
+      thrown.getMessage shouldBe "Something went wrong"
+    }
+
+    "propagate unexpected errors that happen when trying to publish an API to AWS" in new Setup {
+      when(mockWSO2APIPublisher.publish(apiDefinition)).thenReturn(successful(()))
+      when(mockAwsApiPublisher.publish(apiDefinition)).thenReturn(failed(new RuntimeException("Something went wrong")))
 
       val thrown = intercept[RuntimeException] {
         await(underTest.createOrUpdate(apiDefinition))
