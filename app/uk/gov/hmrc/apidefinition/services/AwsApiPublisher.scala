@@ -16,30 +16,35 @@
 
 package uk.gov.hmrc.apidefinition.services
 
-import javax.inject.Inject
-
 import com.google.inject.Singleton
-import uk.gov.hmrc.apidefinition.config.AppContext
+import javax.inject.Inject
+import play.api.Logger
 import uk.gov.hmrc.apidefinition.connector.AWSAPIPublisherConnector
 import uk.gov.hmrc.apidefinition.models.APIDefinition
-import uk.gov.hmrc.apidefinition.utils.WSO2PayloadHelper
+import uk.gov.hmrc.apidefinition.utils.WSO2PayloadHelper.buildWSO2SwaggerDetails
 import uk.gov.hmrc.http.HeaderCarrier
 
+import scala.concurrent.Future.sequence
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.control.NonFatal
 
 @Singleton
-class AwsApiPublisher @Inject()(val appContext: AppContext, val awsAPIPublisherConnector: AWSAPIPublisherConnector)(implicit val ec: ExecutionContext) {
+class AwsApiPublisher @Inject()(val awsAPIPublisherConnector: AWSAPIPublisherConnector)(implicit val ec: ExecutionContext) {
 
   def publish(apiDefinition: APIDefinition)(implicit hc: HeaderCarrier): Future[APIDefinition] = {
-    Future.sequence {
+    sequence {
       apiDefinition.versions.map { apiVersion =>
-        val swagger = WSO2PayloadHelper.buildWSO2SwaggerDetails(apiDefinition.name, apiVersion)
+        val swagger = buildWSO2SwaggerDetails(apiDefinition.name, apiVersion)
 
         apiVersion.awsApiId match {
           case Some(apiId) => awsAPIPublisherConnector.updateAPI(apiId, swagger).map(_ => apiVersion)
           case None => awsAPIPublisherConnector.createAPI(swagger).map(s => apiVersion.copy(awsApiId = Some(s)))
         }
       }
-    } map(v => apiDefinition.copy(versions = v))
+    } map(v => apiDefinition.copy(versions = v)) recover {
+      case NonFatal(e) =>
+        Logger.error("Failed to publish to AWS Gateway", e)
+        apiDefinition
+    }
   }
 }

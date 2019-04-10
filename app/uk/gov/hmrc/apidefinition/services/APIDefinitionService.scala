@@ -39,16 +39,15 @@ class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
   def createOrUpdate(apiDefinition: APIDefinition)(implicit hc: HeaderCarrier): Future[APIDefinition] = {
 
     def publish(): Future[APIDefinition] = {
-      for {
-        wso2 <- wso2Publisher.publish(apiDefinition)
+      (for {
+        _ <- wso2Publisher.publish(apiDefinition)
         aws <- awsApiPublisher.publish(apiDefinition)
-      } yield aws
-    } recover {
+      } yield aws) recoverWith {
       case e: PublishingException =>
         Logger.error(s"Failed to create or update API [${apiDefinition.name}]", e)
         failed(new RuntimeException(s"Could not publish API: [${apiDefinition.name}]"))
+      }
     }
-
 
     publish().flatMap { updatedAPIDefinition =>
       val definitionWithPublishTime = updatedAPIDefinition.copy(lastPublishedAt = Some(DateTime.now(DateTimeZone.UTC)))

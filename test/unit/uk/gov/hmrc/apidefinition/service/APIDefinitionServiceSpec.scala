@@ -76,7 +76,7 @@ class APIDefinitionServiceSpec extends UnitSpec
     "create or update the API Definition in both WSO2 and the repository" in new Setup {
 
       when(mockWSO2APIPublisher.publish(apiDefinition)).thenReturn(successful(()))
-      when(mockAwsApiPublisher.publish(apiDefinition)).thenReturn(successful(()))
+      when(mockAwsApiPublisher.publish(apiDefinition)).thenReturn(successful(apiDefinition))
       when(mockAPIDefinitionRepository.save(apiDefinitionWithSavingTime)).thenReturn(successful(apiDefinitionWithSavingTime))
 
       await(underTest.createOrUpdate(apiDefinition)) shouldBe apiDefinitionWithSavingTime
@@ -88,7 +88,7 @@ class APIDefinitionServiceSpec extends UnitSpec
 
     "propagate unexpected errors that happen when trying to publish an API" in new Setup {
       when(mockWSO2APIPublisher.publish(apiDefinition)).thenReturn(failed(new RuntimeException("Something went wrong")))
-      when(mockAwsApiPublisher.publish(apiDefinition)).thenReturn(successful())
+      when(mockAwsApiPublisher.publish(apiDefinition)).thenReturn(successful(apiDefinition))
 
       val thrown = intercept[RuntimeException] {
         await(underTest.createOrUpdate(apiDefinition))
@@ -490,12 +490,10 @@ class APIDefinitionServiceSpec extends UnitSpec
 
       when(mockAPIDefinitionRepository.fetchAll()).thenReturn(successful(Seq(apiDefinition1, apiDefinition2)))
       when(mockWSO2APIPublisher.publish(Seq(apiDefinition1, apiDefinition2))).thenReturn(successful(Seq()))
-      when(mockAwsApiPublisher.publish(Seq(apiDefinition1, apiDefinition2))).thenReturn(successful(Seq()))
 
       await(underTest.publishAll()) shouldBe ((): Unit)
 
       verify(mockWSO2APIPublisher, times(1)).publish(Seq(apiDefinition1, apiDefinition2))
-      verify(mockAwsApiPublisher, times(1)).publish(Seq(apiDefinition1, apiDefinition2))
     }
 
     "attempt to publish all APIs and report failures" in new Setup {
@@ -507,8 +505,7 @@ class APIDefinitionServiceSpec extends UnitSpec
         .thenReturn(successful(Seq(apiDefinition1, apiDefinition2, apiDefinition3)))
       when(mockWSO2APIPublisher.publish(Seq(apiDefinition1, apiDefinition2, apiDefinition3)))
         .thenReturn(successful(Seq(apiDefinition1.name, apiDefinition2.name)))
-      when(mockAwsApiPublisher.publish(Seq(apiDefinition1, apiDefinition2, apiDefinition3))).thenReturn(successful(Seq()))
-      
+
       val future = underTest.publishAll()
 
       whenReady(future.failed) { ex =>
