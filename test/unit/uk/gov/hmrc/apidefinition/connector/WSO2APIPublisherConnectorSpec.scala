@@ -68,6 +68,7 @@ class WSO2APIPublisherConnectorSpec extends UnitSpec
 
   override def beforeEach() {
     wireMockServer.start()
+    wireMockServer.resetAll()
     WireMock.configureFor(stubHost, stubPort)
   }
 
