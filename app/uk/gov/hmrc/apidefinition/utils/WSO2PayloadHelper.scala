@@ -93,7 +93,7 @@ object WSO2PayloadHelper {
     WSO2SwaggerDetails(
       paths = buildWSO2Paths(apiVersion),
       info = WSO2APIInfo(apiName, apiVersion.version),
-      basePath = Some(basePath))
+      basePath = Some(s"/$basePath"))
   }
 
   private def buildWSO2EndpointConfig(apiDefinition: APIDefinition, apiVersion: APIVersion): WSO2EndpointConfig = {
