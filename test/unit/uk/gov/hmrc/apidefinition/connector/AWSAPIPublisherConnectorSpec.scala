@@ -71,7 +71,6 @@ class AWSAPIPublisherConnectorSpec extends UnitSpec with WithFakeApplication wit
 
   override def beforeEach(): Unit = {
     wireMockServer.start()
-    wireMockServer.resetAll()
     WireMock.configureFor(stubHost, stubPort)
   }
 
