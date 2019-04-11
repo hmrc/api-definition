@@ -18,6 +18,7 @@ package unit.uk.gov.hmrc.apidefinition.connector
 
 import java.util.UUID
 
+import com.codahale.metrics.SharedMetricRegistries
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock._
@@ -49,6 +50,7 @@ class ThirdPartyApplicationConnectorSpec extends UnitSpec
   private val requestId = "requestId"
 
   trait Setup {
+    SharedMetricRegistries.clear()
     WireMock.reset()
     implicit val hc = HeaderCarrier()
       .withExtraHeaders(xRequestId -> requestId)

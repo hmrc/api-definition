@@ -16,6 +16,7 @@
 
 package unit.uk.gov.hmrc.apidefinition.connector
 
+import com.codahale.metrics.SharedMetricRegistries
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock._
@@ -50,6 +51,7 @@ class WSO2APIPublisherConnectorSpec extends UnitSpec
   private val encodedPassword = "a%25dmin"
 
   trait Setup {
+    SharedMetricRegistries.clear()
     WireMock.reset()
     val serviceConfig = mock[ServicesConfig]
 

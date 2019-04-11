@@ -18,6 +18,7 @@ package unit.uk.gov.hmrc.apidefinition.connector
 
 import java.util.UUID
 
+import com.codahale.metrics.SharedMetricRegistries
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock._
@@ -57,6 +58,7 @@ class AWSAPIPublisherConnectorSpec extends UnitSpec with WithFakeApplication wit
       info = WSO2APIInfo("calendar--1.0", "1.0"))
 
   trait Setup {
+    SharedMetricRegistries.clear()
     WireMock.reset()
     implicit val hc = HeaderCarrier()
 
@@ -121,7 +123,7 @@ class AWSAPIPublisherConnectorSpec extends UnitSpec with WithFakeApplication wit
       val result = await(underTest.updateAPI(awsApiId, swagger))
 
       result shouldBe awsApiId
-      wireMockServer.verify(postRequestedFor(urlEqualTo("/api"))
+      wireMockServer.verify(putRequestedFor(urlEqualTo(s"/api/$awsApiId"))
         .withHeader(CONTENT_TYPE, equalTo(JSON)).withHeader("x-api-key", equalTo("EmyYrvl")))
     }
 
