@@ -25,8 +25,11 @@ import com.github.tomakehurst.wiremock.core.WireMockConfiguration._
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
-import play.api.http.Status.{NOT_FOUND, OK, INTERNAL_SERVER_ERROR}
+import play.api.http.ContentTypes.JSON
+import play.api.http.HeaderNames.CONTENT_TYPE
+import play.api.http.Status.{INTERNAL_SERVER_ERROR, NOT_FOUND, OK}
 import play.api.{Configuration, Environment}
+import uk.gov.hmrc.apidefinition.config.AppContext
 import uk.gov.hmrc.apidefinition.connector.AWSAPIPublisherConnector
 import uk.gov.hmrc.apidefinition.models.{WSO2APIInfo, WSO2HttpVerbDetails, WSO2Response, WSO2SwaggerDetails}
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException, Upstream5xxResponse}
@@ -59,8 +62,9 @@ class AWSAPIPublisherConnectorSpec extends UnitSpec with WithFakeApplication wit
     val http: HttpClient = fakeApplication.injector.instanceOf[HttpClient]
     val environment: Environment = fakeApplication.injector.instanceOf[Environment]
     val runModeConfiguration: Configuration = fakeApplication.injector.instanceOf[Configuration]
+    val appContext: AppContext = fakeApplication.injector.instanceOf[AppContext]
 
-    val underTest = new AWSAPIPublisherConnector(http, environment, runModeConfiguration) {
+    val underTest = new AWSAPIPublisherConnector(http, environment, appContext, runModeConfiguration) {
       override val serviceBaseUrl = s"$wireMockUrl/api"
     }
   }
@@ -87,6 +91,8 @@ class AWSAPIPublisherConnectorSpec extends UnitSpec with WithFakeApplication wit
       val result = await(underTest.createAPI(swagger))
 
       result shouldBe expectedRestAPIId
+      wireMockServer.verify(postRequestedFor(urlEqualTo("/api"))
+        .withHeader(CONTENT_TYPE, equalTo(JSON)).withHeader("x-api-key", equalTo("EmyYrvl")))
     }
 
     "return 500 id creation of API fails" in new Setup {
@@ -114,6 +120,8 @@ class AWSAPIPublisherConnectorSpec extends UnitSpec with WithFakeApplication wit
       val result = await(underTest.updateAPI(awsApiId, swagger))
 
       result shouldBe awsApiId
+      wireMockServer.verify(postRequestedFor(urlEqualTo("/api"))
+        .withHeader(CONTENT_TYPE, equalTo(JSON)).withHeader("x-api-key", equalTo("EmyYrvl")))
     }
 
     "return 404 when API does not exist in AWS" in new Setup {
