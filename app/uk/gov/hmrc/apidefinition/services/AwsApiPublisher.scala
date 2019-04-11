@@ -37,8 +37,8 @@ class AwsApiPublisher @Inject()(val awsAPIPublisherConnector: AWSAPIPublisherCon
         val swagger = buildAWSSwaggerDetails(apiDefinition.name, apiVersion, apiDefinition.context)
 
         apiVersion.awsApiId match {
-          case Some(apiId) => awsAPIPublisherConnector.updateAPI(apiId, swagger).map(_ => apiVersion)
-          case None => awsAPIPublisherConnector.createAPI(swagger).map(s => apiVersion.copy(awsApiId = Some(s)))
+          case Some(apiId) => awsAPIPublisherConnector.updateAPI(apiId, swagger)(hc).map(_ => apiVersion)
+          case None => awsAPIPublisherConnector.createAPI(swagger)(hc).map(s => apiVersion.copy(awsApiId = Some(s)))
         }
       }
     } map(v => apiDefinition.copy(versions = v)) recover {

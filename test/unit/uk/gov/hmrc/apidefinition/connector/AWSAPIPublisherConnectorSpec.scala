@@ -27,12 +27,13 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
 import play.api.http.ContentTypes.JSON
-import play.api.http.HeaderNames.CONTENT_TYPE
+import play.api.http.HeaderNames.{CONTENT_TYPE, AUTHORIZATION}
 import play.api.http.Status.{INTERNAL_SERVER_ERROR, NOT_FOUND, OK}
 import play.api.{Configuration, Environment}
 import uk.gov.hmrc.apidefinition.config.AppContext
 import uk.gov.hmrc.apidefinition.connector.AWSAPIPublisherConnector
 import uk.gov.hmrc.apidefinition.models.{WSO2APIInfo, WSO2HttpVerbDetails, WSO2Response, WSO2SwaggerDetails}
+import uk.gov.hmrc.http.logging.Authorization
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException, Upstream5xxResponse}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
@@ -60,7 +61,7 @@ class AWSAPIPublisherConnectorSpec extends UnitSpec with WithFakeApplication wit
   trait Setup {
     SharedMetricRegistries.clear()
     WireMock.reset()
-    implicit val hc = HeaderCarrier()
+    implicit val hc = HeaderCarrier(authorization = Some(Authorization("foo")))
 
     val http: HttpClient = fakeApplication.injector.instanceOf[HttpClient]
     val environment: Environment = fakeApplication.injector.instanceOf[Environment]
@@ -91,11 +92,13 @@ class AWSAPIPublisherConnectorSpec extends UnitSpec with WithFakeApplication wit
             .withStatus(OK)
             .withBody(s"""{ "restApiId" : "$expectedRestAPIId" }""")))
 
-      val result = await(underTest.createAPI(swagger))
+      val result = await(underTest.createAPI(swagger)(hc))
 
       result shouldBe expectedRestAPIId
       wireMockServer.verify(postRequestedFor(urlEqualTo("/api"))
-        .withHeader(CONTENT_TYPE, equalTo(JSON)).withHeader("x-api-key", equalTo("EmyYrvl")))
+        .withHeader(CONTENT_TYPE, equalTo(JSON))
+        .withHeader("x-api-key", equalTo("EmyYrvl"))
+        .withoutHeader(AUTHORIZATION))
     }
 
     "return 500 id creation of API fails" in new Setup {
@@ -105,7 +108,7 @@ class AWSAPIPublisherConnectorSpec extends UnitSpec with WithFakeApplication wit
             .withStatus(INTERNAL_SERVER_ERROR)))
 
       intercept[Upstream5xxResponse] {
-        await(underTest.createAPI(swagger))
+        await(underTest.createAPI(swagger)(hc))
       }
     }
   }
@@ -120,11 +123,13 @@ class AWSAPIPublisherConnectorSpec extends UnitSpec with WithFakeApplication wit
             .withStatus(OK)
             .withBody(s"""{ "restApiId" : "$awsApiId" }""")))
 
-      val result = await(underTest.updateAPI(awsApiId, swagger))
+      val result = await(underTest.updateAPI(awsApiId, swagger)(hc))
 
       result shouldBe awsApiId
       wireMockServer.verify(putRequestedFor(urlEqualTo(s"/api/$awsApiId"))
-        .withHeader(CONTENT_TYPE, equalTo(JSON)).withHeader("x-api-key", equalTo("EmyYrvl")))
+        .withHeader(CONTENT_TYPE, equalTo(JSON))
+        .withHeader("x-api-key", equalTo("EmyYrvl"))
+        .withoutHeader(AUTHORIZATION))
     }
 
     "return 404 when API does not exist in AWS" in new Setup {
@@ -136,7 +141,7 @@ class AWSAPIPublisherConnectorSpec extends UnitSpec with WithFakeApplication wit
             .withStatus(NOT_FOUND)))
 
       intercept[NotFoundException] {
-        await(underTest.updateAPI(awsApiId, swagger))
+        await(underTest.updateAPI(awsApiId, swagger)(hc))
       }
     }
 
@@ -149,7 +154,7 @@ class AWSAPIPublisherConnectorSpec extends UnitSpec with WithFakeApplication wit
             .withStatus(INTERNAL_SERVER_ERROR)))
 
       intercept[Upstream5xxResponse] {
-        await(underTest.updateAPI(awsApiId, swagger))
+        await(underTest.updateAPI(awsApiId, swagger)(hc))
       }
     }
   }
