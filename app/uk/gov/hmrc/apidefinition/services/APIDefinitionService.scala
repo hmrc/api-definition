@@ -103,9 +103,12 @@ class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
     } yield api.map { a =>
         val versions = a.versions.foldLeft(Seq[ExtendedAPIVersion]()){
           case (acc, version) => acc :+
-            ExtendedAPIVersion(version.version, version.status, version.endpoints,
-              availability(version, userApplicationIds),
-              availability(version, userApplicationIds, forSandbox = true))
+            ExtendedAPIVersion(
+              version = version.version,
+              status = version.status,
+              endpoints = version.endpoints,
+              productionAvailability = availability(version, userApplicationIds, forSandbox = false),
+              sandboxAvailability = availability(version, userApplicationIds, forSandbox = true))
         }
 
         ExtendedAPIDefinition(a.serviceName,
