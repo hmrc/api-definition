@@ -40,20 +40,20 @@ class AWSAPIPublisherConnector @Inject()(http: HttpClient,
 
   override protected def mode: Mode = environment.mode
 
-  val serviceBaseUrl: String = baseUrl("aws-gateway")
+  val serviceBaseUrl: String = s"""${baseUrl("aws-gateway")}/v1/api"""
   val awsApiKey: String = getString("awsApiKey")
   val apiKeyHeaderName = "x-api-key"
   val headers: Seq[(String, String)] = Seq(CONTENT_TYPE -> JSON, apiKeyHeaderName -> awsApiKey)
 
   def createAPI(wso2SwaggerDetails: WSO2SwaggerDetails)(hc: HeaderCarrier): Future[String] = {
-    implicit val headersWithoutAuthorization = hc.copy(authorization = None)
+    implicit val headersWithoutAuthorization: HeaderCarrier = hc.copy(authorization = None)
     http.POST(serviceBaseUrl, Json.toJson(wso2SwaggerDetails), headers) map { result =>
       (result.json \ "restApiId").as[String]
     }
   }
 
   def updateAPI(awsApiId: String, wso2SwaggerDetails: WSO2SwaggerDetails)(hc: HeaderCarrier): Future[String] = {
-    implicit val headersWithoutAuthorization = hc.copy(authorization = None)
+    implicit val headersWithoutAuthorization: HeaderCarrier = hc.copy(authorization = None)
     http.PUTString(s"$serviceBaseUrl/$awsApiId", Json.toJson(wso2SwaggerDetails).toString(), headers) map { result =>
       (result.json \ "restApiId").as[String] }
   }
