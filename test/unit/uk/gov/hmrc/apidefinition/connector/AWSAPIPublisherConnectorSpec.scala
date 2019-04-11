@@ -22,7 +22,7 @@ import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration._
-import org.scalatest.BeforeAndAfterEach
+import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
 import play.api.http.ContentTypes.JSON
@@ -38,7 +38,7 @@ import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class AWSAPIPublisherConnectorSpec extends UnitSpec with WithFakeApplication with MockitoSugar with ScalaFutures with BeforeAndAfterEach {
+class AWSAPIPublisherConnectorSpec extends UnitSpec with WithFakeApplication with MockitoSugar with ScalaFutures with BeforeAndAfterAll {
 
   private val stubPort = sys.env.getOrElse("WIREMOCK", "22223").toInt
   private val stubHost = "localhost"
@@ -57,6 +57,7 @@ class AWSAPIPublisherConnectorSpec extends UnitSpec with WithFakeApplication wit
       info = WSO2APIInfo("calendar--1.0", "1.0"))
 
   trait Setup {
+    WireMock.reset()
     implicit val hc = HeaderCarrier()
 
     val http: HttpClient = fakeApplication.injector.instanceOf[HttpClient]
@@ -69,12 +70,12 @@ class AWSAPIPublisherConnectorSpec extends UnitSpec with WithFakeApplication wit
     }
   }
 
-  override def beforeEach(): Unit = {
+  override def beforeAll() {
     wireMockServer.start()
     WireMock.configureFor(stubHost, stubPort)
   }
 
-  override def afterEach(): Unit = {
+  override def afterAll() {
     wireMockServer.stop()
   }
 
