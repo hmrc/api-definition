@@ -40,7 +40,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 class AWSAPIPublisherConnectorSpec extends UnitSpec with WithFakeApplication with MockitoSugar with ScalaFutures with BeforeAndAfterEach {
 
-  private val stubPort = sys.env.getOrElse("WIREMOCK", "22221").toInt
+  private val stubPort = sys.env.getOrElse("WIREMOCK", "22223").toInt
   private val stubHost = "localhost"
   private val wireMockUrl = s"http://$stubHost:$stubPort"
   private val wireMockServer = new WireMockServer(wireMockConfig().port(stubPort))
@@ -71,6 +71,7 @@ class AWSAPIPublisherConnectorSpec extends UnitSpec with WithFakeApplication wit
 
   override def beforeEach(): Unit = {
     wireMockServer.start()
+    wireMockServer.resetAll()
     WireMock.configureFor(stubHost, stubPort)
   }
 

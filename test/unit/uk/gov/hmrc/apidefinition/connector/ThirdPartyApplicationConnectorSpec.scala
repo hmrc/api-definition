@@ -99,6 +99,7 @@ class ThirdPartyApplicationConnectorSpec extends UnitSpec
 
   override def beforeEach(): Unit = {
     wireMockServer.start()
+    wireMockServer.resetAll()
     WireMock.configureFor(stubHost, stubPort)
   }
 
