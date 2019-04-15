@@ -25,6 +25,7 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
 import uk.gov.hmrc.apidefinition.connector.AWSAPIPublisherConnector
 import uk.gov.hmrc.apidefinition.models._
+import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.services.AwsApiPublisher
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.test.UnitSpec
@@ -36,7 +37,7 @@ import scala.concurrent.Future._
 class AwsAPIPublisherSpec extends UnitSpec with ScalaFutures with MockitoSugar {
 
   private val newAPIVersion = APIVersion(
-      "1.0",
+      "2.0",
       APIStatus.PROTOTYPED,
       Some(PublicAPIAccess()),
       Seq(
@@ -60,21 +61,22 @@ class AwsAPIPublisherSpec extends UnitSpec with ScalaFutures with MockitoSugar {
           ResourceThrottlingTier.UNLIMITED)),
       awsApiId = Some("abc"))
 
-  private def someAPIDefinition(version: APIVersion) = {
+  private def someAPIDefinition(version: APIVersion*): APIDefinition = {
     APIDefinition(
       "calendar",
       "http://calendar",
       "Calendar API",
       "My Calendar API",
       "calendar",
-      Seq(version),
+      version,
       None)
   }
 
   private trait Setup {
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val underTest = new AwsApiPublisher(mock[AWSAPIPublisherConnector])
+    val underTest = new AwsApiPublisher(mock[AWSAPIPublisherConnector], mock[APIDefinitionRepository])
+    when(underTest.apiDefinitionRepository.fetchByServiceName(any[String])).thenReturn(successful(None))
   }
 
   "publish" should {
@@ -85,6 +87,17 @@ class AwsAPIPublisherSpec extends UnitSpec with ScalaFutures with MockitoSugar {
 
       verify(underTest.awsAPIPublisherConnector).createAPI(any[WSO2SwaggerDetails])(any[HeaderCarrier])
       verify(underTest.awsAPIPublisherConnector, Mockito.times(0)).updateAPI(any[String], any[WSO2SwaggerDetails])(any[HeaderCarrier])
+    }
+
+    "create the API when new version does not exists and update the existing version" in new Setup {
+      when(underTest.awsAPIPublisherConnector.createAPI(any[WSO2SwaggerDetails])(any[HeaderCarrier])).thenReturn(successful("123456"))
+      when(underTest.awsAPIPublisherConnector.updateAPI(any[String], any[WSO2SwaggerDetails])(any[HeaderCarrier])).thenReturn(successful("123456"))
+      when(underTest.apiDefinitionRepository.fetchByServiceName(any[String])).thenReturn(successful(Some(someAPIDefinition(existingAPIVersion))))
+
+      val result: APIDefinition = await(underTest.publish(someAPIDefinition(existingAPIVersion, newAPIVersion)))
+
+      verify(underTest.awsAPIPublisherConnector).createAPI(any[WSO2SwaggerDetails])(any[HeaderCarrier])
+      verify(underTest.awsAPIPublisherConnector).updateAPI(any[String], any[WSO2SwaggerDetails])(any[HeaderCarrier])
     }
 
     "adds the AWS Id to definition when new API is created" in new Setup {
@@ -106,17 +119,20 @@ class AwsAPIPublisherSpec extends UnitSpec with ScalaFutures with MockitoSugar {
     }
 
     "update the API when it already exists" in new Setup {
+      val apiDefinition = someAPIDefinition(existingAPIVersion)
+      when(underTest.apiDefinitionRepository.fetchByServiceName(any[String])).thenReturn(successful(Some(apiDefinition)))
       when(underTest.awsAPIPublisherConnector.updateAPI(any[String], any[WSO2SwaggerDetails])(any[HeaderCarrier])).thenReturn(successful("123456"))
 
-      val result: APIDefinition = await(underTest.publish(someAPIDefinition(existingAPIVersion)))
+      val result: APIDefinition = await(underTest.publish(apiDefinition))
 
       verify(underTest.awsAPIPublisherConnector).updateAPI(any[String], any[WSO2SwaggerDetails])(any[HeaderCarrier])
       verify(underTest.awsAPIPublisherConnector, Mockito.times(0)).createAPI(any[WSO2SwaggerDetails])(any[HeaderCarrier])
     }
 
     "return the same API Definition after updating the API" in new Setup {
-      when(underTest.awsAPIPublisherConnector.updateAPI(any[String], any[WSO2SwaggerDetails])(any[HeaderCarrier])).thenReturn(successful("123456"))
       val apiDefinition = someAPIDefinition(existingAPIVersion)
+      when(underTest.apiDefinitionRepository.fetchByServiceName(any[String])).thenReturn(successful(Some(apiDefinition)))
+      when(underTest.awsAPIPublisherConnector.updateAPI(any[String], any[WSO2SwaggerDetails])(any[HeaderCarrier])).thenReturn(successful("123456"))
 
       val result: APIDefinition = await(underTest.publish(apiDefinition))
 
@@ -126,6 +142,7 @@ class AwsAPIPublisherSpec extends UnitSpec with ScalaFutures with MockitoSugar {
 
     "returns original API Definition if update fails" in new Setup {
       val apiDefinition = someAPIDefinition(existingAPIVersion)
+      when(underTest.apiDefinitionRepository.fetchByServiceName(any[String])).thenReturn(successful(Some(apiDefinition)))
       when(underTest.awsAPIPublisherConnector.updateAPI(any[String], any[WSO2SwaggerDetails])(any[HeaderCarrier]))
         .thenReturn(Future.failed(new RuntimeException()))
 
