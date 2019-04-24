@@ -20,7 +20,7 @@ import com.google.inject.Singleton
 import javax.inject.Inject
 import play.api.Logger
 import uk.gov.hmrc.apidefinition.connector.AWSAPIPublisherConnector
-import uk.gov.hmrc.apidefinition.models.{APIDefinition, APIVersion}
+import uk.gov.hmrc.apidefinition.models.APIDefinition
 import uk.gov.hmrc.apidefinition.models.WSO2APIDefinition.wso2ApiName
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.utils.WSO2PayloadHelper.buildAWSSwaggerDetails
@@ -37,34 +37,19 @@ class AwsApiPublisher @Inject()(val awsAPIPublisherConnector: AWSAPIPublisherCon
   val hostIndex: Int = 8
 
   def publish(apiDefinition: APIDefinition)(implicit hc: HeaderCarrier): Future[APIDefinition] = {
-    apiDefinitionRepository.fetchByServiceName(apiDefinition.serviceName).flatMap(existingDefinition => doPublish(apiDefinition, existingDefinition))
-  }
-
-  def doPublish(apiDefinition: APIDefinition, existingDefinition: Option[APIDefinition])(implicit hc: HeaderCarrier): Future[APIDefinition] = {
     sequence {
       apiDefinition.versions.map { apiVersion =>
         val swagger = buildAWSSwaggerDetails(wso2ApiName(apiVersion.version, apiDefinition),
           apiVersion, apiDefinition.context, apiDefinition.serviceBaseUrl.substring(hostIndex))
-
-        findAwsApiId(apiVersion, existingDefinition) match {
-          case Some(apiId) => awsAPIPublisherConnector.updateAPI(apiId, swagger)(hc).map(_ => apiVersion)
-          case None => awsAPIPublisherConnector.createAPI(swagger)(hc).map(s => apiVersion.copy(awsApiId = Some(s)))
-        }
+        awsAPIPublisherConnector.createOrUpdateAPI(swagger)(hc).map(s => apiVersion.copy(awsRequestId = Some(s)))
       }
-    } map(v => apiDefinition.copy(versions = v)) recover {
+    } map { v =>
+      Logger.info(s"Successfully published API ${apiDefinition.serviceName} to AWS Gateway")
+      apiDefinition.copy(versions = v)
+    } recover {
       case NonFatal(e) =>
         Logger.error("Failed to publish to AWS Gateway", e)
         apiDefinition
-    }
-  }
-
-  def findAwsApiId(apiVersion: APIVersion, existingDefinition: Option[APIDefinition]): Option[String] = {
-    existingDefinition match {
-      case Some(ed) => ed.versions.filter(v => v.version == apiVersion.version) match {
-        case Seq() => None
-        case Seq(version) => version.awsApiId
-      }
-      case _ => None
     }
   }
 }
