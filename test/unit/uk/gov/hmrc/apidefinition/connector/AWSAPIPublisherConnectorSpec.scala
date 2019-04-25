@@ -97,7 +97,7 @@ class AWSAPIPublisherConnectorSpec extends UnitSpec with WithFakeApplication wit
       result shouldBe expectedRequestId
       wireMockServer.verify(putRequestedFor(urlEqualTo("/api"))
         .withHeader(CONTENT_TYPE, equalTo(JSON))
-        .withHeader("x-api-key", equalTo("EmyYrvl"))
+        .withHeader("x-api-key", equalTo("fake-api-key"))
         .withoutHeader(AUTHORIZATION))
     }
 
