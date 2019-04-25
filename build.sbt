@@ -22,7 +22,7 @@ lazy val test = Seq(
   "org.scalaj" %% "scalaj-http" % "2.3.0" % "test",
   "org.scalatest" %% "scalatest" % "3.0.5" % "test, component, it",
   "org.scalatestplus.play" %% "scalatestplus-play" % "2.0.1" % "test",
-  "org.mockito" % "mockito-core" % "2.13.0" % "test",
+  "org.mockito" % "mockito-core" % "2.27.0" % "test",
   "com.typesafe.play" %% "play-test" % PlayVersion.current % "test",
   "com.github.tomakehurst" % "wiremock" % "2.8.0" % "test"
 )
