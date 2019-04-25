@@ -30,6 +30,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
+                                     awsApiPublisher: AwsApiPublisher,
                                      thirdPartyApplicationConnector: ThirdPartyApplicationConnector,
                                      apiDefinitionRepository: APIDefinitionRepository,
                                      playApplicationContext: AppContext)
@@ -37,26 +38,25 @@ class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
 
   def createOrUpdate(apiDefinition: APIDefinition)(implicit hc: HeaderCarrier): Future[APIDefinition] = {
 
-    def publish(): Future[Unit] = {
-      wso2Publisher.publish(apiDefinition)
-    } recover {
+    def publish(): Future[APIDefinition] = {
+      (for {
+        _ <- wso2Publisher.publish(apiDefinition)
+        aws <- awsApiPublisher.publish(apiDefinition)
+      } yield aws) recoverWith {
       case e: PublishingException =>
         Logger.error(s"Failed to create or update API [${apiDefinition.name}]", e)
         failed(new RuntimeException(s"Could not publish API: [${apiDefinition.name}]"))
-    }
-
-    def publishApiDefinitionToWso2: Future[APIDefinition] = {
-      val definitionWithPublishTime = apiDefinition.copy(lastPublishedAt = Some(DateTime.now(DateTimeZone.UTC)))
-      publish().flatMap { _ =>
-        apiDefinitionRepository.save(definitionWithPublishTime).map(_ => definitionWithPublishTime).recoverWith {
-          case e: Throwable =>
-            Logger.error(s"""API Definition for "${apiDefinition.name}" was published but not saved due to error: ${e.getMessage}""", e)
-            failed(e)
-        }
       }
     }
 
-    publishApiDefinitionToWso2
+    publish().flatMap { updatedAPIDefinition =>
+      val definitionWithPublishTime = updatedAPIDefinition.copy(lastPublishedAt = Some(DateTime.now(DateTimeZone.UTC)))
+      apiDefinitionRepository.save(definitionWithPublishTime).map(_ => definitionWithPublishTime).recoverWith {
+        case e: Throwable =>
+          Logger.error(s"""API Definition for "${apiDefinition.name}" was published but not saved due to error: ${e.getMessage}""", e)
+          failed(e)
+      }
+    }
   }
 
   def fetchByServiceName(serviceName: String, email: Option[String])

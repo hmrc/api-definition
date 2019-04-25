@@ -18,11 +18,12 @@ package unit.uk.gov.hmrc.apidefinition.connector
 
 import java.util.UUID
 
+import com.codahale.metrics.SharedMetricRegistries
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration._
-import org.scalatest.BeforeAndAfterEach
+import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
 import play.api.http.HeaderNames.USER_AGENT
@@ -39,7 +40,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 class ThirdPartyApplicationConnectorSpec extends UnitSpec
   with WithFakeApplication with MockitoSugar
-  with ScalaFutures with BeforeAndAfterEach {
+  with ScalaFutures with BeforeAndAfterAll {
 
   private val stubPort = sys.env.getOrElse("WIREMOCK", "22221").toInt
   private val stubHost = "localhost"
@@ -49,6 +50,8 @@ class ThirdPartyApplicationConnectorSpec extends UnitSpec
   private val requestId = "requestId"
 
   trait Setup {
+    SharedMetricRegistries.clear()
+    WireMock.reset()
     implicit val hc = HeaderCarrier()
       .withExtraHeaders(xRequestId -> requestId)
 
@@ -97,12 +100,12 @@ class ThirdPartyApplicationConnectorSpec extends UnitSpec
     }
   }
 
-  override def beforeEach(): Unit = {
+  override def beforeAll() {
     wireMockServer.start()
     WireMock.configureFor(stubHost, stubPort)
   }
 
-  override def afterEach(): Unit = {
+  override def afterAll() {
     wireMockServer.stop()
   }
 

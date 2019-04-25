@@ -21,7 +21,6 @@ import java.util.UUID
 import org.joda.time.DateTimeUtils._
 import org.joda.time.format.ISODateTimeFormat
 import org.joda.time.{DateTime, DateTimeZone}
-import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.ScalaFutures
@@ -30,7 +29,7 @@ import uk.gov.hmrc.apidefinition.config.AppContext
 import uk.gov.hmrc.apidefinition.connector.ThirdPartyApplicationConnector
 import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
-import uk.gov.hmrc.apidefinition.services.{APIDefinitionService, WSO2APIPublisher}
+import uk.gov.hmrc.apidefinition.services.{APIDefinitionService, AwsApiPublisher, WSO2APIPublisher}
 import uk.gov.hmrc.http.HeaderNames._
 import uk.gov.hmrc.http.{HeaderCarrier, UnauthorizedException}
 import uk.gov.hmrc.play.test.UnitSpec
@@ -56,11 +55,12 @@ class APIDefinitionServiceSpec extends UnitSpec
     implicit val hc = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
 
     val mockWSO2APIPublisher = mock[WSO2APIPublisher]
+    val mockAwsApiPublisher = mock[AwsApiPublisher]
     val mockAPIDefinitionRepository = mock[APIDefinitionRepository]
     val mockThirdPartyApplicationConnector = mock[ThirdPartyApplicationConnector]
     val mockAppContext = mock[AppContext]
 
-    val underTest = new APIDefinitionService(mockWSO2APIPublisher, mockThirdPartyApplicationConnector,
+    val underTest = new APIDefinitionService(mockWSO2APIPublisher, mockAwsApiPublisher, mockThirdPartyApplicationConnector,
       mockAPIDefinitionRepository, mockAppContext)
 
     val apiDefinition = someAPIDefinition
@@ -73,40 +73,40 @@ class APIDefinitionServiceSpec extends UnitSpec
 
   "createOrUpdate" should {
 
-    "create or update the API Definition in both WSO2 and the repository" in new Setup {
+    "create or update the API Definition in all WSO2, AWS and the repository" in new Setup {
 
       when(mockWSO2APIPublisher.publish(apiDefinition)).thenReturn(successful(()))
+      when(mockAwsApiPublisher.publish(apiDefinition)).thenReturn(successful(apiDefinition))
       when(mockAPIDefinitionRepository.save(apiDefinitionWithSavingTime)).thenReturn(successful(apiDefinitionWithSavingTime))
 
       await(underTest.createOrUpdate(apiDefinition)) shouldBe apiDefinitionWithSavingTime
 
       verify(mockWSO2APIPublisher, times(1)).publish(apiDefinition)
+      verify(mockAwsApiPublisher, times(1)).publish(apiDefinition)
       verify(mockAPIDefinitionRepository, times(1)).save(apiDefinitionWithSavingTime)
     }
 
-    "propagate unexpected errors that happen when trying to publish an API" in new Setup {
+    "propagate unexpected errors that happen when trying to publish an API to WSO2" in new Setup {
       when(mockWSO2APIPublisher.publish(apiDefinition)).thenReturn(failed(new RuntimeException("Something went wrong")))
+      when(mockAwsApiPublisher.publish(apiDefinition)).thenReturn(successful(apiDefinition))
 
       val thrown = intercept[RuntimeException] {
         await(underTest.createOrUpdate(apiDefinition))
       }
+
       thrown.getMessage shouldBe "Something went wrong"
-
-      verify(mockAPIDefinitionRepository, never()).save(any[APIDefinition])
-      verify(mockWSO2APIPublisher, times(1)).publish(apiDefinition)
     }
 
-    "update the API Definition (in both WSO2 AM and the mongo repository)" in new Setup {
-
+    "propagate unexpected errors that happen when trying to publish an API to AWS" in new Setup {
       when(mockWSO2APIPublisher.publish(apiDefinition)).thenReturn(successful(()))
-      when(mockAPIDefinitionRepository.save(apiDefinitionWithSavingTime)).thenReturn(successful(apiDefinitionWithSavingTime))
+      when(mockAwsApiPublisher.publish(apiDefinition)).thenReturn(failed(new RuntimeException("Something went wrong")))
 
-      await(underTest.createOrUpdate(apiDefinition)) shouldBe apiDefinitionWithSavingTime
+      val thrown = intercept[RuntimeException] {
+        await(underTest.createOrUpdate(apiDefinition))
+      }
 
-      verify(mockWSO2APIPublisher, times(1)).publish(apiDefinition)
-      verify(mockAPIDefinitionRepository, times(1)).save(apiDefinitionWithSavingTime)
+      thrown.getMessage shouldBe "Something went wrong"
     }
-
   }
 
   "fetchExtended" should {
