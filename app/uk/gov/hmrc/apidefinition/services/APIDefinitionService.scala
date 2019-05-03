@@ -151,9 +151,11 @@ class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
       case Some(definition) => wso2Publisher.hasSubscribers(definition) flatMap {
         case true => failed(new UnauthorizedException("API has subscribers"))
         case false =>
-          wso2Publisher.delete(definition) flatMap { _ =>
-            apiDefinitionRepository.delete(definition.serviceName)
-          }
+          for {
+            _ <- wso2Publisher.delete(definition)
+            _ <- awsApiPublisher.delete(definition)
+            _ <- apiDefinitionRepository.delete(definition.serviceName)
+          } yield ()
       }
     }
   }

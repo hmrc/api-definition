@@ -17,7 +17,6 @@
 package uk.gov.hmrc.apidefinition.connector
 
 import javax.inject.Inject
-
 import play.api.Mode.Mode
 import play.api.http.ContentTypes.JSON
 import play.api.http.HeaderNames.CONTENT_TYPE
@@ -48,6 +47,16 @@ class AWSAPIPublisherConnector @Inject()(http: HttpClient,
   def createOrUpdateAPI(wso2SwaggerDetails: WSO2SwaggerDetails)(hc: HeaderCarrier): Future[String] = {
     implicit val headersWithoutAuthorization: HeaderCarrier = hc.copy(authorization = None)
     http.PUTString(serviceBaseUrl, Json.toJson(wso2SwaggerDetails).toString(), headers) map { result =>
+      (result.json \ "RequestId").as[String]
+    }
+  }
+
+  def deleteAPI(apiName: String)(hc: HeaderCarrier): Future[String] = {
+    implicit val headersWithoutAuthorization: HeaderCarrier = hc
+      .copy(authorization = None)
+      .withExtraHeaders(apiKeyHeaderName -> awsApiKey)
+
+    http.DELETE(s"$serviceBaseUrl/$apiName") map { result =>
       (result.json \ "RequestId").as[String]
     }
   }

@@ -68,6 +68,7 @@ class APIDefinitionServiceSpec extends UnitSpec
 
     when(mockAPIDefinitionRepository.fetchByServiceName(apiDefinition.serviceName)).thenReturn(successful(Some(apiDefinition)))
     when(mockWSO2APIPublisher.delete(apiDefinition)).thenReturn(successful(()))
+    when(mockAwsApiPublisher.delete(apiDefinition)).thenReturn(successful(()))
     when(mockAPIDefinitionRepository.delete(apiDefinition.serviceName)).thenReturn(successful(()))
   }
 
@@ -440,13 +441,14 @@ class APIDefinitionServiceSpec extends UnitSpec
 
   "delete" should {
 
-    "delete the API in WSO2 and the repository when there is no subscriber" in new Setup {
+    "delete the API in WSO2, AWS and the repository when there is no subscribers" in new Setup {
 
       when(mockWSO2APIPublisher.hasSubscribers(apiDefinition)).thenReturn(successful(false))
 
       await(underTest.delete(apiDefinition.serviceName))
 
       verify(mockWSO2APIPublisher).delete(apiDefinition)
+      verify(mockAwsApiPublisher).delete(apiDefinition)
       verify(mockAPIDefinitionRepository).delete(apiDefinition.serviceName)
     }
 
@@ -472,6 +474,18 @@ class APIDefinitionServiceSpec extends UnitSpec
 
       when(mockWSO2APIPublisher.hasSubscribers(apiDefinition)).thenReturn(successful(false))
       when(mockWSO2APIPublisher.delete(apiDefinition)).thenReturn(failed(new RuntimeException()))
+
+      val future = underTest.delete(apiDefinition.serviceName)
+
+      whenReady(future.failed) { ex =>
+        ex shouldBe a[RuntimeException]
+      }
+    }
+
+    "fail when AWS delete fails" in new Setup {
+
+      when(mockWSO2APIPublisher.hasSubscribers(apiDefinition)).thenReturn(successful(false))
+      when(mockAwsApiPublisher.delete(apiDefinition)).thenReturn(failed(new RuntimeException()))
 
       val future = underTest.delete(apiDefinition.serviceName)
 

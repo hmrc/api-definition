@@ -41,15 +41,30 @@ class AwsApiPublisher @Inject()(val awsAPIPublisherConnector: AWSAPIPublisherCon
       apiDefinition.versions.map { apiVersion =>
         val swagger = buildAWSSwaggerDetails(wso2ApiName(apiVersion.version, apiDefinition),
           apiVersion, apiDefinition.context, apiDefinition.serviceBaseUrl.substring(hostIndex))
-        awsAPIPublisherConnector.createOrUpdateAPI(swagger)(hc).map(s => apiVersion.copy(awsRequestId = Some(s)))
+        awsAPIPublisherConnector.createOrUpdateAPI(swagger)(hc).map(requestId => apiVersion.copy(awsRequestId = Some(requestId)))
       }
     } map { v =>
-      Logger.info(s"Successfully published API ${apiDefinition.serviceName} to AWS Gateway")
+      Logger.info(s"Successfully published API '${apiDefinition.serviceName}' to AWS API Gateway")
       apiDefinition.copy(versions = v)
     } recover {
       case NonFatal(e) =>
-        Logger.error("Failed to publish to AWS Gateway", e)
+        Logger.error(s"Failed to publish API '${apiDefinition.serviceName}' to AWS API Gateway", e)
         apiDefinition
+    }
+  }
+
+  def delete(apiDefinition: APIDefinition)(implicit hc: HeaderCarrier): Future[Unit] = {
+    sequence {
+      apiDefinition.versions.map { apiVersion =>
+        val apiName = wso2ApiName(apiVersion.version, apiDefinition)
+        awsAPIPublisherConnector.deleteAPI(apiName)(hc) map { requestId =>
+          Logger.info(s"Successfully deleted API '$apiName' from AWS API Gateway with request ID $requestId")
+        }
+      }
+    } map {_ =>
+      Logger.info(s"Successfully deleted all versions for API '${apiDefinition.serviceName}' from AWS API Gateway")
+    } recover {
+      case NonFatal(e) => Logger.error(s"Failed to delete API '${apiDefinition.serviceName}' from AWS API Gateway", e)
     }
   }
 }
