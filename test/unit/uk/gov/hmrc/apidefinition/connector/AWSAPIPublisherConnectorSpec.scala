@@ -53,10 +53,11 @@ class AWSAPIPublisherConnectorSpec extends UnitSpec with WithFakeApplication wit
     `x-throttling-tier` = "Unlimited",
     `x-scope` = None)
 
+  private val apiName = "calendar--1.0"
   private val swagger =
     WSO2SwaggerDetails(
       paths = Map("/check-weather" -> Map("get" -> aWSO2HttpVerbDetails)),
-      info = WSO2APIInfo("calendar--1.0", "1.0"))
+      info = WSO2APIInfo(s"$apiName", "1.0"))
 
   trait Setup {
     SharedMetricRegistries.clear()
@@ -82,7 +83,7 @@ class AWSAPIPublisherConnectorSpec extends UnitSpec with WithFakeApplication wit
     wireMockServer.stop()
   }
 
-  "createAPI" should {
+  "createOrUpdateAPI" should {
     "return RequestId when an new API is created or updated" in new Setup {
       val expectedRequestId: String = UUID.randomUUID().toString
 
@@ -101,7 +102,7 @@ class AWSAPIPublisherConnectorSpec extends UnitSpec with WithFakeApplication wit
         .withoutHeader(AUTHORIZATION))
     }
 
-    "return 500 id creation or update of API fails" in new Setup {
+    "return 500 when creation or update of API fails" in new Setup {
       stubFor(put(urlPathEqualTo("/api"))
         .willReturn(
           aResponse()
@@ -109,6 +110,35 @@ class AWSAPIPublisherConnectorSpec extends UnitSpec with WithFakeApplication wit
 
       intercept[Upstream5xxResponse] {
         await(underTest.createOrUpdateAPI(swagger)(hc))
+      }
+    }
+  }
+
+  "deleteAPI" should {
+    "return RequestId when an API is deleted" in new Setup {
+      val expectedRequestId: String = UUID.randomUUID().toString
+      stubFor(delete(urlPathEqualTo(s"/api/$apiName"))
+        .willReturn(
+          aResponse()
+            .withStatus(OK)
+            .withBody(s"""{ "RequestId" : "$expectedRequestId" }""")))
+
+      val result: String = await(underTest.deleteAPI(apiName)(hc))
+
+      result shouldBe expectedRequestId
+      wireMockServer.verify(deleteRequestedFor(urlEqualTo(s"/api/$apiName"))
+        .withHeader("x-api-key", equalTo("fake-api-key"))
+        .withoutHeader(AUTHORIZATION))
+    }
+
+    "return 500 when deletion of API fails" in new Setup {
+      stubFor(delete(urlPathEqualTo(s"/api/$apiName"))
+        .willReturn(
+          aResponse()
+            .withStatus(INTERNAL_SERVER_ERROR)))
+
+      intercept[Upstream5xxResponse] {
+        await(underTest.deleteAPI(apiName)(hc))
       }
     }
   }

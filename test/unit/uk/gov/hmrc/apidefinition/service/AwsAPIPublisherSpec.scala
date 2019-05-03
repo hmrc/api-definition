@@ -18,8 +18,8 @@ package unit.uk.gov.hmrc.apidefinition.service
 
 import java.util.UUID
 
-import org.mockito.ArgumentMatchers._
-import org.mockito.Mockito._
+import org.mockito.ArgumentMatchers.any
+import org.mockito.Mockito.{verify, when}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
 import uk.gov.hmrc.apidefinition.connector.AWSAPIPublisherConnector
@@ -31,7 +31,7 @@ import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.concurrent.Future._
+import scala.concurrent.Future.successful
 
 class AwsAPIPublisherSpec extends UnitSpec with ScalaFutures with MockitoSugar {
 
@@ -47,13 +47,14 @@ class AwsAPIPublisherSpec extends UnitSpec with ScalaFutures with MockitoSugar {
           AuthType.NONE,
           ResourceThrottlingTier.UNLIMITED)))
 
+  private val apiContext = "calendar"
   private def someAPIDefinition(version: APIVersion*): APIDefinition = {
     APIDefinition(
       "calendar",
       "http://calendar",
       "Calendar API",
       "My Calendar API",
-      "calendar",
+      apiContext,
       version,
       None)
   }
@@ -69,7 +70,7 @@ class AwsAPIPublisherSpec extends UnitSpec with ScalaFutures with MockitoSugar {
     "create or update the API in AWS" in new Setup {
       when(underTest.awsAPIPublisherConnector.createOrUpdateAPI(any[WSO2SwaggerDetails])(any[HeaderCarrier])).thenReturn(successful(UUID.randomUUID().toString))
 
-      val result: APIDefinition = await(underTest.publish(someAPIDefinition(newAPIVersion)))
+      await(underTest.publish(someAPIDefinition(newAPIVersion)))
 
       verify(underTest.awsAPIPublisherConnector).createOrUpdateAPI(any[WSO2SwaggerDetails])(any[HeaderCarrier])
     }
@@ -83,13 +84,31 @@ class AwsAPIPublisherSpec extends UnitSpec with ScalaFutures with MockitoSugar {
       result.versions.head.awsRequestId shouldBe Some(awsRequestId)
     }
 
-    "returns original API Definition if creation fails" in new Setup {
+    "return original API Definition if creation fails" in new Setup {
       val apiDefinition: APIDefinition = someAPIDefinition(newAPIVersion)
       when(underTest.awsAPIPublisherConnector.createOrUpdateAPI(any[WSO2SwaggerDetails])(any[HeaderCarrier])).thenReturn(Future.failed(new RuntimeException()))
 
       val result: APIDefinition = await(underTest.publish(apiDefinition))
 
       result shouldBe apiDefinition
+    }
+  }
+
+  "delete" should {
+    "delete the API in AWS" in new Setup {
+      when(underTest.awsAPIPublisherConnector.deleteAPI(any[String])(any[HeaderCarrier])).thenReturn(successful(UUID.randomUUID().toString))
+
+      await(underTest.delete(someAPIDefinition(newAPIVersion)))
+
+      verify(underTest.awsAPIPublisherConnector).deleteAPI(s"$apiContext--2.0")(hc)
+    }
+
+    "return unit if deletion fails" in new Setup {
+      when(underTest.awsAPIPublisherConnector.deleteAPI(any[String])(any[HeaderCarrier])).thenReturn(Future.failed(new RuntimeException()))
+
+      val result: Unit = await(underTest.delete(someAPIDefinition(newAPIVersion)))
+
+      result shouldBe ()
     }
   }
 }
