@@ -29,18 +29,20 @@ import uk.gov.hmrc.http.HeaderCarrier
 import scala.concurrent.Future.sequence
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
+import scala.util.matching.Regex
 
 @Singleton
 class AwsApiPublisher @Inject()(val awsAPIPublisherConnector: AWSAPIPublisherConnector, val apiDefinitionRepository: APIDefinitionRepository)
                                (implicit val ec: ExecutionContext) {
 
-  val hostIndex: Int = 8
+  val hostRegex: Regex = "https?://(.+)".r
 
   def publish(apiDefinition: APIDefinition)(implicit hc: HeaderCarrier): Future[APIDefinition] = {
     sequence {
       apiDefinition.versions.map { apiVersion =>
+        val hostRegex(host) = apiDefinition.serviceBaseUrl
         val swagger = buildAWSSwaggerDetails(wso2ApiName(apiVersion.version, apiDefinition),
-          apiVersion, apiDefinition.context, apiDefinition.serviceBaseUrl.substring(hostIndex))
+          apiVersion, apiDefinition.context, host)
         awsAPIPublisherConnector.createOrUpdateAPI(swagger)(hc).map(requestId => apiVersion.copy(awsRequestId = Some(requestId)))
       }
     } map { v =>
