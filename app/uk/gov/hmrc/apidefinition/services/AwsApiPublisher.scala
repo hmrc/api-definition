@@ -41,9 +41,9 @@ class AwsApiPublisher @Inject()(val awsAPIPublisherConnector: AWSAPIPublisherCon
     sequence {
       apiDefinition.versions.map { apiVersion =>
         val hostRegex(host) = apiDefinition.serviceBaseUrl
-        val swagger = buildAWSSwaggerDetails(wso2ApiName(apiVersion.version, apiDefinition),
-          apiVersion, apiDefinition.context, host)
-        awsAPIPublisherConnector.createOrUpdateAPI(swagger)(hc).map(requestId => apiVersion.copy(awsRequestId = Some(requestId)))
+        val swagger = buildAWSSwaggerDetails(apiDefinition.name, apiVersion, apiDefinition.context, host)
+        awsAPIPublisherConnector.createOrUpdateAPI(wso2ApiName(apiVersion.version, apiDefinition), swagger)(hc)
+          .map(requestId => apiVersion.copy(awsRequestId = Some(requestId)))
       }
     } map { v =>
       Logger.info(s"Successfully published API '${apiDefinition.serviceName}' to AWS API Gateway")

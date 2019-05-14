@@ -57,7 +57,7 @@ class AWSAPIPublisherConnectorSpec extends UnitSpec with WithFakeApplication wit
   private val swagger =
     WSO2SwaggerDetails(
       paths = Map("/check-weather" -> Map("get" -> aWSO2HttpVerbDetails)),
-      info = WSO2APIInfo(s"$apiName", "1.0"))
+      info = WSO2APIInfo("calendar", "1.0"))
 
   trait Setup {
     SharedMetricRegistries.clear()
@@ -87,29 +87,29 @@ class AWSAPIPublisherConnectorSpec extends UnitSpec with WithFakeApplication wit
     "return RequestId when an new API is created or updated" in new Setup {
       val expectedRequestId: String = UUID.randomUUID().toString
 
-      stubFor(put(urlPathEqualTo("/api"))
+      stubFor(put(urlPathEqualTo(s"/api/$apiName"))
         .willReturn(
           aResponse()
             .withStatus(OK)
             .withBody(s"""{ "RequestId" : "$expectedRequestId" }""")))
 
-      val result: String = await(underTest.createOrUpdateAPI(swagger)(hc))
+      val result: String = await(underTest.createOrUpdateAPI(apiName, swagger)(hc))
 
       result shouldBe expectedRequestId
-      wireMockServer.verify(putRequestedFor(urlEqualTo("/api"))
+      wireMockServer.verify(putRequestedFor(urlEqualTo(s"/api/$apiName"))
         .withHeader(CONTENT_TYPE, equalTo(JSON))
         .withHeader("x-api-key", equalTo("fake-api-key"))
         .withoutHeader(AUTHORIZATION))
     }
 
     "return 500 when creation or update of API fails" in new Setup {
-      stubFor(put(urlPathEqualTo("/api"))
+      stubFor(put(urlPathEqualTo(s"/api/$apiName"))
         .willReturn(
           aResponse()
             .withStatus(INTERNAL_SERVER_ERROR)))
 
       intercept[Upstream5xxResponse] {
-        await(underTest.createOrUpdateAPI(swagger)(hc))
+        await(underTest.createOrUpdateAPI(apiName, swagger)(hc))
       }
     }
   }
