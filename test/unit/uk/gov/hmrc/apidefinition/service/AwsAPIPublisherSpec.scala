@@ -19,7 +19,7 @@ package unit.uk.gov.hmrc.apidefinition.service
 import java.util.UUID
 
 import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.{verify, when}
+import org.mockito.Mockito.{times, verify, when}
 import org.mockito.{ArgumentCaptor, ArgumentMatchers}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
@@ -30,13 +30,14 @@ import uk.gov.hmrc.apidefinition.services.AwsApiPublisher
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.test.UnitSpec
 
+import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Future.successful
 
 class AwsAPIPublisherSpec extends UnitSpec with ScalaFutures with MockitoSugar {
 
-  private val newAPIVersion = APIVersion(
+  private val anAPIVersion = APIVersion(
       "2.0",
       APIStatus.PROTOTYPED,
       Some(PublicAPIAccess()),
@@ -48,18 +49,17 @@ class AwsAPIPublisherSpec extends UnitSpec with ScalaFutures with MockitoSugar {
           AuthType.NONE,
           ResourceThrottlingTier.UNLIMITED)))
 
-  private val apiContext = "calendar"
-  private val apiName = "Calendar API"
-  private val httpServiceBaseUrl = "http://calendar"
-  private val httpsServiceBaseUrl = "https://calendar"
-  private def someAPIDefinition(serviceBaseUrl: String, version: APIVersion*): APIDefinition = {
+  private val host = UUID.randomUUID().toString
+  private def someAPIDefinition(name: String = UUID.randomUUID().toString,
+                                serviceBaseUrl: String = s"https://$host",
+                                version: APIVersion = anAPIVersion): APIDefinition = {
     APIDefinition(
-      "calendar",
+      UUID.randomUUID().toString,
       serviceBaseUrl,
-      apiName,
-      "My Calendar API",
-      apiContext,
-      version,
+      name,
+      UUID.randomUUID().toString,
+      UUID.randomUUID().toString,
+      Seq(version),
       None)
   }
 
@@ -70,18 +70,37 @@ class AwsAPIPublisherSpec extends UnitSpec with ScalaFutures with MockitoSugar {
     when(underTest.apiDefinitionRepository.fetchByServiceName(any[String])).thenReturn(successful(None))
   }
 
+  "publishAll" should {
+    "create or update all the APIs in AWS" in new Setup {
+      val swaggerDetailsCaptor: ArgumentCaptor[WSO2SwaggerDetails] = ArgumentCaptor.forClass(classOf[WSO2SwaggerDetails])
+      when(underTest.awsAPIPublisherConnector.createOrUpdateAPI(any[String], swaggerDetailsCaptor.capture())(any[HeaderCarrier]))
+        .thenReturn(successful(UUID.randomUUID().toString))
+      val apiDefinition1: APIDefinition = someAPIDefinition("API 1")
+      val apiDefinition2: APIDefinition = someAPIDefinition("API 2")
+
+      await(underTest.publishAll(Seq(apiDefinition1, apiDefinition2)))
+
+      verify(underTest.awsAPIPublisherConnector, times(2)).createOrUpdateAPI(any[String], any[WSO2SwaggerDetails])(any[HeaderCarrier])
+      val swaggerDetails: Seq[WSO2SwaggerDetails] = swaggerDetailsCaptor.getAllValues.asScala
+      swaggerDetails.head.info.title shouldBe apiDefinition1.name
+      swaggerDetails(1).info.title shouldBe apiDefinition2.name
+    }
+  }
+
   "publish" should {
     "create or update the API in AWS" in new Setup {
       val swaggerDetailsCaptor: ArgumentCaptor[WSO2SwaggerDetails] = ArgumentCaptor.forClass(classOf[WSO2SwaggerDetails])
       when(underTest.awsAPIPublisherConnector.createOrUpdateAPI(any[String], swaggerDetailsCaptor.capture())(any[HeaderCarrier]))
         .thenReturn(successful(UUID.randomUUID().toString))
+      val apiDefinition: APIDefinition = someAPIDefinition()
 
-      await(underTest.publish(someAPIDefinition(httpsServiceBaseUrl, newAPIVersion)))
+      await(underTest.publish(apiDefinition))
 
-      verify(underTest.awsAPIPublisherConnector).createOrUpdateAPI(ArgumentMatchers.eq("calendar--2.0"), any[WSO2SwaggerDetails])(any[HeaderCarrier])
+      verify(underTest.awsAPIPublisherConnector)
+        .createOrUpdateAPI(ArgumentMatchers.eq(s"${apiDefinition.context}--2.0"), any[WSO2SwaggerDetails])(any[HeaderCarrier])
       val swaggerDetails: WSO2SwaggerDetails = swaggerDetailsCaptor.getValue
-      swaggerDetails.host shouldBe Some("calendar")
-      swaggerDetails.info.title shouldBe apiName
+      swaggerDetails.host shouldBe Some(host)
+      swaggerDetails.info.title shouldBe apiDefinition.name
     }
 
     "populate correctly the host from service base URLs using HTTP" in new Setup {
@@ -89,23 +108,23 @@ class AwsAPIPublisherSpec extends UnitSpec with ScalaFutures with MockitoSugar {
       when(underTest.awsAPIPublisherConnector.createOrUpdateAPI(any[String], swaggerDetailsCaptor.capture())(any[HeaderCarrier]))
         .thenReturn(successful(UUID.randomUUID().toString))
 
-      await(underTest.publish(someAPIDefinition(httpServiceBaseUrl, newAPIVersion)))
+      await(underTest.publish(someAPIDefinition(serviceBaseUrl = s"http://$host")))
 
       val swaggerDetails: WSO2SwaggerDetails = swaggerDetailsCaptor.getValue
-      swaggerDetails.host shouldBe Some("calendar")
+      swaggerDetails.host shouldBe Some(host)
     }
 
     "add the AWS Request Id to the API definition when an API is created or updated" in new Setup {
       val awsRequestId: String = UUID.randomUUID().toString
       when(underTest.awsAPIPublisherConnector.createOrUpdateAPI(any[String], any[WSO2SwaggerDetails])(any[HeaderCarrier])).thenReturn(successful(awsRequestId))
 
-      val result: APIDefinition = await(underTest.publish(someAPIDefinition(httpsServiceBaseUrl, newAPIVersion)))
+      val result: APIDefinition = await(underTest.publish(someAPIDefinition()))
 
       result.versions.head.awsRequestId shouldBe Some(awsRequestId)
     }
 
     "return original API Definition if creation fails" in new Setup {
-      val apiDefinition: APIDefinition = someAPIDefinition(httpsServiceBaseUrl, newAPIVersion)
+      val apiDefinition: APIDefinition = someAPIDefinition()
       when(underTest.awsAPIPublisherConnector.createOrUpdateAPI(any[String], any[WSO2SwaggerDetails])(any[HeaderCarrier]))
         .thenReturn(Future.failed(new RuntimeException()))
 
@@ -118,16 +137,17 @@ class AwsAPIPublisherSpec extends UnitSpec with ScalaFutures with MockitoSugar {
   "delete" should {
     "delete the API in AWS" in new Setup {
       when(underTest.awsAPIPublisherConnector.deleteAPI(any[String])(any[HeaderCarrier])).thenReturn(successful(UUID.randomUUID().toString))
+      val apiDefinition: APIDefinition = someAPIDefinition()
 
-      await(underTest.delete(someAPIDefinition(httpsServiceBaseUrl, newAPIVersion)))
+      await(underTest.delete(apiDefinition))
 
-      verify(underTest.awsAPIPublisherConnector).deleteAPI(s"$apiContext--2.0")(hc)
+      verify(underTest.awsAPIPublisherConnector).deleteAPI(s"${apiDefinition.context}--2.0")(hc)
     }
 
     "return unit if deletion fails" in new Setup {
       when(underTest.awsAPIPublisherConnector.deleteAPI(any[String])(any[HeaderCarrier])).thenReturn(Future.failed(new RuntimeException()))
 
-      val result: Unit = await(underTest.delete(someAPIDefinition(httpsServiceBaseUrl, newAPIVersion)))
+      val result: Unit = await(underTest.delete(someAPIDefinition()))
 
       result shouldBe ()
     }

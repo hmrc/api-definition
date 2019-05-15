@@ -864,6 +864,28 @@ class APIDefinitionControllerSpec extends UnitSpec
     }
   }
 
+  "publishAllToAws" should {
+    "succeed with status 204 when all APIs are republished" in new Setup {
+      given(mockAPIDefinitionService.publishAllToAws()(any[HeaderCarrier])).willReturn(successful(()))
+
+      val result: Result = await(underTest.publishAllToAws()(request))
+
+      status(result) shouldBe NO_CONTENT
+      bodyOf(result).isEmpty shouldBe true
+    }
+
+    "fail with status 500 and return the error message when it fails to publish" in new Setup {
+      val message = "Some error"
+      given(mockAPIDefinitionService.publishAllToAws()(any[HeaderCarrier])).willReturn(failed(new RuntimeException(message)))
+
+      val result: Result = await(underTest.publishAllToAws()(request))
+
+      status(result) shouldBe INTERNAL_SERVER_ERROR
+      (jsonBodyOf(result) \ "code").as[String] shouldBe "INTERNAL_SERVER_ERROR"
+      (jsonBodyOf(result) \ "message").as[String] shouldBe message
+    }
+  }
+
   private val anApiDefinition = APIDefinition("calendar", "http://calendar", "Calendar API", "My Calendar API", "calendar",
     versions = Seq(APIVersion("1.0", APIStatus.BETA,  Some(PublicAPIAccess()),
       Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
