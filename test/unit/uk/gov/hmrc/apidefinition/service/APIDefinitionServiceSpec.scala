@@ -542,6 +542,18 @@ class APIDefinitionServiceSpec extends UnitSpec
     }
   }
 
+  "publishAllToAws" should {
+    "publish all APIs" in new Setup {
+      val apiDefinition1: APIDefinition = someAPIDefinition
+      val apiDefinition2: APIDefinition = someAPIDefinition
+      when(mockAPIDefinitionRepository.fetchAll()).thenReturn(successful(Seq(apiDefinition1, apiDefinition2)))
+
+      underTest.publishAllToAws()
+
+      verify(mockAwsApiPublisher, times(1)).publishAll(Seq(apiDefinition1, apiDefinition2))
+    }
+  }
+
   private def anAPIDefinition(context: String, versions: APIVersion*) = {
     APIDefinition("service","http://service","name", "description", context, versions, None, None, None)
   }

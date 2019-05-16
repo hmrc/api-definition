@@ -37,6 +37,10 @@ class AwsApiPublisher @Inject()(val awsAPIPublisherConnector: AWSAPIPublisherCon
 
   val hostRegex: Regex = "https?://(.+)".r
 
+  def publishAll(apiDefinitions: Seq[APIDefinition])(implicit hc: HeaderCarrier): Unit = {
+    apiDefinitions.foreach(publish)
+  }
+
   def publish(apiDefinition: APIDefinition)(implicit hc: HeaderCarrier): Future[APIDefinition] = {
     sequence {
       apiDefinition.versions.map { apiVersion =>

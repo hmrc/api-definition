@@ -226,4 +226,8 @@ class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
     }
   }
 
+  def publishAllToAws()(implicit hc: HeaderCarrier): Future[Unit] = {
+    apiDefinitionRepository.fetchAll().map(awsApiPublisher.publishAll)
+  }
+
 }
