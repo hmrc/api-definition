@@ -20,7 +20,7 @@ import com.google.inject.Singleton
 import javax.inject.Inject
 import play.api.Logger
 import uk.gov.hmrc.apidefinition.connector.AWSAPIPublisherConnector
-import uk.gov.hmrc.apidefinition.models.APIDefinition
+import uk.gov.hmrc.apidefinition.models.{APIDefinition, APIStatus, APIVersion}
 import uk.gov.hmrc.apidefinition.models.WSO2APIDefinition.wso2ApiName
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.utils.WSO2PayloadHelper.buildAWSSwaggerDetails
@@ -41,36 +41,50 @@ class AwsApiPublisher @Inject()(val awsAPIPublisherConnector: AWSAPIPublisherCon
     apiDefinitions.foreach(publish)
   }
 
-  def publish(apiDefinition: APIDefinition)(implicit hc: HeaderCarrier): Future[APIDefinition] = {
+  def publish(apiDefinition: APIDefinition)(implicit hc: HeaderCarrier): Future[Unit] = {
     sequence {
       apiDefinition.versions.map { apiVersion =>
-        val hostRegex(host) = apiDefinition.serviceBaseUrl
-        val swagger = buildAWSSwaggerDetails(apiDefinition.name, apiVersion, apiDefinition.context, host)
-        awsAPIPublisherConnector.createOrUpdateAPI(wso2ApiName(apiVersion.version, apiDefinition), swagger)(hc)
-          .map(requestId => apiVersion.copy(awsRequestId = Some(requestId)))
+        val apiName = wso2ApiName(apiVersion.version, apiDefinition)
+
+        apiVersion.status match {
+          case APIStatus.RETIRED => deleteAPIVersion(apiName)
+          case _ => publishAPIVersion(apiName, apiDefinition.name, apiDefinition.serviceBaseUrl, apiDefinition.context, apiVersion)
+        }
       }
-    } map { v =>
+    } map { _ =>
       Logger.info(s"Successfully published API '${apiDefinition.serviceName}' to AWS API Gateway")
-      apiDefinition.copy(versions = v)
     } recover {
       case NonFatal(e) =>
         Logger.error(s"Failed to publish API '${apiDefinition.serviceName}' to AWS API Gateway", e)
-        apiDefinition
     }
+  }
+
+  def publishAPIVersion(apiName: String,
+                        apiDefinitionName: String,
+                        serviceBaseUrl: String,
+                        context: String,
+                        apiVersion: APIVersion)(implicit hc: HeaderCarrier): Future[Unit] = {
+    val hostRegex(host) = serviceBaseUrl
+    val swagger = buildAWSSwaggerDetails(apiDefinitionName, apiVersion, context, host)
+    awsAPIPublisherConnector.createOrUpdateAPI(apiName, swagger)(hc)
+      .map(awsRequestId => Logger.info(s"Successfully published API [$apiName] Version [${apiVersion.version}] under AWS Request Id [$awsRequestId]"))
   }
 
   def delete(apiDefinition: APIDefinition)(implicit hc: HeaderCarrier): Future[Unit] = {
     sequence {
       apiDefinition.versions.map { apiVersion =>
-        val apiName = wso2ApiName(apiVersion.version, apiDefinition)
-        awsAPIPublisherConnector.deleteAPI(apiName)(hc) map { requestId =>
-          Logger.info(s"Successfully deleted API '$apiName' from AWS API Gateway with request ID $requestId")
-        }
+        deleteAPIVersion(wso2ApiName(apiVersion.version, apiDefinition))
       }
     } map {_ =>
       Logger.info(s"Successfully deleted all versions for API '${apiDefinition.serviceName}' from AWS API Gateway")
     } recover {
       case NonFatal(e) => Logger.error(s"Failed to delete API '${apiDefinition.serviceName}' from AWS API Gateway", e)
+    }
+  }
+
+  def deleteAPIVersion(apiName: String)(implicit hc: HeaderCarrier): Future[Unit] = {
+    awsAPIPublisherConnector.deleteAPI(apiName)(hc) map { requestId =>
+      Logger.info(s"Successfully deleted API '$apiName' from AWS API Gateway with request ID $requestId")
     }
   }
 }

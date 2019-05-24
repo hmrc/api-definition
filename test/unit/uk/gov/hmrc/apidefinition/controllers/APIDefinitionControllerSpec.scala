@@ -22,8 +22,7 @@ import org.joda.time.{DateTime, DateTimeZone}
 import org.mockito.ArgumentMatchers.{any, refEq, eq => isEq}
 import org.mockito.BDDMockito.given
 import org.mockito.Mockito.{verify, verifyZeroInteractions, when}
-import org.mockito.invocation.InvocationOnMock
-import org.mockito.stubbing.{Answer, OngoingStubbing}
+import org.mockito.stubbing.OngoingStubbing
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
 import play.api.http.Status._
@@ -74,37 +73,63 @@ class APIDefinitionControllerSpec extends UnitSpec
 
     val underTest = new APIDefinitionController(apiDefinitionValidator, mockAPIDefinitionService, apiDefinitionMapper, mockAppContext)
 
-    def theServiceWillCreateOrUpdateTheAPIDefinition: OngoingStubbing[Future[APIDefinition]] = {
-      when(mockAPIDefinitionService.createOrUpdate(any[APIDefinition])(any[HeaderCarrier])).thenAnswer(new Answer[Future[APIDefinition]] {
-        override def answer(invocation: InvocationOnMock): Future[APIDefinition] = {
-          successful(invocation.getArgument(0))
-        }
-      })
+    def theServiceWillCreateOrUpdateTheAPIDefinition: OngoingStubbing[Future[Unit]] = {
+      when(mockAPIDefinitionService.createOrUpdate(any[APIDefinition])(any[HeaderCarrier])).thenReturn(Future.successful())
     }
   }
 
   "createOrUpdate" should {
 
-    "succeed with a 200 (ok) when payload is valid and service responds successfully" in new Setup {
+    "succeed with a 204 (NO CONTENT) when payload is valid and service responds successfully" in new Setup {
 
-      val apiDefinition = APIDefinition("calendar", "http://calendar", "Calendar API", "My Calendar API", "calendar",
-        versions = Seq(APIVersion("1.0", APIStatus.STABLE, None, Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)), Some(true))),
-        requiresTrust = Some(true), None, lastPublishedAt = None)
+      val apiDefinition =
+        APIDefinition(
+          "calendar",
+          "http://calendar",
+          "Calendar API",
+          "My Calendar API",
+          "calendar",
+          versions =
+            Seq(
+              APIVersion(
+                "1.0",
+                APIStatus.STABLE,
+                None,
+                Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
+                Some(true))),
+          requiresTrust = Some(true),
+          None,
+          lastPublishedAt = None)
 
       theServiceWillCreateOrUpdateTheAPIDefinition
 
-      val result = await(underTest.createOrUpdate()(request.withBody(Json.parse(calendarApiDefinition))))
+      val result: Result = await(underTest.createOrUpdate()(request.withBody(Json.parse(calendarApiDefinition))))
 
-      status(result) shouldBe OK
+      status(result) shouldBe NO_CONTENT
 
       verify(mockAPIDefinitionService).createOrUpdate(refEq(apiDefinition))(any[HeaderCarrier])
     }
 
     "map legacy API statuses to new statuses before calling the service" in new Setup {
 
-      val apiDefinition = APIDefinition("calendar", "http://calendar", "Calendar API", "My Calendar API", "calendar",
-        versions = Seq(APIVersion("1.0", APIStatus.STABLE, None, Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)), Some(true))),
-        requiresTrust = Some(true), None, lastPublishedAt = None)
+      val apiDefinition =
+        APIDefinition(
+          "calendar",
+          "http://calendar",
+          "Calendar API",
+          "My Calendar API",
+          "calendar",
+          versions =
+            Seq(
+              APIVersion(
+                "1.0",
+                APIStatus.STABLE,
+                None,
+                Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
+                Some(true))),
+          requiresTrust = Some(true),
+          None,
+          lastPublishedAt = None)
 
       theServiceWillCreateOrUpdateTheAPIDefinition
 
@@ -117,7 +142,7 @@ class APIDefinitionControllerSpec extends UnitSpec
 
       val body = """{ "invalid": "json" }"""
 
-      val result = underTest.createOrUpdate()(request.withBody(Json.parse(body)))
+      val result: Future[Result] = underTest.createOrUpdate()(request.withBody(Json.parse(body)))
 
       status(result) shouldBe UNPROCESSABLE_ENTITY
 
@@ -129,14 +154,14 @@ class APIDefinitionControllerSpec extends UnitSpec
       when(mockAPIDefinitionService.createOrUpdate(any[APIDefinition])(any[HeaderCarrier]))
         .thenReturn(failed(new RuntimeException("Something went wrong")))
 
-      val result = await(underTest.createOrUpdate()(request.withBody(Json.parse(calendarApiDefinition))))
+      val result: Result = await(underTest.createOrUpdate()(request.withBody(Json.parse(calendarApiDefinition))))
 
       status(result) shouldBe INTERNAL_SERVER_ERROR
     }
 
     "fail with a 422 (Unprocessable entity) when api name is invalid" in new Setup {
 
-      val body =
+      val body: String =
         """{
           |   "serviceName":"calendar",
           |   "name":"",
@@ -163,7 +188,7 @@ class APIDefinitionControllerSpec extends UnitSpec
 
       verifyZeroInteractions(mockAPIDefinitionService)
 
-      val result = await(underTest.createOrUpdate()(request.withBody(Json.parse(body))))
+      val result: Result = await(underTest.createOrUpdate()(request.withBody(Json.parse(body))))
 
       status(result) shouldBe UNPROCESSABLE_ENTITY
       jsonBodyOf(result).as[ValidationErrors] shouldBe
@@ -172,7 +197,7 @@ class APIDefinitionControllerSpec extends UnitSpec
 
     "fail with a 422 (Unprocessable entity) when same version appear multiple times" in new Setup {
 
-      val body =
+      val body: String =
         """{
           |   "serviceName":"calendar",
           |   "name":"Calendar API",
@@ -213,7 +238,7 @@ class APIDefinitionControllerSpec extends UnitSpec
 
       verifyZeroInteractions(mockAPIDefinitionService)
 
-      val result = await(underTest.createOrUpdate()(request.withBody(Json.parse(body))))
+      val result: Result = await(underTest.createOrUpdate()(request.withBody(Json.parse(body))))
 
       status(result) shouldBe UNPROCESSABLE_ENTITY
       jsonBodyOf(result).as[ValidationErrors] shouldBe
@@ -221,7 +246,7 @@ class APIDefinitionControllerSpec extends UnitSpec
     }
 
     "parse an API definition with PUBLIC access type" in new Setup {
-      val apiDefinitionJson =
+      val apiDefinitionJson: String =
         """{
           |  "serviceName": "calendar",
           |  "name": "Calendar API",
@@ -257,17 +282,15 @@ class APIDefinitionControllerSpec extends UnitSpec
 
       theServiceWillCreateOrUpdateTheAPIDefinition
 
-      val result = await(underTest.createOrUpdate()(request.withBody(Json.parse(apiDefinitionJson))))
+      val result: Result = await(underTest.createOrUpdate()(request.withBody(Json.parse(apiDefinitionJson))))
 
-      status(result) shouldBe OK
-
-      ((jsonBodyOf(result) \ "versions")(0) \ "access").as[APIAccess] shouldBe PublicAPIAccess()
+      status(result) shouldBe NO_CONTENT
 
       verify(mockAPIDefinitionService).createOrUpdate(refEq(apiDefinition))(any[HeaderCarrier])
     }
 
     "parse an API definition with not defined access type should be public" in new Setup {
-      val apiDefinitionJson =
+      val apiDefinitionJson: String =
         """{
           |  "serviceName": "calendar",
           |  "name": "Calendar API",
@@ -302,9 +325,7 @@ class APIDefinitionControllerSpec extends UnitSpec
 
       val result = await(underTest.createOrUpdate()(request.withBody(Json.parse(apiDefinitionJson))))
 
-      status(result) shouldBe OK
-
-      (jsonBodyOf(result) \ "versions")(0).as[APIVersion].access shouldBe None
+      status(result) shouldBe NO_CONTENT
 
       verify(mockAPIDefinitionService).createOrUpdate(refEq(apiDefinition))(any[HeaderCarrier])
     }
@@ -349,9 +370,7 @@ class APIDefinitionControllerSpec extends UnitSpec
 
       val result = await(underTest.createOrUpdate()(request.withBody(Json.parse(apiDefinitionJson))))
 
-      status(result) shouldBe OK
-
-      ((jsonBodyOf(result) \ "versions")(0) \ "access").as[APIAccess] shouldBe PrivateAPIAccess(Seq("app-id-1", "app-id-2"))
+      status(result) shouldBe NO_CONTENT
 
       verify(mockAPIDefinitionService).createOrUpdate(refEq(apiDefinition))(any[HeaderCarrier])
     }

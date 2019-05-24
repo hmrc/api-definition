@@ -24,6 +24,7 @@ import org.mockito.{ArgumentCaptor, ArgumentMatchers}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
 import uk.gov.hmrc.apidefinition.connector.AWSAPIPublisherConnector
+import uk.gov.hmrc.apidefinition.models.APIStatus.APIStatus
 import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.services.AwsApiPublisher
@@ -37,9 +38,9 @@ import scala.concurrent.Future.successful
 
 class AwsAPIPublisherSpec extends UnitSpec with ScalaFutures with MockitoSugar {
 
-  private val anAPIVersion = APIVersion(
-      "2.0",
-      APIStatus.PROTOTYPED,
+  private def anAPIVersion(version: String, status: APIStatus = APIStatus.PROTOTYPED) = APIVersion(
+      version,
+      status,
       Some(PublicAPIAccess()),
       Seq(
         Endpoint(
@@ -52,14 +53,14 @@ class AwsAPIPublisherSpec extends UnitSpec with ScalaFutures with MockitoSugar {
   private val host = UUID.randomUUID().toString
   private def someAPIDefinition(name: String = UUID.randomUUID().toString,
                                 serviceBaseUrl: String = s"https://$host",
-                                version: APIVersion = anAPIVersion): APIDefinition = {
+                                versions: Seq[APIVersion] = Seq(anAPIVersion("2.0"))): APIDefinition = {
     APIDefinition(
       UUID.randomUUID().toString,
       serviceBaseUrl,
       name,
       UUID.randomUUID().toString,
       UUID.randomUUID().toString,
-      Seq(version),
+      versions,
       None)
   }
 
@@ -114,23 +115,19 @@ class AwsAPIPublisherSpec extends UnitSpec with ScalaFutures with MockitoSugar {
       swaggerDetails.host shouldBe Some(host)
     }
 
-    "add the AWS Request Id to the API definition when an API is created or updated" in new Setup {
-      val awsRequestId: String = UUID.randomUUID().toString
-      when(underTest.awsAPIPublisherConnector.createOrUpdateAPI(any[String], any[WSO2SwaggerDetails])(any[HeaderCarrier])).thenReturn(successful(awsRequestId))
+    "call delete endpoint for RETIRED versions" in new Setup {
+      val apiDefinition: APIDefinition = someAPIDefinition(versions = Seq(anAPIVersion("1.0", APIStatus.RETIRED), anAPIVersion("2.0")))
 
-      val result: APIDefinition = await(underTest.publish(someAPIDefinition()))
-
-      result.versions.head.awsRequestId shouldBe Some(awsRequestId)
-    }
-
-    "return original API Definition if creation fails" in new Setup {
-      val apiDefinition: APIDefinition = someAPIDefinition()
+      when(underTest.awsAPIPublisherConnector.deleteAPI(any[String])(any[HeaderCarrier]))
+        .thenReturn(successful(UUID.randomUUID().toString))
       when(underTest.awsAPIPublisherConnector.createOrUpdateAPI(any[String], any[WSO2SwaggerDetails])(any[HeaderCarrier]))
-        .thenReturn(Future.failed(new RuntimeException()))
+        .thenReturn(successful(UUID.randomUUID().toString))
 
-      val result: APIDefinition = await(underTest.publish(apiDefinition))
+      await(underTest.publish(apiDefinition))
 
-      result shouldBe apiDefinition
+      verify(underTest.awsAPIPublisherConnector).deleteAPI(s"${apiDefinition.context}--1.0")(hc)
+      verify(underTest.awsAPIPublisherConnector)
+        .createOrUpdateAPI(ArgumentMatchers.eq(s"${apiDefinition.context}--2.0"), any[WSO2SwaggerDetails])(any[HeaderCarrier])
     }
   }
 
@@ -141,6 +138,16 @@ class AwsAPIPublisherSpec extends UnitSpec with ScalaFutures with MockitoSugar {
 
       await(underTest.delete(apiDefinition))
 
+      verify(underTest.awsAPIPublisherConnector).deleteAPI(s"${apiDefinition.context}--2.0")(hc)
+    }
+
+    "delete multiple versions of the API in AWS" in new Setup {
+      when(underTest.awsAPIPublisherConnector.deleteAPI(any[String])(any[HeaderCarrier])).thenReturn(successful(UUID.randomUUID().toString))
+      val apiDefinition: APIDefinition = someAPIDefinition(versions = Seq(anAPIVersion("1.0"), anAPIVersion("2.0")))
+
+      await(underTest.delete(apiDefinition))
+
+      verify(underTest.awsAPIPublisherConnector).deleteAPI(s"${apiDefinition.context}--1.0")(hc)
       verify(underTest.awsAPIPublisherConnector).deleteAPI(s"${apiDefinition.context}--2.0")(hc)
     }
 
