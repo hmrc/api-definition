@@ -36,9 +36,9 @@ class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
                                      playApplicationContext: AppContext)
                                     (implicit val ec: ExecutionContext) {
 
-  def createOrUpdate(apiDefinition: APIDefinition)(implicit hc: HeaderCarrier): Future[APIDefinition] = {
+  def createOrUpdate(apiDefinition: APIDefinition)(implicit hc: HeaderCarrier): Future[Unit] = {
 
-    def publish(): Future[APIDefinition] = {
+    def publish(): Future[Unit] = {
       (for {
         _ <- wso2Publisher.publish(apiDefinition)
         aws <- awsApiPublisher.publish(apiDefinition)
@@ -49,13 +49,16 @@ class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
       }
     }
 
-    publish().flatMap { updatedAPIDefinition =>
-      val definitionWithPublishTime = updatedAPIDefinition.copy(lastPublishedAt = Some(DateTime.now(DateTimeZone.UTC)))
-      apiDefinitionRepository.save(definitionWithPublishTime).map(_ => definitionWithPublishTime).recoverWith {
-        case e: Throwable =>
-          Logger.error(s"""API Definition for "${apiDefinition.name}" was published but not saved due to error: ${e.getMessage}""", e)
-          failed(e)
-      }
+    publish().flatMap { _ =>
+      val definitionWithPublishTime = apiDefinition.copy(lastPublishedAt = Some(DateTime.now(DateTimeZone.UTC)))
+
+      apiDefinitionRepository.save(definitionWithPublishTime)
+        .flatMap(_ => Future.successful())
+        .recoverWith {
+          case e: Throwable =>
+            Logger.error(s"""API Definition for "${apiDefinition.name}" was published but not saved due to error: ${e.getMessage}""", e)
+            failed(e)
+        }
     }
   }
 
@@ -107,7 +110,7 @@ class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
               version = version.version,
               status = version.status,
               endpoints = version.endpoints,
-              productionAvailability = availability(version, userApplicationIds, forSandbox = false),
+              productionAvailability = availability(version, userApplicationIds),
               sandboxAvailability = availability(version, userApplicationIds, forSandbox = true))
         }
 

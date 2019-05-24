@@ -46,9 +46,9 @@ class APIDefinitionController @Inject()(apiDefinitionValidator: ApiDefinitionVal
     handleRequest[APIDefinition](request) { requestBody =>
       apiDefinitionValidator.validate(requestBody) { validatedDefinition =>
         Logger.info(s"Create/Update API definition request: $validatedDefinition")
-        apiDefinitionService.createOrUpdate(apiDefinitionMapper.mapLegacyStatuses(validatedDefinition)).map { result =>
-          Logger.info(s"API definition successfully created/updated: $result")
-          Ok(Json.toJson(result))
+        apiDefinitionService.createOrUpdate(apiDefinitionMapper.mapLegacyStatuses(validatedDefinition)).map { _ =>
+          Logger.info("API definition successfully created/updated")
+          Ok(Json.toJson("{}"))
         } recover recovery
       }
     }

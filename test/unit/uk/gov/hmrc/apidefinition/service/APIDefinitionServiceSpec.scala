@@ -77,10 +77,10 @@ class APIDefinitionServiceSpec extends UnitSpec
     "create or update the API Definition in all WSO2, AWS and the repository" in new Setup {
 
       when(mockWSO2APIPublisher.publish(apiDefinition)).thenReturn(successful(()))
-      when(mockAwsApiPublisher.publish(apiDefinition)).thenReturn(successful(apiDefinition))
+      when(mockAwsApiPublisher.publish(apiDefinition)).thenReturn(successful())
       when(mockAPIDefinitionRepository.save(apiDefinitionWithSavingTime)).thenReturn(successful(apiDefinitionWithSavingTime))
 
-      await(underTest.createOrUpdate(apiDefinition)) shouldBe apiDefinitionWithSavingTime
+      await(underTest.createOrUpdate(apiDefinition))
 
       verify(mockWSO2APIPublisher, times(1)).publish(apiDefinition)
       verify(mockAwsApiPublisher, times(1)).publish(apiDefinition)
@@ -89,7 +89,7 @@ class APIDefinitionServiceSpec extends UnitSpec
 
     "propagate unexpected errors that happen when trying to publish an API to WSO2" in new Setup {
       when(mockWSO2APIPublisher.publish(apiDefinition)).thenReturn(failed(new RuntimeException("Something went wrong")))
-      when(mockAwsApiPublisher.publish(apiDefinition)).thenReturn(successful(apiDefinition))
+      when(mockAwsApiPublisher.publish(apiDefinition)).thenReturn(successful())
 
       val thrown = intercept[RuntimeException] {
         await(underTest.createOrUpdate(apiDefinition))
@@ -350,18 +350,25 @@ class APIDefinitionServiceSpec extends UnitSpec
 
     "filter the private APIs for which the user does not have an application whitelisted" in new Setup {
 
-      val publicVersion = aVersion("1.0", Some(PublicAPIAccess()))
-      val versionWithoutAccessDefined = aVersion("2.0", None)
-      val privateTrialVersion = aVersion("2.5", Some(PrivateAPIAccess(Seq.empty, isTrial = Some(true))))
-      val privateVersionWithAppWhitelisted = aVersion("3.0", Some(PrivateAPIAccess(Seq(applicationId.toString))))
-      val privateVersionWithoutAppWhitelisted = aVersion("4.0", Some(PrivateAPIAccess(Seq(UUID.randomUUID().toString))))
-      val api = anAPIDefinition("context", publicVersion, versionWithoutAccessDefined, privateTrialVersion, privateVersionWithAppWhitelisted, privateVersionWithoutAppWhitelisted)
+      val publicVersion: APIVersion = aVersion("1.0", Some(PublicAPIAccess()))
+      val versionWithoutAccessDefined: APIVersion = aVersion("2.0", None)
+      val privateTrialVersion: APIVersion = aVersion("2.5", Some(PrivateAPIAccess(Seq.empty, isTrial = Some(true))))
+      val privateVersionWithAppWhitelisted: APIVersion = aVersion("3.0", Some(PrivateAPIAccess(Seq(applicationId.toString))))
+      val privateVersionWithoutAppWhitelisted: APIVersion = aVersion("4.0", Some(PrivateAPIAccess(Seq(UUID.randomUUID().toString))))
+      val api: APIDefinition =
+        anAPIDefinition(
+          "context",
+          publicVersion,
+          versionWithoutAccessDefined,
+          privateTrialVersion,
+          privateVersionWithAppWhitelisted,
+          privateVersionWithoutAppWhitelisted)
 
       when(mockThirdPartyApplicationConnector.fetchApplicationsByEmail(email))
         .thenReturn(successful(Seq(Application(applicationId, "App"))))
       when(mockAPIDefinitionRepository.fetchAll()).thenReturn(successful(Seq(api)))
 
-      val response = await(underTest.fetchAllAPIsForCollaborator(email))
+      val response: Seq[APIDefinition] = await(underTest.fetchAllAPIsForCollaborator(email))
 
       response shouldBe Seq(anAPIDefinition("context", publicVersion, versionWithoutAccessDefined, privateTrialVersion, privateVersionWithAppWhitelisted))
     }
@@ -548,25 +555,32 @@ class APIDefinitionServiceSpec extends UnitSpec
       val apiDefinition2: APIDefinition = someAPIDefinition
       when(mockAPIDefinitionRepository.fetchAll()).thenReturn(successful(Seq(apiDefinition1, apiDefinition2)))
 
-      underTest.publishAllToAws()
+      await(underTest.publishAllToAws())
 
       verify(mockAwsApiPublisher, times(1)).publishAll(Seq(apiDefinition1, apiDefinition2))
     }
   }
 
-  private def anAPIDefinition(context: String, versions: APIVersion*) = {
+  private def anAPIDefinition(context: String, versions: APIVersion*) =
     APIDefinition("service","http://service","name", "description", context, versions, None, None, None)
-  }
 
-  private def extAPIDefinition(context: String, versions: Seq[ExtendedAPIVersion]) = {
-    ExtendedAPIDefinition("service", "http://service", "name", "description", context, requiresTrust = false, isTestSupport = false, versions, lastPublishedAt = None)
-  }
+  private def extAPIDefinition(context: String, versions: Seq[ExtendedAPIVersion]) =
+    ExtendedAPIDefinition(
+      "service",
+      "http://service",
+      "name",
+      "description",
+      context,
+      requiresTrust = false,
+      isTestSupport = false,
+      versions,
+      lastPublishedAt = None)
 
-  private def aVersion(version: String, access: Option[APIAccess]) = {
+
+  private def aVersion(version: String, access: Option[APIAccess]) =
     APIVersion(version, APIStatus.PROTOTYPED, access, Seq(Endpoint("/test", "test", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)))
-  }
 
-  private def someAPIDefinition: APIDefinition = {
+  private def someAPIDefinition: APIDefinition =
     APIDefinition(
       "calendar",
       "http://calendar",
@@ -586,6 +600,5 @@ class APIDefinitionServiceSpec extends UnitSpec
               AuthType.NONE,
               ResourceThrottlingTier.UNLIMITED)))),
       None, None, None)
-  }
 
 }
