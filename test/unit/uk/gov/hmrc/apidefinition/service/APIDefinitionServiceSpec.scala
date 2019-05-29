@@ -21,12 +21,16 @@ import java.util.UUID
 import org.joda.time.DateTimeUtils._
 import org.joda.time.format.ISODateTimeFormat
 import org.joda.time.{DateTime, DateTimeZone}
+import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
 import uk.gov.hmrc.apidefinition.config.AppContext
 import uk.gov.hmrc.apidefinition.connector.ThirdPartyApplicationConnector
+import uk.gov.hmrc.apidefinition.models.AuthType.NONE
+import uk.gov.hmrc.apidefinition.models.HttpMethod.GET
+import uk.gov.hmrc.apidefinition.models.ResourceThrottlingTier.UNLIMITED
 import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.services.{APIDefinitionService, AwsApiPublisher, WSO2APIPublisher}
@@ -398,6 +402,17 @@ class APIDefinitionServiceSpec extends UnitSpec
       val response = await(underTest.fetchByContext(context))
 
       response shouldBe Some(apiDefinition)
+    }
+  }
+
+  "fetchEndpointsByContextVersionAndScopes" should {
+    "return the endpoints using the repository" in new Setup {
+      val expectedResponse: Seq[Endpoint] = Seq(Endpoint("/world", "Say Hello to the World!", GET, NONE, UNLIMITED, Some("read:hello")))
+      when(mockAPIDefinitionRepository.fetchEndpointsByContextVersionAndScopes(any[String], any[String], any[Seq[String]])).thenReturn(expectedResponse)
+
+      val response: Seq[Endpoint] = await(underTest.fetchEndpointsByContextVersionAndScopes("hello", "1.0", Seq("read:hello")))
+
+      response shouldBe expectedResponse
     }
   }
 
