@@ -24,8 +24,8 @@ import reactivemongo.api.Cursor.FailOnError
 import reactivemongo.api.indexes.Index
 import reactivemongo.bson.{BSONDocument, BSONObjectID}
 import reactivemongo.play.json.ImplicitBSONHandlers._
-import uk.gov.hmrc.apidefinition.models.APIDefinition
 import uk.gov.hmrc.apidefinition.models.JsonFormatters._
+import uk.gov.hmrc.apidefinition.models.{APIDefinition, Endpoint}
 import uk.gov.hmrc.apidefinition.utils.IndexHelper.createUniqueBackgroundSingleFieldAscendingIndex
 import uk.gov.hmrc.mongo.ReactiveRepository
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
@@ -101,6 +101,28 @@ class APIDefinitionRepository @Inject()(mongo: ReactiveMongoComponent)(implicit 
         Logger.error(s"An error occurred while retrieving API with context '$context' in mongo", e)
         throw e
     }
+  }
+
+  def fetchEndpointsByContextVersionAndScopes(context: String, version: String, scopes: Seq[String]): Future[Seq[Endpoint]] = {
+    val builder = collection.BatchCommands.AggregationFramework
+    val pipeline = List(
+      builder.Match(Json.obj("context" -> context)),
+      builder.UnwindField("versions"),
+      builder.UnwindField("versions.endpoints"),
+      builder.Match(Json.obj("versions.version" -> version, "versions.endpoints.scope" -> Json.obj("$in" -> scopes))),
+      builder.Project(Json.obj("_id" -> "0", "uriPattern" -> "$versions.endpoints.uriPattern",
+        "endpointName" -> "$versions.endpoints.endpointName", "method" -> "$versions.endpoints.method",
+        "authType" -> "$versions.endpoints.authType", "throttlingTier" -> "$versions.endpoints.throttlingTier"))
+    )
+
+    collection.aggregateWith[Endpoint]()(_ => (pipeline.head, pipeline.tail))
+      .fold(Nil: List[Endpoint])((acc, cur) => cur :: acc)
+      .recover {
+        case e =>
+          Logger.error(s"An error occurred while retrieving API endpoints with context '$context', version '$version' " +
+            s"and scopes '${scopes.mkString(", ")}' in mongo", e)
+          throw e
+      }
   }
 
   def fetchAll(): Future[Seq[APIDefinition]] = {

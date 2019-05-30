@@ -25,6 +25,7 @@ import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.http.{HeaderCarrier, UnauthorizedException}
 
+import scala.collection.Seq
 import scala.concurrent.Future.{failed, successful}
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -53,7 +54,7 @@ class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
       val definitionWithPublishTime = apiDefinition.copy(lastPublishedAt = Some(DateTime.now(DateTimeZone.UTC)))
 
       apiDefinitionRepository.save(definitionWithPublishTime)
-        .flatMap(_ => Future.successful())
+        .map(_ => ())
         .recoverWith {
           case e: Throwable =>
             Logger.error(s"""API Definition for "${apiDefinition.name}" was published but not saved due to error: ${e.getMessage}""", e)
@@ -142,6 +143,10 @@ class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
 
   def fetchByContext(context: String): Future[Option[APIDefinition]] = {
     apiDefinitionRepository.fetchByContext(context)
+  }
+
+  def fetchEndpointsByContextVersionAndScopes(context: String, version: String, scopes: Seq[String]): Future[Seq[Endpoint]] = {
+    apiDefinitionRepository.fetchEndpointsByContextVersionAndScopes(context, version, scopes)
   }
 
   def fetchByServiceBaseUrl(serviceBaseUrl: String): Future[Option[APIDefinition]] = {

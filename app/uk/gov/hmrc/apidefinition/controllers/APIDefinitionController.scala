@@ -19,8 +19,9 @@ package uk.gov.hmrc.apidefinition.controllers
 import javax.inject.{Inject, Singleton}
 import play.api._
 import play.api.http.HeaderNames
+import play.api.libs.json.Json.toJson
 import play.api.libs.json._
-import play.api.mvc._
+import play.api.mvc.{AnyContent, _}
 import uk.gov.hmrc.apidefinition.config.AppContext
 import uk.gov.hmrc.apidefinition.models.ErrorCode._
 import uk.gov.hmrc.apidefinition.models.JsonFormatters._
@@ -31,6 +32,7 @@ import uk.gov.hmrc.apidefinition.validators.ApiDefinitionValidator
 import uk.gov.hmrc.http.UnauthorizedException
 import uk.gov.hmrc.play.bootstrap.controller.BaseController
 
+import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
@@ -77,7 +79,7 @@ class APIDefinitionController @Inject()(apiDefinitionValidator: ApiDefinitionVal
   def validate: Action[JsValue] = Action.async(BodyParsers.parse.json) { implicit request =>
     handleRequest[APIDefinition](request) { requestBody =>
       apiDefinitionValidator.validate(requestBody) { validatedDefinition =>
-        Future.successful(Accepted(Json.toJson(validatedDefinition)))
+        successful(Accepted(Json.toJson(validatedDefinition)))
       }
     }
   }
@@ -126,6 +128,18 @@ class APIDefinitionController @Inject()(apiDefinitionValidator: ApiDefinitionVal
       case Some("type") => fetchDefinitionsByType(getParameter("type"))
       case _ => fetchAllPublicAPIs()
     }
+  }
+
+  def fetchEndpoints: Action[AnyContent] = Action.async { implicit request =>
+    val queryBy = request.queryString.keys.toList.sorted
+
+    (queryBy match {
+      case "context" :: "scopes" :: "version" :: Nil =>
+        apiDefinitionService
+          .fetchEndpointsByContextVersionAndScopes(request.queryString("context").head, request.queryString("version").head, request.queryString("scopes"))
+          .map(endpoints => Ok(toJson(endpoints)))
+      case _ => successful(BadRequest(error(INVALID_REQUEST_PAYLOAD, "Missing request parameters")))
+    }) recover recovery
   }
 
   def publishAll():  Action[AnyContent] = Action.async { implicit request =>
