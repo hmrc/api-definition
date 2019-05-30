@@ -3,7 +3,6 @@
 GET         /api-definition                         uk.gov.hmrc.apidefinition.controllers.APIDefinitionController.queryDispatcher()
 GET         /api-definition/:serviceName            uk.gov.hmrc.apidefinition.controllers.APIDefinitionController.fetch(serviceName)
 GET         /api-definition/:serviceName/extended   uk.gov.hmrc.apidefinition.controllers.APIDefinitionController.fetchExtended(serviceName)
-GET         /api-definition/endpoints               uk.gov.hmrc.apidefinition.controllers.APIDefinitionController.fetchEndpoints
 
 POST        /api-definition                         uk.gov.hmrc.apidefinition.controllers.APIDefinitionController.createOrUpdate()
 POST        /api-definition/validate                uk.gov.hmrc.apidefinition.controllers.APIDefinitionController.validate

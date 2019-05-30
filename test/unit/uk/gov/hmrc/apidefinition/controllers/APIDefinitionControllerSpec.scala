@@ -32,11 +32,8 @@ import play.api.test.FakeRequest
 import play.mvc.Http.HeaderNames
 import uk.gov.hmrc.apidefinition.config.AppContext
 import uk.gov.hmrc.apidefinition.controllers.APIDefinitionController
-import uk.gov.hmrc.apidefinition.models.AuthType.NONE
 import uk.gov.hmrc.apidefinition.models.ErrorCode.INVALID_REQUEST_PAYLOAD
-import uk.gov.hmrc.apidefinition.models.HttpMethod.GET
 import uk.gov.hmrc.apidefinition.models.JsonFormatters._
-import uk.gov.hmrc.apidefinition.models.ResourceThrottlingTier.UNLIMITED
 import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.services.APIDefinitionService
 import uk.gov.hmrc.apidefinition.utils.APIDefinitionMapper
@@ -858,55 +855,6 @@ class APIDefinitionControllerSpec extends UnitSpec
       val result = await(underTest.delete("service-name")(request))
 
       status(result) shouldBe FORBIDDEN
-    }
-  }
-
-  "fetchEndpoints" should {
-    "succeed with status 200 when the request is valid" in new Setup {
-      val expectedResponse: Seq[Endpoint] = Seq(Endpoint("/world", "Say Hello to the World!", GET, NONE, UNLIMITED, Some("read:hello")))
-      given(mockAPIDefinitionService.fetchEndpointsByContextVersionAndScopes("hello", "1.0", Seq("read:hello", "write:hello")))
-        .willReturn(successful(expectedResponse))
-
-      val result = await(underTest.fetchEndpoints(FakeRequest("GET", s"?context=hello&version=1.0&scopes=read:hello&scopes=write:hello")))
-
-      status(result) shouldBe OK
-      jsonBodyOf(result) shouldEqual Json.toJson(expectedResponse)
-    }
-
-    "fail with status 400 if the context is missing in the query string" in new Setup {
-      val result = await(underTest.fetchEndpoints(FakeRequest("GET", s"?version=1.0&scopes=read:hello&scopes=write:hello")))
-
-      status(result) shouldBe BAD_REQUEST
-      (jsonBodyOf(result) \ "code").as[String] shouldBe "INVALID_REQUEST_PAYLOAD"
-      (jsonBodyOf(result) \ "message").as[String] shouldBe "Missing request parameters"
-    }
-
-    "fail with status 400 if the version is missing in the query string" in new Setup {
-      val result = await(underTest.fetchEndpoints(FakeRequest("GET", s"?context=hello&scopes=read:hello&scopes=write:hello")))
-
-      status(result) shouldBe BAD_REQUEST
-      (jsonBodyOf(result) \ "code").as[String] shouldBe "INVALID_REQUEST_PAYLOAD"
-      (jsonBodyOf(result) \ "message").as[String] shouldBe "Missing request parameters"
-    }
-
-    "fail with status 400 if the scopes are missing in the query string" in new Setup {
-      val result = await(underTest.fetchEndpoints(FakeRequest("GET", s"?context=hello&version=1.0")))
-
-      status(result) shouldBe BAD_REQUEST
-      (jsonBodyOf(result) \ "code").as[String] shouldBe "INVALID_REQUEST_PAYLOAD"
-      (jsonBodyOf(result) \ "message").as[String] shouldBe "Missing request parameters"
-    }
-
-    "fail with status 500 if an unexpected error happens" in new Setup {
-      val errorMessage = "Unexpected Error"
-      given(mockAPIDefinitionService.fetchEndpointsByContextVersionAndScopes("hello", "1.0", Seq("read:hello", "write:hello")))
-        .willReturn(failed(new RuntimeException(errorMessage)))
-
-      val result = await(underTest.fetchEndpoints(FakeRequest("GET", s"?context=hello&version=1.0&scopes=read:hello&scopes=write:hello")))
-
-      status(result) shouldBe INTERNAL_SERVER_ERROR
-      (jsonBodyOf(result) \ "code").as[String] shouldBe "INTERNAL_SERVER_ERROR"
-      (jsonBodyOf(result) \ "message").as[String] shouldBe errorMessage
     }
   }
 
