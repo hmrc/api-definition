@@ -23,10 +23,7 @@ import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.indexes.Index
 import reactivemongo.api.indexes.IndexType.Ascending
 import reactivemongo.core.errors.DatabaseException
-import uk.gov.hmrc.apidefinition.models.AuthType.NONE
-import uk.gov.hmrc.apidefinition.models.HttpMethod.{GET, POST}
 import uk.gov.hmrc.apidefinition.models.JsonFormatters._
-import uk.gov.hmrc.apidefinition.models.ResourceThrottlingTier.UNLIMITED
 import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport}
@@ -39,20 +36,18 @@ class APIDefinitionRepositorySpec extends UnitSpec
   with MongoSpecSupport with BeforeAndAfterEach
   with BeforeAndAfterAll with Eventually {
 
-  private val readHelloWorldEndpoint = Endpoint("/world", "Say Hello to the World!", GET, NONE, UNLIMITED, Some("read:hello"))
-
   private val helloApiVersion = APIVersion(
     version = "1.0",
     status = APIStatus.PROTOTYPED,
     access = None,
-    endpoints = Seq(readHelloWorldEndpoint)
+    endpoints = Seq(Endpoint("/world", "Say Hello to the World!", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
   )
 
   private val calendarApiVersion = APIVersion(
     version = "2.0",
     status = APIStatus.PUBLISHED,
     access = None,
-    endpoints = Seq(Endpoint("/date", "Check current date", GET, NONE, UNLIMITED))
+    endpoints = Seq(Endpoint("/date", "Check current date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
   )
 
   private val helloApiDefinition = APIDefinition(
@@ -219,38 +214,6 @@ class APIDefinitionRepositorySpec extends UnitSpec
 
       val retrieved = await(repository.fetchByContext(calendarApiDefinition.context))
       retrieved shouldBe None
-    }
-  }
-
-  "fetchEndpointsByContextVersionAndScopes" should {
-    "return only endpoints with matching context, version and scope" in {
-      val writeHelloWorldEndpoint = readHelloWorldEndpoint.copy(method = POST, scope = Some("write:hello"))
-      val readHelloApplicationEndpoint = readHelloWorldEndpoint.copy(uriPattern = "/application")
-      val writeHelloApplicationEndpoint = readHelloWorldEndpoint.copy(uriPattern = "/application", method = POST, scope = Some("write:hello"))
-      val adminEndpoint = readHelloWorldEndpoint.copy(uriPattern = "/admin", scope = Some("admin"))
-      val helloApiVersion2 = helloApiVersion.copy(
-        version = "2.0",
-        endpoints = Seq(readHelloWorldEndpoint, writeHelloWorldEndpoint, readHelloApplicationEndpoint, writeHelloApplicationEndpoint, adminEndpoint)
-      )
-      await(repository.save(helloApiDefinition.copy(versions = Seq(helloApiVersion, helloApiVersion2))))
-      await(repository.save(calendarApiDefinition))
-
-      val retrieved: Seq[Endpoint] = await(repository.fetchEndpointsByContextVersionAndScopes(helloApiDefinition.context,
-        helloApiVersion2.version, List("write:hello", "admin")))
-
-      retrieved should have length 3
-      exactly(1, retrieved) should have ('method (POST), 'uriPattern ("/world"))
-      exactly(1, retrieved) should have ('method (POST), 'uriPattern ("/application"))
-      exactly(1, retrieved) should have ('method (GET), 'uriPattern ("/admin"))
-    }
-
-    "return an empty sequence when there are no matches" in {
-      await(repository.save(calendarApiDefinition))
-
-      val retrieved: Seq[Endpoint] = await(repository.fetchEndpointsByContextVersionAndScopes(calendarApiDefinition.context,
-        calendarApiVersion.version, List(readHelloWorldEndpoint.scope.get)))
-
-      retrieved shouldBe empty
     }
   }
 
