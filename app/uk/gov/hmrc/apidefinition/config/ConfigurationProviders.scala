@@ -16,14 +16,21 @@
 
 package uk.gov.hmrc.apidefinition.config
 
+
+import java.util.concurrent.TimeUnit.{HOURS, SECONDS}
+
 import javax.inject.{Inject, Provider, Singleton}
+import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import play.api.inject.{Binding, Module}
 import play.api.{Configuration, Environment}
 import uk.gov.hmrc.apidefinition.connector._
 import uk.gov.hmrc.apidefinition.controllers.{ApiVersionConfig, DocumentationConfig}
 import uk.gov.hmrc.apidefinition.models._
+import uk.gov.hmrc.apidefinition.scheduled.{JobConfig, RetireApisJobConfig}
 import uk.gov.hmrc.play.config.ServicesConfig
 
+import scala.concurrent.duration.FiniteDuration
 import scala.util.Try
 
 class ConfigurationModule extends Module {
@@ -32,7 +39,8 @@ class ConfigurationModule extends Module {
     Seq(
       bind[ServiceLocatorRegistrationConfig].toProvider[ServiceLocatorRegistrationConfigProvider],
       bind[ServiceLocatorConfig].toProvider[ServiceLocatorConfigProvider],
-      bind[DocumentationConfig].toProvider[DocumentationConfigProvider]
+      bind[DocumentationConfig].toProvider[DocumentationConfigProvider],
+      bind[RetireApisJobConfig].toProvider[RetireApisJobConfigProvider]
     )
   }
 }
@@ -105,5 +113,18 @@ class DocumentationConfigProvider @Inject()(val runModeConfiguration: Configurat
     val publishApiDefinition = runModeConfiguration.getBoolean("publishApiDefinition").getOrElse(false)
 
     DocumentationConfig(publishApiDefinition, apiVersionConfigurations)
+  }
+}
+
+@Singleton
+class RetireApisJobConfigProvider @Inject()(val runModeConfiguration: Configuration, environment: Environment)
+  extends Provider[RetireApisJobConfig] with ServicesConfig {
+
+  override protected def mode = environment.mode
+
+  override def get() = {
+    val jobConfig = runModeConfiguration.underlying.as[Option[JobConfig]]("retireApisJob")
+      .getOrElse(JobConfig(FiniteDuration(120, SECONDS), FiniteDuration(24, HOURS), enabled = true)) // scalastyle:off magic.number
+    RetireApisJobConfig(jobConfig.initialDelay, jobConfig.interval, jobConfig.enabled)
   }
 }
