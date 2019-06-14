@@ -24,7 +24,6 @@ import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import play.api.inject.{Binding, Module}
 import play.api.{Configuration, Environment}
-import uk.gov.hmrc.apidefinition.connector._
 import uk.gov.hmrc.apidefinition.controllers.{ApiVersionConfig, DocumentationConfig}
 import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.scheduled.{JobConfig, RetireApisJobConfig}
@@ -37,37 +36,9 @@ class ConfigurationModule extends Module {
 
   override def bindings(environment: Environment, configuration: Configuration): Seq[Binding[_]] = {
     Seq(
-      bind[ServiceLocatorRegistrationConfig].toProvider[ServiceLocatorRegistrationConfigProvider],
-      bind[ServiceLocatorConfig].toProvider[ServiceLocatorConfigProvider],
       bind[DocumentationConfig].toProvider[DocumentationConfigProvider],
       bind[RetireApisJobConfig].toProvider[RetireApisJobConfigProvider]
     )
-  }
-}
-
-@Singleton
-class ServiceLocatorRegistrationConfigProvider @Inject()(val runModeConfiguration: Configuration, environment: Environment)
-  extends Provider[ServiceLocatorRegistrationConfig] with ServicesConfig {
-
-  override protected def mode = environment.mode
-
-  override def get() = {
-    val registrationEnabled = getConfBool("service-locator.enabled", defBool = true)
-    ServiceLocatorRegistrationConfig(registrationEnabled)
-  }
-}
-
-@Singleton
-class ServiceLocatorConfigProvider @Inject()(val runModeConfiguration: Configuration, environment: Environment)
-  extends Provider[ServiceLocatorConfig] with ServicesConfig {
-
-  override protected def mode = environment.mode
-
-  override def get() = {
-    val appName = getString("appName")
-    val appUrl = getString("appUrl")
-    val serviceLocatorBaseUrl = baseUrl("service-locator")
-    ServiceLocatorConfig(appName, appUrl, serviceLocatorBaseUrl)
   }
 }
 

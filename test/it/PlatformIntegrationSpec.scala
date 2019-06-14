@@ -16,28 +16,22 @@
 
 package it
 
-import org.scalatest.BeforeAndAfterAll
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.test.FakeRequest
 import play.api.test.Helpers._
-import uk.gov.hmrc.apidefinition.controllers._
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.{Application, Mode}
-import play.api.inject.guice.GuiceApplicationBuilder
+import uk.gov.hmrc.apidefinition.controllers._
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.test.UnitSpec
 
-class PlatformIntegrationSpec extends UnitSpec with GuiceOneAppPerSuite with ServiceLocatorStub with BeforeAndAfterAll {
+class PlatformIntegrationSpec extends UnitSpec with GuiceOneAppPerSuite {
 
   implicit def mat: akka.stream.Materializer = app.injector.instanceOf[akka.stream.Materializer]
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
-  override def beforeAll(): Unit = {
-    super.beforeAll()
-    serviceLocatorWillAcceptTheRegistration()
-  }
-
-  val configuration = Map("publishApiDefinition" -> "true") ++ stubConfiguration()
+  val configuration = Map("publishApiDefinition" -> "true")
 
   override def fakeApplication(): Application =
     GuiceApplicationBuilder().configure(configuration).in(Mode.Test).build()
@@ -47,10 +41,6 @@ class PlatformIntegrationSpec extends UnitSpec with GuiceOneAppPerSuite with Ser
   }
 
   "microservice" should {
-
-    "register itself with the service locator" in new Setup {
-      verifyServiceLocatorWasCalledToRegister(appName, appUrl)
-    }
 
     "return the JSON definition" in new Setup {
       route(app, FakeRequest(GET, "/api/definition")) match {
