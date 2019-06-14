@@ -31,7 +31,7 @@ class DocumentationController @Inject()(config: DocumentationConfig) extends Bas
     if (config.publishApiDefinition) {
       Ok(txt.definition(config)).withHeaders(CONTENT_TYPE -> JSON)
     } else {
-      NotFound
+      NoContent
     }
   }
 
@@ -39,7 +39,7 @@ class DocumentationController @Inject()(config: DocumentationConfig) extends Bas
     if (config.publishApiDefinition) {
       Ok(txt.application())
     } else {
-      NotFound
+      NoContent
     }
   }
 }
