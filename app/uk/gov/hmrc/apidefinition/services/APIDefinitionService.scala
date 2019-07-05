@@ -25,7 +25,7 @@ import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.http.{HeaderCarrier, UnauthorizedException}
 
-import scala.concurrent.Future.{failed, successful}
+import scala.concurrent.Future.{failed, sequence, successful}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
@@ -151,7 +151,7 @@ class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
   def delete(serviceName: String)(implicit hc: HeaderCarrier): Future[Unit] = {
     apiDefinitionRepository.fetchByServiceName(serviceName) flatMap {
       case None => successful(())
-      case Some(definition) => wso2Publisher.hasSubscribers(definition) flatMap {
+      case Some(definition) => hasSubscribers(definition) flatMap {
         case true => failed(new UnauthorizedException("API has subscribers"))
         case false =>
           for {
@@ -160,6 +160,14 @@ class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
             _ <- apiDefinitionRepository.delete(definition.serviceName)
           } yield ()
       }
+    }
+  }
+
+  private def hasSubscribers(apiDefinition: APIDefinition)(implicit hc: HeaderCarrier): Future[Boolean] = {
+    sequence {
+      apiDefinition.versions.map(v => thirdPartyApplicationConnector.fetchSubscribers(apiDefinition.context, v.version))
+    } map {
+      _.exists(subscribers => subscribers.nonEmpty)
     }
   }
 

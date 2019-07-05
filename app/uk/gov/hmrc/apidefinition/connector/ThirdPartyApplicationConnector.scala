@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.apidefinition.connector
 
+import java.util.UUID
+
 import javax.inject.{Inject, Singleton}
 import play.api.Mode.Mode
 import play.api.{Configuration, Environment}
@@ -39,4 +41,9 @@ class ThirdPartyApplicationConnector @Inject()(http: HttpClient,
     http.GET[Seq[Application]](s"$serviceUrl/application", Seq("emailAddress" -> email))
   }
 
+  def fetchSubscribers(context: String, version: String)(implicit hc: HeaderCarrier): Future[Seq[UUID]] = {
+    http.GET(s"$serviceUrl/apis/$context/versions/$version/subscribers") map { result =>
+      (result.json \ "subscribers").as[Seq[UUID]]
+    }
+  }
 }
