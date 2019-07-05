@@ -59,7 +59,7 @@ class AwsApiPublisher @Inject()(val awsAPIPublisherConnector: AWSAPIPublisherCon
     }
   }
 
-  def publishAPIVersion(apiName: String,
+  private def publishAPIVersion(apiName: String,
                         apiDefinitionName: String,
                         serviceBaseUrl: String,
                         context: String,
@@ -82,7 +82,7 @@ class AwsApiPublisher @Inject()(val awsAPIPublisherConnector: AWSAPIPublisherCon
     }
   }
 
-  def deleteAPIVersion(apiName: String)(implicit hc: HeaderCarrier): Future[Unit] = {
+  private def deleteAPIVersion(apiName: String)(implicit hc: HeaderCarrier): Future[Unit] = {
     awsAPIPublisherConnector.deleteAPI(apiName)(hc) map { requestId =>
       Logger.info(s"Successfully deleted API '$apiName' from AWS API Gateway with request ID $requestId")
     }

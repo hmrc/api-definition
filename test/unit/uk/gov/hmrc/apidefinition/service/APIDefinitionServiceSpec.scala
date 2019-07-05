@@ -16,7 +16,7 @@
 
 package unit.uk.gov.hmrc.apidefinition.service
 
-import java.util.UUID
+import java.util.UUID.randomUUID
 
 import org.joda.time.DateTimeUtils._
 import org.joda.time.format.ISODateTimeFormat
@@ -112,8 +112,8 @@ class APIDefinitionServiceSpec extends UnitSpec
 
   "fetchExtended" should {
     val serviceName = "calendar"
-    val appId = UUID.randomUUID()
-    val otherAppId = UUID.randomUUID()
+    val appId = randomUUID()
+    val otherAppId = randomUUID()
 
     val publicVersion = aVersion("1.0", Some(PublicAPIAccess()))
     val publicVersionAvailability = APIAvailability(publicVersion.endpointsEnabled.getOrElse(false),
@@ -258,7 +258,7 @@ class APIDefinitionServiceSpec extends UnitSpec
   }
 
   "fetch" should {
-    val appId = UUID.randomUUID()
+    val appId = randomUUID()
     val publicVersion = aVersion("1.0", Some(PublicAPIAccess()))
     val privateVersion = aVersion("2.0", Some(PrivateAPIAccess(Seq(appId.toString))))
     val privateTrialVersion = aVersion("2.5", Some(PrivateAPIAccess(Seq.empty, isTrial = Some(true))))
@@ -346,7 +346,7 @@ class APIDefinitionServiceSpec extends UnitSpec
 
   "fetchAllAPIsForCollaborator" should {
     val email = "email@email.com"
-    val applicationId = UUID.randomUUID()
+    val applicationId = randomUUID()
 
     "filter the private APIs for which the user does not have an application whitelisted" in new Setup {
 
@@ -354,7 +354,7 @@ class APIDefinitionServiceSpec extends UnitSpec
       val versionWithoutAccessDefined: APIVersion = aVersion("2.0", None)
       val privateTrialVersion: APIVersion = aVersion("2.5", Some(PrivateAPIAccess(Seq.empty, isTrial = Some(true))))
       val privateVersionWithAppWhitelisted: APIVersion = aVersion("3.0", Some(PrivateAPIAccess(Seq(applicationId.toString))))
-      val privateVersionWithoutAppWhitelisted: APIVersion = aVersion("4.0", Some(PrivateAPIAccess(Seq(UUID.randomUUID().toString))))
+      val privateVersionWithoutAppWhitelisted: APIVersion = aVersion("4.0", Some(PrivateAPIAccess(Seq(randomUUID().toString))))
       val api: APIDefinition =
         anAPIDefinition(
           "context",
@@ -449,8 +449,7 @@ class APIDefinitionServiceSpec extends UnitSpec
   "delete" should {
 
     "delete the API in WSO2, AWS and the repository when there is no subscribers" in new Setup {
-
-      when(mockWSO2APIPublisher.hasSubscribers(apiDefinition)).thenReturn(successful(false))
+      when(mockThirdPartyApplicationConnector.fetchSubscribers("calendar", "1.0")).thenReturn(successful(Seq()))
 
       await(underTest.delete(apiDefinition.serviceName))
 
@@ -460,8 +459,7 @@ class APIDefinitionServiceSpec extends UnitSpec
     }
 
     "fail when one API has a subscriber" in new Setup {
-
-      when(mockWSO2APIPublisher.hasSubscribers(apiDefinition)).thenReturn(successful(true))
+      when(mockThirdPartyApplicationConnector.fetchSubscribers("calendar", "1.0")).thenReturn(successful(Seq(randomUUID)))
 
       val future = underTest.delete(apiDefinition.serviceName)
 
@@ -471,15 +469,13 @@ class APIDefinitionServiceSpec extends UnitSpec
     }
 
     "return success when the API doesnt exist" in new Setup {
-
       when(mockAPIDefinitionRepository.fetchByServiceName("service")).thenReturn(successful(None))
 
       await(underTest.delete("service"))
     }
 
     "fail when wso2 delete fails" in new Setup {
-
-      when(mockWSO2APIPublisher.hasSubscribers(apiDefinition)).thenReturn(successful(false))
+      when(mockThirdPartyApplicationConnector.fetchSubscribers("calendar", "1.0")).thenReturn(successful(Seq()))
       when(mockWSO2APIPublisher.delete(apiDefinition)).thenReturn(failed(new RuntimeException()))
 
       val future = underTest.delete(apiDefinition.serviceName)
@@ -490,8 +486,7 @@ class APIDefinitionServiceSpec extends UnitSpec
     }
 
     "fail when AWS delete fails" in new Setup {
-
-      when(mockWSO2APIPublisher.hasSubscribers(apiDefinition)).thenReturn(successful(false))
+      when(mockThirdPartyApplicationConnector.fetchSubscribers("calendar", "1.0")).thenReturn(successful(Seq()))
       when(mockAwsApiPublisher.delete(apiDefinition)).thenReturn(failed(new RuntimeException()))
 
       val future = underTest.delete(apiDefinition.serviceName)
@@ -502,8 +497,7 @@ class APIDefinitionServiceSpec extends UnitSpec
     }
 
     "fail when repository delete fails" in new Setup {
-
-      when(mockWSO2APIPublisher.hasSubscribers(apiDefinition)).thenReturn(successful(false))
+      when(mockThirdPartyApplicationConnector.fetchSubscribers("calendar", "1.0")).thenReturn(successful(Seq()))
       when(mockAPIDefinitionRepository.delete(apiDefinition.serviceName)).thenReturn(failed(new RuntimeException()))
 
       val future = underTest.delete(apiDefinition.serviceName)

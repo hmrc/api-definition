@@ -27,6 +27,7 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
 import play.api.http.HeaderNames.USER_AGENT
+import play.api.http.Status.{INTERNAL_SERVER_ERROR, OK}
 import play.api.libs.json.Json
 import play.api.{Configuration, Environment}
 import uk.gov.hmrc.apidefinition.connector.ThirdPartyApplicationConnector
@@ -52,14 +53,14 @@ class ThirdPartyApplicationConnectorSpec extends UnitSpec
   trait Setup {
     SharedMetricRegistries.clear()
     WireMock.reset()
-    implicit val hc = HeaderCarrier()
+    implicit val hc: HeaderCarrier = HeaderCarrier()
       .withExtraHeaders(xRequestId -> requestId)
 
     val http: HttpClient = fakeApplication.injector.instanceOf[HttpClient]
     val environment: Environment = fakeApplication.injector.instanceOf[Environment]
     val runModeConfiguration: Configuration = fakeApplication.injector.instanceOf[Configuration]
 
-    val underTest = new ThirdPartyApplicationConnector(http, environment, runModeConfiguration) {
+    val underTest: ThirdPartyApplicationConnector = new ThirdPartyApplicationConnector(http, environment, runModeConfiguration) {
       override lazy val serviceUrl = s"$wireMockUrl"
     }
   }
@@ -68,7 +69,7 @@ class ThirdPartyApplicationConnectorSpec extends UnitSpec
     val userEmail = "john.doe+test@example.com"
 
     "return all the applications the user is a collaborator on" in new Setup {
-      val applications = Seq(Application(UUID.randomUUID(), "App 1"), Application(UUID.randomUUID(), "App 2"))
+      private val applications = Seq(Application(UUID.randomUUID(), "App 1"), Application(UUID.randomUUID(), "App 2"))
 
       stubFor(get(urlPathEqualTo("/application"))
         .withHeader(USER_AGENT, equalTo(appName))
@@ -76,10 +77,10 @@ class ThirdPartyApplicationConnectorSpec extends UnitSpec
         .withQueryParam("emailAddress", equalTo(userEmail))
         .willReturn(
           aResponse()
-            .withStatus(200)
+            .withStatus(OK)
             .withBody(Json.toJson(applications).toString())))
 
-      val result = await(underTest.fetchApplicationsByEmail(userEmail))
+      val result: Seq[Application] = await(underTest.fetchApplicationsByEmail(userEmail))
 
       result shouldBe applications
     }
@@ -92,10 +93,44 @@ class ThirdPartyApplicationConnectorSpec extends UnitSpec
         .withQueryParam("emailAddress", equalTo(userEmail))
         .willReturn(
           aResponse()
-            .withStatus(500)))
+            .withStatus(INTERNAL_SERVER_ERROR)))
 
       intercept[Upstream5xxResponse] {
         await(underTest.fetchApplicationsByEmail(userEmail))
+      }
+    }
+  }
+
+  "fetchSubscribers" should {
+    "return all the subscribers for an API" in new Setup {
+      private val context = "hello"
+      private val version = "1.0"
+      private val subscribers = Seq(UUID.randomUUID, UUID.randomUUID)
+      stubFor(get(urlPathEqualTo(s"/apis/$context/versions/$version/subscribers"))
+        .withHeader(USER_AGENT, equalTo(appName))
+        .withHeader(xRequestId, equalTo(requestId))
+        .willReturn(
+          aResponse()
+            .withStatus(OK)
+            .withBody(Json.obj("subscribers" -> Json.toJson(subscribers)).toString)))
+
+      val result: Seq[UUID] = await(underTest.fetchSubscribers(context, version))
+
+      result should contain only (subscribers: _*)
+    }
+
+    "fail when third-party-application return a status code different of 200 (OK)" in new Setup {
+      private val context = "hello"
+      private val version = "1.0"
+      stubFor(get(urlPathEqualTo(s"/apis/$context/versions/$version/subscribers"))
+        .withHeader(USER_AGENT, equalTo(appName))
+        .withHeader(xRequestId, equalTo(requestId))
+        .willReturn(
+          aResponse()
+            .withStatus(INTERNAL_SERVER_ERROR)))
+
+      intercept[Upstream5xxResponse] {
+        await(underTest.fetchSubscribers(context, version))
       }
     }
   }
