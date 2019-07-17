@@ -20,6 +20,7 @@ import cats.data.Validated.Invalid
 import cats.implicits._
 import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.apidefinition.models.APIDefinition
+import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.services.APIDefinitionService
 
 import scala.concurrent.Future.successful
@@ -27,7 +28,8 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.matching.Regex
 
 @Singleton
-class ApiContextValidator @Inject()(apiDefinitionService: APIDefinitionService)
+class ApiContextValidator @Inject()(apiDefinitionService: APIDefinitionService,
+                                    apiDefinitionRepository: APIDefinitionRepository)
                                    (implicit override val ec: ExecutionContext) extends Validator[String] {
 
   private val contextRegex: Regex = "^[a-zA-Z0-9_\\-\\/]+$".r
@@ -36,8 +38,7 @@ class ApiContextValidator @Inject()(apiDefinitionService: APIDefinitionService)
     val validated = validateThat(_.nonEmpty, _ => s"Field 'context' should not be empty $errorContext").andThen(validateContext(errorContext)(_))
     validated match {
       case Invalid(_) => successful(validated)
-      case _ => validateFieldNotAlreadyUsed(apiDefinitionService.fetchByContext(apiDefinition.context),
-        s"Field 'context' must be unique $errorContext")(context, apiDefinition)
+      case _ => validateAgainstDatabase(errorContext, apiDefinition)
     }
   }
 
@@ -50,4 +51,19 @@ class ApiContextValidator @Inject()(apiDefinitionService: APIDefinitionService)
     ).mapN((_,_,_,_) => context)
   }
 
+  private def validateAgainstDatabase(errorContext: String, apiDefinition: APIDefinition)(implicit context: String): Future[HMRCValidated[String]] = {
+    for {
+      contextUniqueValidated <- validateFieldNotAlreadyUsed(apiDefinitionService
+        .fetchByContext(apiDefinition.context), s"Field 'context' must be unique $errorContext")(context, apiDefinition)
+      contextNotChangedValidated <- validateContextNotChanged(errorContext, apiDefinition)
+    } yield (contextUniqueValidated, contextNotChangedValidated).mapN((_, _) => context)
+  }
+
+  private def validateContextNotChanged(errorContext: String, apiDefinition: APIDefinition)(implicit context: String): Future[HMRCValidated[String]] = {
+    apiDefinitionRepository.fetchByServiceName(apiDefinition.serviceName)
+      .map {
+        case Some(found: APIDefinition) => found.context != apiDefinition.context
+        case _ => false
+      }.map(contextChanged => validateThat(_ => !contextChanged, _ => s"Field 'context' must not be changed $errorContext"))
+  }
 }

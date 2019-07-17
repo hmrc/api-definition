@@ -24,6 +24,7 @@ import org.scalatest.mockito.MockitoSugar
 import play.api.mvc.Results.{NoContent, UnprocessableEntity}
 import uk.gov.hmrc.apidefinition.models.ErrorCode.INVALID_REQUEST_PAYLOAD
 import uk.gov.hmrc.apidefinition.models._
+import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.services.APIDefinitionService
 import uk.gov.hmrc.apidefinition.validators._
 import uk.gov.hmrc.play.test.UnitSpec
@@ -36,7 +37,8 @@ class ApiDefinitionValidatorSpec extends UnitSpec with MockitoSugar {
 
   trait Setup {
     val mockAPIDefinitionService: APIDefinitionService = mock[APIDefinitionService]
-    val apiContextValidator: ApiContextValidator = new ApiContextValidator(mockAPIDefinitionService)
+    val mockApiDefinitionRepository: APIDefinitionRepository = mock[APIDefinitionRepository]
+    val apiContextValidator: ApiContextValidator = new ApiContextValidator(mockAPIDefinitionService, mockApiDefinitionRepository)
     val queryParameterValidator: QueryParameterValidator = new QueryParameterValidator()
     val apiEndpointValidator: ApiEndpointValidator = new ApiEndpointValidator(queryParameterValidator)
     val apiVersionValidator: ApiVersionValidator = new ApiVersionValidator(apiEndpointValidator)
@@ -45,6 +47,7 @@ class ApiDefinitionValidatorSpec extends UnitSpec with MockitoSugar {
     when(mockAPIDefinitionService.fetchByContext(any[String])).thenReturn(successful(None))
     when(mockAPIDefinitionService.fetchByName(any[String])).thenReturn(successful(None))
     when(mockAPIDefinitionService.fetchByServiceBaseUrl(any[String])).thenReturn(successful(None))
+    when(mockApiDefinitionRepository.fetchByServiceName(any[String])).thenReturn(successful(None))
 
     def assertValidationSuccess(apiDefinition: => APIDefinition): Unit = {
       val result = await(apiDefinitionValidator.validate(apiDefinition)(_ => Future.successful(NoContent)))
@@ -197,6 +200,12 @@ class ApiDefinitionValidatorSpec extends UnitSpec with MockitoSugar {
         lazy val apiDefinition: APIDefinition = moneyApiDefinition.copy(context = ctx)
         assertValidationFailure(apiDefinition, List("Field 'context' should match regular expression '^[a-zA-Z0-9_\\-\\/]+$' for API 'Money API'"))
       }
+    }
+
+    "fail validation when context has been changed" in new Setup {
+      when(mockApiDefinitionRepository.fetchByServiceName("money")).thenReturn(successful(Some(moneyApiDefinition)))
+
+      assertValidationFailure(moneyApiDefinition.copy(context = "aNewContext"), List("Field 'context' must not be changed for API 'Money API'"))
     }
 
     "fail validation when context already exist for another API" in new Setup {

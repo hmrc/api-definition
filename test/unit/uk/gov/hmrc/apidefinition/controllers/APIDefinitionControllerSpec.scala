@@ -35,6 +35,7 @@ import uk.gov.hmrc.apidefinition.controllers.APIDefinitionController
 import uk.gov.hmrc.apidefinition.models.ErrorCode.INVALID_REQUEST_PAYLOAD
 import uk.gov.hmrc.apidefinition.models.JsonFormatters._
 import uk.gov.hmrc.apidefinition.models._
+import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.services.APIDefinitionService
 import uk.gov.hmrc.apidefinition.utils.APIDefinitionMapper
 import uk.gov.hmrc.apidefinition.validators._
@@ -56,11 +57,13 @@ class APIDefinitionControllerSpec extends UnitSpec
     when(mockAPIDefinitionService.fetchByContext(any[String])).thenReturn(successful(None))
     when(mockAPIDefinitionService.fetchByName(any[String])).thenReturn(successful(None))
     when(mockAPIDefinitionService.fetchByServiceBaseUrl(any[String])).thenReturn(successful(None))
+    val mockApiDefinitionRepository: APIDefinitionRepository = mock[APIDefinitionRepository]
+    when(mockApiDefinitionRepository.fetchByServiceName(any[String])).thenReturn(successful(None))
 
     implicit lazy val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
 
-    val apiContextValidator: ApiContextValidator = new ApiContextValidator(mockAPIDefinitionService)
+    val apiContextValidator: ApiContextValidator = new ApiContextValidator(mockAPIDefinitionService, mockApiDefinitionRepository)
     val queryParameterValidator: QueryParameterValidator = new QueryParameterValidator()
     val apiEndpointValidator: ApiEndpointValidator = new ApiEndpointValidator(queryParameterValidator)
     val apiVersionValidator: ApiVersionValidator = new ApiVersionValidator(apiEndpointValidator)
