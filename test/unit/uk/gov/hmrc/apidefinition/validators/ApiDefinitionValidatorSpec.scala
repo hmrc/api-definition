@@ -190,7 +190,7 @@ class ApiDefinitionValidatorSpec extends UnitSpec with MockitoSugar {
     }
 
     val specialChars = List(
-      ' ', '@', '%', '£', '*', '\\', '|', '$', '~', '^', ';', '=', ''',
+      ' ', '@', '%', '£', '*', '\\', '|', '$', '~', '^', ';', '=', '\'',
       '<', '>', '"', '?', '!', ',', '.', ':', '&', '[', ']', '(' ,')'
     )
 
