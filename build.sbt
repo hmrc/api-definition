@@ -6,7 +6,7 @@ import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin._
 
 lazy val appName = "api-definition"
 
-lazy val appDependencies: Seq[ModuleID] = compile ++ test
+lazy val appDependencies: Seq[ModuleID] = compile ++ test ++ tmpMacWorkaround
 
 lazy val compile = Seq(
   ws,
@@ -26,6 +26,13 @@ lazy val test = Seq(
   "com.typesafe.play" %% "play-test" % PlayVersion.current % "test",
   "com.github.tomakehurst" % "wiremock" % "2.8.0" % "test"
 )
+
+// Temporary Workaround for intermittent (but frequent) failures of Mongo integration tests when running on a Mac
+// See Jira story GG-3666 for further information
+def tmpMacWorkaround =
+  if (sys.props.get("os.name").exists(_.toLowerCase.contains("mac"))) {
+    Seq("org.reactivemongo" % "reactivemongo-shaded-native" % "0.16.1-osx-x86-64" % "runtime,test,it")
+  } else Seq()
 
 lazy val ComponentTest = config("component") extend Test
 lazy val IntegrationTest = config("it") extend Test
