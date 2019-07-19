@@ -106,7 +106,8 @@ class APIDefinitionController @Inject()(apiDefinitionValidator: ApiDefinitionVal
       case _ => NotFound(error(API_DEFINITION_NOT_FOUND, "No API Definition was found"))
     } recover recovery
 
-    def fetchAllForApplication(applicationId: String) = apiDefinitionService.fetchAllAPIsForApplication(applicationId)
+
+    def fetchAllForApplication(applicationId: String) = apiDefinitionService.fetchAllAPIsForApplication( applicationId)
       .map(apiDefinitionToResult) recover recovery
 
     def fetchAllForCollaborator(email: String) = apiDefinitionService.fetchAllAPIsForCollaborator(email)

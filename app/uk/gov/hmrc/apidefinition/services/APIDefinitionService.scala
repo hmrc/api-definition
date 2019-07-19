@@ -43,9 +43,9 @@ class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
         _ <- wso2Publisher.publish(apiDefinition)
         _ <- awsApiPublisher.publish(apiDefinition)
       } yield ()) recoverWith {
-      case e: PublishingException =>
-        Logger.error(s"Failed to create or update API [${apiDefinition.name}]", e)
-        failed(new RuntimeException(s"Could not publish API: [${apiDefinition.name}]"))
+        case e: PublishingException =>
+          Logger.error(s"Failed to create or update API [${apiDefinition.name}]", e)
+          failed(new RuntimeException(s"Could not publish API: [${apiDefinition.name}]"))
       }
     }
 
@@ -71,7 +71,7 @@ class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
     for {
       api <- maybeApiDefinitionF
       userApplicationIds <- applicationIdsF
-    } yield api.flatMap(filterAPIForApplications(userApplicationIds :_*))
+    } yield api.flatMap(filterAPIForApplications(alsoIncludePrivateTrial, userApplicationIds: _*))
   }
 
   def fetchExtendedByServiceName(serviceName: String, email: Option[String])
@@ -104,25 +104,25 @@ class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
       api <- maybeApiDefinitionF
       userApplicationIds <- applicationIdsF
     } yield api.map { a =>
-        val versions = a.versions.foldLeft(Seq[ExtendedAPIVersion]()){
-          case (acc, version) => acc :+
-            ExtendedAPIVersion(
-              version = version.version,
-              status = version.status,
-              endpoints = version.endpoints,
-              productionAvailability = availability(version, userApplicationIds),
-              sandboxAvailability = availability(version, userApplicationIds, forSandbox = true))
-        }
+      val versions = a.versions.foldLeft(Seq[ExtendedAPIVersion]()) {
+        case (acc, version) => acc :+
+          ExtendedAPIVersion(
+            version = version.version,
+            status = version.status,
+            endpoints = version.endpoints,
+            productionAvailability = availability(version, userApplicationIds),
+            sandboxAvailability = availability(version, userApplicationIds, forSandbox = true))
+      }
 
-        ExtendedAPIDefinition(a.serviceName,
-          a.serviceBaseUrl,
-          a.name,
-          a.description,
-          a.context,
-          a.requiresTrust.getOrElse(false),
-          a.isTestSupport.getOrElse(false),
-          versions,
-          a.lastPublishedAt)
+      ExtendedAPIDefinition(a.serviceName,
+        a.serviceBaseUrl,
+        a.name,
+        a.description,
+        a.context,
+        a.requiresTrust.getOrElse(false),
+        a.isTestSupport.getOrElse(false),
+        versions,
+        a.lastPublishedAt)
     }
   }
 
@@ -172,7 +172,8 @@ class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
   }
 
   def fetchAllPublicAPIs(): Future[Seq[APIDefinition]] = {
-    apiDefinitionRepository.fetchAll().map(filterAPIsForApplications())
+    // TODO Hardcoded false
+    apiDefinitionRepository.fetchAll().map(filterAPIsForApplications(alsoIncludePrivateTrial = false))
   }
 
   def fetchAllPrivateAPIs(): Future[Seq[APIDefinition]] = {
@@ -183,7 +184,7 @@ class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
     }
 
     def removePublicVersions(api: APIDefinition) =
-      api.copy(versions= api.versions.filter(hasPrivateAccess))
+      api.copy(versions = api.versions.filter(hasPrivateAccess))
 
     for {
       apiDefinitions <- apiDefinitionRepository.fetchAll()
@@ -192,11 +193,13 @@ class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
     } yield onlyPrivateApis
   }
 
-  def fetchAllAPIsForApplication(applicationId: String): Future[Seq[APIDefinition]] = {
-    apiDefinitionRepository.fetchAll().map(filterAPIsForApplications(applicationId))
+  // TODO: Remove default
+  def fetchAllAPIsForApplication(applicationId: String, alsoIncludePrivateTrial: Boolean = false): Future[Seq[APIDefinition]] = {
+    apiDefinitionRepository.fetchAll().map(filterAPIsForApplications(alsoIncludePrivateTrial, applicationId))
   }
 
-  def fetchAllAPIsForCollaborator(email: String)(implicit hc: HeaderCarrier): Future[Seq[APIDefinition]] = {
+  // TODO: Remove default
+  def fetchAllAPIsForCollaborator(email: String, alsoIncludePrivateTrial: Boolean = false)(implicit hc: HeaderCarrier): Future[Seq[APIDefinition]] = {
 
     val applicationIdsF = fetchApplicationIdsByEmail(Some(email))
     val apiDefinitionsF = apiDefinitionRepository.fetchAll()
@@ -204,17 +207,20 @@ class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
     for {
       userApplicationIds <- applicationIdsF
       allApis <- apiDefinitionsF
-    } yield filterAPIsForApplications(userApplicationIds :_*)(allApis)
+    } yield filterAPIsForApplications(alsoIncludePrivateTrial, userApplicationIds: _*)(allApis)
   }
 
-  private def filterAPIsForApplications(applicationIds: String*) : Seq[APIDefinition] => Seq[APIDefinition] = {
-    _ flatMap { filterAPIForApplications(applicationIds:_*)(_) }
+  private def filterAPIsForApplications(alsoIncludePrivateTrial: Boolean, applicationIds: String*): Seq[APIDefinition] => Seq[APIDefinition] = {
+    _ flatMap {
+      filterAPIForApplications(alsoIncludePrivateTrial, applicationIds: _*)(_)
+    }
   }
 
-  private def filterAPIForApplications(applicationIds: String*) : APIDefinition => Option[APIDefinition] = { api =>
+  private def filterAPIForApplications(alsoIncludePrivateTrial: Boolean, applicationIds: String*): APIDefinition => Option[APIDefinition] = { api =>
 
     val filteredVersions = api.versions.filter(_.access.getOrElse(PublicAPIAccess) match {
-      case access: PrivateAPIAccess => access.whitelistedApplicationIds.exists(s => applicationIds.contains(s))
+      case access: PrivateAPIAccess =>
+        access.whitelistedApplicationIds.exists(s => applicationIds.contains(s)) || (access.isTrial.contains(true) && alsoIncludePrivateTrial)
       case _ => true
     })
 

@@ -783,7 +783,7 @@ class APIDefinitionControllerSpec extends UnitSpec
 
       val apiDefinitions = Seq(anApiDefinition)
 
-      when(mockAPIDefinitionService.fetchAllAPIsForCollaborator(isEq("EMAIL@EMAIL.COM"))(any[HeaderCarrier]))
+      when(mockAPIDefinitionService.fetchAllAPIsForCollaborator(isEq("EMAIL@EMAIL.COM"), any[Boolean])(any[HeaderCarrier]))
         .thenReturn(successful(apiDefinitions))
 
       val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?email=EMAIL@EMAIL.COM")))
@@ -795,7 +795,7 @@ class APIDefinitionControllerSpec extends UnitSpec
 
     "fail with a 500 (internal server error) when the email is defined and the service throws an exception" in new Setup {
 
-      when(mockAPIDefinitionService.fetchAllAPIsForCollaborator(isEq("EMAIL@EMAIL.COM"))(any[HeaderCarrier]))
+      when(mockAPIDefinitionService.fetchAllAPIsForCollaborator(isEq("EMAIL@EMAIL.COM"), any[Boolean])(any[HeaderCarrier]))
         .thenReturn(failed(new RuntimeException("Something went wrong")))
 
       val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?email=EMAIL@EMAIL.COM")))
