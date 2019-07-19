@@ -53,7 +53,7 @@ class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
       val definitionWithPublishTime = apiDefinition.copy(lastPublishedAt = Some(DateTime.now(DateTimeZone.UTC)))
 
       apiDefinitionRepository.save(definitionWithPublishTime)
-        .flatMap(_ => Future.successful())
+        .flatMap(_ => Future.successful(()))
         .recoverWith {
           case e: Throwable =>
             Logger.error(s"""API Definition for "${apiDefinition.name}" was published but not saved due to error: ${e.getMessage}""", e)
@@ -62,7 +62,7 @@ class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
     }
   }
 
-  def fetchByServiceName(serviceName: String, email: Option[String])
+  def fetchByServiceName(serviceName: String, email: Option[String], alsoIncludePrivateTrial: Boolean)
                         (implicit hc: HeaderCarrier): Future[Option[APIDefinition]] = {
 
     val maybeApiDefinitionF = apiDefinitionRepository.fetchByServiceName(serviceName)
@@ -214,7 +214,7 @@ class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
   private def filterAPIForApplications(applicationIds: String*) : APIDefinition => Option[APIDefinition] = { api =>
 
     val filteredVersions = api.versions.filter(_.access.getOrElse(PublicAPIAccess) match {
-      case access: PrivateAPIAccess => access.whitelistedApplicationIds.exists(s => applicationIds.contains(s)) || access.isTrial.getOrElse(false)
+      case access: PrivateAPIAccess => access.whitelistedApplicationIds.exists(s => applicationIds.contains(s))
       case _ => true
     })
 

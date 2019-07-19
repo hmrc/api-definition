@@ -77,7 +77,7 @@ class APIDefinitionControllerSpec extends UnitSpec
     val underTest = new APIDefinitionController(apiDefinitionValidator, mockAPIDefinitionService, apiDefinitionMapper, mockAppContext)
 
     def theServiceWillCreateOrUpdateTheAPIDefinition: OngoingStubbing[Future[Unit]] = {
-      when(mockAPIDefinitionService.createOrUpdate(any[APIDefinition])(any[HeaderCarrier])).thenReturn(Future.successful())
+      when(mockAPIDefinitionService.createOrUpdate(any[APIDefinition])(any[HeaderCarrier])).thenReturn(Future.successful(()))
     }
   }
 
@@ -365,7 +365,7 @@ class APIDefinitionControllerSpec extends UnitSpec
           |}""".stripMargin.replaceAll("\n", " ")
 
       val apiDefinition = APIDefinition("calendar", "http://calendar", "Calendar API", "My Calendar API", "calendar",
-        versions = Seq(APIVersion("1.0", APIStatus.STABLE,  Some(PrivateAPIAccess(Seq("app-id-1","app-id-2"))),
+        versions = Seq(APIVersion("1.0", APIStatus.STABLE, Some(PrivateAPIAccess(Seq("app-id-1", "app-id-2"))),
           Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
           Some(true))), requiresTrust = Some(true), None, None)
 
@@ -538,7 +538,7 @@ class APIDefinitionControllerSpec extends UnitSpec
           Some(true))),
         requiresTrust = None, lastPublishedAt = Some(aTime))
 
-      when(mockAPIDefinitionService.fetchByServiceName(isEq(serviceName), isEq(Some(userEmail)))(any[HeaderCarrier]))
+      when(mockAPIDefinitionService.fetchByServiceName(isEq(serviceName), isEq(Some(userEmail)), any[Boolean])(any[HeaderCarrier]))
         .thenReturn(successful(Some(apiDefinition)))
 
       val result = await(underTest.fetch(serviceName)(FakeRequest("GET", s"?email=$userEmail")))
@@ -546,28 +546,28 @@ class APIDefinitionControllerSpec extends UnitSpec
       status(result) shouldBe OK
       Json.prettyPrint(jsonBodyOf(result)) shouldBe
         s"""{
-            |  "serviceName" : "calendar",
-            |  "serviceBaseUrl" : "http://calendar",
-            |  "name" : "Calendar API",
-            |  "description" : "My Calendar API",
-            |  "context" : "calendar",
-            |  "versions" : [ {
-            |    "version" : "1.0",
-            |    "status" : "BETA",
-            |    "access" : {
-            |      "type" : "PUBLIC"
-            |    },
-            |    "endpoints" : [ {
-            |      "uriPattern" : "/today",
-            |      "endpointName" : "Get Today's Date",
-            |      "method" : "GET",
-            |      "authType" : "NONE",
-            |      "throttlingTier" : "UNLIMITED"
-            |    } ],
-            |    "endpointsEnabled" : true
-            |  } ],
-            |  "lastPublishedAt" : "${ISODateTimeFormat.dateTime().withZoneUTC().print(aTime)}"
-            |}""".trim.stripMargin
+           |  "serviceName" : "calendar",
+           |  "serviceBaseUrl" : "http://calendar",
+           |  "name" : "Calendar API",
+           |  "description" : "My Calendar API",
+           |  "context" : "calendar",
+           |  "versions" : [ {
+           |    "version" : "1.0",
+           |    "status" : "BETA",
+           |    "access" : {
+           |      "type" : "PUBLIC"
+           |    },
+           |    "endpoints" : [ {
+           |      "uriPattern" : "/today",
+           |      "endpointName" : "Get Today's Date",
+           |      "method" : "GET",
+           |      "authType" : "NONE",
+           |      "throttlingTier" : "UNLIMITED"
+           |    } ],
+           |    "endpointsEnabled" : true
+           |  } ],
+           |  "lastPublishedAt" : "${ISODateTimeFormat.dateTime().withZoneUTC().print(aTime)}"
+           |}""".trim.stripMargin
     }
 
     "succeed with a 200 (ok) when a public API exists for the given serviceName" in new Setup {
@@ -576,12 +576,12 @@ class APIDefinitionControllerSpec extends UnitSpec
       val userEmail = "user@email.com"
 
       val apiDefinition = APIDefinition(serviceName, "http://calendar", "Calendar API", "My Calendar API", "calendar",
-        versions = Seq(APIVersion("1.0", APIStatus.BETA,  Some(PublicAPIAccess()),
+        versions = Seq(APIVersion("1.0", APIStatus.BETA, Some(PublicAPIAccess()),
           Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
           Some(true))),
         requiresTrust = None)
 
-      when(mockAPIDefinitionService.fetchByServiceName(isEq(serviceName), isEq(None))(any[HeaderCarrier]))
+      when(mockAPIDefinitionService.fetchByServiceName(isEq(serviceName), isEq(None), any[Boolean])(any[HeaderCarrier]))
         .thenReturn(successful(Some(apiDefinition)))
 
       val result = await(underTest.fetch(serviceName)(request))
@@ -593,7 +593,7 @@ class APIDefinitionControllerSpec extends UnitSpec
 
       val serviceName = "calendar"
 
-      when(mockAPIDefinitionService.fetchByServiceName(isEq(serviceName), isEq(None))(any[HeaderCarrier]))
+      when(mockAPIDefinitionService.fetchByServiceName(isEq(serviceName), isEq(None), any[Boolean])(any[HeaderCarrier]))
         .thenReturn(successful(None))
 
       val result = await(underTest.fetch(serviceName)(request))
@@ -606,7 +606,7 @@ class APIDefinitionControllerSpec extends UnitSpec
       val serviceName = "calendar"
       val userEmail = "user@email.com"
 
-      when(mockAPIDefinitionService.fetchByServiceName(isEq(serviceName), isEq(Some(userEmail)))(any[HeaderCarrier]))
+      when(mockAPIDefinitionService.fetchByServiceName(isEq(serviceName), isEq(Some(userEmail)), any[Boolean])(any[HeaderCarrier]))
         .thenReturn(successful(None))
 
       val result = await(underTest.fetch(serviceName)(FakeRequest("GET", s"?email=$userEmail")))
@@ -618,7 +618,7 @@ class APIDefinitionControllerSpec extends UnitSpec
 
       val serviceName = "calendar"
 
-      when(mockAPIDefinitionService.fetchByServiceName(isEq(serviceName), isEq(None))(any[HeaderCarrier]))
+      when(mockAPIDefinitionService.fetchByServiceName(isEq(serviceName), isEq(None), any[Boolean])(any[HeaderCarrier]))
         .thenReturn(failed(new RuntimeException("Something went wrong")))
 
       val result = await(underTest.fetch(serviceName)(request))
@@ -633,12 +633,12 @@ class APIDefinitionControllerSpec extends UnitSpec
     "return all the Public APIs when no context is given" in new Setup {
 
       val apiDefinition1 = APIDefinition("calendar", "http://calendar", "Calendar API", "My Calendar API", "calendar",
-        versions = Seq(APIVersion("1.0", APIStatus.BETA,  Some(PublicAPIAccess()),
+        versions = Seq(APIVersion("1.0", APIStatus.BETA, Some(PublicAPIAccess()),
           Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
           Some(true))),
         requiresTrust = Some(true))
       val apiDefinition2 = APIDefinition("employment", "http://employment", "Employment API", "My Calendar API", "employment",
-        versions = Seq(APIVersion("1.0", APIStatus.BETA,  Some(PublicAPIAccess()),
+        versions = Seq(APIVersion("1.0", APIStatus.BETA, Some(PublicAPIAccess()),
           Seq(Endpoint("/history", "Get Employment History", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
           Some(true))),
         requiresTrust = Some(false))
@@ -674,19 +674,19 @@ class APIDefinitionControllerSpec extends UnitSpec
         .thenReturn(successful(Seq(privateApiDefinition)))
 
       val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?type=private")))
-      status (result) shouldBe OK
-      jsonBodyOf (result) shouldEqual Json.toJson(Seq(privateApiDefinition))
+      status(result) shouldBe OK
+      jsonBodyOf(result) shouldEqual Json.toJson(Seq(privateApiDefinition))
       getHeader(result, HeaderNames.CACHE_CONTROL) shouldBe None
     }
 
     "return all Public APIs when no the type parameter is defined as public" in new Setup {
 
       val apiDefinition1 = APIDefinition("calendar", "http://calendar", "Calendar API", "My Calendar API", "calendar",
-        Seq(APIVersion("1.0", APIStatus.BETA,  Some(PublicAPIAccess()),
+        Seq(APIVersion("1.0", APIStatus.BETA, Some(PublicAPIAccess()),
           Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
           Some(true))), Some(true))
       val apiDefinition2 = APIDefinition("employment", "http://employment", "Employment API", "My Calendar API", "employment",
-        Seq(APIVersion("1.0", APIStatus.BETA,  Some(PublicAPIAccess()),
+        Seq(APIVersion("1.0", APIStatus.BETA, Some(PublicAPIAccess()),
           Seq(Endpoint("/history", "Get Employment History", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
           Some(true))), Some(false))
 
@@ -712,13 +712,13 @@ class APIDefinitionControllerSpec extends UnitSpec
 
     "fail with a 400 (bad request) when an invalid type parameter is defined" in new Setup {
       val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?type=monoid")))
-      status (result) shouldBe BAD_REQUEST
+      status(result) shouldBe BAD_REQUEST
     }
 
     "return the API when the context is defined and an API exist for the context" in new Setup {
 
       val apiDefinition1 = APIDefinition("calendar", "http://calendar", "Calendar API", "My Calendar API", "calendar",
-        versions = Seq(APIVersion("1.0", APIStatus.BETA,  Some(PublicAPIAccess()),
+        versions = Seq(APIVersion("1.0", APIStatus.BETA, Some(PublicAPIAccess()),
           Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
           Some(true))),
         requiresTrust = Some(true))
@@ -909,7 +909,7 @@ class APIDefinitionControllerSpec extends UnitSpec
   }
 
   private val anApiDefinition = APIDefinition("calendar", "http://calendar", "Calendar API", "My Calendar API", "calendar",
-    versions = Seq(APIVersion("1.0", APIStatus.BETA,  Some(PublicAPIAccess()),
+    versions = Seq(APIVersion("1.0", APIStatus.BETA, Some(PublicAPIAccess()),
       Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
       Some(true))),
     requiresTrust = Some(true))
