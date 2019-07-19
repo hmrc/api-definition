@@ -12,7 +12,7 @@ lazy val compile = Seq(
   ws,
   "uk.gov.hmrc" %% "bootstrap-play-25" % "4.13.0",
   "uk.gov.hmrc" %% "simple-reactivemongo" % "7.20.0-play-25",
-  "uk.gov.hmrc" %% "play-json-union-formatter" % "1.3.0",
+  "uk.gov.hmrc" %% "play-json-union-formatter" % "1.7.0",
   "org.typelevel" %% "cats-core" % "1.1.0"
 )
 
