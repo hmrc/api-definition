@@ -73,7 +73,7 @@ lazy val unitTestSettings =
   inConfig(Test)(Defaults.testTasks) ++
     Seq(
       testOptions in Test := Seq(Tests.Filter(onPackageName("unit"))),
-      testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-oD"),
+      testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-oDT"),
       unmanagedSourceDirectories in Test := Seq((baseDirectory in Test).value / "test"),
       addTestReportOption(Test, "test-reports")
     )
@@ -82,7 +82,7 @@ lazy val componentTestSettings =
   inConfig(ComponentTest)(Defaults.testTasks) ++
     Seq(
       testOptions in ComponentTest := Seq(Tests.Filter(onPackageName("component"))),
-      testOptions in ComponentTest += Tests.Argument(TestFrameworks.ScalaTest, "-oD"),
+      testOptions in ComponentTest += Tests.Argument(TestFrameworks.ScalaTest, "-oDT"),
       fork in ComponentTest := false,
       parallelExecution in ComponentTest := false,
       addTestReportOption(ComponentTest, "component-reports")
@@ -92,7 +92,7 @@ lazy val itTestSettings =
   inConfig(IntegrationTest)(Defaults.testTasks) ++
     Seq(
       testOptions in IntegrationTest := Seq(Tests.Filter(onPackageName("it"))),
-      testOptions in IntegrationTest += Tests.Argument(TestFrameworks.ScalaTest, "-oD"),
+      testOptions in IntegrationTest += Tests.Argument(TestFrameworks.ScalaTest, "-oDT"),
       fork in IntegrationTest := false,
       parallelExecution in IntegrationTest := false,
       addTestReportOption(IntegrationTest, "integration-reports")
