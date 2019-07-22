@@ -162,7 +162,7 @@ class APIDefinitionControllerSpec extends UnitSpec
       status(result) shouldBe INTERNAL_SERVER_ERROR
     }
 
-    "fail with a 422 (Unprocessable entity) when api name is invalid" in new Setup {
+    "fail with a 422 (Un-processable entity) when api name is invalid" in new Setup {
 
       val body: String =
         """{
@@ -326,7 +326,7 @@ class APIDefinitionControllerSpec extends UnitSpec
 
       theServiceWillCreateOrUpdateTheAPIDefinition
 
-      val result = await(underTest.createOrUpdate()(request.withBody(Json.parse(apiDefinitionJson))))
+      private val result = await(underTest.createOrUpdate()(request.withBody(Json.parse(apiDefinitionJson))))
 
       status(result) shouldBe NO_CONTENT
 
@@ -334,7 +334,7 @@ class APIDefinitionControllerSpec extends UnitSpec
     }
 
     "parse an API definition with PRIVATE access type" in new Setup {
-      val apiDefinitionJson =
+      private val apiDefinitionJson =
         """{
           |  "serviceName": "calendar",
           |  "name": "Calendar API",
@@ -371,7 +371,7 @@ class APIDefinitionControllerSpec extends UnitSpec
 
       theServiceWillCreateOrUpdateTheAPIDefinition
 
-      val result = await(underTest.createOrUpdate()(request.withBody(Json.parse(apiDefinitionJson))))
+      private val result = await(underTest.createOrUpdate()(request.withBody(Json.parse(apiDefinitionJson))))
 
       status(result) shouldBe NO_CONTENT
 
@@ -380,7 +380,7 @@ class APIDefinitionControllerSpec extends UnitSpec
 
     "fail with a 422 (Unprocessable entity) when access type 'PROTECTED' is unkown" in new Setup {
 
-      val apiDefinitionJson =
+      private val apiDefinitionJson =
         """{
           |  "serviceName": "calendar",
           |  "name": "Calendar API",
@@ -410,7 +410,7 @@ class APIDefinitionControllerSpec extends UnitSpec
 
       verifyZeroInteractions(mockAPIDefinitionService)
 
-      val result = await(underTest.createOrUpdate()(request.withBody(Json.parse(apiDefinitionJson))))
+      private val result = await(underTest.createOrUpdate()(request.withBody(Json.parse(apiDefinitionJson))))
 
       status(result) shouldBe UNPROCESSABLE_ENTITY
       (jsonBodyOf(result) \ "message").as[String] shouldBe "Json cannot be converted to API Definition"
@@ -418,7 +418,7 @@ class APIDefinitionControllerSpec extends UnitSpec
 
     "fail with a 422 (Unprocessable entity) when access type 'PRIVATE' does not define whitelistedApplicationIds" in new Setup {
 
-      val apiDefinitionJson =
+      private val apiDefinitionJson =
         """{
           |  "serviceName": "calendar",
           |  "name": "Calendar API",
@@ -448,7 +448,7 @@ class APIDefinitionControllerSpec extends UnitSpec
 
       verifyZeroInteractions(mockAPIDefinitionService)
 
-      val result = await(underTest.createOrUpdate()(request.withBody(Json.parse(apiDefinitionJson))))
+      private val result = await(underTest.createOrUpdate()(request.withBody(Json.parse(apiDefinitionJson))))
 
       status(result) shouldBe UNPROCESSABLE_ENTITY
       (jsonBodyOf(result) \ "message").as[String] shouldBe "API Access 'PRIVATE' should define 'whitelistedApplicationIds'"
@@ -472,12 +472,12 @@ class APIDefinitionControllerSpec extends UnitSpec
     "succeed with a 200 (ok) when an API exists for the given serviceName and user has access" in new Setup {
       val serviceName = "calendar"
       val userEmail = "user@email.com"
-      val extendedApiDefinition = extDefinition(serviceName, Some(userEmail))
+      private val extendedApiDefinition = extDefinition(serviceName, Some(userEmail))
 
       when(mockAPIDefinitionService.fetchExtendedByServiceName(isEq(serviceName), isEq(Some(userEmail)))(any[HeaderCarrier]))
         .thenReturn(successful(extendedApiDefinition))
 
-      val result = await(underTest.fetchExtended(serviceName)(FakeRequest("GET", s"?email=$userEmail")))
+      private val result = await(underTest.fetchExtended(serviceName)(FakeRequest("GET", s"?email=$userEmail")))
 
       status(result) shouldBe OK
       jsonBodyOf(result).asOpt[ExtendedAPIDefinition] shouldBe extendedApiDefinition
@@ -487,12 +487,12 @@ class APIDefinitionControllerSpec extends UnitSpec
 
       val serviceName = "calendar"
       val userEmail = "user@email.com"
-      val extendedApiDefinition = extDefinition(serviceName, None)
+      private val extendedApiDefinition = extDefinition(serviceName, None)
 
       when(mockAPIDefinitionService.fetchExtendedByServiceName(isEq(serviceName), isEq(None))(any[HeaderCarrier]))
         .thenReturn(successful(extendedApiDefinition))
 
-      val result = await(underTest.fetchExtended(serviceName)(FakeRequest("GET", "")))
+      private val result = await(underTest.fetchExtended(serviceName)(FakeRequest("GET", "")))
 
       status(result) shouldBe OK
       jsonBodyOf(result).asOpt[ExtendedAPIDefinition] shouldBe extendedApiDefinition
@@ -505,7 +505,7 @@ class APIDefinitionControllerSpec extends UnitSpec
       when(mockAPIDefinitionService.fetchExtendedByServiceName(isEq(serviceName), isEq(None))(any[HeaderCarrier]))
         .thenReturn(successful(None))
 
-      val result = await(underTest.fetchExtended(serviceName)(request))
+      private val result = await(underTest.fetchExtended(serviceName)(request))
 
       status(result) shouldBe NOT_FOUND
     }
@@ -517,7 +517,7 @@ class APIDefinitionControllerSpec extends UnitSpec
       when(mockAPIDefinitionService.fetchExtendedByServiceName(isEq(serviceName), isEq(None))(any[HeaderCarrier]))
         .thenReturn(failed(new RuntimeException("Something went wrong")))
 
-      val result = await(underTest.fetchExtended(serviceName)(request))
+      private val result = await(underTest.fetchExtended(serviceName)(request))
 
       status(result) shouldBe INTERNAL_SERVER_ERROR
     }
@@ -530,7 +530,7 @@ class APIDefinitionControllerSpec extends UnitSpec
       val serviceName = "calendar"
       val userEmail = "user@email.com"
 
-      val aTime = DateTime.now(DateTimeZone.forID("Asia/Harbin"))
+      private val aTime = DateTime.now(DateTimeZone.forID("Asia/Harbin"))
 
       val apiDefinition = APIDefinition(serviceName, "http://calendar", "Calendar API", "My Calendar API", "calendar",
         versions = Seq(APIVersion("1.0", APIStatus.BETA, Some(PublicAPIAccess()),
@@ -541,7 +541,7 @@ class APIDefinitionControllerSpec extends UnitSpec
       when(mockAPIDefinitionService.fetchByServiceName(isEq(serviceName), isEq(Some(userEmail)), any[Boolean])(any[HeaderCarrier]))
         .thenReturn(successful(Some(apiDefinition)))
 
-      val result = await(underTest.fetch(serviceName)(FakeRequest("GET", s"?email=$userEmail")))
+      private val result = await(underTest.fetch(serviceName)(FakeRequest("GET", s"?email=$userEmail")))
 
       status(result) shouldBe OK
       Json.prettyPrint(jsonBodyOf(result)) shouldBe
@@ -584,7 +584,7 @@ class APIDefinitionControllerSpec extends UnitSpec
       when(mockAPIDefinitionService.fetchByServiceName(isEq(serviceName), isEq(None), any[Boolean])(any[HeaderCarrier]))
         .thenReturn(successful(Some(apiDefinition)))
 
-      val result = await(underTest.fetch(serviceName)(request))
+      private val result = await(underTest.fetch(serviceName)(request))
 
       status(result) shouldBe OK
     }
@@ -596,7 +596,7 @@ class APIDefinitionControllerSpec extends UnitSpec
       when(mockAPIDefinitionService.fetchByServiceName(isEq(serviceName), isEq(None), any[Boolean])(any[HeaderCarrier]))
         .thenReturn(successful(None))
 
-      val result = await(underTest.fetch(serviceName)(request))
+      private val result = await(underTest.fetch(serviceName)(request))
 
       status(result) shouldBe NOT_FOUND
     }
@@ -609,7 +609,7 @@ class APIDefinitionControllerSpec extends UnitSpec
       when(mockAPIDefinitionService.fetchByServiceName(isEq(serviceName), isEq(Some(userEmail)), any[Boolean])(any[HeaderCarrier]))
         .thenReturn(successful(None))
 
-      val result = await(underTest.fetch(serviceName)(FakeRequest("GET", s"?email=$userEmail")))
+      private val result = await(underTest.fetch(serviceName)(FakeRequest("GET", s"?email=$userEmail")))
 
       status(result) shouldBe NOT_FOUND
     }
@@ -621,7 +621,7 @@ class APIDefinitionControllerSpec extends UnitSpec
       when(mockAPIDefinitionService.fetchByServiceName(isEq(serviceName), isEq(None), any[Boolean])(any[HeaderCarrier]))
         .thenReturn(failed(new RuntimeException("Something went wrong")))
 
-      val result = await(underTest.fetch(serviceName)(request))
+      private val result = await(underTest.fetch(serviceName)(request))
 
       status(result) shouldBe INTERNAL_SERVER_ERROR
     }
@@ -646,7 +646,7 @@ class APIDefinitionControllerSpec extends UnitSpec
       when(mockAPIDefinitionService.fetchAllPublicAPIs())
         .thenReturn(successful(Seq(apiDefinition1, apiDefinition2)))
 
-      val result = await(underTest.queryDispatcher()(request))
+      private val result = await(underTest.queryDispatcher()(request))
 
       status(result) shouldBe OK
       jsonBodyOf(result) shouldEqual Json.toJson(Seq(apiDefinition1, apiDefinition2))
@@ -658,7 +658,7 @@ class APIDefinitionControllerSpec extends UnitSpec
       when(mockAPIDefinitionService.fetchAllPublicAPIs())
         .thenReturn(failed(new RuntimeException("Something went wrong")))
 
-      val result = await(underTest.queryDispatcher()(request))
+      private val result = await(underTest.queryDispatcher()(request))
 
       status(result) shouldBe INTERNAL_SERVER_ERROR
       getHeader(result, HeaderNames.CACHE_CONTROL) shouldBe None
@@ -673,7 +673,7 @@ class APIDefinitionControllerSpec extends UnitSpec
       when(mockAPIDefinitionService.fetchAllPrivateAPIs())
         .thenReturn(successful(Seq(privateApiDefinition)))
 
-      val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?type=private")))
+      private val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?type=private")))
       status(result) shouldBe OK
       jsonBodyOf(result) shouldEqual Json.toJson(Seq(privateApiDefinition))
       getHeader(result, HeaderNames.CACHE_CONTROL) shouldBe None
@@ -693,7 +693,7 @@ class APIDefinitionControllerSpec extends UnitSpec
       when(mockAPIDefinitionService.fetchAllPublicAPIs())
         .thenReturn(successful(Seq(apiDefinition1, apiDefinition2)))
 
-      val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?type=public")))
+      private val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?type=public")))
 
       status(result) shouldBe OK
       jsonBodyOf(result) shouldEqual Json.toJson(Seq(apiDefinition1, apiDefinition2))
@@ -705,13 +705,13 @@ class APIDefinitionControllerSpec extends UnitSpec
       when(mockAPIDefinitionService.fetchAllPrivateAPIs())
         .thenReturn(failed(new RuntimeException("Something went wrong")))
 
-      val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?type=private")))
+      private val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?type=private")))
 
       status(result) shouldBe INTERNAL_SERVER_ERROR
     }
 
     "fail with a 400 (bad request) when an invalid type parameter is defined" in new Setup {
-      val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?type=monoid")))
+      private val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?type=monoid")))
       status(result) shouldBe BAD_REQUEST
     }
 
@@ -726,7 +726,7 @@ class APIDefinitionControllerSpec extends UnitSpec
       when(mockAPIDefinitionService.fetchByContext(isEq("calendar")))
         .thenReturn(successful(Some(apiDefinition1)))
 
-      val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?context=calendar")))
+      private val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?context=calendar")))
 
       status(result) shouldBe OK
       jsonBodyOf(result) shouldEqual Json.toJson(apiDefinition1)
@@ -738,7 +738,7 @@ class APIDefinitionControllerSpec extends UnitSpec
       when(mockAPIDefinitionService.fetchByContext(isEq("calendar")))
         .thenReturn(successful(None))
 
-      val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?context=calendar")))
+      private val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?context=calendar")))
 
       status(result) shouldBe NOT_FOUND
       getHeader(result, HeaderNames.CACHE_CONTROL) shouldBe None
@@ -749,19 +749,19 @@ class APIDefinitionControllerSpec extends UnitSpec
       when(mockAPIDefinitionService.fetchByContext(isEq("calendar")))
         .thenReturn(failed(new RuntimeException("Something went wrong")))
 
-      val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?context=calendar")))
+      private val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?context=calendar")))
 
       status(result) shouldBe INTERNAL_SERVER_ERROR
     }
 
     "return all the APIs available for the application when the applicationId is defined" in new Setup {
 
-      val apiDefinitions = Seq(anApiDefinition)
+      private val apiDefinitions = Seq(anApiDefinition)
 
       when(mockAPIDefinitionService.fetchAllAPIsForApplication("APP_ID"))
         .thenReturn(successful(apiDefinitions))
 
-      val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?applicationId=APP_ID")))
+      private val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?applicationId=APP_ID")))
 
       status(result) shouldBe OK
       jsonBodyOf(result) shouldEqual Json.toJson(apiDefinitions)
@@ -773,7 +773,7 @@ class APIDefinitionControllerSpec extends UnitSpec
       when(mockAPIDefinitionService.fetchAllAPIsForApplication("APP_ID"))
         .thenReturn(failed(new RuntimeException("Something went wrong")))
 
-      val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?applicationId=APP_ID")))
+      private val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?applicationId=APP_ID")))
 
       status(result) shouldBe INTERNAL_SERVER_ERROR
       getHeader(result, HeaderNames.CACHE_CONTROL) shouldBe None
@@ -781,12 +781,12 @@ class APIDefinitionControllerSpec extends UnitSpec
 
     "return all the APIs available for the collaborator when the email is defined" in new Setup {
 
-      val apiDefinitions = Seq(anApiDefinition)
+      private val apiDefinitions = Seq(anApiDefinition)
 
       when(mockAPIDefinitionService.fetchAllAPIsForCollaborator(isEq("EMAIL@EMAIL.COM"), any[Boolean])(any[HeaderCarrier]))
         .thenReturn(successful(apiDefinitions))
 
-      val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?email=EMAIL@EMAIL.COM")))
+      private val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?email=EMAIL@EMAIL.COM")))
 
       status(result) shouldBe OK
       jsonBodyOf(result) shouldEqual Json.toJson(apiDefinitions)
@@ -798,7 +798,7 @@ class APIDefinitionControllerSpec extends UnitSpec
       when(mockAPIDefinitionService.fetchAllAPIsForCollaborator(isEq("EMAIL@EMAIL.COM"), any[Boolean])(any[HeaderCarrier]))
         .thenReturn(failed(new RuntimeException("Something went wrong")))
 
-      val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?email=EMAIL@EMAIL.COM")))
+      private val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?email=EMAIL@EMAIL.COM")))
 
       status(result) shouldBe INTERNAL_SERVER_ERROR
       getHeader(result, HeaderNames.CACHE_CONTROL) shouldBe None
@@ -810,14 +810,14 @@ class APIDefinitionControllerSpec extends UnitSpec
   "validate" should {
     "succeed with status 202 (Accepted) when the payload is valid" in new Setup {
 
-      val result = await(underTest.validate()(request.withBody(Json.parse(calendarApiDefinition))))
+      private val result = await(underTest.validate()(request.withBody(Json.parse(calendarApiDefinition))))
 
       status(result) shouldBe ACCEPTED
     }
 
     "fail with status 422 (UnprocessableEntity) when the payload is invalid" in new Setup {
 
-      val result = await(underTest.validate()(request.withBody(Json.parse(calendarApiDefinitionMissingDescription))))
+      private val result = await(underTest.validate()(request.withBody(Json.parse(calendarApiDefinitionMissingDescription))))
 
       jsonBodyOf(result) shouldEqual Json.toJson(
         ErrorResponse(ErrorCode.API_INVALID_JSON, "Json cannot be converted to API Definition",
@@ -835,7 +835,7 @@ class APIDefinitionControllerSpec extends UnitSpec
       given(mockAPIDefinitionService.delete(isEq("service-name"))(any[HeaderCarrier]))
         .willReturn(successful(()))
 
-      val result = await(underTest.delete("service-name")(request))
+      private val result = await(underTest.delete("service-name")(request))
 
       status(result) shouldBe NO_CONTENT
     }
@@ -845,7 +845,7 @@ class APIDefinitionControllerSpec extends UnitSpec
       given(mockAPIDefinitionService.delete(isEq("service-name"))(any[HeaderCarrier]))
         .willReturn(failed(new RuntimeException("Something went wrong")))
 
-      val result = await(underTest.delete("service-name")(request))
+      private val result = await(underTest.delete("service-name")(request))
 
       status(result) shouldBe INTERNAL_SERVER_ERROR
     }
@@ -855,7 +855,7 @@ class APIDefinitionControllerSpec extends UnitSpec
       given(mockAPIDefinitionService.delete(isEq("service-name"))(any[HeaderCarrier]))
         .willReturn(failed(new UnauthorizedException("Unauthorized")))
 
-      val result = await(underTest.delete("service-name")(request))
+      private val result = await(underTest.delete("service-name")(request))
 
       status(result) shouldBe FORBIDDEN
     }
@@ -866,7 +866,7 @@ class APIDefinitionControllerSpec extends UnitSpec
       given(mockAPIDefinitionService.publishAll()(any[HeaderCarrier]))
         .willReturn(successful(()))
 
-      val result = await(underTest.publishAll()(request))
+      private val result = await(underTest.publishAll()(request))
 
       status(result) shouldBe NO_CONTENT
       bodyOf(result).isEmpty shouldBe true
@@ -878,7 +878,7 @@ class APIDefinitionControllerSpec extends UnitSpec
       given(mockAPIDefinitionService.publishAll()(any[HeaderCarrier]))
         .willReturn(failed(new RuntimeException(message)))
 
-      val result = await(underTest.publishAll()(request))
+      private val result = await(underTest.publishAll()(request))
 
       status(result) shouldBe INTERNAL_SERVER_ERROR
       (jsonBodyOf(result) \ "code").as[String] shouldBe "INTERNAL_SERVER_ERROR"
