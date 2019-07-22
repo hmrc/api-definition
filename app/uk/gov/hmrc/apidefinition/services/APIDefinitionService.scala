@@ -62,7 +62,7 @@ class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
     }
   }
 
-  def fetchByServiceName(serviceName: String, email: Option[String], alsoIncludePrivateTrial: Boolean)
+  def fetchByServiceName(serviceName: String, email: Option[String], alsoIncludePrivateTrials: Boolean)
                         (implicit hc: HeaderCarrier): Future[Option[APIDefinition]] = {
 
     val maybeApiDefinitionF = apiDefinitionRepository.fetchByServiceName(serviceName)
@@ -71,7 +71,7 @@ class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
     for {
       api <- maybeApiDefinitionF
       userApplicationIds <- applicationIdsF
-    } yield api.flatMap(filterAPIForApplications(alsoIncludePrivateTrial, userApplicationIds: _*))
+    } yield api.flatMap(filterAPIForApplications(alsoIncludePrivateTrials, userApplicationIds: _*))
   }
 
   def fetchExtendedByServiceName(serviceName: String, email: Option[String])
@@ -173,9 +173,9 @@ class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
 
   // TODO Hardcoded false
   // TODO - Need to test this in the service spec
-  def fetchAllPublicAPIs(alsoIncludePrivateTrial: Boolean = false): Future[Seq[APIDefinition]] = {
+  def fetchAllPublicAPIs(alsoIncludePrivateTrials: Boolean = false): Future[Seq[APIDefinition]] = {
     // TODO Hardcoded false
-    apiDefinitionRepository.fetchAll().map(filterAPIsForApplications(alsoIncludePrivateTrial = false))
+    apiDefinitionRepository.fetchAll().map(filterAPIsForApplications(alsoIncludePrivateTrials = false))
   }
 
   def fetchAllPrivateAPIs(): Future[Seq[APIDefinition]] = {
@@ -197,13 +197,13 @@ class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
 
   // TODO: Remove default
   // TODO: Need test in ServiceSpec
-  def fetchAllAPIsForApplication(applicationId: String, alsoIncludePrivateTrial: Boolean = false): Future[Seq[APIDefinition]] = {
-    apiDefinitionRepository.fetchAll().map(filterAPIsForApplications(alsoIncludePrivateTrial, applicationId))
+  def fetchAllAPIsForApplication(applicationId: String, alsoIncludePrivateTrials: Boolean = false): Future[Seq[APIDefinition]] = {
+    apiDefinitionRepository.fetchAll().map(filterAPIsForApplications(alsoIncludePrivateTrials, applicationId))
   }
 
   // TODO: Remove default
   // TODO: Need test in ServiceSpec
-  def fetchAllAPIsForCollaborator(email: String, alsoIncludePrivateTrial: Boolean = false)(implicit hc: HeaderCarrier): Future[Seq[APIDefinition]] = {
+  def fetchAllAPIsForCollaborator(email: String, alsoIncludePrivateTrials: Boolean = false)(implicit hc: HeaderCarrier): Future[Seq[APIDefinition]] = {
 
     val applicationIdsF = fetchApplicationIdsByEmail(Some(email))
     val apiDefinitionsF = apiDefinitionRepository.fetchAll()
@@ -211,20 +211,20 @@ class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
     for {
       userApplicationIds <- applicationIdsF
       allApis <- apiDefinitionsF
-    } yield filterAPIsForApplications(alsoIncludePrivateTrial, userApplicationIds: _*)(allApis)
+    } yield filterAPIsForApplications(alsoIncludePrivateTrials, userApplicationIds: _*)(allApis)
   }
 
-  private def filterAPIsForApplications(alsoIncludePrivateTrial: Boolean, applicationIds: String*): Seq[APIDefinition] => Seq[APIDefinition] = {
+  private def filterAPIsForApplications(alsoIncludePrivateTrials: Boolean, applicationIds: String*): Seq[APIDefinition] => Seq[APIDefinition] = {
     _ flatMap {
-      filterAPIForApplications(alsoIncludePrivateTrial, applicationIds: _*)(_)
+      filterAPIForApplications(alsoIncludePrivateTrials, applicationIds: _*)(_)
     }
   }
 
-  private def filterAPIForApplications(alsoIncludePrivateTrial: Boolean, applicationIds: String*): APIDefinition => Option[APIDefinition] = { api =>
+  private def filterAPIForApplications(alsoIncludePrivateTrials: Boolean, applicationIds: String*): APIDefinition => Option[APIDefinition] = { api =>
 
     val filteredVersions = api.versions.filter(_.access.getOrElse(PublicAPIAccess) match {
       case access: PrivateAPIAccess =>
-        access.whitelistedApplicationIds.exists(s => applicationIds.contains(s)) || (access.isTrial.contains(true) && alsoIncludePrivateTrial)
+        access.whitelistedApplicationIds.exists(s => applicationIds.contains(s)) || (access.isTrial.contains(true) && alsoIncludePrivateTrials)
       case _ => true
     })
 

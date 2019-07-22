@@ -652,7 +652,7 @@ class APIDefinitionControllerSpec extends UnitSpec
   }
 
   "queryDispatcher" when {
-    "alsoIncludePrivateTrial is not specified" should {
+    "alsoIncludePrivateTrials is not specified" should {
 
       "return all the Public APIs (except private trials)" in new QueryDispatcherTrait {
 
@@ -662,7 +662,7 @@ class APIDefinitionControllerSpec extends UnitSpec
         jsonBodyOf(result) shouldEqual Json.toJson(apiDefinitions)
         getHeader(result, HeaderNames.CACHE_CONTROL) shouldBe None
 
-        verify(mockAPIDefinitionService).fetchAllPublicAPIs(alsoIncludePrivateTrial = false)
+        verify(mockAPIDefinitionService).fetchAllPublicAPIs(alsoIncludePrivateTrials = false)
       }
 
       "fail with a 500 (internal server error) when the fetchAllPublicAPIs throws an exception" in new QueryDispatcherTrait {
@@ -753,7 +753,7 @@ class APIDefinitionControllerSpec extends UnitSpec
         jsonBodyOf(result) shouldEqual Json.toJson(apiDefinitions)
         getHeader(result, HeaderNames.CACHE_CONTROL) shouldBe None
 
-        verify(mockAPIDefinitionService).fetchAllAPIsForApplication("APP_ID", alsoIncludePrivateTrial = false)
+        verify(mockAPIDefinitionService).fetchAllAPIsForApplication("APP_ID", alsoIncludePrivateTrials = false)
       }
 
       "fail with a 500 (internal server error) when the applicationId is defined and the service throws an exception" in new QueryDispatcherTrait {
@@ -790,16 +790,16 @@ class APIDefinitionControllerSpec extends UnitSpec
       }
     }
 
-    "alsoIncludePrivateTrial is specified" when {
+    "alsoIncludePrivateTrials is specified" when {
 
-      val alsoIncludePrivateTrialQueryParameter = "options=alsoIncludePrivateTrial"
+      val alsoIncludePrivateTrialsQueryParameter = "options=alsoIncludePrivateTrials"
 
       "return all the Public APIs and private trials APIs" in new QueryDispatcherTrait {
 
         when(mockAPIDefinitionService.fetchAllPublicAPIs(any()))
           .thenReturn(successful(apiDefinitions))
 
-        val fakeRequest = FakeRequest("GET", s"?$alsoIncludePrivateTrialQueryParameter")
+        val fakeRequest = FakeRequest("GET", s"?$alsoIncludePrivateTrialsQueryParameter")
 
         private val result = await(underTest.queryDispatcher()(fakeRequest))
 
@@ -807,38 +807,38 @@ class APIDefinitionControllerSpec extends UnitSpec
         jsonBodyOf(result) shouldEqual Json.toJson(apiDefinitions)
         getHeader(result, HeaderNames.CACHE_CONTROL) shouldBe None
 
-        verify(mockAPIDefinitionService).fetchAllPublicAPIs(alsoIncludePrivateTrial = true)
+        verify(mockAPIDefinitionService).fetchAllPublicAPIs(alsoIncludePrivateTrials = true)
       }
 
       "return all Public APIs and trial APIs when the type parameter is defined as public" in new QueryDispatcherTrait {
         when(mockAPIDefinitionService.fetchAllPublicAPIs(any()))
           .thenReturn(successful(apiDefinitions))
 
-        private val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?type=public&$alsoIncludePrivateTrialQueryParameter")))
+        private val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?type=public&$alsoIncludePrivateTrialsQueryParameter")))
 
         status(result) shouldBe OK
         jsonBodyOf(result) shouldEqual Json.toJson(apiDefinitions)
         getHeader(result, HeaderNames.CACHE_CONTROL) shouldBe None
 
-        verify(mockAPIDefinitionService).fetchAllPublicAPIs(alsoIncludePrivateTrial = true)
+        verify(mockAPIDefinitionService).fetchAllPublicAPIs(alsoIncludePrivateTrials = true)
       }
 
-      "return all the APIs available for an applicationId and alsoIncludePrivateTrial option is set" in new Setup {
+      "return all the APIs available for an applicationId and alsoIncludePrivateTrials option is set" in new Setup {
         when(mockAPIDefinitionService.fetchAllAPIsForApplication(any(), any()))
           .thenReturn(successful(apiDefinitions))
 
-        private val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?applicationId=APP_ID&options=alsoIncludePrivateTrial")))
+        private val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?applicationId=APP_ID&options=alsoIncludePrivateTrials")))
 
         status(result) shouldBe OK
         jsonBodyOf(result) shouldEqual Json.toJson(apiDefinitions)
         getHeader(result, HeaderNames.CACHE_CONTROL) shouldBe None
 
-        verify(mockAPIDefinitionService).fetchAllAPIsForApplication("APP_ID", alsoIncludePrivateTrial = true)
+        verify(mockAPIDefinitionService).fetchAllAPIsForApplication("APP_ID", alsoIncludePrivateTrials = true)
       }
 
       "return all the APIs available for the collaborator when the email is defined" in new QueryDispatcherTrait {
 
-        private val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?email=EMAIL@EMAIL.COM&$alsoIncludePrivateTrialQueryParameter")))
+        private val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?email=EMAIL@EMAIL.COM&$alsoIncludePrivateTrialsQueryParameter")))
 
         status(result) shouldBe OK
         jsonBodyOf(result) shouldEqual Json.toJson(apiDefinitions)
@@ -959,19 +959,19 @@ class APIDefinitionControllerSpec extends UnitSpec
   }
 
   "parse query options" should {
-    "set alsoIncludePrivateTrial to false if options not specified" in {
+    "set alsoIncludePrivateTrials to false if options not specified" in {
       val parsed = APIDefinitionController.QueryOptions(None)
-      parsed.alsoIncludePrivateTrial shouldBe false
+      parsed.alsoIncludePrivateTrials shouldBe false
     }
 
-    "set alsoIncludePrivateTrial to true if set in the query options" in {
-      val parsed = APIDefinitionController.QueryOptions(Some("alsoIncludePrivateTrial"))
-      parsed.alsoIncludePrivateTrial shouldBe true
+    "set alsoIncludePrivateTrials to true if set in the query options" in {
+      val parsed = APIDefinitionController.QueryOptions(Some("alsoIncludePrivateTrials"))
+      parsed.alsoIncludePrivateTrials shouldBe true
     }
 
-    "set alsoIncludePrivateTrial to false if blank in the query options" in {
+    "set alsoIncludePrivateTrials to false if blank in the query options" in {
       val parsed = APIDefinitionController.QueryOptions(Some(""))
-      parsed.alsoIncludePrivateTrial shouldBe false
+      parsed.alsoIncludePrivateTrials shouldBe false
     }
 
     "throw error if invalid option specified" in {

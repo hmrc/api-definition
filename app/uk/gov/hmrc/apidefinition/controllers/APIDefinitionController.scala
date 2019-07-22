@@ -68,7 +68,7 @@ class APIDefinitionController @Inject()(apiDefinitionValidator: ApiDefinitionVal
   }
 
   def fetch(serviceName: String): Action[AnyContent] = Action.async { implicit request =>
-    // TODO: Hardcoded alsoIncludePrivateTrial
+    // TODO: Hardcoded alsoIncludePrivateTrials
     apiDefinitionService.fetchByServiceName(serviceName, request.queryString.get("email").flatMap(_.headOption), false) map {
       case Some(apiDefinition) => Ok(Json.toJson(apiDefinition))
       case _ => NotFound(error(API_DEFINITION_NOT_FOUND, "No API Definition was found"))
@@ -143,13 +143,13 @@ class APIDefinitionController @Inject()(apiDefinitionValidator: ApiDefinitionVal
 
     // TODO: Parameter ordering can break this
     queryParameters match {
-      case Nil | ("options", _) :: Nil => fetchAllPublicAPIs(options.alsoIncludePrivateTrial)
+      case Nil | ("options", _) :: Nil => fetchAllPublicAPIs(options.alsoIncludePrivateTrials)
       case ("context", context) :: Nil => fetchByContext(context)
-      case ("applicationId", applicationId) :: _ => fetchAllForApplication(applicationId, options.alsoIncludePrivateTrial)
-      case ("email", email) :: Nil => fetchAllForCollaborator(email, options.alsoIncludePrivateTrial)
-      case ("email", email) :: ("options", _) :: Nil => fetchAllForCollaborator(email, options.alsoIncludePrivateTrial)
-      case ("type", typeValue) :: Nil => fetchDefinitionsByType(typeValue, options.alsoIncludePrivateTrial)
-      case ("options", _) :: ("type", typeValue) :: Nil => fetchDefinitionsByType(typeValue, options.alsoIncludePrivateTrial)
+      case ("applicationId", applicationId) :: _ => fetchAllForApplication(applicationId, options.alsoIncludePrivateTrials)
+      case ("email", email) :: Nil => fetchAllForCollaborator(email, options.alsoIncludePrivateTrials)
+      case ("email", email) :: ("options", _) :: Nil => fetchAllForCollaborator(email, options.alsoIncludePrivateTrials)
+      case ("type", typeValue) :: Nil => fetchDefinitionsByType(typeValue, options.alsoIncludePrivateTrials)
+      case ("options", _) :: ("type", typeValue) :: Nil => fetchDefinitionsByType(typeValue, options.alsoIncludePrivateTrials)
       // TODO - default?
     }
   }
@@ -166,14 +166,14 @@ class APIDefinitionController @Inject()(apiDefinitionValidator: ApiDefinitionVal
 object APIDefinitionController {
 
   // TODO - Is this the right place for this?
-  case class QueryOptions(alsoIncludePrivateTrial: Boolean)
+  case class QueryOptions(alsoIncludePrivateTrials: Boolean)
 
   object QueryOptions {
     def apply(options: Option[String]): QueryOptions = {
 
       options match {
-        case None | Some("") => QueryOptions(alsoIncludePrivateTrial = false)
-        case Some("alsoIncludePrivateTrial") => QueryOptions(alsoIncludePrivateTrial = true)
+        case None | Some("") => QueryOptions(alsoIncludePrivateTrials = false)
+        case Some("alsoIncludePrivateTrials") => QueryOptions(alsoIncludePrivateTrials = true)
         case Some(value) => throw new BadRequestException(s"Invalid options specified: $value")
       }
     }

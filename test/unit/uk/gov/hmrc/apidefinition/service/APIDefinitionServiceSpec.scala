@@ -278,13 +278,13 @@ class APIDefinitionServiceSpec extends UnitSpec
 
   "fetch" when {
 
-    "the alsoIncludePrivateTrial option is false" should {
+    "the alsoIncludePrivateTrials option is false" should {
 
-      val alsoIncludePrivateTrial = false
+      val alsoIncludePrivateTrials = false
 
       "return just the public and 'no access' versions of the API Definition when the user is not defined" in new FetchSetup {
 
-        val response = await(underTest.fetchByServiceName(serviceName, None, alsoIncludePrivateTrial))
+        val response = await(underTest.fetchByServiceName(serviceName, None, alsoIncludePrivateTrials))
 
         response shouldNot be(None)
         response.get.versions should contain allOf(publicVersion, noAccessDefinedVersion)
@@ -295,14 +295,14 @@ class APIDefinitionServiceSpec extends UnitSpec
 
         when(mockAPIDefinitionRepository.fetchByServiceName(serviceName)).thenReturn(successful(Some(definition)))
 
-        val response = await(underTest.fetchByServiceName(serviceName, None, alsoIncludePrivateTrial))
+        val response = await(underTest.fetchByServiceName(serviceName, None, alsoIncludePrivateTrials))
 
         response shouldBe None
       }
 
       "include public and 'no access' versions of the API Definition when the user is defined" in new FetchSetup {
 
-        val response = await(underTest.fetchByServiceName(serviceName, Some(email), alsoIncludePrivateTrial))
+        val response = await(underTest.fetchByServiceName(serviceName, Some(email), alsoIncludePrivateTrials))
 
         response shouldNot be(None)
         response.get.versions should contain allOf(publicVersion, noAccessDefinedVersion)
@@ -310,7 +310,7 @@ class APIDefinitionServiceSpec extends UnitSpec
 
       "include private versions of the API Definition when the specified user's application is whitelisted" in new FetchSetup {
 
-        val response = await(underTest.fetchByServiceName(serviceName, Some(email), alsoIncludePrivateTrial))
+        val response = await(underTest.fetchByServiceName(serviceName, Some(email), alsoIncludePrivateTrials))
 
         response shouldNot be(None)
         response.get.versions should contain(privateVersion)
@@ -318,7 +318,7 @@ class APIDefinitionServiceSpec extends UnitSpec
 
       "exclude private versions of the API Definition when the specified user's application is not whitelisted" in new FetchSetup {
 
-        val response = await(underTest.fetchByServiceName(serviceName, Some(email), alsoIncludePrivateTrial))
+        val response = await(underTest.fetchByServiceName(serviceName, Some(email), alsoIncludePrivateTrials))
 
         response shouldNot be(None)
         response.get.versions should not contain privateVersionOtherApplications
@@ -326,7 +326,7 @@ class APIDefinitionServiceSpec extends UnitSpec
 
       "include private trial versions of the API Definition when the specified user's application is whitelisted" in new FetchSetup {
 
-        val response = await(underTest.fetchByServiceName(serviceName, Some(email), alsoIncludePrivateTrial))
+        val response = await(underTest.fetchByServiceName(serviceName, Some(email), alsoIncludePrivateTrials))
 
         response shouldNot be(None)
         response.get.versions should contain(privateTrialVersionWithWhitelist)
@@ -334,20 +334,20 @@ class APIDefinitionServiceSpec extends UnitSpec
 
       "exclude private trial versions of the API Definition when the specified user's application is not whitelisted" in new FetchSetup {
 
-        val response = await(underTest.fetchByServiceName(serviceName, Some(email), alsoIncludePrivateTrial))
+        val response = await(underTest.fetchByServiceName(serviceName, Some(email), alsoIncludePrivateTrials))
 
         response shouldNot be(None)
         response.get.versions should not contain privateTrialVersion
       }
     }
 
-    "the alsoIncludePrivateTrial option is true" should {
+    "the alsoIncludePrivateTrials option is true" should {
 
-      val alsoIncludePrivateTrial = true
+      val alsoIncludePrivateTrials = true
 
       "return the public, 'no access' and private trial versions of the API Definition when the user is not defined" in new FetchSetup {
 
-        val response = await(underTest.fetchByServiceName(serviceName, None, alsoIncludePrivateTrial))
+        val response = await(underTest.fetchByServiceName(serviceName, None, alsoIncludePrivateTrials))
 
         response shouldNot be(None)
         response.get.versions should contain allOf(publicVersion, noAccessDefinedVersion, privateTrialVersion)
@@ -355,7 +355,7 @@ class APIDefinitionServiceSpec extends UnitSpec
 
       "include public and 'no access' versions of the API Definition when the user is defined" in new FetchSetup {
 
-        val response = await(underTest.fetchByServiceName(serviceName, Some(email), alsoIncludePrivateTrial))
+        val response = await(underTest.fetchByServiceName(serviceName, Some(email), alsoIncludePrivateTrials))
 
         response shouldNot be(None)
         response.get.versions should contain allOf(publicVersion, noAccessDefinedVersion)
@@ -363,7 +363,7 @@ class APIDefinitionServiceSpec extends UnitSpec
 
       "include private versions of the API Definition when the specified user's application is whitelisted" in new FetchSetup {
 
-        val response = await(underTest.fetchByServiceName(serviceName, Some(email), alsoIncludePrivateTrial))
+        val response = await(underTest.fetchByServiceName(serviceName, Some(email), alsoIncludePrivateTrials))
 
         response shouldNot be(None)
         response.get.versions should contain(privateVersion)
@@ -371,7 +371,7 @@ class APIDefinitionServiceSpec extends UnitSpec
 
       "exclude private versions of the API Definition when the specified user's application is not whitelisted" in new FetchSetup {
 
-        val response = await(underTest.fetchByServiceName(serviceName, Some(email), alsoIncludePrivateTrial))
+        val response = await(underTest.fetchByServiceName(serviceName, Some(email), alsoIncludePrivateTrials))
 
         response shouldNot be(None)
         response.get.versions should not contain privateVersionOtherApplications
@@ -379,7 +379,7 @@ class APIDefinitionServiceSpec extends UnitSpec
 
       "include private trial versions of the API Definition when the specified user's application is whitelisted" in new FetchSetup {
 
-        val response = await(underTest.fetchByServiceName(serviceName, Some(email), alsoIncludePrivateTrial))
+        val response = await(underTest.fetchByServiceName(serviceName, Some(email), alsoIncludePrivateTrials))
 
         response shouldNot be(None)
         response.get.versions should contain(privateTrialVersionWithWhitelist)
@@ -387,7 +387,7 @@ class APIDefinitionServiceSpec extends UnitSpec
 
       "include private trial versions of the API Definition when the specified user's application is not whitelisted" in new FetchSetup {
 
-        val response = await(underTest.fetchByServiceName(serviceName, Some(email), alsoIncludePrivateTrial))
+        val response = await(underTest.fetchByServiceName(serviceName, Some(email), alsoIncludePrivateTrials))
 
         response shouldNot be(None)
         response.get.versions should contain(privateTrialVersion)
@@ -397,9 +397,9 @@ class APIDefinitionServiceSpec extends UnitSpec
 
   "fetchAllAPIsForApplication" when {
 
-    "the alsoIncludePrivateTrial option is false" should {
+    "the alsoIncludePrivateTrials option is false" should {
 
-      val alsoIncludePrivateTrial = false
+      val alsoIncludePrivateTrials = false
 
       "filter out versions which are private for which the application is not trusted" in new Setup {
         val applicationId = "APP_ID"
@@ -437,9 +437,9 @@ class APIDefinitionServiceSpec extends UnitSpec
     val email = "email@email.com"
     val applicationId = randomUUID()
 
-    "the alsoIncludePrivateTrial option is false" should {
+    "the alsoIncludePrivateTrials option is false" should {
 
-      val alsoIncludePrivateTrial = false
+      val alsoIncludePrivateTrials = false
 
       "filter the private APIs for which the user does not have an application whitelisted" in new Setup {
 
