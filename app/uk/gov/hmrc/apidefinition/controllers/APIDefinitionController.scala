@@ -67,18 +67,18 @@ class APIDefinitionController @Inject()(apiDefinitionValidator: ApiDefinitionVal
     } recover recovery
   }
 
-  private def recovery: PartialFunction[Throwable, Result] = {
-    case e =>
-      Logger.error(s"An unexpected error occurred: ${e.getMessage}", e)
-      InternalServerError(error(ErrorCode.INTERNAL_SERVER_ERROR, e.getMessage))
-  }
-
   def fetch(serviceName: String): Action[AnyContent] = Action.async { implicit request =>
     // TODO: Hardcoded alsoIncludePrivateTrial
     apiDefinitionService.fetchByServiceName(serviceName, request.queryString.get("email").flatMap(_.headOption), false) map {
       case Some(apiDefinition) => Ok(Json.toJson(apiDefinition))
       case _ => NotFound(error(API_DEFINITION_NOT_FOUND, "No API Definition was found"))
     } recover recovery
+  }
+
+  private def recovery: PartialFunction[Throwable, Result] = {
+    case e =>
+      Logger.error(s"An unexpected error occurred: ${e.getMessage}", e)
+      InternalServerError(error(ErrorCode.INTERNAL_SERVER_ERROR, e.getMessage))
   }
 
   def validate: Action[JsValue] = Action.async(BodyParsers.parse.json) { implicit request =>
@@ -115,12 +115,14 @@ class APIDefinitionController @Inject()(apiDefinitionValidator: ApiDefinitionVal
       case _ => NotFound(error(API_DEFINITION_NOT_FOUND, "No API Definition was found"))
     } recover recovery
 
-    def fetchAllForApplication(applicationId: String, alsoIncludePrivateTrial: Boolean = false) =
-      apiDefinitionService.fetchAllAPIsForApplication(applicationId, alsoIncludePrivateTrial)
+    def fetchAllForApplication(applicationId: String, alsoIncludePrivateTrials: Boolean = false) =
+      apiDefinitionService.fetchAllAPIsForApplication(applicationId, alsoIncludePrivateTrials)
         .map(apiDefinitionToResult) recover recovery
 
-    def fetchAllForCollaborator(email: String) = apiDefinitionService.fetchAllAPIsForCollaborator(email)
-      .map(apiDefinitionToResult) recover recovery
+    def fetchAllForCollaborator(email: String, alsoIncludePrivateTrials: Boolean) =
+      apiDefinitionService
+        .fetchAllAPIsForCollaborator(email, alsoIncludePrivateTrials)
+        .map(apiDefinitionToResult) recover recovery
 
     def fetchDefinitionsByType(typeParam: String, alsoIncludePrivateTrials: Boolean) = {
       typeParam match {
@@ -144,7 +146,8 @@ class APIDefinitionController @Inject()(apiDefinitionValidator: ApiDefinitionVal
       case Nil | ("options", _) :: Nil => fetchAllPublicAPIs(options.alsoIncludePrivateTrial)
       case ("context", context) :: Nil => fetchByContext(context)
       case ("applicationId", applicationId) :: _ => fetchAllForApplication(applicationId, options.alsoIncludePrivateTrial)
-      case ("email", email) :: Nil => fetchAllForCollaborator(email)
+      case ("email", email) :: Nil => fetchAllForCollaborator(email, options.alsoIncludePrivateTrial)
+      case ("email", email) :: ("options", _) :: Nil => fetchAllForCollaborator(email, options.alsoIncludePrivateTrial)
       case ("type", typeValue) :: Nil => fetchDefinitionsByType(typeValue, options.alsoIncludePrivateTrial)
       case ("options", _) :: ("type", typeValue) :: Nil => fetchDefinitionsByType(typeValue, options.alsoIncludePrivateTrial)
       // TODO - default?
