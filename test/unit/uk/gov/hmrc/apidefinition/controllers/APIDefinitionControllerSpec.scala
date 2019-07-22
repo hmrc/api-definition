@@ -39,7 +39,6 @@ import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.services.APIDefinitionService
 import uk.gov.hmrc.apidefinition.utils.APIDefinitionMapper
 import uk.gov.hmrc.apidefinition.validators._
-import uk.gov.hmrc.http.HeaderNames.xRequestId
 import uk.gov.hmrc.http.{BadRequestException, HeaderCarrier, UnauthorizedException}
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 
@@ -54,7 +53,6 @@ class APIDefinitionControllerSpec extends UnitSpec
     implicit lazy val materializer: Materializer = fakeApplication.materializer
 
     implicit lazy val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
-    implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
 
     val mockAPIDefinitionService: APIDefinitionService = mock[APIDefinitionService]
     val mockApiDefinitionRepository: APIDefinitionRepository = mock[APIDefinitionRepository]
@@ -83,12 +81,6 @@ class APIDefinitionControllerSpec extends UnitSpec
       when(mockAPIDefinitionService.createOrUpdate(any[APIDefinition])(any[HeaderCarrier])).thenReturn(Future.successful(()))
     }
   }
-
-  private val anApiDefinition = APIDefinition("calendar", "http://calendar", "Calendar API", "My Calendar API", "calendar",
-    versions = Seq(APIVersion("1.0", APIStatus.BETA, Some(PublicAPIAccess()),
-      Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
-      Some(true))),
-    requiresTrust = Some(true))
 
   "createOrUpdate" should {
 
@@ -638,6 +630,8 @@ class APIDefinitionControllerSpec extends UnitSpec
 
   trait QueryDispatcherTrait extends Setup {
 
+    val email = "EMAIL@EXAMPLE.COM"
+
     val apiDefinitions: Seq[APIDefinition] =
       Array.fill(2)(APIDefinition("MyApiDefinitionServiceName1", "MyUrl", "MyName", "My description", "MyContext",
         Seq.empty, None))
@@ -649,6 +643,12 @@ class APIDefinitionControllerSpec extends UnitSpec
     when(mockAPIDefinitionService.fetchAllAPIsForCollaborator(any(), any())(any[HeaderCarrier])).thenReturn(apiDefinitions)
 
     def getHeader(result: Result, headerName: String) = result.header.headers.get(headerName)
+
+    def verifyApiDefinitionsReturnedOkWithNoCacheControl(result: Result) = {
+      status(result) shouldBe OK
+      jsonBodyOf(result) shouldEqual Json.toJson(apiDefinitions)
+      getHeader(result, HeaderNames.CACHE_CONTROL) shouldBe None
+    }
   }
 
   "queryDispatcher" should {
@@ -667,9 +667,8 @@ class APIDefinitionControllerSpec extends UnitSpec
     "return all Private APIs when the type parameter is defined as private" in new QueryDispatcherTrait {
 
       private val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?type=private")))
-      status(result) shouldBe OK
-      jsonBodyOf(result) shouldEqual Json.toJson(apiDefinitions)
-      getHeader(result, HeaderNames.CACHE_CONTROL) shouldBe None
+
+      verifyApiDefinitionsReturnedOkWithNoCacheControl(result)
 
       verify(mockAPIDefinitionService).fetchAllPrivateAPIs()
     }
@@ -723,10 +722,10 @@ class APIDefinitionControllerSpec extends UnitSpec
 
     "fail with a 500 (internal server error) when the email is defined and the service throws an exception" in new QueryDispatcherTrait {
 
-      when(mockAPIDefinitionService.fetchAllAPIsForCollaborator(isEq("EMAIL@EMAIL.COM"), any[Boolean])(any[HeaderCarrier]))
+      when(mockAPIDefinitionService.fetchAllAPIsForCollaborator(isEq(email), any[Boolean])(any[HeaderCarrier]))
         .thenReturn(failed(new RuntimeException("Something went wrong")))
 
-      private val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?email=EMAIL@EMAIL.COM")))
+      private val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?email=$email")))
 
       status(result) shouldBe INTERNAL_SERVER_ERROR
       getHeader(result, HeaderNames.CACHE_CONTROL) shouldBe None
@@ -748,104 +747,88 @@ class APIDefinitionControllerSpec extends UnitSpec
 
       "alsoIncludePrivateTrials is not specified" should {
 
+        val alsoIncludePrivateTrials = false
+
         "return all the Public APIs (without private trials)" in new QueryDispatcherTrait {
 
           private val result = await(underTest.queryDispatcher()(request))
 
-          status(result) shouldBe OK
-          jsonBodyOf(result) shouldEqual Json.toJson(apiDefinitions)
-          getHeader(result, HeaderNames.CACHE_CONTROL) shouldBe None
+          verifyApiDefinitionsReturnedOkWithNoCacheControl(result)
 
-          verify(mockAPIDefinitionService).fetchAllPublicAPIs(alsoIncludePrivateTrials = false)
+          verify(mockAPIDefinitionService).fetchAllPublicAPIs(alsoIncludePrivateTrials)
         }
 
         "return all Public APIs (without private trials) when the type parameter is defined as public" in new QueryDispatcherTrait {
 
           private val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?type=public")))
 
-          status(result) shouldBe OK
-          jsonBodyOf(result) shouldEqual Json.toJson(apiDefinitions)
-          getHeader(result, HeaderNames.CACHE_CONTROL) shouldBe None
+          verifyApiDefinitionsReturnedOkWithNoCacheControl(result)
 
-          verify(mockAPIDefinitionService).fetchAllPublicAPIs(false)
+          verify(mockAPIDefinitionService).fetchAllPublicAPIs(alsoIncludePrivateTrials)
         }
 
         "return all the APIs (without private trials) available for an applicationId" in new QueryDispatcherTrait {
 
           private val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?applicationId=APP_ID")))
 
-          status(result) shouldBe OK
-          jsonBodyOf(result) shouldEqual Json.toJson(apiDefinitions)
-          getHeader(result, HeaderNames.CACHE_CONTROL) shouldBe None
+          verifyApiDefinitionsReturnedOkWithNoCacheControl(result)
 
-          verify(mockAPIDefinitionService).fetchAllAPIsForApplication("APP_ID", alsoIncludePrivateTrials = false)
+          verify(mockAPIDefinitionService).fetchAllAPIsForApplication("APP_ID", alsoIncludePrivateTrials)
         }
 
         "return all the APIs (without private trials) available for the collaborator when the email is defined" in new QueryDispatcherTrait {
 
-          private val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?email=EMAIL@EMAIL.COM")))
+          private val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?email=$email")))
 
-          status(result) shouldBe OK
-          jsonBodyOf(result) shouldEqual Json.toJson(apiDefinitions)
-          getHeader(result, HeaderNames.CACHE_CONTROL) shouldBe None
+          verifyApiDefinitionsReturnedOkWithNoCacheControl(result)
 
-          verify(mockAPIDefinitionService).fetchAllAPIsForCollaborator(isEq("EMAIL@EMAIL.COM"), isEq(false))(any[HeaderCarrier])
+          verify(mockAPIDefinitionService).fetchAllAPIsForCollaborator(isEq(email), isEq(alsoIncludePrivateTrials))(any[HeaderCarrier])
         }
       }
 
       "alsoIncludePrivateTrials is specified" should {
 
         val alsoIncludePrivateTrialsQueryParameter = "options=alsoIncludePrivateTrials"
+        val alsoIncludePrivateTrials = true
 
         "return all the Public APIs and private trial APIs" in new QueryDispatcherTrait {
 
-          when(mockAPIDefinitionService.fetchAllPublicAPIs(any()))
-            .thenReturn(successful(apiDefinitions))
+          when(mockAPIDefinitionService.fetchAllPublicAPIs(any())).thenReturn(successful(apiDefinitions))
 
-          val fakeRequest = FakeRequest("GET", s"?$alsoIncludePrivateTrialsQueryParameter")
+          private val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?$alsoIncludePrivateTrialsQueryParameter")))
 
-          private val result = await(underTest.queryDispatcher()(fakeRequest))
+          verifyApiDefinitionsReturnedOkWithNoCacheControl(result)
 
-          status(result) shouldBe OK
-          jsonBodyOf(result) shouldEqual Json.toJson(apiDefinitions)
-          getHeader(result, HeaderNames.CACHE_CONTROL) shouldBe None
-
-          verify(mockAPIDefinitionService).fetchAllPublicAPIs(alsoIncludePrivateTrials = true)
+          verify(mockAPIDefinitionService).fetchAllPublicAPIs(alsoIncludePrivateTrials)
         }
 
         "return all Public APIs and private trial APIs when the type parameter is defined as public" in new QueryDispatcherTrait {
-          when(mockAPIDefinitionService.fetchAllPublicAPIs(any()))
-            .thenReturn(successful(apiDefinitions))
+
+          when(mockAPIDefinitionService.fetchAllPublicAPIs(any())).thenReturn(successful(apiDefinitions))
 
           private val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?type=public&$alsoIncludePrivateTrialsQueryParameter")))
 
-          status(result) shouldBe OK
-          jsonBodyOf(result) shouldEqual Json.toJson(apiDefinitions)
-          getHeader(result, HeaderNames.CACHE_CONTROL) shouldBe None
+          verifyApiDefinitionsReturnedOkWithNoCacheControl(result)
 
-          verify(mockAPIDefinitionService).fetchAllPublicAPIs(alsoIncludePrivateTrials = true)
+          verify(mockAPIDefinitionService).fetchAllPublicAPIs(alsoIncludePrivateTrials)
         }
 
         "return all the APIs available for an applicationId (including private trials)" in new QueryDispatcherTrait {
 
           private val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?applicationId=APP_ID&options=alsoIncludePrivateTrials")))
 
-          status(result) shouldBe OK
-          jsonBodyOf(result) shouldEqual Json.toJson(apiDefinitions)
-          getHeader(result, HeaderNames.CACHE_CONTROL) shouldBe None
+          verifyApiDefinitionsReturnedOkWithNoCacheControl(result)
 
-          verify(mockAPIDefinitionService).fetchAllAPIsForApplication("APP_ID", alsoIncludePrivateTrials = true)
+          verify(mockAPIDefinitionService).fetchAllAPIsForApplication("APP_ID", alsoIncludePrivateTrials)
         }
 
         "return all the APIs available for the collaborator (including private trials) when the email is defined" in new QueryDispatcherTrait {
 
-          private val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?email=EMAIL@EMAIL.COM&$alsoIncludePrivateTrialsQueryParameter")))
+          private val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?email=$email&$alsoIncludePrivateTrialsQueryParameter")))
 
-          status(result) shouldBe OK
-          jsonBodyOf(result) shouldEqual Json.toJson(apiDefinitions)
-          getHeader(result, HeaderNames.CACHE_CONTROL) shouldBe None
+          verifyApiDefinitionsReturnedOkWithNoCacheControl(result)
 
-          verify(mockAPIDefinitionService).fetchAllAPIsForCollaborator(isEq("EMAIL@EMAIL.COM"), isEq(true))(any[HeaderCarrier])
+          verify(mockAPIDefinitionService).fetchAllAPIsForCollaborator(isEq(email), isEq(alsoIncludePrivateTrials))(any[HeaderCarrier])
         }
       }
     }
@@ -859,8 +842,6 @@ class APIDefinitionControllerSpec extends UnitSpec
       when(mockAPIDefinitionService.fetchByContext(any())).thenReturn(Future.successful(None))
 
       private val result = await(underTest.validate()(request.withBody(Json.parse(calendarApiDefinition))))
-
-      println(bodyOf(result))
 
       status(result) shouldBe ACCEPTED
     }
