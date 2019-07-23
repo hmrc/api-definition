@@ -195,15 +195,11 @@ class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
     } yield onlyPrivateApis
   }
 
-  // TODO: Remove default
-  // TODO: Need test in ServiceSpec
-  def fetchAllAPIsForApplication(applicationId: String, alsoIncludePrivateTrials: Boolean = false): Future[Seq[APIDefinition]] = {
+  def fetchAllAPIsForApplication(applicationId: String, alsoIncludePrivateTrials: Boolean): Future[Seq[APIDefinition]] = {
     apiDefinitionRepository.fetchAll().map(filterAPIsForApplications(alsoIncludePrivateTrials, applicationId))
   }
 
-  // TODO: Remove default
-  // TODO: Need test in ServiceSpec
-  def fetchAllAPIsForCollaborator(email: String, alsoIncludePrivateTrials: Boolean = false)(implicit hc: HeaderCarrier): Future[Seq[APIDefinition]] = {
+  def fetchAllAPIsForCollaborator(email: String, alsoIncludePrivateTrials: Boolean)(implicit hc: HeaderCarrier): Future[Seq[APIDefinition]] = {
 
     val applicationIdsF = fetchApplicationIdsByEmail(Some(email))
     val apiDefinitionsF = apiDefinitionRepository.fetchAll()
