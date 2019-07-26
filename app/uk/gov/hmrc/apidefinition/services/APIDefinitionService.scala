@@ -171,11 +171,8 @@ class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
     }
   }
 
-  // TODO Hardcoded false
-  // TODO - Need to test this in the service spec
-  def fetchAllPublicAPIs(alsoIncludePrivateTrials: Boolean = false): Future[Seq[APIDefinition]] = {
-    // TODO Hardcoded false
-    apiDefinitionRepository.fetchAll().map(filterAPIsForApplications(alsoIncludePrivateTrials = false))
+  def fetchAllPublicAPIs(alsoIncludePrivateTrials: Boolean): Future[Seq[APIDefinition]] = {
+    apiDefinitionRepository.fetchAll().map(filterAPIsForApplications(alsoIncludePrivateTrials))
   }
 
   def fetchAllPrivateAPIs(): Future[Seq[APIDefinition]] = {

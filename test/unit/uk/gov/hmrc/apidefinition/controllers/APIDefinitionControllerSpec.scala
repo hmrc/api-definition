@@ -655,7 +655,7 @@ class APIDefinitionControllerSpec extends UnitSpec
 
     "fail with a 500 (internal server error) when the fetchAllPublicAPIs throws an exception" in new QueryDispatcherTrait {
 
-      when(mockAPIDefinitionService.fetchAllPublicAPIs())
+      when(mockAPIDefinitionService.fetchAllPublicAPIs(alsoIncludePrivateTrials = false))
         .thenReturn(failed(new RuntimeException("Something went wrong")))
 
       private val result = await(underTest.queryDispatcher()(request))
