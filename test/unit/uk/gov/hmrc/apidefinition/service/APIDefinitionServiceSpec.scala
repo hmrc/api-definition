@@ -64,6 +64,70 @@ class APIDefinitionServiceSpec extends UnitSpec
       versions,
       lastPublishedAt = None)
 
+  trait Setup {
+
+    implicit val hc = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
+
+    val mockWSO2APIPublisher = mock[WSO2APIPublisher]
+    val mockAwsApiPublisher = mock[AwsApiPublisher]
+    val mockAPIDefinitionRepository = mock[APIDefinitionRepository]
+    val mockThirdPartyApplicationConnector = mock[ThirdPartyApplicationConnector]
+    val mockAppContext = mock[AppContext]
+
+    val underTest = new APIDefinitionService(
+      mockWSO2APIPublisher,
+      mockAwsApiPublisher,
+      mockThirdPartyApplicationConnector,
+      mockAPIDefinitionRepository,
+      mockAppContext)
+
+    val applicationId = randomUUID()
+    val publicVersion = aVersion("1.0", Some(PublicAPIAccess()))
+
+    // TODO - Get rid of this.
+    // Use one of privateVersionWithAppWhitelisted or privateVersionWithoutAppWhitelisted
+    val privateVersion = aVersion("2.0", Some(PrivateAPIAccess(Seq(applicationId.toString))))
+
+    val privateTrialVersionWithoutWhitelist = aVersion("2.5", Some(PrivateAPIAccess(Seq.empty, isTrial = Some(true))))
+    val privateTrialVersionWithWhitelist = aVersion("2.5", Some(PrivateAPIAccess(Seq(applicationId.toString), isTrial = Some(true))))
+    val noAccessDefinedVersion = aVersion("3.0", None)
+    val privateVersionOtherApplications = aVersion("4.0", Some(PrivateAPIAccess(Seq("OTHER_APP_ID"))))
+    val versionWithoutAccessDefined: APIVersion = aVersion("2.0", None)
+    val privateVersionWithAppWhitelisted: APIVersion = aVersion("3.0", Some(PrivateAPIAccess(Seq(applicationId.toString))))
+    val privateVersionWithoutAppWhitelisted: APIVersion = aVersion("4.0", Some(PrivateAPIAccess(Seq(randomUUID().toString))))
+
+    val publicVersionAvailability =
+      APIAvailability(publicVersion.endpointsEnabled.getOrElse(false), publicVersion.access.get, loggedIn = false, authorised = true)
+    val privateVersionAvailability =
+      APIAvailability(privateVersion.endpointsEnabled.getOrElse(false), privateVersion.access.get, loggedIn = false, authorised = false)
+
+    val apiDefinition = someAPIDefinition
+    val apiDefinitionWithSavingTime = apiDefinition.copy(lastPublishedAt = Some(fixedSavingTime))
+
+    when(mockAPIDefinitionRepository.fetchByServiceName(apiDefinition.serviceName)).thenReturn(successful(Some(apiDefinition)))
+    when(mockWSO2APIPublisher.delete(apiDefinition)).thenReturn(successful(()))
+    when(mockAwsApiPublisher.delete(apiDefinition)).thenReturn(successful(()))
+    when(mockAPIDefinitionRepository.delete(apiDefinition.serviceName)).thenReturn(successful(()))
+  }
+
+  trait FetchSetup extends Setup {
+    val serviceName = "calendar"
+    val email = "user@email.com"
+    val versions = Seq(
+      publicVersion,
+      privateVersion,
+      privateTrialVersionWithoutWhitelist,
+      privateTrialVersionWithWhitelist,
+      noAccessDefinedVersion,
+      privateVersionOtherApplications)
+    val definition = anAPIDefinition("context", versions: _*)
+
+    when(mockAPIDefinitionRepository.fetchByServiceName(serviceName))
+      .thenReturn(successful(Some(definition)))
+    when(mockThirdPartyApplicationConnector.fetchApplicationsByEmail(email))
+      .thenReturn(successful(Seq(Application(applicationId, "App"))))
+  }
+
   "createOrUpdate" should {
 
     "create or update the API Definition in all WSO2, AWS and the repository" in new Setup {
@@ -411,7 +475,8 @@ class APIDefinitionServiceSpec extends UnitSpec
 
           val response = await(underTest.fetchAllAPIsForApplication(applicationId.toString, alsoIncludePrivateTrials))
 
-          response shouldBe Seq(anAPIDefinition("context", publicVersion, versionWithoutAccessDefined, privateTrialVersionWithoutWhitelist, privateVersionWithAppWhitelisted))
+          response shouldBe
+            Seq(anAPIDefinition("context", publicVersion, versionWithoutAccessDefined, privateTrialVersionWithoutWhitelist, privateVersionWithAppWhitelisted))
         }
       }
     }
@@ -478,7 +543,8 @@ class APIDefinitionServiceSpec extends UnitSpec
 
         val response: Seq[APIDefinition] = await(underTest.fetchAllAPIsForCollaborator(email, alsoIncludePrivateTrials))
 
-        response shouldBe Seq(anAPIDefinition("context", publicVersion, versionWithoutAccessDefined, privateTrialVersionWithoutWhitelist, privateVersionWithAppWhitelisted))
+        response shouldBe
+          Seq(anAPIDefinition("context", publicVersion, versionWithoutAccessDefined, privateTrialVersionWithoutWhitelist, privateVersionWithAppWhitelisted))
       }
     }
   }
@@ -667,60 +733,5 @@ class APIDefinitionServiceSpec extends UnitSpec
               AuthType.NONE,
               ResourceThrottlingTier.UNLIMITED)))),
       None, None, None)
-
-  trait Setup {
-
-    implicit val hc = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
-
-    val mockWSO2APIPublisher = mock[WSO2APIPublisher]
-    val mockAwsApiPublisher = mock[AwsApiPublisher]
-    val mockAPIDefinitionRepository = mock[APIDefinitionRepository]
-    val mockThirdPartyApplicationConnector = mock[ThirdPartyApplicationConnector]
-    val mockAppContext = mock[AppContext]
-
-    val underTest = new APIDefinitionService(mockWSO2APIPublisher, mockAwsApiPublisher, mockThirdPartyApplicationConnector,
-      mockAPIDefinitionRepository, mockAppContext)
-
-
-    val applicationId = randomUUID()
-    val publicVersion = aVersion("1.0", Some(PublicAPIAccess()))
-
-    // TODO - Get rid of this.
-    // Use one of privateVersionWithAppWhitelisted or privateVersionWithoutAppWhitelisted
-    val privateVersion = aVersion("2.0", Some(PrivateAPIAccess(Seq(applicationId.toString))))
-
-    val privateTrialVersionWithoutWhitelist = aVersion("2.5", Some(PrivateAPIAccess(Seq.empty, isTrial = Some(true))))
-    val privateTrialVersionWithWhitelist = aVersion("2.5", Some(PrivateAPIAccess(Seq(applicationId.toString), isTrial = Some(true))))
-    val noAccessDefinedVersion = aVersion("3.0", None)
-    val privateVersionOtherApplications = aVersion("4.0", Some(PrivateAPIAccess(Seq("OTHER_APP_ID"))))
-    val versionWithoutAccessDefined: APIVersion = aVersion("2.0", None)
-    val privateVersionWithAppWhitelisted: APIVersion = aVersion("3.0", Some(PrivateAPIAccess(Seq(applicationId.toString))))
-    val privateVersionWithoutAppWhitelisted: APIVersion = aVersion("4.0", Some(PrivateAPIAccess(Seq(randomUUID().toString))))
-
-    val publicVersionAvailability = APIAvailability(publicVersion.endpointsEnabled.getOrElse(false), publicVersion.access.get, loggedIn = false, authorised = true)
-    val privateVersionAvailability = APIAvailability(privateVersion.endpointsEnabled.getOrElse(false), privateVersion.access.get, loggedIn = false, authorised = false)
-
-    val apiDefinition = someAPIDefinition
-    val apiDefinitionWithSavingTime = apiDefinition.copy(lastPublishedAt = Some(fixedSavingTime))
-
-    when(mockAPIDefinitionRepository.fetchByServiceName(apiDefinition.serviceName)).thenReturn(successful(Some(apiDefinition)))
-    when(mockWSO2APIPublisher.delete(apiDefinition)).thenReturn(successful(()))
-    when(mockAwsApiPublisher.delete(apiDefinition)).thenReturn(successful(()))
-    when(mockAPIDefinitionRepository.delete(apiDefinition.serviceName)).thenReturn(successful(()))
-  }
-
-  trait FetchSetup extends Setup {
-    val serviceName = "calendar"
-
-
-    val email = "user@email.com"
-    val definition = anAPIDefinition(
-      "context", publicVersion, privateVersion, privateTrialVersionWithoutWhitelist, privateTrialVersionWithWhitelist, noAccessDefinedVersion, privateVersionOtherApplications)
-
-    when(mockAPIDefinitionRepository.fetchByServiceName(serviceName))
-      .thenReturn(successful(Some(definition)))
-    when(mockThirdPartyApplicationConnector.fetchApplicationsByEmail(email))
-      .thenReturn(successful(Seq(Application(applicationId, "App"))))
-  }
 
 }
