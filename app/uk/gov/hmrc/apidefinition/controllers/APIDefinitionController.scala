@@ -28,7 +28,7 @@ import uk.gov.hmrc.apidefinition.models.{APIDefinition, ErrorCode}
 import uk.gov.hmrc.apidefinition.services.APIDefinitionService
 import uk.gov.hmrc.apidefinition.utils.APIDefinitionMapper
 import uk.gov.hmrc.apidefinition.validators.ApiDefinitionValidator
-import uk.gov.hmrc.http.{BadRequestException, UnauthorizedException}
+import uk.gov.hmrc.http.{HeaderCarrier, UnauthorizedException}
 import uk.gov.hmrc.play.bootstrap.controller.BaseController
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -68,8 +68,8 @@ class APIDefinitionController @Inject()(apiDefinitionValidator: ApiDefinitionVal
   }
 
   def fetch(serviceName: String): Action[AnyContent] = Action.async { implicit request =>
-    // TODO: Hardcoded alsoIncludePrivateTrials
-    apiDefinitionService.fetchByServiceName(serviceName, request.queryString.get("email").flatMap(_.headOption), false) map {
+    val queryOptions = extractQueryOptions(request)
+    apiDefinitionService.fetchByServiceName(serviceName, request.queryString.get("email").flatMap(_.headOption), queryOptions.alsoIncludePrivateTrials) map {
       case Some(apiDefinition) => Ok(Json.toJson(apiDefinition))
       case _ => NotFound(error(API_DEFINITION_NOT_FOUND, "No API Definition was found"))
     } recover recovery
@@ -89,59 +89,12 @@ class APIDefinitionController @Inject()(apiDefinitionValidator: ApiDefinitionVal
     }
   }
 
-
-  //noinspection ScalaStyle
   def queryDispatcher(): Action[AnyContent] = Action.async { implicit request =>
-    // TODO - Remove above scala style
 
-    //def getParameter(param: String): String = request.queryString(param).head
+    val queryParameters: Seq[(String, String)] = request.queryString.toList.map { case (key, values) => (key, values.head) }.sorted
 
-    def extractSpecifiedQueryOptions(queryParameters: Seq[(String, String)]) =
-      queryParameters.find(_._1 == "options").map(_._2)
+    val options = extractQueryOptions(request)
 
-    def apiDefinitionToResult(result: Seq[APIDefinition]) = Ok(Json.toJson(result))
-
-    def fetchAllPrivateAPIs() = apiDefinitionService.fetchAllPrivateAPIs()
-      .map(apiDefinitionToResult) recover recovery
-
-    // TODO : remove default argument?
-    def fetchAllPublicAPIs(alsoIncludePrivateTrials: Boolean = false) =
-      apiDefinitionService
-        .fetchAllPublicAPIs(alsoIncludePrivateTrials)
-        .map(apiDefinitionToResult) recover recovery
-
-    def fetchByContext(context: String) = apiDefinitionService.fetchByContext(context).map {
-      case Some(api) => Ok(Json.toJson(api)).withHeaders(HeaderNames.CACHE_CONTROL -> s"max-age=$fetchByContextTtlInSeconds")
-      case _ => NotFound(error(API_DEFINITION_NOT_FOUND, "No API Definition was found"))
-    } recover recovery
-
-    def fetchAllForApplication(applicationId: String, alsoIncludePrivateTrials: Boolean = false) =
-      apiDefinitionService.fetchAllAPIsForApplication(applicationId, alsoIncludePrivateTrials)
-        .map(apiDefinitionToResult) recover recovery
-
-    def fetchAllForCollaborator(email: String, alsoIncludePrivateTrials: Boolean) =
-      apiDefinitionService
-        .fetchAllAPIsForCollaborator(email, alsoIncludePrivateTrials)
-        .map(apiDefinitionToResult) recover recovery
-
-    def fetchDefinitionsByType(typeParam: String, alsoIncludePrivateTrials: Boolean) = {
-      typeParam match {
-        case "public" => fetchAllPublicAPIs(alsoIncludePrivateTrials)
-        case "private" => fetchAllPrivateAPIs()
-        case _ => Future(BadRequest(error(UNSUPPORTED_ACCESS_TYPE, s"$typeParam is not a supported access type")))
-      }
-    }
-
-    val queryParameters: Seq[(String, String)] = request
-      .queryString
-      .toList
-      .map { case (key, values) => (key, values.head) }
-      .sorted
-
-    val optionsValue = extractSpecifiedQueryOptions(queryParameters)
-    val options = APIDefinitionController.QueryOptions(optionsValue)
-
-    // TODO: Parameter ordering can break this
     queryParameters match {
       case Nil | ("options", _) :: Nil => fetchAllPublicAPIs(options.alsoIncludePrivateTrials)
       case ("context", context) :: Nil => fetchByContext(context)
@@ -150,7 +103,7 @@ class APIDefinitionController @Inject()(apiDefinitionValidator: ApiDefinitionVal
       case ("email", email) :: ("options", _) :: Nil => fetchAllForCollaborator(email, options.alsoIncludePrivateTrials)
       case ("type", typeValue) :: Nil => fetchDefinitionsByType(typeValue, options.alsoIncludePrivateTrials)
       case ("options", _) :: ("type", typeValue) :: Nil => fetchDefinitionsByType(typeValue, options.alsoIncludePrivateTrials)
-      // TODO - default?
+      case _ => Future.successful(BadRequest("Invalid query parameter or parameters"))
     }
   }
 
@@ -161,22 +114,51 @@ class APIDefinitionController @Inject()(apiDefinitionValidator: ApiDefinitionVal
   def publishAllToAws(): Action[AnyContent] = Action.async { implicit request =>
     apiDefinitionService.publishAllToAws().map { _ => NoContent } recover recovery
   }
-}
 
-object APIDefinitionController {
-
-  // TODO - Is this the right place for this?
-  case class QueryOptions(alsoIncludePrivateTrials: Boolean)
-
-  object QueryOptions {
-    def apply(options: Option[String]): QueryOptions = {
-
-      options match {
-        case None | Some("") => QueryOptions(alsoIncludePrivateTrials = false)
-        case Some("alsoIncludePrivateTrials") => QueryOptions(alsoIncludePrivateTrials = true)
-        case Some(value) => throw new BadRequestException(s"Invalid options specified: $value")
-      }
-    }
+  private def extractQueryOptions(request: Request[AnyContent]) = {
+    QueryOptions(request.getQueryString("options"))
   }
 
+  private def apiDefinitionToResult(result: Seq[APIDefinition]) = {
+    Ok(Json.toJson(result))
+  }
+
+  private def fetchAllPrivateAPIs() = {
+    apiDefinitionService.fetchAllPrivateAPIs()
+      .map(apiDefinitionToResult) recover recovery
+  }
+
+  private def fetchAllPublicAPIs(alsoIncludePrivateTrials: Boolean) = {
+    apiDefinitionService
+      .fetchAllPublicAPIs(alsoIncludePrivateTrials)
+      .map(apiDefinitionToResult) recover recovery
+  }
+
+  private def fetchByContext(context: String) = {
+    apiDefinitionService
+      .fetchByContext(context).map {
+      case Some(api) => Ok(Json.toJson(api)).withHeaders(HeaderNames.CACHE_CONTROL -> s"max-age=$fetchByContextTtlInSeconds")
+      case _ => NotFound(error(API_DEFINITION_NOT_FOUND, "No API Definition was found"))
+    } recover recovery
+  }
+
+  private def fetchAllForApplication(applicationId: String, alsoIncludePrivateTrials: Boolean = false) = {
+    apiDefinitionService
+      .fetchAllAPIsForApplication(applicationId, alsoIncludePrivateTrials)
+      .map(apiDefinitionToResult) recover recovery
+  }
+
+  private def fetchAllForCollaborator(email: String, alsoIncludePrivateTrials: Boolean)(implicit hc: HeaderCarrier) = {
+    apiDefinitionService
+      .fetchAllAPIsForCollaborator(email, alsoIncludePrivateTrials)
+      .map(apiDefinitionToResult) recover recovery
+  }
+
+  private def fetchDefinitionsByType(typeParam: String, alsoIncludePrivateTrials: Boolean) = {
+    typeParam match {
+      case "public" => fetchAllPublicAPIs(alsoIncludePrivateTrials)
+      case "private" => fetchAllPrivateAPIs()
+      case _ => Future(BadRequest(error(UNSUPPORTED_ACCESS_TYPE, s"$typeParam is not a supported access type")))
+    }
+  }
 }

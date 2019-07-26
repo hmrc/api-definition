@@ -728,7 +728,7 @@ class APIDefinitionServiceSpec extends UnitSpec
   }
 
   private def aVersion(version: String, access: Option[APIAccess]) =
-    APIVersion(version, APIStatus.PROTOTYPED, access, Seq(Endpoint("/test", "test", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)))
+    APIVersion(version, APIStatus.BETA, access, Seq(Endpoint("/test", "test", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)))
 
   private def someAPIDefinition: APIDefinition =
     APIDefinition(
@@ -740,7 +740,7 @@ class APIDefinitionServiceSpec extends UnitSpec
       Seq(
         APIVersion(
           "1.0",
-          APIStatus.PROTOTYPED,
+          APIStatus.BETA,
           Some(PublicAPIAccess()),
           Seq(
             Endpoint(

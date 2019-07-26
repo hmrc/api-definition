@@ -85,8 +85,6 @@ case class WSO2PathParameter(override val name: String,
   extends WSO2Parameter(name, required, in, `type`, description) {
 }
 
-// TODO: we might need `WSO2BodyParameter(in = WSO2ParameterType.BODY)`
-
 case class WSO2HttpVerbDetails(parameters: Option[Seq[WSO2Parameter]],
                                responses: Map[String, WSO2Response],
                                `x-auth-type`: String,
