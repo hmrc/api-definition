@@ -100,8 +100,6 @@ class APIDefinitionRepositorySpec extends UnitSpec
     await(repository.drop)
   }
 
-  // TODO: the test scenarios below have lot of code in common... try to extract common code in private methods
-
   "save()" should {
 
     "create a new API definition in Mongo" in {

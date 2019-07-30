@@ -20,7 +20,6 @@ import java.util.UUID.randomUUID
 
 import org.joda.time.DateTimeUtils._
 import org.joda.time.format.ISODateTimeFormat
-import org.joda.time.{DateTime, DateTimeZone}
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.ScalaFutures
@@ -40,6 +39,8 @@ import scala.concurrent.Future.{failed, successful}
 class APIDefinitionServiceSpec extends UnitSpec
   with ScalaFutures with MockitoSugar with BeforeAndAfterAll {
 
+  private val context = "calendar"
+  private val serviceName = "calendar-service"
   private val fixedSavingTime = ISODateTimeFormat.dateTime().withZoneUTC().parseDateTime("2014-02-09T02:27:15.145Z")
 
   override def beforeAll(): Unit = {
@@ -49,6 +50,21 @@ class APIDefinitionServiceSpec extends UnitSpec
   override def afterAll(): Unit = {
     setCurrentMillisSystem()
   }
+
+  private def anAPIDefinition(context: String, versions: APIVersion*) =
+    APIDefinition("service", "http://service", "name", "description", context, versions, None, None, None)
+
+  private def extAPIDefinition(context: String, versions: Seq[ExtendedAPIVersion]) =
+    ExtendedAPIDefinition(
+      "service",
+      "http://service",
+      "name",
+      "description",
+      context,
+      requiresTrust = false,
+      isTestSupport = false,
+      versions,
+      lastPublishedAt = None)
 
   trait Setup {
 
@@ -60,9 +76,38 @@ class APIDefinitionServiceSpec extends UnitSpec
     val mockThirdPartyApplicationConnector = mock[ThirdPartyApplicationConnector]
     val mockAppContext = mock[AppContext]
 
-    val underTest = new APIDefinitionService(mockWSO2APIPublisher, mockAwsApiPublisher, mockThirdPartyApplicationConnector,
-      mockAPIDefinitionRepository, mockAppContext)
+    val underTest = new APIDefinitionService(
+      mockWSO2APIPublisher,
+      mockAwsApiPublisher,
+      mockThirdPartyApplicationConnector,
+      mockAPIDefinitionRepository,
+      mockAppContext)
 
+    val applicationId = randomUUID()
+
+    val versionWithoutAccessDefined: APIVersion = aVersion("1.0", None)
+    val publicVersion = aVersion("2.0", Some(PublicAPIAccess()))
+    val privateVersionWithAppWhitelisted: APIVersion = aVersion("3.0", Some(PrivateAPIAccess(Seq(applicationId.toString))))
+    val privateVersionWithoutAppWhitelisted: APIVersion = aVersion("3.1", Some(PrivateAPIAccess(Seq("OTHER_APP_ID"))))
+    val privateTrialVersionWithWhitelist = aVersion("4.0", Some(PrivateAPIAccess(Seq(applicationId.toString), isTrial = Some(true))))
+    val privateTrialVersionWithoutWhitelist = aVersion("4.1", Some(PrivateAPIAccess(Seq.empty, isTrial = Some(true))))
+
+    val allVersions = Seq(
+      versionWithoutAccessDefined,
+      publicVersion,
+      privateVersionWithAppWhitelisted,
+      privateVersionWithoutAppWhitelisted,
+      privateTrialVersionWithWhitelist,
+      privateTrialVersionWithoutWhitelist)
+
+    val versionWithoutAccessDefinedAvailability = APIAvailability(versionWithoutAccessDefined.endpointsEnabled.getOrElse(false),
+      PublicAPIAccess(), loggedIn = false, authorised = true)
+    val publicVersionAvailability = APIAvailability(
+      publicVersion.endpointsEnabled.getOrElse(false), publicVersion.access.get, loggedIn = false, authorised = true)
+    val privateVersionAvailability = APIAvailability(
+      privateVersionWithAppWhitelisted.endpointsEnabled.getOrElse(false), privateVersionWithAppWhitelisted.access.get, loggedIn = false, authorised = false)
+
+    val apiDefinitionWithAllVersions = anAPIDefinition(context, allVersions: _*)
     val apiDefinition = someAPIDefinition
     val apiDefinitionWithSavingTime = apiDefinition.copy(lastPublishedAt = Some(fixedSavingTime))
 
@@ -72,12 +117,28 @@ class APIDefinitionServiceSpec extends UnitSpec
     when(mockAPIDefinitionRepository.delete(apiDefinition.serviceName)).thenReturn(successful(()))
   }
 
+  trait FetchSetup extends Setup {
+    val email = "user@email.com"
+    val versions = Seq(
+      versionWithoutAccessDefined,
+      publicVersion,
+      privateVersionWithAppWhitelisted,
+      privateVersionWithoutAppWhitelisted,
+      privateTrialVersionWithWhitelist,
+      privateTrialVersionWithoutWhitelist
+    )
+    val definition = anAPIDefinition(context, versions: _*)
+
+    when(mockAPIDefinitionRepository.fetchByServiceName(serviceName)).thenReturn(successful(Some(definition)))
+    when(mockThirdPartyApplicationConnector.fetchApplicationsByEmail(email)).thenReturn(successful(Seq(Application(applicationId, "App"))))
+  }
+
   "createOrUpdate" should {
 
     "create or update the API Definition in all WSO2, AWS and the repository" in new Setup {
 
       when(mockWSO2APIPublisher.publish(apiDefinition)).thenReturn(successful(()))
-      when(mockAwsApiPublisher.publish(apiDefinition)).thenReturn(successful())
+      when(mockAwsApiPublisher.publish(apiDefinition)).thenReturn(successful(()))
       when(mockAPIDefinitionRepository.save(apiDefinitionWithSavingTime)).thenReturn(successful(apiDefinitionWithSavingTime))
 
       await(underTest.createOrUpdate(apiDefinition))
@@ -89,7 +150,7 @@ class APIDefinitionServiceSpec extends UnitSpec
 
     "propagate unexpected errors that happen when trying to publish an API to WSO2" in new Setup {
       when(mockWSO2APIPublisher.publish(apiDefinition)).thenReturn(failed(new RuntimeException("Something went wrong")))
-      when(mockAwsApiPublisher.publish(apiDefinition)).thenReturn(successful())
+      when(mockAwsApiPublisher.publish(apiDefinition)).thenReturn(successful(()))
 
       val thrown = intercept[RuntimeException] {
         await(underTest.createOrUpdate(apiDefinition))
@@ -111,40 +172,26 @@ class APIDefinitionServiceSpec extends UnitSpec
   }
 
   "fetchExtended" should {
-    val serviceName = "calendar"
-    val appId = randomUUID()
     val otherAppId = randomUUID()
-
-    val publicVersion = aVersion("1.0", Some(PublicAPIAccess()))
-    val publicVersionAvailability = APIAvailability(publicVersion.endpointsEnabled.getOrElse(false),
-      publicVersion.access.get, loggedIn = false, authorised = true)
-
-    val privateVersion = aVersion("2.0", Some(PrivateAPIAccess(Seq(appId.toString))))
-    val privateVersionAvailability = APIAvailability(privateVersion.endpointsEnabled.getOrElse(false),
-      privateVersion.access.get, loggedIn = false, authorised = false)
-
-    val noAccessDefinedVersion = aVersion("3.0", None)
-    val noAccessDefinedVersionAvailability = APIAvailability(noAccessDefinedVersion.endpointsEnabled.getOrElse(false),
-      PublicAPIAccess(), loggedIn = false, authorised = true)
 
     val privateVersionOtherApplications = aVersion("4.0", Some(PrivateAPIAccess(Seq("OTHER_APP_ID"))))
     val privateVersionOtherApplicationsAvailability = APIAvailability(privateVersionOtherApplications.endpointsEnabled.getOrElse(false),
       privateVersionOtherApplications.access.get, loggedIn = false, authorised = true)
 
     "return all Versions of the API Definition with information on which versions the undefined user can see." in new Setup {
-      val definition = anAPIDefinition("context", publicVersion, privateVersion, noAccessDefinedVersion)
+      val definition = anAPIDefinition(context, publicVersion, privateVersionWithAppWhitelisted, versionWithoutAccessDefined)
 
       when(mockAPIDefinitionRepository.fetchByServiceName(serviceName)).thenReturn(successful(Some(definition)))
 
       val exp = Some(extAPIDefinition(
-        "context",
+        context,
         Seq(
           ExtendedAPIVersion(publicVersion.version, publicVersion.status, publicVersion.endpoints,
             Some(publicVersionAvailability), None),
-          ExtendedAPIVersion(privateVersion.version, privateVersion.status, privateVersion.endpoints,
+          ExtendedAPIVersion(privateVersionWithAppWhitelisted.version, privateVersionWithAppWhitelisted.status, privateVersionWithAppWhitelisted.endpoints,
             Some(privateVersionAvailability), None),
-          ExtendedAPIVersion(noAccessDefinedVersion.version, noAccessDefinedVersion.status, noAccessDefinedVersion.endpoints,
-            Some(noAccessDefinedVersionAvailability), None)
+          ExtendedAPIVersion(versionWithoutAccessDefined.version, versionWithoutAccessDefined.status, versionWithoutAccessDefined.endpoints,
+            Some(versionWithoutAccessDefinedAvailability), None)
         )
       ))
 
@@ -153,7 +200,7 @@ class APIDefinitionServiceSpec extends UnitSpec
     }
 
     "user cannot access the private endpoint" in new Setup {
-      val definition = anAPIDefinition("context", publicVersion, privateVersion, noAccessDefinedVersion)
+      val definition = anAPIDefinition(context, publicVersion, privateVersionWithAppWhitelisted, versionWithoutAccessDefined)
 
       when(mockAPIDefinitionRepository.fetchByServiceName(serviceName))
         .thenReturn(successful(Some(definition)))
@@ -161,14 +208,14 @@ class APIDefinitionServiceSpec extends UnitSpec
         .thenReturn(successful(Seq(Application(otherAppId, "App"))))
 
       val exp = Some(extAPIDefinition(
-        "context",
+        context,
         Seq(
           ExtendedAPIVersion(publicVersion.version, publicVersion.status, publicVersion.endpoints,
             Some(publicVersionAvailability.copy(loggedIn = true, authorised = true)), None),
-          ExtendedAPIVersion(privateVersion.version, privateVersion.status, privateVersion.endpoints,
+          ExtendedAPIVersion(privateVersionWithAppWhitelisted.version, privateVersionWithAppWhitelisted.status, privateVersionWithAppWhitelisted.endpoints,
             Some(privateVersionAvailability.copy(loggedIn = true, authorised = false)), None),
-          ExtendedAPIVersion(noAccessDefinedVersion.version, noAccessDefinedVersion.status, noAccessDefinedVersion.endpoints,
-            Some(noAccessDefinedVersionAvailability.copy(loggedIn = true, authorised = true)), None)
+          ExtendedAPIVersion(versionWithoutAccessDefined.version, versionWithoutAccessDefined.status, versionWithoutAccessDefined.endpoints,
+            Some(versionWithoutAccessDefinedAvailability.copy(loggedIn = true, authorised = true)), None)
         )
       ))
       val response = await(underTest.fetchExtendedByServiceName(serviceName, Some("Bob")))
@@ -176,22 +223,22 @@ class APIDefinitionServiceSpec extends UnitSpec
     }
 
     "user can access the private endpoint" in new Setup {
-      val definition = anAPIDefinition("context", publicVersion, privateVersion, noAccessDefinedVersion)
+      val definition = anAPIDefinition(context, publicVersion, privateVersionWithAppWhitelisted, versionWithoutAccessDefined)
 
       when(mockAPIDefinitionRepository.fetchByServiceName(serviceName))
         .thenReturn(successful(Some(definition)))
       when(mockThirdPartyApplicationConnector.fetchApplicationsByEmail("Bob"))
-        .thenReturn(successful(Seq(Application(appId, "App"))))
+        .thenReturn(successful(Seq(Application(applicationId, "App"))))
 
       val exp = Some(extAPIDefinition(
-        "context",
+        context,
         Seq(
           ExtendedAPIVersion(publicVersion.version, publicVersion.status, publicVersion.endpoints,
             Some(publicVersionAvailability.copy(loggedIn = true, authorised = true)), None),
-          ExtendedAPIVersion(privateVersion.version, privateVersion.status, privateVersion.endpoints,
+          ExtendedAPIVersion(privateVersionWithAppWhitelisted.version, privateVersionWithAppWhitelisted.status, privateVersionWithAppWhitelisted.endpoints,
             Some(privateVersionAvailability.copy(loggedIn = true, authorised = true)), None),
-          ExtendedAPIVersion(noAccessDefinedVersion.version, noAccessDefinedVersion.status, noAccessDefinedVersion.endpoints,
-            Some(noAccessDefinedVersionAvailability.copy(loggedIn = true, authorised = true)), None)
+          ExtendedAPIVersion(versionWithoutAccessDefined.version, versionWithoutAccessDefined.status, versionWithoutAccessDefined.endpoints,
+            Some(versionWithoutAccessDefinedAvailability.copy(loggedIn = true, authorised = true)), None)
         )
       ))
       val response = await(underTest.fetchExtendedByServiceName(serviceName, Some("Bob")))
@@ -199,23 +246,28 @@ class APIDefinitionServiceSpec extends UnitSpec
     }
 
     "return all versions of the API Definition with information that the logged in user can access one private version" in new Setup {
-      val definition = anAPIDefinition("context", publicVersion, privateVersion, noAccessDefinedVersion, privateVersionOtherApplications)
+      val definition = anAPIDefinition(
+        context, publicVersion, privateVersionWithAppWhitelisted, versionWithoutAccessDefined, privateVersionWithoutAppWhitelisted)
 
       when(mockAPIDefinitionRepository.fetchByServiceName(serviceName))
         .thenReturn(successful(Some(definition)))
       when(mockThirdPartyApplicationConnector.fetchApplicationsByEmail("Bob"))
-        .thenReturn(successful(Seq(Application(appId, "App"))))
+        .thenReturn(successful(Seq(Application(applicationId, "App"))))
 
       val exp = Some(extAPIDefinition(
-        "context",
+        context,
         Seq(
-          ExtendedAPIVersion(publicVersion.version, publicVersion.status, publicVersion.endpoints,
+          ExtendedAPIVersion(
+            publicVersion.version, publicVersion.status, publicVersion.endpoints,
             Some(publicVersionAvailability.copy(loggedIn = true, authorised = true)), None),
-          ExtendedAPIVersion(privateVersion.version, privateVersion.status, privateVersion.endpoints,
+          ExtendedAPIVersion(
+            privateVersionWithAppWhitelisted.version, privateVersionWithAppWhitelisted.status, privateVersionWithAppWhitelisted.endpoints,
             Some(privateVersionAvailability.copy(loggedIn = true, authorised = true)), None),
-          ExtendedAPIVersion(noAccessDefinedVersion.version, noAccessDefinedVersion.status, noAccessDefinedVersion.endpoints,
-            Some(noAccessDefinedVersionAvailability.copy(loggedIn = true, authorised = true)), None),
-          ExtendedAPIVersion(privateVersionOtherApplications.version, privateVersionOtherApplications.status, privateVersionOtherApplications.endpoints,
+          ExtendedAPIVersion(
+            versionWithoutAccessDefined.version, versionWithoutAccessDefined.status, versionWithoutAccessDefined.endpoints,
+            Some(versionWithoutAccessDefinedAvailability.copy(loggedIn = true, authorised = true)), None),
+          ExtendedAPIVersion(
+            privateVersionWithoutAppWhitelisted.version, privateVersionWithoutAppWhitelisted.status, privateVersionWithoutAppWhitelisted.endpoints,
             Some(privateVersionOtherApplicationsAvailability.copy(loggedIn = true, authorised = false)), None)
         )
       ))
@@ -224,15 +276,15 @@ class APIDefinitionServiceSpec extends UnitSpec
     }
 
     "default to public access when no access defined for an API version" in new Setup {
-      val definition = anAPIDefinition("context", noAccessDefinedVersion)
+      val definition = anAPIDefinition(context, versionWithoutAccessDefined)
 
       when(mockAPIDefinitionRepository.fetchByServiceName(serviceName)).thenReturn(successful(Some(definition)))
 
       val exp = Some(extAPIDefinition(
-        "context",
+        context,
         Seq(
-          ExtendedAPIVersion(noAccessDefinedVersion.version, noAccessDefinedVersion.status, noAccessDefinedVersion.endpoints,
-            Some(noAccessDefinedVersionAvailability.copy(loggedIn = false, authorised = true)), None)
+          ExtendedAPIVersion(versionWithoutAccessDefined.version, versionWithoutAccessDefined.status, versionWithoutAccessDefined.endpoints,
+            Some(versionWithoutAccessDefinedAvailability.copy(loggedIn = false, authorised = true)), None)
         )
       ))
       val response = await(underTest.fetchExtendedByServiceName(serviceName, None))
@@ -240,16 +292,16 @@ class APIDefinitionServiceSpec extends UnitSpec
     }
 
     "populate sandbox availability when in sandbox mode" in new Setup {
-      val definition = anAPIDefinition("context", noAccessDefinedVersion)
+      val definition = anAPIDefinition(context, versionWithoutAccessDefined)
 
       when(mockAppContext.isSandbox).thenReturn(true)
       when(mockAPIDefinitionRepository.fetchByServiceName(serviceName)).thenReturn(successful(Some(definition)))
 
       val exp = Some(extAPIDefinition(
-        "context",
+        context,
         Seq(
-          ExtendedAPIVersion(noAccessDefinedVersion.version, noAccessDefinedVersion.status, noAccessDefinedVersion.endpoints,
-            None, Some(noAccessDefinedVersionAvailability.copy(loggedIn = false, authorised = true)))
+          ExtendedAPIVersion(versionWithoutAccessDefined.version, versionWithoutAccessDefined.status, versionWithoutAccessDefined.endpoints,
+            None, Some(versionWithoutAccessDefinedAvailability.copy(loggedIn = false, authorised = true)))
         )
       ))
       val response = await(underTest.fetchExtendedByServiceName(serviceName, None))
@@ -257,141 +309,252 @@ class APIDefinitionServiceSpec extends UnitSpec
     }
   }
 
-  "fetch" should {
-    val appId = randomUUID()
-    val publicVersion = aVersion("1.0", Some(PublicAPIAccess()))
-    val privateVersion = aVersion("2.0", Some(PrivateAPIAccess(Seq(appId.toString))))
-    val privateTrialVersion = aVersion("2.5", Some(PrivateAPIAccess(Seq.empty, isTrial = Some(true))))
-    val noAccessDefinedVersion = aVersion("3.0", None)
-    val privateVersionOtherApplications = aVersion("4.0", Some(PrivateAPIAccess(Seq("OTHER_APP_ID"))))
+  "fetch" when {
 
-    "return the public and private trial versions of the API Definition when the user is not defined" in new Setup {
-      val serviceName = "calendar"
+    "the alsoIncludePrivateTrials option is false" should {
 
-      val aTime = DateTime.now(DateTimeZone.UTC)
+      val alsoIncludePrivateTrials = false
 
-      val definition = anAPIDefinition("context", publicVersion, privateTrialVersion, privateVersion, noAccessDefinedVersion).
-        copy(lastPublishedAt = Some(aTime))
+      "return just the public and 'no access' versions of the API Definition when the user is not defined" in new FetchSetup {
 
-      when(mockAPIDefinitionRepository.fetchByServiceName(serviceName)).thenReturn(successful(Some(definition)))
+        val response = await(underTest.fetchByServiceName(serviceName, None, alsoIncludePrivateTrials))
 
-      val response = await(underTest.fetchByServiceName(serviceName, None))
+        response shouldNot be(None)
+        response.get.versions should contain allOf(publicVersion, versionWithoutAccessDefined)
+      }
 
-      val expected = anAPIDefinition("context", publicVersion, privateTrialVersion, noAccessDefinedVersion).copy(lastPublishedAt = Some(aTime))
+      "return None when the user is not defined and none of the versions of the API Definition are public or private trial" in new FetchSetup {
+        override val definition = anAPIDefinition(context, privateVersionWithAppWhitelisted)
 
-      response shouldBe Some(expected)
+        when(mockAPIDefinitionRepository.fetchByServiceName(serviceName)).thenReturn(successful(Some(definition)))
+
+        val response = await(underTest.fetchByServiceName(serviceName, None, alsoIncludePrivateTrials))
+
+        response shouldBe None
+      }
+
+      "include public and 'no access' versions of the API Definition when the user is defined" in new FetchSetup {
+
+        val response = await(underTest.fetchByServiceName(serviceName, Some(email), alsoIncludePrivateTrials))
+
+        response shouldNot be(None)
+        response.get.versions should contain allOf(publicVersion, versionWithoutAccessDefined)
+      }
+
+      "include private versions of the API Definition when the specified user's application is whitelisted" in new FetchSetup {
+
+        val response = await(underTest.fetchByServiceName(serviceName, Some(email), alsoIncludePrivateTrials))
+
+        response shouldNot be(None)
+        response.get.versions should contain(privateVersionWithAppWhitelisted)
+      }
+
+      "exclude private versions of the API Definition when the specified user's application is not whitelisted" in new FetchSetup {
+
+        val response = await(underTest.fetchByServiceName(serviceName, Some(email), alsoIncludePrivateTrials))
+
+        response shouldNot be(None)
+        response.get.versions should not contain privateVersionWithoutAppWhitelisted
+      }
+
+      "include private trial versions of the API Definition when the specified user's application is whitelisted" in new FetchSetup {
+
+        val response = await(underTest.fetchByServiceName(serviceName, Some(email), alsoIncludePrivateTrials))
+
+        response shouldNot be(None)
+        response.get.versions should contain(privateTrialVersionWithWhitelist)
+      }
+
+      "exclude private trial versions of the API Definition when the specified user's application is not whitelisted" in new FetchSetup {
+
+        val response = await(underTest.fetchByServiceName(serviceName, Some(email), alsoIncludePrivateTrials))
+
+        response shouldNot be(None)
+        response.get.versions should not contain privateTrialVersionWithoutWhitelist
+      }
     }
 
-    "return None when the user is not defined and none of the version of the API Definition is public or private trial" in new Setup {
-      val serviceName = "calendar"
+    "the alsoIncludePrivateTrials option is true" should {
 
-      val definition = anAPIDefinition("context", privateVersion)
+      val alsoIncludePrivateTrials = true
 
-      when(mockAPIDefinitionRepository.fetchByServiceName(serviceName)).thenReturn(successful(Some(definition)))
+      "return the public, 'no access' and private trial versions of the API Definition when the user is not defined" in new FetchSetup {
 
-      val response = await(underTest.fetchByServiceName(serviceName, None))
+        val response = await(underTest.fetchByServiceName(serviceName, None, alsoIncludePrivateTrials))
 
-      response shouldBe None
-    }
+        response shouldNot be(None)
+        response.get.versions should contain allOf(publicVersion, versionWithoutAccessDefined, privateTrialVersionWithoutWhitelist)
+      }
 
-    "return the public, private and private trial versions of the user when the user is defined" in new Setup {
-      val serviceName = "calendar"
+      "include public and 'no access' versions of the API Definition when the user is defined" in new FetchSetup {
 
-      val email = "user@email.com"
-      val definition = anAPIDefinition("context", publicVersion, privateVersion, privateTrialVersion, noAccessDefinedVersion, privateVersionOtherApplications)
+        val response = await(underTest.fetchByServiceName(serviceName, Some(email), alsoIncludePrivateTrials))
 
-      when(mockAPIDefinitionRepository.fetchByServiceName(serviceName))
-        .thenReturn(successful(Some(definition)))
-      when(mockThirdPartyApplicationConnector.fetchApplicationsByEmail(email))
-        .thenReturn(successful(Seq(Application(appId, "App"))))
+        response shouldNot be(None)
+        response.get.versions should contain allOf(publicVersion, versionWithoutAccessDefined)
+      }
 
-      val response = await(underTest.fetchByServiceName(serviceName, Some(email)))
+      "include private versions of the API Definition when the specified user's application is whitelisted" in new FetchSetup {
 
-      response shouldBe Some(anAPIDefinition("context", publicVersion, privateVersion, privateTrialVersion, noAccessDefinedVersion))
+        val response = await(underTest.fetchByServiceName(serviceName, Some(email), alsoIncludePrivateTrials))
+
+        response shouldNot be(None)
+        response.get.versions should contain(privateVersionWithAppWhitelisted)
+      }
+
+      "exclude private versions of the API Definition when the specified user's application is not whitelisted" in new FetchSetup {
+
+        val response = await(underTest.fetchByServiceName(serviceName, Some(email), alsoIncludePrivateTrials))
+
+        response shouldNot be(None)
+        response.get.versions should not contain privateVersionWithoutAppWhitelisted
+      }
+
+      "include private trial versions of the API Definition when the specified user's application is whitelisted" in new FetchSetup {
+
+        val response = await(underTest.fetchByServiceName(serviceName, Some(email), alsoIncludePrivateTrials))
+
+        response shouldNot be(None)
+        response.get.versions should contain(privateTrialVersionWithWhitelist)
+      }
+
+      "include private trial versions of the API Definition when the specified user's application is not whitelisted" in new FetchSetup {
+
+        val response = await(underTest.fetchByServiceName(serviceName, Some(email), alsoIncludePrivateTrials))
+
+        response shouldNot be(None)
+        response.get.versions should contain(privateTrialVersionWithoutWhitelist)
+      }
     }
   }
 
   "fetchAllAPIsForApplication" should {
 
-    "filter out versions which are private for which the application is not trusted" in new Setup {
-      val applicationId = "APP_ID"
-      val publicVersion = aVersion("1.0", Some(PublicAPIAccess()))
-      val versionWithoutAccessDefined = aVersion("2.0", None)
-      val privateTrialVersion = aVersion("2.5", Some(PrivateAPIAccess(Seq.empty, isTrial = Some(true))))
-      val privateVersion1 = aVersion("3.0", Some(PrivateAPIAccess(Seq(applicationId))))
-      val privateVersion2 = aVersion("4.0", Some(PrivateAPIAccess(Seq("OTHER_APPID"))))
-
-      val api = anAPIDefinition("context", publicVersion, versionWithoutAccessDefined, privateTrialVersion, privateVersion1, privateVersion2)
+    "filter out API Definition which do not have any version available for the application" in new Setup {
+      val api = anAPIDefinition(context, privateVersionWithoutAppWhitelisted, privateTrialVersionWithoutWhitelist)
 
       when(mockAPIDefinitionRepository.fetchAll()).thenReturn(successful(Seq(api)))
 
-      val response = await(underTest.fetchAllAPIsForApplication(applicationId))
-
-      response shouldBe Seq(anAPIDefinition("context", publicVersion, versionWithoutAccessDefined, privateTrialVersion, privateVersion1))
-    }
-
-    "filter out APIs which do not have any version available for the application" in new Setup {
-      val applicationId = "APP_ID"
-      val privateVersion = aVersion("4.0", Some(PrivateAPIAccess(Seq("OTHER_APPID"))))
-
-      val api = anAPIDefinition("context", privateVersion)
-
-      when(mockAPIDefinitionRepository.fetchAll()).thenReturn(successful(Seq(api)))
-
-      val response = await(underTest.fetchAllAPIsForApplication(applicationId))
+      val response = await(underTest.fetchAllAPIsForApplication(applicationId.toString, alsoIncludePrivateTrials = false))
 
       response shouldBe Seq()
+    }
+
+    "allow the option of specifying alsoIncludePrivateTrials" when {
+
+      "the alsoIncludePrivateTrials option is false" should {
+
+        val alsoIncludePrivateTrials = false
+
+        "filter out versions which are private for which the application is not whitelisted" in new Setup {
+          val api = anAPIDefinition(context,
+            publicVersion,
+            versionWithoutAccessDefined,
+            privateTrialVersionWithoutWhitelist,
+            privateVersionWithAppWhitelisted,
+            privateVersionWithoutAppWhitelisted)
+
+          when(mockAPIDefinitionRepository.fetchAll()).thenReturn(successful(Seq(api)))
+
+          val response = await(underTest.fetchAllAPIsForApplication(applicationId.toString, alsoIncludePrivateTrials))
+
+          response shouldBe Seq(anAPIDefinition(context, publicVersion, versionWithoutAccessDefined, privateVersionWithAppWhitelisted))
+        }
+      }
+
+      "the alsoIncludePrivateTrials option is true" should {
+
+        val alsoIncludePrivateTrials = true
+
+        "filter out versions which are private for which the application is not whitelisted but include private trials" in new Setup {
+          val api = anAPIDefinition(context,
+            publicVersion,
+            versionWithoutAccessDefined,
+            privateTrialVersionWithoutWhitelist,
+            privateVersionWithAppWhitelisted,
+            privateVersionWithoutAppWhitelisted)
+
+          when(mockAPIDefinitionRepository.fetchAll()).thenReturn(successful(Seq(api)))
+
+          val response = await(underTest.fetchAllAPIsForApplication(applicationId.toString, alsoIncludePrivateTrials))
+
+          response shouldBe
+            Seq(anAPIDefinition(context, publicVersion, versionWithoutAccessDefined, privateTrialVersionWithoutWhitelist, privateVersionWithAppWhitelisted))
+        }
+      }
     }
   }
 
-  "fetchAllAPIsForCollaborator" should {
+  "fetchAllAPIsForCollaborator" when {
     val email = "email@email.com"
-    val applicationId = randomUUID()
 
-    "filter the private APIs for which the user does not have an application whitelisted" in new Setup {
+    "the alsoIncludePrivateTrials option is false" should {
 
-      val publicVersion: APIVersion = aVersion("1.0", Some(PublicAPIAccess()))
-      val versionWithoutAccessDefined: APIVersion = aVersion("2.0", None)
-      val privateTrialVersion: APIVersion = aVersion("2.5", Some(PrivateAPIAccess(Seq.empty, isTrial = Some(true))))
-      val privateVersionWithAppWhitelisted: APIVersion = aVersion("3.0", Some(PrivateAPIAccess(Seq(applicationId.toString))))
-      val privateVersionWithoutAppWhitelisted: APIVersion = aVersion("4.0", Some(PrivateAPIAccess(Seq(randomUUID().toString))))
-      val api: APIDefinition =
-        anAPIDefinition(
-          "context",
-          publicVersion,
-          versionWithoutAccessDefined,
-          privateTrialVersion,
-          privateVersionWithAppWhitelisted,
-          privateVersionWithoutAppWhitelisted)
+      val alsoIncludePrivateTrials = false
 
-      when(mockThirdPartyApplicationConnector.fetchApplicationsByEmail(email))
-        .thenReturn(successful(Seq(Application(applicationId, "App"))))
-      when(mockAPIDefinitionRepository.fetchAll()).thenReturn(successful(Seq(api)))
+      "filter the private APIs for which the user does not have an application whitelisted" in new Setup {
 
-      val response: Seq[APIDefinition] = await(underTest.fetchAllAPIsForCollaborator(email))
+        val api: APIDefinition =
+          anAPIDefinition(
+            context,
+            publicVersion,
+            versionWithoutAccessDefined,
+            privateTrialVersionWithoutWhitelist,
+            privateVersionWithAppWhitelisted,
+            privateVersionWithoutAppWhitelisted)
 
-      response shouldBe Seq(anAPIDefinition("context", publicVersion, versionWithoutAccessDefined, privateTrialVersion, privateVersionWithAppWhitelisted))
+        when(mockThirdPartyApplicationConnector.fetchApplicationsByEmail(email))
+          .thenReturn(successful(Seq(Application(applicationId, "App"))))
+        when(mockAPIDefinitionRepository.fetchAll()).thenReturn(successful(Seq(api)))
+
+        val response: Seq[APIDefinition] = await(underTest.fetchAllAPIsForCollaborator(email, alsoIncludePrivateTrials))
+
+        response shouldBe Seq(anAPIDefinition(context, publicVersion, versionWithoutAccessDefined, privateVersionWithAppWhitelisted))
+      }
+
+      "filter out APIs which do not have any version available for the user" in new Setup {
+
+        val api = anAPIDefinition(context, privateVersionWithAppWhitelisted, privateTrialVersionWithWhitelist)
+
+        when(mockThirdPartyApplicationConnector.fetchApplicationsByEmail(email)).thenReturn(successful(Seq.empty))
+        when(mockAPIDefinitionRepository.fetchAll()).thenReturn(successful(Seq(api)))
+
+        val response = await(underTest.fetchAllAPIsForCollaborator(email, alsoIncludePrivateTrials))
+
+        response shouldBe Seq()
+      }
     }
 
-    "filter out APIs which do not have any version available for the user" in new Setup {
+    "the alsoIncludePrivateTrials option is true" should {
 
-      val privateVersion = aVersion("4.0", Some(PrivateAPIAccess(Seq("OTHER_APPID"))))
-      val api = anAPIDefinition("context", privateVersion)
+      val alsoIncludePrivateTrials = true
 
-      when(mockThirdPartyApplicationConnector.fetchApplicationsByEmail(email)).thenReturn(successful(Seq()))
-      when(mockAPIDefinitionRepository.fetchAll()).thenReturn(successful(Seq(api)))
+      "filter the private APIs for which the user does not have an application whitelisted but include any private trials" in new FetchSetup {
 
-      val response = await(underTest.fetchAllAPIsForCollaborator(email))
+        val api: APIDefinition =
+          anAPIDefinition(
+            context,
+            publicVersion,
+            versionWithoutAccessDefined,
+            privateTrialVersionWithoutWhitelist,
+            privateVersionWithAppWhitelisted,
+            privateVersionWithoutAppWhitelisted)
 
-      response shouldBe Seq()
+        when(mockThirdPartyApplicationConnector.fetchApplicationsByEmail(email))
+          .thenReturn(successful(Seq(Application(applicationId, "App"))))
+        when(mockAPIDefinitionRepository.fetchAll()).thenReturn(successful(Seq(api)))
+
+        val response: Seq[APIDefinition] = await(underTest.fetchAllAPIsForCollaborator(email, alsoIncludePrivateTrials))
+
+        response shouldBe
+          Seq(anAPIDefinition(context, publicVersion, versionWithoutAccessDefined, privateTrialVersionWithoutWhitelist, privateVersionWithAppWhitelisted))
+      }
     }
   }
 
   "fetchByContext" should {
 
     "return API Definition that exists in the repository" in new Setup {
-
-      val context = "calendar"
 
       when(mockAPIDefinitionRepository.fetchByContext(context)).thenReturn(successful(Some(apiDefinition)))
 
@@ -401,55 +564,64 @@ class APIDefinitionServiceSpec extends UnitSpec
     }
   }
 
-  "fetchAllPublicAPIs" should {
+  "fetchAllPublicAPIs" when {
 
-    "return all Public API Definitions and filter out private versions" in new Setup {
+    "the alsoIncludePrivateTrials option is false" should {
 
-      val publicVersion = aVersion("1.0", Some(PublicAPIAccess()))
-      val versionWithoutAccessDefined = aVersion("2.0", None)
-      val privateVersion = aVersion("3.0", Some(PrivateAPIAccess(Seq("APP_ID"))))
-      val api = anAPIDefinition("context", publicVersion, versionWithoutAccessDefined, privateVersion)
+      val alsoIncludePrivateTrials = false
 
-      when(mockAPIDefinitionRepository.fetchAll()).thenReturn(successful(Seq(api)))
+      "return all Public API Definitions and filter out private versions" in new Setup {
 
-      val result = await(underTest.fetchAllPublicAPIs())
+        when(mockAPIDefinitionRepository.fetchAll()).thenReturn(successful(Seq(apiDefinitionWithAllVersions)))
 
-      result shouldBe Seq(anAPIDefinition("context", publicVersion, versionWithoutAccessDefined))
+        val result = await(underTest.fetchAllPublicAPIs(alsoIncludePrivateTrials))
+
+        result shouldBe Seq(anAPIDefinition(context, versionWithoutAccessDefined, publicVersion))
+      }
     }
 
-    "filter out APIs which do not have any version available for the user" in new Setup {
+    "the alsoIncludePrivateTrials option is true" should {
 
-      val privateVersion = aVersion("4.0", Some(PrivateAPIAccess(Seq("APP_ID"))))
-      val api = anAPIDefinition("context", privateVersion)
+      val alsoIncludePrivateTrials = true
 
-      when(mockAPIDefinitionRepository.fetchAll()).thenReturn(successful(Seq(api)))
+      "return all Public and Private Trial API Definitions" in new Setup {
 
-      val result = await(underTest.fetchAllPublicAPIs())
+        when(mockAPIDefinitionRepository.fetchAll()).thenReturn(successful(Seq(apiDefinitionWithAllVersions)))
 
-      result shouldBe Seq()
+        val result = await(underTest.fetchAllPublicAPIs(alsoIncludePrivateTrials))
+
+        result shouldBe Seq(anAPIDefinition(
+          context, versionWithoutAccessDefined, publicVersion, privateTrialVersionWithWhitelist, privateTrialVersionWithoutWhitelist))
+      }
     }
   }
 
   "fetchAllPrivateAPIs" should {
 
     "return all Private API Definitions" in new Setup {
-      val publicVersion = aVersion("1.0", Some(PublicAPIAccess()))
-      val versionWithoutAccessDefined = aVersion("2.0", None)
-      val privateVersion = aVersion("3.0", Some(PrivateAPIAccess(Seq("APP_ID"))))
-      val api = anAPIDefinition("context", publicVersion, versionWithoutAccessDefined, privateVersion)
+
+      val api = anAPIDefinition(
+        context,
+        publicVersion,
+        versionWithoutAccessDefined,
+        privateVersionWithAppWhitelisted,
+        privateVersionWithoutAppWhitelisted,
+        privateTrialVersionWithWhitelist,
+        privateTrialVersionWithoutWhitelist)
 
       when(mockAPIDefinitionRepository.fetchAll()).thenReturn(successful(Seq(api)))
 
       val result = await(underTest.fetchAllPrivateAPIs())
 
-      result shouldBe Seq(anAPIDefinition("context", privateVersion))
+      result shouldBe Seq(anAPIDefinition(
+        context, privateVersionWithAppWhitelisted, privateVersionWithoutAppWhitelisted, privateTrialVersionWithWhitelist, privateTrialVersionWithoutWhitelist))
     }
   }
 
   "delete" should {
 
     "delete the API in WSO2, AWS and the repository when there is no subscribers" in new Setup {
-      when(mockThirdPartyApplicationConnector.fetchSubscribers("calendar", "1.0")).thenReturn(successful(Seq()))
+      when(mockThirdPartyApplicationConnector.fetchSubscribers(context, "1.0")).thenReturn(successful(Seq()))
 
       await(underTest.delete(apiDefinition.serviceName))
 
@@ -459,7 +631,7 @@ class APIDefinitionServiceSpec extends UnitSpec
     }
 
     "fail when one API has a subscriber" in new Setup {
-      when(mockThirdPartyApplicationConnector.fetchSubscribers("calendar", "1.0")).thenReturn(successful(Seq(randomUUID)))
+      when(mockThirdPartyApplicationConnector.fetchSubscribers(context, "1.0")).thenReturn(successful(Seq(randomUUID)))
 
       val future = underTest.delete(apiDefinition.serviceName)
 
@@ -475,7 +647,7 @@ class APIDefinitionServiceSpec extends UnitSpec
     }
 
     "fail when wso2 delete fails" in new Setup {
-      when(mockThirdPartyApplicationConnector.fetchSubscribers("calendar", "1.0")).thenReturn(successful(Seq()))
+      when(mockThirdPartyApplicationConnector.fetchSubscribers(context, "1.0")).thenReturn(successful(Seq()))
       when(mockWSO2APIPublisher.delete(apiDefinition)).thenReturn(failed(new RuntimeException()))
 
       val future = underTest.delete(apiDefinition.serviceName)
@@ -486,7 +658,7 @@ class APIDefinitionServiceSpec extends UnitSpec
     }
 
     "fail when AWS delete fails" in new Setup {
-      when(mockThirdPartyApplicationConnector.fetchSubscribers("calendar", "1.0")).thenReturn(successful(Seq()))
+      when(mockThirdPartyApplicationConnector.fetchSubscribers(context, "1.0")).thenReturn(successful(Seq()))
       when(mockAwsApiPublisher.delete(apiDefinition)).thenReturn(failed(new RuntimeException()))
 
       val future = underTest.delete(apiDefinition.serviceName)
@@ -497,7 +669,7 @@ class APIDefinitionServiceSpec extends UnitSpec
     }
 
     "fail when repository delete fails" in new Setup {
-      when(mockThirdPartyApplicationConnector.fetchSubscribers("calendar", "1.0")).thenReturn(successful(Seq()))
+      when(mockThirdPartyApplicationConnector.fetchSubscribers(context, "1.0")).thenReturn(successful(Seq()))
       when(mockAPIDefinitionRepository.delete(apiDefinition.serviceName)).thenReturn(failed(new RuntimeException()))
 
       val future = underTest.delete(apiDefinition.serviceName)
@@ -555,36 +727,20 @@ class APIDefinitionServiceSpec extends UnitSpec
     }
   }
 
-  private def anAPIDefinition(context: String, versions: APIVersion*) =
-    APIDefinition("service","http://service","name", "description", context, versions, None, None, None)
-
-  private def extAPIDefinition(context: String, versions: Seq[ExtendedAPIVersion]) =
-    ExtendedAPIDefinition(
-      "service",
-      "http://service",
-      "name",
-      "description",
-      context,
-      requiresTrust = false,
-      isTestSupport = false,
-      versions,
-      lastPublishedAt = None)
-
-
   private def aVersion(version: String, access: Option[APIAccess]) =
-    APIVersion(version, APIStatus.PROTOTYPED, access, Seq(Endpoint("/test", "test", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)))
+    APIVersion(version, APIStatus.BETA, access, Seq(Endpoint("/test", "test", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)))
 
   private def someAPIDefinition: APIDefinition =
     APIDefinition(
-      "calendar",
+      serviceName,
       "http://calendar",
       "Calendar API",
       "My Calendar API",
-      "calendar",
+      context,
       Seq(
         APIVersion(
           "1.0",
-          APIStatus.PROTOTYPED,
+          APIStatus.BETA,
           Some(PublicAPIAccess()),
           Seq(
             Endpoint(
