@@ -16,19 +16,19 @@
 
 package unit.uk.gov.hmrc.apidefinition.service
 
-import uk.gov.hmrc.apidefinition.config.AppContext
-import uk.gov.hmrc.apidefinition.connector.WSO2APIPublisherConnector
 import org.mockito.ArgumentMatchers.{any, refEq}
 import org.mockito.BDDMockito.given
-import org.mockito.Mockito.{times, verify, when}
+import org.mockito.Mockito._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
+import uk.gov.hmrc.apidefinition.config.AppContext
+import uk.gov.hmrc.apidefinition.connector.WSO2APIPublisherConnector
+import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.services.WSO2APIPublisher
+import uk.gov.hmrc.apidefinition.utils.WSO2PayloadHelper
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HeaderNames._
-import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.play.test.UnitSpec
-import uk.gov.hmrc.apidefinition.utils.WSO2PayloadHelper
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.{failed, successful}
@@ -67,6 +67,15 @@ class WSO2APIPublisherSpec extends UnitSpec
         .createAPI(refEq(cookie), any(classOf[WSO2APIDefinition]))(any(classOf[HeaderCarrier]))
       verify(underTest.wso2PublisherConnector)
         .publishAPIStatus(refEq(cookie), any(classOf[WSO2APIDefinition]), refEq("PUBLISHED"))(any(classOf[HeaderCarrier]))
+    }
+
+    Seq("sso-in/sso", "web-session/sso-api").foreach { context =>
+      s"skip publishing if the context is $context" in new Setup {
+        await(underTest.publish(someAPIDefinition.copy(context = context)))
+
+        verify(underTest.wso2PublisherConnector).login()
+        verifyNoMoreInteractions(underTest.wso2PublisherConnector)
+      }
     }
 
     "login to WSO2 and update the API when it already exists" in new Setup {
@@ -194,6 +203,14 @@ class WSO2APIPublisherSpec extends UnitSpec
 
       verify(underTest.wso2PublisherConnector, times(3))
         .removeAPI(refEq(cookie), any(classOf[String]), any(classOf[String]))(any(classOf[HeaderCarrier]))
+    }
+
+    Seq("sso-in/sso", "web-session/sso-api").foreach { context =>
+      s"skip deletion if the context is $context" in new Setup {
+        await(underTest.delete(someAPIDefinition.copy(context = context)))
+
+        verifyZeroInteractions(underTest.wso2PublisherConnector)
+      }
     }
   }
 
