@@ -32,30 +32,36 @@ class WSO2APIPublisher @Inject()(val appContext: AppContext,
                                  val wso2PublisherConnector: WSO2APIPublisherConnector)
                                 (implicit val ec: ExecutionContext) {
 
-  private def publish(apiDefinition: APIDefinition, cookie: String)(implicit hc: HeaderCarrier): Future[Unit] = {
+  val IgnoredContexts: Seq[String] = Seq("sso-in/sso", "web-session/sso-api")
 
+  private def publish(apiDefinition: APIDefinition, cookie: String)(implicit hc: HeaderCarrier): Future[Unit] = {
     Logger.info(s"Trying to publish API [${apiDefinition.name}]")
 
-    def createOrUpdateAPI(wso2APIDefinition: WSO2APIDefinition): Future[Unit] = {
-      wso2PublisherConnector.doesAPIExist(cookie, wso2APIDefinition).flatMap {
-        case true => wso2PublisherConnector.updateAPI(cookie, wso2APIDefinition)
-        case false => wso2PublisherConnector.createAPI(cookie, wso2APIDefinition)
-      }
-    }
-
-    def publishApiStatuses(): Seq[Future[Unit]] = {
-      buildWSO2APIDefinitions(apiDefinition).map {
-        wso2ApiDefinition: WSO2APIDefinition => createOrUpdateAPI(wso2ApiDefinition).flatMap { _ =>
-          val wso2APIStatus = wso2ApiStatus(apiDefinition, wso2ApiDefinition)
-          wso2PublisherConnector.publishAPIStatus(cookie, wso2ApiDefinition, wso2APIStatus)
+    if (IgnoredContexts.contains(apiDefinition.context)) {
+      Logger.info(s"Ignoring publishing of ${apiDefinition.context}")
+      Future.successful(())
+    } else {
+      def createOrUpdateAPI(wso2APIDefinition: WSO2APIDefinition): Future[Unit] = {
+        wso2PublisherConnector.doesAPIExist(cookie, wso2APIDefinition).flatMap {
+          case true => wso2PublisherConnector.updateAPI(cookie, wso2APIDefinition)
+          case false => wso2PublisherConnector.createAPI(cookie, wso2APIDefinition)
         }
       }
-    }
 
-    Future.sequence(publishApiStatuses()) map (_ => ()) recover {
-      case e: Throwable =>
-        Logger.error(s"Failed to publish API [${apiDefinition.name}]", e)
-        throw PublishingException(apiDefinition.name)
+      def publishApiStatuses(): Seq[Future[Unit]] = {
+        buildWSO2APIDefinitions(apiDefinition).map {
+          wso2ApiDefinition: WSO2APIDefinition => createOrUpdateAPI(wso2ApiDefinition).flatMap { _ =>
+            val wso2APIStatus = wso2ApiStatus(apiDefinition, wso2ApiDefinition)
+            wso2PublisherConnector.publishAPIStatus(cookie, wso2ApiDefinition, wso2APIStatus)
+          }
+        }
+      }
+
+      Future.sequence(publishApiStatuses()) map (_ => ()) recover {
+        case e: Throwable =>
+          Logger.error(s"Failed to publish API [${apiDefinition.name}]", e)
+          throw PublishingException(apiDefinition.name)
+      }
     }
   }
 
@@ -96,15 +102,18 @@ class WSO2APIPublisher @Inject()(val appContext: AppContext,
   }
 
   def delete(apiDefinition: APIDefinition)(implicit hc: HeaderCarrier): Future[Unit] = {
+    if (IgnoredContexts.contains(apiDefinition.context)) {
+      Logger.info(s"Ignoring deletion of ${apiDefinition.context}")
+      Future.successful(())
+    } else {
+      def removeAPI(cookie: String, wso2Definition: WSO2APIDefinition): Future[Unit] = {
+        wso2PublisherConnector.removeAPI(cookie, wso2Definition.name, wso2Definition.version)
+      }
 
-    def removeAPI(cookie: String, wso2Definition: WSO2APIDefinition) = {
-      wso2PublisherConnector.removeAPI(cookie, wso2Definition.name, wso2Definition.version)
+      for {
+        cookie <- wso2PublisherConnector.login()
+        _ <- Future.sequence(buildWSO2APIDefinitions(apiDefinition).map(removeAPI(cookie, _)))
+      } yield ()
     }
-
-    for {
-      cookie <- wso2PublisherConnector.login()
-      _ <- Future.sequence(buildWSO2APIDefinitions(apiDefinition).map(removeAPI(cookie, _)))
-    } yield ()
   }
-
 }
