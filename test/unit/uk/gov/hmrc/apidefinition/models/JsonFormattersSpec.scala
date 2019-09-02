@@ -16,9 +16,10 @@
 
 package unit.uk.gov.hmrc.apidefinition.models
 
-import uk.gov.hmrc.apidefinition.models.JsonFormatters.dateTimeReads
+import uk.gov.hmrc.apidefinition.models.JsonFormatters.{apiAccessWrites, dateTimeReads}
 import org.joda.time.{DateTime, DateTimeZone}
 import play.api.libs.json.{JsError, JsNumber, Json}
+import uk.gov.hmrc.apidefinition.models.PrivateAPIAccess
 import uk.gov.hmrc.play.test.UnitSpec
 
 class JsonFormattersSpec extends UnitSpec {
@@ -33,6 +34,15 @@ class JsonFormattersSpec extends UnitSpec {
       Json.fromJson[DateTime](json = dateTime)(fjs = dateTimeReads) shouldBe expectedErrorMessage
     }
 
+    "write isTrial when it is defined in the API access" in {
+      val apiAccess = PrivateAPIAccess(Seq("A", "B"), isTrial = Some(false))
+      apiAccessWrites.writes(apiAccess).toString shouldBe """{"type":"PRIVATE","whitelistedApplicationIds":["A","B"],"isTrial":false}"""
+    }
+
+    "omit isTrial when it is not defined in the API access" in {
+      val apiAccess = PrivateAPIAccess(Seq("A", "B"), isTrial = None)
+      apiAccessWrites.writes(apiAccess).toString shouldBe """{"type":"PRIVATE","whitelistedApplicationIds":["A","B"]}"""
+    }
   }
 
 }
