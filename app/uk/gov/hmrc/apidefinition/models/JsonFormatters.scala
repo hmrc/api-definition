@@ -34,9 +34,15 @@ object JsonFormatters {
   implicit val formatResourceThrottlingTier = EnumJson.enumFormat(ResourceThrottlingTier)
 
   implicit object apiAccessWrites extends Writes[APIAccess] {
+    private val privApiWrites: OWrites[(APIAccessType, Seq[String], Option[Boolean])] = (
+      (JsPath \ "type").write[APIAccessType] and
+      (JsPath \ "whitelistedApplicationIds").write[Seq[String]] and
+      (JsPath \ "isTrial").writeNullable[Boolean]
+    ).tupled
+
     override def writes(access: APIAccess) = access match {
       case _: PublicAPIAccess => Json.obj("type" -> PUBLIC)
-      case privApi: PrivateAPIAccess => Json.obj("type" -> PRIVATE, "whitelistedApplicationIds" -> privApi.whitelistedApplicationIds, "isTrial" -> privApi.isTrial)
+      case privApi: PrivateAPIAccess => privApiWrites.writes(PRIVATE, privApi.whitelistedApplicationIds, privApi.isTrial)
       case acc => throw new RuntimeException(s"Unknown API Access $acc")
     }
   }
