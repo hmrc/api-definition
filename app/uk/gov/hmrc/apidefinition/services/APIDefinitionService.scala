@@ -68,24 +68,19 @@ class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
   }
 
   private def checkAPIDefinitionForStatusChanges(apiDefinition: APIDefinition): Unit = {
-    def findStatusDifferences(existingAPIVersions: Seq[APIVersion], newAPIVersions: Seq[APIVersion]): Future[Seq[(String, APIStatus, APIStatus)]] =
-      Future {
+    def findStatusDifferences(existingAPIVersions: Seq[APIVersion], newAPIVersions: Seq[APIVersion]): Seq[(String, APIStatus, APIStatus)] =
         (existingAPIVersions ++ newAPIVersions)
           .groupBy(_.version)
           .filter(v => v._2.size == 2)
           .filterNot(v => v._2.head.status == v._2.last.status)
           .map(v => (v._1, v._2.head.status, v._2.last.status))
           .toSeq
-      }
 
-    for {
-      apiDefinitionOption <- apiDefinitionRepository.fetchByName(apiDefinition.name)
-      differences <- {
-        if (apiDefinitionOption.isDefined) findStatusDifferences(apiDefinitionOption.get.versions, apiDefinition.versions)
-        else findStatusDifferences(Seq.empty, apiDefinition.versions)
-      }
-      _ = differences.foreach(diff => notificationService.notifyOfStatusChange(apiDefinition.name, diff._1, diff._2, diff._3))
-    } yield differences
+    apiDefinitionRepository.fetchByName(apiDefinition.name)
+      .map(existingAPIDefinitionOption =>
+        existingAPIDefinitionOption
+          .map(existingAPIDefinition => findStatusDifferences(existingAPIDefinition.versions, apiDefinition.versions))
+          .map(_.foreach(diff => notificationService.notifyOfStatusChange(apiDefinition.name, diff._1, diff._2, diff._3))))
   }
 
   def fetchByServiceName(serviceName: String, email: Option[String], alsoIncludePrivateTrials: Boolean)
