@@ -21,18 +21,21 @@ import org.joda.time.{DateTime, DateTimeZone}
 import play.api.Logger
 import uk.gov.hmrc.apidefinition.config.AppContext
 import uk.gov.hmrc.apidefinition.connector.ThirdPartyApplicationConnector
+import uk.gov.hmrc.apidefinition.models.APIStatus.APIStatus
 import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.http.{HeaderCarrier, UnauthorizedException}
 
 import scala.concurrent.Future.{failed, sequence, successful}
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 @Singleton
 class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
                                      awsApiPublisher: AwsApiPublisher,
                                      thirdPartyApplicationConnector: ThirdPartyApplicationConnector,
                                      apiDefinitionRepository: APIDefinitionRepository,
+                                     notificationService: NotificationService,
                                      playApplicationContext: AppContext)
                                     (implicit val ec: ExecutionContext) {
 
@@ -49,6 +52,8 @@ class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
       }
     }
 
+    checkAPIDefinitionForStatusChanges(apiDefinition)
+
     publish().flatMap { _ =>
       val definitionWithPublishTime = apiDefinition.copy(lastPublishedAt = Some(DateTime.now(DateTimeZone.UTC)))
 
@@ -60,6 +65,27 @@ class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
             failed(e)
         }
     }
+  }
+
+  private def checkAPIDefinitionForStatusChanges(apiDefinition: APIDefinition): Unit = {
+    def findStatusDifferences(existingAPIVersions: Seq[APIVersion], newAPIVersions: Seq[APIVersion]): Future[Seq[(String, APIStatus, APIStatus)]] =
+      Future {
+        (existingAPIVersions ++ newAPIVersions)
+          .groupBy(_.version)
+          .filter(v => v._2.size == 2)
+          .filterNot(v => v._2.head.status == v._2.last.status)
+          .map(v => (v._1, v._2.head.status, v._2.last.status))
+          .toSeq
+      }
+
+    for {
+      apiDefinitionOption <- apiDefinitionRepository.fetchByName(apiDefinition.name)
+      differences <- {
+        if (apiDefinitionOption.isDefined) findStatusDifferences(apiDefinitionOption.get.versions, apiDefinition.versions)
+        else findStatusDifferences(Seq.empty, apiDefinition.versions)
+      }
+      _ = differences.foreach(diff => notificationService.notifyOfStatusChange(apiDefinition.name, diff._1, diff._2, diff._3))
+    } yield differences
   }
 
   def fetchByServiceName(serviceName: String, email: Option[String], alsoIncludePrivateTrials: Boolean)

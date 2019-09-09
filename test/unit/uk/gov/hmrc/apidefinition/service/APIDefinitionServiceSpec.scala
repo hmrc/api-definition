@@ -26,14 +26,17 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
 import uk.gov.hmrc.apidefinition.config.AppContext
 import uk.gov.hmrc.apidefinition.connector.ThirdPartyApplicationConnector
+import uk.gov.hmrc.apidefinition.models
+import uk.gov.hmrc.apidefinition.models.APIStatus.APIStatus
 import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
-import uk.gov.hmrc.apidefinition.services.{APIDefinitionService, AwsApiPublisher, WSO2APIPublisher}
+import uk.gov.hmrc.apidefinition.services.{APIDefinitionService, AwsApiPublisher, NotificationService, WSO2APIPublisher}
 import uk.gov.hmrc.http.HeaderNames._
 import uk.gov.hmrc.http.{HeaderCarrier, UnauthorizedException}
 import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
 
 class APIDefinitionServiceSpec extends UnitSpec
@@ -70,27 +73,29 @@ class APIDefinitionServiceSpec extends UnitSpec
 
     implicit val hc = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
 
-    val mockWSO2APIPublisher = mock[WSO2APIPublisher]
-    val mockAwsApiPublisher = mock[AwsApiPublisher]
-    val mockAPIDefinitionRepository = mock[APIDefinitionRepository]
-    val mockThirdPartyApplicationConnector = mock[ThirdPartyApplicationConnector]
-    val mockAppContext = mock[AppContext]
+    val mockWSO2APIPublisher: WSO2APIPublisher = mock[WSO2APIPublisher]
+    val mockAwsApiPublisher: AwsApiPublisher = mock[AwsApiPublisher]
+    val mockAPIDefinitionRepository: APIDefinitionRepository = mock[APIDefinitionRepository]
+    val mockThirdPartyApplicationConnector: ThirdPartyApplicationConnector = mock[ThirdPartyApplicationConnector]
+    val mockNotificationService: NotificationService = mock[NotificationService]
+    val mockAppContext: AppContext = mock[AppContext]
 
     val underTest = new APIDefinitionService(
       mockWSO2APIPublisher,
       mockAwsApiPublisher,
       mockThirdPartyApplicationConnector,
       mockAPIDefinitionRepository,
+      mockNotificationService,
       mockAppContext)
 
     val applicationId = randomUUID()
 
-    val versionWithoutAccessDefined: APIVersion = aVersion("1.0", None)
-    val publicVersion = aVersion("2.0", Some(PublicAPIAccess()))
-    val privateVersionWithAppWhitelisted: APIVersion = aVersion("3.0", Some(PrivateAPIAccess(Seq(applicationId.toString))))
-    val privateVersionWithoutAppWhitelisted: APIVersion = aVersion("3.1", Some(PrivateAPIAccess(Seq("OTHER_APP_ID"))))
-    val privateTrialVersionWithWhitelist = aVersion("4.0", Some(PrivateAPIAccess(Seq(applicationId.toString), isTrial = Some(true))))
-    val privateTrialVersionWithoutWhitelist = aVersion("4.1", Some(PrivateAPIAccess(Seq.empty, isTrial = Some(true))))
+    val versionWithoutAccessDefined: APIVersion = aVersion(version = "1.0", access = None)
+    val publicVersion = aVersion(version = "2.0", access = Some(PublicAPIAccess()))
+    val privateVersionWithAppWhitelisted: APIVersion = aVersion(version = "3.0", access = Some(PrivateAPIAccess(Seq(applicationId.toString))))
+    val privateVersionWithoutAppWhitelisted: APIVersion = aVersion(version = "3.1", access = Some(PrivateAPIAccess(Seq("OTHER_APP_ID"))))
+    val privateTrialVersionWithWhitelist = aVersion(version = "4.0", access = Some(PrivateAPIAccess(Seq(applicationId.toString), isTrial = Some(true))))
+    val privateTrialVersionWithoutWhitelist = aVersion(version = "4.1", access = Some(PrivateAPIAccess(Seq.empty, isTrial = Some(true))))
 
     val allVersions = Seq(
       versionWithoutAccessDefined,
@@ -136,7 +141,7 @@ class APIDefinitionServiceSpec extends UnitSpec
   "createOrUpdate" should {
 
     "create or update the API Definition in all WSO2, AWS and the repository" in new Setup {
-
+      when(mockAPIDefinitionRepository.fetchByName(apiDefinition.name)).thenReturn(Future.successful(Some(apiDefinition)))
       when(mockWSO2APIPublisher.publish(apiDefinition)).thenReturn(successful(()))
       when(mockAwsApiPublisher.publish(apiDefinition)).thenReturn(successful(()))
       when(mockAPIDefinitionRepository.save(apiDefinitionWithSavingTime)).thenReturn(successful(apiDefinitionWithSavingTime))
@@ -146,9 +151,11 @@ class APIDefinitionServiceSpec extends UnitSpec
       verify(mockWSO2APIPublisher, times(1)).publish(apiDefinition)
       verify(mockAwsApiPublisher, times(1)).publish(apiDefinition)
       verify(mockAPIDefinitionRepository, times(1)).save(apiDefinitionWithSavingTime)
+      verifyZeroInteractions(mockNotificationService)
     }
 
     "propagate unexpected errors that happen when trying to publish an API to WSO2" in new Setup {
+      when(mockAPIDefinitionRepository.fetchByName(apiDefinition.name)).thenReturn(Future.successful(Some(apiDefinition)))
       when(mockWSO2APIPublisher.publish(apiDefinition)).thenReturn(failed(new RuntimeException("Something went wrong")))
       when(mockAwsApiPublisher.publish(apiDefinition)).thenReturn(successful(()))
 
@@ -157,9 +164,11 @@ class APIDefinitionServiceSpec extends UnitSpec
       }
 
       thrown.getMessage shouldBe "Something went wrong"
+      verifyZeroInteractions(mockNotificationService)
     }
 
     "propagate unexpected errors that happen when trying to publish an API to AWS" in new Setup {
+      when(mockAPIDefinitionRepository.fetchByName(apiDefinition.name)).thenReturn(Future.successful(Some(apiDefinition)))
       when(mockWSO2APIPublisher.publish(apiDefinition)).thenReturn(successful(()))
       when(mockAwsApiPublisher.publish(apiDefinition)).thenReturn(failed(new RuntimeException("Something went wrong")))
 
@@ -168,13 +177,36 @@ class APIDefinitionServiceSpec extends UnitSpec
       }
 
       thrown.getMessage shouldBe "Something went wrong"
+      verifyZeroInteractions(mockNotificationService)
+    }
+
+    "send notifications when version of API has changed status" in new Setup {
+      val apiVersion = "1.0"
+      val existingStatus: models.APIStatus.Value = APIStatus.ALPHA
+      val updatedStatus: models.APIStatus.Value = APIStatus.BETA
+      val existingAPIDefinition: APIDefinition = anAPIDefinition("/foo", aVersion(apiVersion, existingStatus, Some(PublicAPIAccess())))
+      val updatedAPIDefinition: APIDefinition = anAPIDefinition("/foo", aVersion(apiVersion, updatedStatus, Some(PublicAPIAccess())))
+      val updatedAPIDefinitionWithSavingTime: APIDefinition = updatedAPIDefinition.copy(lastPublishedAt = Some(fixedSavingTime))
+
+      when(mockAPIDefinitionRepository.fetchByName(updatedAPIDefinition.name)).thenReturn(Future.successful(Some(existingAPIDefinition)))
+      when(mockNotificationService.notifyOfStatusChange(existingAPIDefinition.name, apiVersion, existingStatus, updatedStatus)).thenReturn(Future.successful())
+      when(mockWSO2APIPublisher.publish(updatedAPIDefinition)).thenReturn(successful(()))
+      when(mockAwsApiPublisher.publish(updatedAPIDefinition)).thenReturn(successful(()))
+      when(mockAPIDefinitionRepository.save(updatedAPIDefinitionWithSavingTime)).thenReturn(successful(updatedAPIDefinitionWithSavingTime))
+
+      await(underTest.createOrUpdate(updatedAPIDefinition))
+
+      verify(mockWSO2APIPublisher, times(1)).publish(updatedAPIDefinition)
+      verify(mockAwsApiPublisher, times(1)).publish(updatedAPIDefinition)
+      verify(mockAPIDefinitionRepository, times(1)).save(updatedAPIDefinitionWithSavingTime)
+      verify(mockNotificationService).notifyOfStatusChange(existingAPIDefinition.name, apiVersion, existingStatus, updatedStatus)
     }
   }
 
   "fetchExtended" should {
     val otherAppId = randomUUID()
 
-    val privateVersionOtherApplications = aVersion("4.0", Some(PrivateAPIAccess(Seq("OTHER_APP_ID"))))
+    val privateVersionOtherApplications = aVersion(version = "4.0", access = Some(PrivateAPIAccess(Seq("OTHER_APP_ID"))))
     val privateVersionOtherApplicationsAvailability = APIAvailability(privateVersionOtherApplications.endpointsEnabled.getOrElse(false),
       privateVersionOtherApplications.access.get, loggedIn = false, authorised = true)
 
@@ -727,8 +759,8 @@ class APIDefinitionServiceSpec extends UnitSpec
     }
   }
 
-  private def aVersion(version: String, access: Option[APIAccess]) =
-    APIVersion(version, APIStatus.BETA, access, Seq(Endpoint("/test", "test", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)))
+  private def aVersion(version: String, status: APIStatus = APIStatus.BETA, access: Option[APIAccess]) =
+    APIVersion(version, status, access, Seq(Endpoint("/test", "test", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)))
 
   private def someAPIDefinition: APIDefinition =
     APIDefinition(
