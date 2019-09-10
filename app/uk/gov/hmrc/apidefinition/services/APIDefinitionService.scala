@@ -76,7 +76,7 @@ class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
           .map(v => (v._1, v._2.head.status, v._2.last.status))
           .toSeq
 
-    apiDefinitionRepository.fetchByName(apiDefinition.name)
+    apiDefinitionRepository.fetchByContext(apiDefinition.context)
       .map(existingAPIDefinitionOption =>
         existingAPIDefinitionOption
           .map(existingAPIDefinition => findStatusDifferences(existingAPIDefinition.versions, apiDefinition.versions))

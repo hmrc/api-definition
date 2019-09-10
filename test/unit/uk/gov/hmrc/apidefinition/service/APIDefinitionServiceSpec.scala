@@ -141,7 +141,7 @@ class APIDefinitionServiceSpec extends UnitSpec
   "createOrUpdate" should {
 
     "create or update the API Definition in all WSO2, AWS and the repository" in new Setup {
-      when(mockAPIDefinitionRepository.fetchByName(apiDefinition.name)).thenReturn(Future.successful(Some(apiDefinition)))
+      when(mockAPIDefinitionRepository.fetchByContext(apiDefinition.context)).thenReturn(Future.successful(Some(apiDefinition)))
       when(mockWSO2APIPublisher.publish(apiDefinition)).thenReturn(successful(()))
       when(mockAwsApiPublisher.publish(apiDefinition)).thenReturn(successful(()))
       when(mockAPIDefinitionRepository.save(apiDefinitionWithSavingTime)).thenReturn(successful(apiDefinitionWithSavingTime))
@@ -155,7 +155,7 @@ class APIDefinitionServiceSpec extends UnitSpec
     }
 
     "propagate unexpected errors that happen when trying to publish an API to WSO2" in new Setup {
-      when(mockAPIDefinitionRepository.fetchByName(apiDefinition.name)).thenReturn(Future.successful(Some(apiDefinition)))
+      when(mockAPIDefinitionRepository.fetchByContext(apiDefinition.context)).thenReturn(Future.successful(Some(apiDefinition)))
       when(mockWSO2APIPublisher.publish(apiDefinition)).thenReturn(failed(new RuntimeException("Something went wrong")))
       when(mockAwsApiPublisher.publish(apiDefinition)).thenReturn(successful(()))
 
@@ -168,7 +168,7 @@ class APIDefinitionServiceSpec extends UnitSpec
     }
 
     "propagate unexpected errors that happen when trying to publish an API to AWS" in new Setup {
-      when(mockAPIDefinitionRepository.fetchByName(apiDefinition.name)).thenReturn(Future.successful(Some(apiDefinition)))
+      when(mockAPIDefinitionRepository.fetchByContext(apiDefinition.context)).thenReturn(Future.successful(Some(apiDefinition)))
       when(mockWSO2APIPublisher.publish(apiDefinition)).thenReturn(successful(()))
       when(mockAwsApiPublisher.publish(apiDefinition)).thenReturn(failed(new RuntimeException("Something went wrong")))
 
@@ -182,13 +182,14 @@ class APIDefinitionServiceSpec extends UnitSpec
 
     "send notifications when version of API has changed status" in new Setup {
       val apiVersion = "1.0"
+      val apiContext = "foo"
       val existingStatus: models.APIStatus.Value = APIStatus.ALPHA
       val updatedStatus: models.APIStatus.Value = APIStatus.BETA
-      val existingAPIDefinition: APIDefinition = anAPIDefinition("/foo", aVersion(apiVersion, existingStatus, Some(PublicAPIAccess())))
-      val updatedAPIDefinition: APIDefinition = anAPIDefinition("/foo", aVersion(apiVersion, updatedStatus, Some(PublicAPIAccess())))
+      val existingAPIDefinition: APIDefinition = anAPIDefinition(apiContext, aVersion(apiVersion, existingStatus, Some(PublicAPIAccess())))
+      val updatedAPIDefinition: APIDefinition = anAPIDefinition(apiContext, aVersion(apiVersion, updatedStatus, Some(PublicAPIAccess())))
       val updatedAPIDefinitionWithSavingTime: APIDefinition = updatedAPIDefinition.copy(lastPublishedAt = Some(fixedSavingTime))
 
-      when(mockAPIDefinitionRepository.fetchByName(updatedAPIDefinition.name)).thenReturn(Future.successful(Some(existingAPIDefinition)))
+      when(mockAPIDefinitionRepository.fetchByContext(apiContext)).thenReturn(Future.successful(Some(existingAPIDefinition)))
       when(mockNotificationService.notifyOfStatusChange(existingAPIDefinition.name, apiVersion, existingStatus, updatedStatus)).thenReturn(Future.successful())
       when(mockWSO2APIPublisher.publish(updatedAPIDefinition)).thenReturn(successful(()))
       when(mockAwsApiPublisher.publish(updatedAPIDefinition)).thenReturn(successful(()))
