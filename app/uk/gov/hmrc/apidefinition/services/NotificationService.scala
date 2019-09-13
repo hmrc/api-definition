@@ -22,12 +22,24 @@ import uk.gov.hmrc.apidefinition.models.APIStatus.APIStatus
 
 import scala.concurrent.{ExecutionContext, Future}
 
-@Singleton
-class NotificationService @Inject()(implicit val ec: ExecutionContext) {
+trait NotificationService {
+  def notifyOfStatusChange(apiName: String, apiVersion: String, existingAPIStatus: APIStatus, newAPIStatus: APIStatus)
+                          (implicit ec: ExecutionContext): Future[Unit]
+}
 
-  def notifyOfStatusChange(apiName: String, apiVersion: String, existingAPIStatus: APIStatus, newAPIStatus: APIStatus): Future[Unit] = {
+class LoggingNotificationService extends NotificationService {
+
+  def notifyOfStatusChange(apiName: String, apiVersion: String, existingAPIStatus: APIStatus, newAPIStatus: APIStatus)
+                          (implicit ec: ExecutionContext): Future[Unit] = {
     Future {
       Logger.info(s"API [$apiName] Version [$apiVersion] Status has changed from [$existingAPIStatus] to [$newAPIStatus]")
     }
+  }
+}
+
+class EmailNotificationService extends NotificationService {
+  override def notifyOfStatusChange(apiName: String, apiVersion: String, existingAPIStatus: APIStatus, newAPIStatus: APIStatus)
+                                   (implicit ec: ExecutionContext): Future[Unit] = {
+    Future.successful()
   }
 }

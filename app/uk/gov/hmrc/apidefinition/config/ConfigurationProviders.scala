@@ -18,10 +18,12 @@ package uk.gov.hmrc.apidefinition.config
 
 
 import javax.inject.{Inject, Provider, Singleton}
+import play.api.Mode.Mode
 import play.api.inject.{Binding, Module}
 import play.api.{Configuration, Environment}
 import uk.gov.hmrc.apidefinition.controllers.{ApiVersionConfig, DocumentationConfig}
 import uk.gov.hmrc.apidefinition.models._
+import uk.gov.hmrc.apidefinition.services.{EmailNotificationService, LoggingNotificationService, NotificationService}
 import uk.gov.hmrc.play.config.ServicesConfig
 
 import scala.util.Try
@@ -30,7 +32,8 @@ class ConfigurationModule extends Module {
 
   override def bindings(environment: Environment, configuration: Configuration): Seq[Binding[_]] = {
     Seq(
-      bind[DocumentationConfig].toProvider[DocumentationConfigProvider]
+      bind[DocumentationConfig].toProvider[DocumentationConfigProvider],
+      bind[NotificationService].toProvider[NotificationServiceConfigProvider]
     )
   }
 }
@@ -77,5 +80,31 @@ class DocumentationConfigProvider @Inject()(val runModeConfiguration: Configurat
     val publishApiDefinition = runModeConfiguration.getBoolean("publishApiDefinition").getOrElse(false)
 
     DocumentationConfig(publishApiDefinition, apiVersionConfigurations)
+  }
+}
+
+@Singleton
+class NotificationServiceConfigProvider @Inject()(val runModeConfiguration: Configuration, environment: Environment)
+  extends Provider[NotificationService] with ServicesConfig {
+
+  private val LoggerNotificationType = "LOG"
+  private val EmailNotificationType = "EMAIL"
+  private val DefaultNotificationType = LoggerNotificationType
+
+  override protected def mode: Mode = environment.mode
+
+  override def get(): NotificationService = {
+    runModeConfiguration.getConfig("notifications") match {
+      case Some(notificationsConfig) => configureNotificationsService(notificationsConfig)
+      case None => new LoggingNotificationService
+    }
+  }
+
+  private def configureNotificationsService(configuration: Configuration): NotificationService = {
+    configuration.getString("type", Some(Set(LoggerNotificationType, EmailNotificationType))).getOrElse(DefaultNotificationType) match {
+      case LoggerNotificationType => new LoggingNotificationService
+      case EmailNotificationType => new EmailNotificationService
+    }
+
   }
 }

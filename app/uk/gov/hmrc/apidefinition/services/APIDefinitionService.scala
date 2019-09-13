@@ -28,7 +28,6 @@ import uk.gov.hmrc.http.{HeaderCarrier, UnauthorizedException}
 
 import scala.concurrent.Future.{failed, sequence, successful}
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success}
 
 @Singleton
 class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
