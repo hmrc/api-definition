@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.apidefinition.services
 
-import javax.inject.{Inject, Singleton}
 import play.api.Logger
 import uk.gov.hmrc.apidefinition.models.APIStatus.APIStatus
 
@@ -37,7 +36,7 @@ class LoggingNotificationService extends NotificationService {
   }
 }
 
-class EmailNotificationService extends NotificationService {
+class EmailNotificationService(val emailAddresses: Set[String]) extends NotificationService {
   override def notifyOfStatusChange(apiName: String, apiVersion: String, existingAPIStatus: APIStatus, newAPIStatus: APIStatus)
                                    (implicit ec: ExecutionContext): Future[Unit] = {
     Future.successful()

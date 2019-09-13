@@ -17,16 +17,19 @@
 package uk.gov.hmrc.apidefinition.config
 
 
+import java.util
+
 import javax.inject.{Inject, Provider, Singleton}
 import play.api.Mode.Mode
 import play.api.inject.{Binding, Module}
-import play.api.{Configuration, Environment}
+import play.api.{Configuration, Environment, Logger}
 import uk.gov.hmrc.apidefinition.controllers.{ApiVersionConfig, DocumentationConfig}
 import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.services.{EmailNotificationService, LoggingNotificationService, NotificationService}
 import uk.gov.hmrc.play.config.ServicesConfig
 
 import scala.util.Try
+import scala.collection.JavaConverters._
 
 class ConfigurationModule extends Module {
 
@@ -89,7 +92,6 @@ class NotificationServiceConfigProvider @Inject()(val runModeConfiguration: Conf
 
   private val LoggerNotificationType = "LOG"
   private val EmailNotificationType = "EMAIL"
-  private val DefaultNotificationType = LoggerNotificationType
 
   override protected def mode: Mode = environment.mode
 
@@ -101,9 +103,15 @@ class NotificationServiceConfigProvider @Inject()(val runModeConfiguration: Conf
   }
 
   private def configureNotificationsService(configuration: Configuration): NotificationService = {
-    configuration.getString("type", Some(Set(LoggerNotificationType, EmailNotificationType))).getOrElse(DefaultNotificationType) match {
+    def withNotificationEmailAddresses(): Set[String] =
+      configuration.getStringList("emailAddresses").getOrElse(new util.ArrayList[String]()).asScala.toSet
+
+    configuration.getString("type", Some(Set(LoggerNotificationType, EmailNotificationType))).get match {
       case LoggerNotificationType => new LoggingNotificationService
-      case EmailNotificationType => new EmailNotificationService
+      case EmailNotificationType => new EmailNotificationService(withNotificationEmailAddresses())
+      case _ =>
+        Logger.warn("Notification type not recognised - defaulting to LoggingNotificationService")
+        new LoggingNotificationService
     }
 
   }
