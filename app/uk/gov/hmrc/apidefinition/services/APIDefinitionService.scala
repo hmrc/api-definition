@@ -66,7 +66,7 @@ class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
     }
   }
 
-  private def checkAPIDefinitionForStatusChanges(apiDefinition: APIDefinition): Unit = {
+  private def checkAPIDefinitionForStatusChanges(apiDefinition: APIDefinition)(implicit hc: HeaderCarrier): Unit = {
     def findStatusDifferences(existingAPIVersions: Seq[APIVersion], newAPIVersions: Seq[APIVersion]): Seq[(String, APIStatus, APIStatus)] =
         (existingAPIVersions ++ newAPIVersions)
           .groupBy(_.version)
