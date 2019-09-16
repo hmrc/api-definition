@@ -123,9 +123,9 @@ class NotificationServiceConfigProvider @Inject()(val runModeConfiguration: Conf
       }
     }
 
-    configuration.getString("type", Some(Set(LoggerNotificationType, EmailNotificationType))).get match {
-      case LoggerNotificationType => new LoggingNotificationService
-      case EmailNotificationType => configureEmailNotificationService(configuration.getConfig("email"))
+    configuration.getString("type", Some(Set(LoggerNotificationType, EmailNotificationType))) match {
+      case Some(LoggerNotificationType) => new LoggingNotificationService
+      case Some(EmailNotificationType) => configureEmailNotificationService(configuration.getConfig("email"))
       case _ =>
         Logger.warn("Notification type not recognised")
         defaultNotificationService()

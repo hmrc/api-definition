@@ -45,6 +45,13 @@ class ConfigurationProvidersSpec extends UnitSpec with MockitoSugar {
       when(mockRunModeConfiguration.getConfig("notifications")).thenReturn(Some(notificationsConfiguration))
     }
 
+    def notificationConfigReturnsMissingNotificationType(): Unit = {
+      val notificationsConfiguration: Configuration = mock[Configuration]
+      when(notificationsConfiguration.getString(matches("type"), any[Option[Set[String]]])).thenReturn(None)
+
+      when(mockRunModeConfiguration.getConfig("notifications")).thenReturn(Some(notificationsConfiguration))
+    }
+
     def notificationConfigReturnsUnknownNotificationType(): Unit = {
       val notificationsConfiguration: Configuration = mock[Configuration]
       when(notificationsConfiguration.getString(matches("type"), any[Option[Set[String]]])).thenReturn(Some("FOO"))
@@ -137,6 +144,23 @@ class ConfigurationProvidersSpec extends UnitSpec with MockitoSugar {
       val returnedNotificationService: NotificationService = underTest.get()
 
       returnedNotificationService shouldBe a[LoggingNotificationService]
+    }
+
+    "default to LoggingNotificationService if no type specified" in new NotificationServiceConfigProviderSetup {
+      notificationConfigReturnsMissingNotificationType()
+
+      val returnedNotificationService: NotificationService = underTest.get()
+
+      returnedNotificationService shouldBe a[LoggingNotificationService]
+    }
+
+    "default to LoggingNotificationService if not configuration specified" in new NotificationServiceConfigProviderSetup {
+      when(mockRunModeConfiguration.getConfig("notifications")).thenReturn(None)
+
+      val returnedNotificationService: NotificationService = underTest.get()
+
+      returnedNotificationService shouldBe a[LoggingNotificationService]
+
     }
   }
 }
