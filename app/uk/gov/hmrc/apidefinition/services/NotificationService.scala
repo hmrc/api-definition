@@ -45,20 +45,15 @@ class EmailNotificationService(httpClient: HttpClient,
                                val emailServiceURL: String,
                                val emailTemplateId: String,
                                val emailAddresses: Set[String]) extends NotificationService {
-  case class SendEmailRequest(to: Set[String],
-                              templateId: String,
-                              parameters: Map[String, String],
-                              force: Boolean = false,
-                              auditData: Map[String, String] = Map.empty,
-                              eventUrl: Option[String] = None)
-
-  object SendEmailRequest {
-    implicit val sendEmailRequestFormat: OFormat[SendEmailRequest] = Json.format[SendEmailRequest]
-  }
 
   override def notifyOfStatusChange(apiName: String, apiVersion: String, existingAPIStatus: APIStatus, newAPIStatus: APIStatus)
                                    (implicit ec: ExecutionContext, headerCarrier: HeaderCarrier): Future[Unit] = {
-    sendEmail(new SendEmailRequest(emailAddresses, emailTemplateId, Map.empty)).flatMap(_ => Future.successful())
+    sendEmail(
+      new SendEmailRequest(
+        emailAddresses,
+        emailTemplateId,
+        Map("apiName" -> apiName, "apiVersion" -> apiVersion, "currentStatus" -> existingAPIStatus.toString, "newStatus" -> newAPIStatus.toString)
+       )).flatMap(_ => Future.successful())
   }
 
   private def sendEmail(payload: SendEmailRequest)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[HttpResponse] = {
@@ -80,4 +75,12 @@ class EmailNotificationService(httpClient: HttpClient,
         }
       }
   }
+}
+
+case class SendEmailRequest(to: Set[String],
+                            templateId: String,
+                            parameters: Map[String, String])
+
+object SendEmailRequest {
+  implicit val sendEmailRequestFormat: OFormat[SendEmailRequest] = Json.format[SendEmailRequest]
 }
