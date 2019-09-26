@@ -115,6 +115,7 @@ class NotificationServiceConfigProvider @Inject()(val runModeConfiguration: Conf
         val emailConfiguration = optionalEmailConfiguration.get
         (emailConfiguration.getString("serviceURL"), emailConfiguration.getString("templateId"), emailConfiguration.getStringList("addresses")) match {
           case (Some(emailServiceURL), Some(emailTemplateId), Some(emailAddresses)) =>
+            Logger.info(s"Email notifications will be sent to $emailAddresses using template [$emailTemplateId]")
             new EmailNotificationService(httpClient, emailServiceURL, emailTemplateId, emailAddresses.asScala.toSet)
           case _ =>
             Logger.warn(s"Failed to create EmailNotificationService")
@@ -124,8 +125,12 @@ class NotificationServiceConfigProvider @Inject()(val runModeConfiguration: Conf
     }
 
     configuration.getString("type", Some(Set(LoggerNotificationType, EmailNotificationType))) match {
-      case Some(LoggerNotificationType) => new LoggingNotificationService
-      case Some(EmailNotificationType) => configureEmailNotificationService(configuration.getConfig("email"))
+      case Some(LoggerNotificationType) =>
+        Logger.info("Using Logging Notification Service")
+        new LoggingNotificationService
+      case Some(EmailNotificationType) =>
+        Logger.info("Using Email Notification Service")
+        configureEmailNotificationService(configuration.getConfig("email"))
       case _ =>
         Logger.warn("Notification type not recognised")
         defaultNotificationService()
