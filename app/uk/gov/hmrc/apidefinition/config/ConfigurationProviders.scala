@@ -18,19 +18,24 @@ package uk.gov.hmrc.apidefinition.config
 
 
 import javax.inject.{Inject, Provider, Singleton}
+import play.api.Mode.Mode
 import play.api.inject.{Binding, Module}
-import play.api.{Configuration, Environment}
+import play.api.{Configuration, Environment, Logger}
 import uk.gov.hmrc.apidefinition.controllers.{ApiVersionConfig, DocumentationConfig}
 import uk.gov.hmrc.apidefinition.models._
+import uk.gov.hmrc.apidefinition.services.{EmailNotificationService, LoggingNotificationService, NotificationService}
+import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.play.config.ServicesConfig
 
+import scala.collection.JavaConverters._
 import scala.util.Try
 
 class ConfigurationModule extends Module {
 
   override def bindings(environment: Environment, configuration: Configuration): Seq[Binding[_]] = {
     Seq(
-      bind[DocumentationConfig].toProvider[DocumentationConfigProvider]
+      bind[DocumentationConfig].toProvider[DocumentationConfigProvider],
+      bind[NotificationService].toProvider[NotificationServiceConfigProvider]
     )
   }
 }
@@ -77,5 +82,59 @@ class DocumentationConfigProvider @Inject()(val runModeConfiguration: Configurat
     val publishApiDefinition = runModeConfiguration.getBoolean("publishApiDefinition").getOrElse(false)
 
     DocumentationConfig(publishApiDefinition, apiVersionConfigurations)
+  }
+}
+
+@Singleton
+class NotificationServiceConfigProvider @Inject()(val runModeConfiguration: Configuration, environment: Environment, httpClient: HttpClient)
+  extends Provider[NotificationService] with ServicesConfig {
+
+  private val LoggerNotificationType = "LOG"
+  private val EmailNotificationType = "EMAIL"
+
+  override protected def mode: Mode = environment.mode
+
+  override def get(): NotificationService = {
+    runModeConfiguration.getConfig("notifications") match {
+      case Some(notificationsConfig) => configureNotificationsService(notificationsConfig)
+      case None => new LoggingNotificationService
+    }
+  }
+
+  private def configureNotificationsService(configuration: Configuration): NotificationService = {
+    def defaultNotificationService(): NotificationService = {
+      Logger.warn("Using Default Notification Service")
+      new LoggingNotificationService
+    }
+
+    def configureEmailNotificationService(optionalEmailConfiguration: Option[Configuration]): NotificationService = {
+      if(optionalEmailConfiguration.isEmpty) {
+        Logger.warn(s"No Email configuration provided")
+        defaultNotificationService()
+      } else {
+        val emailConfiguration = optionalEmailConfiguration.get
+        (emailConfiguration.getString("serviceURL"), emailConfiguration.getString("templateId"), emailConfiguration.getStringList("addresses")) match {
+          case (Some(emailServiceURL), Some(emailTemplateId), Some(emailAddresses)) =>
+            Logger.info(s"Email notifications will be sent to $emailAddresses using template [$emailTemplateId]")
+            new EmailNotificationService(httpClient, emailServiceURL, emailTemplateId, emailAddresses.asScala.toSet)
+          case _ =>
+            Logger.warn(s"Failed to create EmailNotificationService")
+            defaultNotificationService()
+        }
+      }
+    }
+
+    configuration.getString("type", Some(Set(LoggerNotificationType, EmailNotificationType))) match {
+      case Some(LoggerNotificationType) =>
+        Logger.info("Using Logging Notification Service")
+        new LoggingNotificationService
+      case Some(EmailNotificationType) =>
+        Logger.info("Using Email Notification Service")
+        configureEmailNotificationService(configuration.getConfig("email"))
+      case _ =>
+        Logger.warn("Notification type not recognised")
+        defaultNotificationService()
+    }
+
   }
 }
