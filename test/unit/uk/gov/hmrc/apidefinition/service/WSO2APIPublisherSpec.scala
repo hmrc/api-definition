@@ -95,7 +95,7 @@ class WSO2APIPublisherSpec extends UnitSpec
         .publishAPIStatus(refEq(cookie), any(classOf[WSO2APIDefinition]), refEq("PUBLISHED"))(any(classOf[HeaderCarrier]))
     }
 
-    "fail when an update to WSO2 responds with an error" in new Setup {
+    "not fail when an update to WSO2 responds with an error" in new Setup {
 
       when(underTest.wso2PublisherConnector.doesAPIExist(refEq(cookie), any(classOf[WSO2APIDefinition]))(any(classOf[HeaderCarrier])))
         .thenReturn(successful(false))
@@ -104,12 +104,10 @@ class WSO2APIPublisherSpec extends UnitSpec
       when(underTest.wso2PublisherConnector.publishAPIStatus(refEq(cookie), any(classOf[WSO2APIDefinition]), refEq("PUBLISHED"))(any(classOf[HeaderCarrier])))
         .thenReturn(failed(new RuntimeException("Something went wrong")))
 
-      underTest.publish(someAPIDefinition).map{
-        result => fail("Exception was expected but not thrown")
-      }.recover {
-        case _ => ()
-      }
+      val result: Unit = await(underTest.publish(someAPIDefinition))
 
+      verify(underTest.wso2PublisherConnector)
+        .publishAPIStatus(refEq(cookie), any(classOf[WSO2APIDefinition]), refEq("PUBLISHED"))(any(classOf[HeaderCarrier]))
     }
 
   }

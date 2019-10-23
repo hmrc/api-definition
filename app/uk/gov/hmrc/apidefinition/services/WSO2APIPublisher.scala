@@ -26,6 +26,7 @@ import uk.gov.hmrc.apidefinition.utils.WSO2PayloadHelper.buildWSO2APIDefinitions
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.control.NonFatal
 
 @Singleton
 class WSO2APIPublisher @Inject()(val appContext: AppContext,
@@ -68,6 +69,9 @@ class WSO2APIPublisher @Inject()(val appContext: AppContext,
   def publish(apiDefinition: APIDefinition)(implicit hc: HeaderCarrier): Future[Unit] = {
     wso2PublisherConnector.login().flatMap { cookie: String =>
       publish(apiDefinition, cookie)
+    } recover {
+      case NonFatal(e) =>
+        Logger.error(s"Failed to publish API '${apiDefinition.serviceName}' to WSO2", e)
     }
   }
 
