@@ -17,34 +17,19 @@
 package uk.gov.hmrc.apidefinition.controllers
 
 import javax.inject.{Inject, Singleton}
-import play.api.mvc.Action
-import uk.gov.hmrc.apidefinition.models.APIAccess
-import uk.gov.hmrc.apidefinition.models.APIStatus.APIStatus
-import uk.gov.hmrc.apidefinition.views.txt
-import uk.gov.hmrc.play.bootstrap.controller.BaseController
+import play.api.Logger
+import play.api.mvc.{Action, AnyContent}
+import uk.gov.hmrc.apidefinition.services.DocumentationService
 
+import scala.concurrent.ExecutionContext
 
 @Singleton
-class DocumentationController @Inject()(config: DocumentationConfig) extends BaseController {
+class DocumentationController @Inject()(service: DocumentationService)
+                                       (implicit val ec: ExecutionContext) extends CommonController {
 
-  def definition = Action {
-    if (config.publishApiDefinition) {
-      Ok(txt.definition(config)).withHeaders(CONTENT_TYPE -> JSON)
-    } else {
-      NoContent
-    }
-  }
-
-  def raml(version: String, file: String) = Action {
-    if (config.publishApiDefinition) {
-      Ok(txt.application())
-    } else {
-      NoContent
-    }
+  def fetchApiDocumentationResource(serviceName: String, version: String, resource: String): Action[AnyContent] = Action.async {
+    implicit request =>
+      Logger.info(s"API Documentation received request for resource: $serviceName, $version, $resource")
+      service.fetchApiDocumentationResource(serviceName, version, resource)
   }
 }
-
-
-case class DocumentationConfig(publishApiDefinition: Boolean, versions: Seq[ApiVersionConfig])
-
-case class ApiVersionConfig(version: String, status: APIStatus, access: APIAccess, endpointsEnabled: Boolean)

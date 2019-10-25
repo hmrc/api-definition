@@ -30,6 +30,8 @@ object ErrorCode extends Enumeration {
   val UNSUPPORTED_ACCESS_TYPE = Value("UNSUPPORTED_ACCESS_TYPE")
 }
 
+
+
 case class ValidationErrors(code: ErrorCode.Value, messages: Seq[String])
 
 object ValidationErrors {
