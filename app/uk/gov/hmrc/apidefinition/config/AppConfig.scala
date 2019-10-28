@@ -30,13 +30,6 @@ class AppConfig @Inject()(override val runModeConfiguration: Configuration, envi
 
   lazy val fetchByContextTtlInSeconds: String = runModeConfiguration.underlying.as[String]("fetchByContextTtlInSeconds")
 
-//  lazy val publishApiDefinition = runModeConfiguration.getBoolean("publishApiDefinition").getOrElse(false)
-//  lazy val apiContext = runModeConfiguration.getString("api.context").getOrElse("api-documentation")
-//  lazy val access = runModeConfiguration.getConfig(s"api.access")
-//  lazy val apiPlatformBearerToken = runModeConfiguration.getString(s"$env.api-platform.bearer-token")
-//  lazy val requiresAuthorization = runModeConfiguration.getBoolean("requiresAuthorization").getOrElse(false)
-//  lazy val topLevelRamlFile = "application.raml"
-
   override def baseUrl(serviceName: String) = {
     val context = getConfString(s"$serviceName.context", "")
 

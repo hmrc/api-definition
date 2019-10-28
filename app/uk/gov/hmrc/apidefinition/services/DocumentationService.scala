@@ -16,10 +16,13 @@
 
 package uk.gov.hmrc.apidefinition.services
 
+import java.lang.IllegalArgumentException
+
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
+import cats.data.{Nested, OptionT}
 import javax.inject.{Inject, Singleton}
 import play.api.Logger
 import play.api.http.Status._
@@ -29,10 +32,13 @@ import play.api.mvc.Result
 import play.api.mvc.Results._
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.connector.ApiMicroserviceConnector
+import uk.gov.hmrc.apidefinition.models.{APIDefinition, APIVersion, ExtendedAPIVersion}
 import uk.gov.hmrc.apidefinition.repository.{APIDefinitionRepository, ResourceData, ResourceRepository}
+import uk.gov.hmrc.apidefinition.views.txt.definition
 import uk.gov.hmrc.http.{HeaderCarrier, InternalServerException, NotFoundException}
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
 @Singleton
 class DocumentationService @Inject()(apiDefinitionRepository: APIDefinitionRepository,
@@ -40,6 +46,7 @@ class DocumentationService @Inject()(apiDefinitionRepository: APIDefinitionRepos
                                      resourceRepository: ResourceRepository,
                                      config: AppConfig)(implicit val ec: ExecutionContext) {
 
+  // TODO : Use play's Actor (inject)
   implicit val system: ActorSystem = ActorSystem("System")
   implicit val mat: ActorMaterializer = ActorMaterializer()
 
@@ -61,7 +68,7 @@ class DocumentationService @Inject()(apiDefinitionRepository: APIDefinitionRepos
     }
   }
 
-
+  //noinspection ScalaStyle
   private def fetchResource(serviceName: String, version: String, resource: String
                            )(implicit hc: HeaderCarrier): Future[StreamedResponse] = {
 
@@ -80,6 +87,26 @@ class DocumentationService @Inject()(apiDefinitionRepository: APIDefinitionRepos
         case _ => Future.successful(response)
       }
 
+    def getApiDefinitionOrThrow: Future[APIDefinition] = {
+      import cats.implicits._
+
+      val failure = Future.failed[APIDefinition](new IllegalArgumentException(s"$serviceName not found"))
+
+      apiDefinitionRepository.fetchByServiceName(serviceName).flatMap( _.fold(failure)(_.pure[Future]) )
+    }
+
+    def getApiVersionOrThrow(apiDefinition: APIDefinition): Future[APIVersion] = {
+      import cats.implicits._
+
+      val failure = Future.failed[APIVersion](new IllegalArgumentException(s"Version $version of $serviceName not found"))
+      val oVersion = apiDefinition.versions.find(_.version == version)
+
+      oVersion.fold(failure)(v => v.pure[Future])
+    }
+
+    /*
+    ** Start here
+     */
     fetchStoredResource.map {
       case Some(resourceData) =>
         val source = Source[ByteString](Seq(ByteString.fromArray(resourceData.contents)).to)
@@ -93,9 +120,13 @@ class DocumentationService @Inject()(apiDefinitionRepository: APIDefinitionRepos
       case e =>
         Logger.error("Fallback to retrieve local resource following exception.", e)
 
+        //TODO fetchByServiceName() - Add specific method & index to get just the base uri by service name as this is called a lot.
         for {
-          api <- apiDefinitionRepository.fetchByServiceName(serviceName)
-          response <- fetchLocalResource(api.get.serviceBaseUrl)  // TODO - solve get....)
+          api <- getApiDefinitionOrThrow
+          _ <- getApiVersionOrThrow(api)
+
+          serviceBaseUrl = api.serviceBaseUrl
+          response <- fetchLocalResource(serviceBaseUrl)  // TODO - solve get....)
           storedResponse <- storeResponseWhenOk(response)
         } yield storedResponse
     }
