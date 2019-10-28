@@ -27,16 +27,17 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 trait NotificationService {
+  val environmentName: String
   def notifyOfStatusChange(apiName: String, apiVersion: String, existingAPIStatus: APIStatus, newAPIStatus: APIStatus)
                           (implicit ec: ExecutionContext, headerCarrier: HeaderCarrier): Future[Unit]
 }
 
-class LoggingNotificationService extends NotificationService {
+class LoggingNotificationService(override val environmentName: String) extends NotificationService {
 
   def notifyOfStatusChange(apiName: String, apiVersion: String, existingAPIStatus: APIStatus, newAPIStatus: APIStatus)
                           (implicit ec: ExecutionContext, headerCarrier: HeaderCarrier): Future[Unit] = {
     Future {
-      Logger.info(s"API [$apiName] Version [$apiVersion] Status has changed from [$existingAPIStatus] to [$newAPIStatus]")
+      Logger.info(s"API [$apiName] Version [$apiVersion] Status has changed from [$existingAPIStatus] to [$newAPIStatus] in [$environmentName] environment")
     }
   }
 }
@@ -44,6 +45,7 @@ class LoggingNotificationService extends NotificationService {
 class EmailNotificationService(httpClient: HttpClient,
                                val emailServiceURL: String,
                                val emailTemplateId: String,
+                               override val environmentName: String,
                                val emailAddresses: Set[String]) extends NotificationService {
 
   override def notifyOfStatusChange(apiName: String, apiVersion: String, existingAPIStatus: APIStatus, newAPIStatus: APIStatus)
@@ -52,7 +54,12 @@ class EmailNotificationService(httpClient: HttpClient,
       new SendEmailRequest(
         emailAddresses,
         emailTemplateId,
-        Map("apiName" -> apiName, "apiVersion" -> apiVersion, "currentStatus" -> existingAPIStatus.toString, "newStatus" -> newAPIStatus.toString)
+        Map(
+          "apiName" -> apiName,
+          "apiVersion" -> apiVersion,
+          "currentStatus" -> existingAPIStatus.toString,
+          "newStatus" -> newAPIStatus.toString,
+          "environmentName" -> environmentName)
        )).flatMap(_ => Future.successful())
   }
 

@@ -92,48 +92,54 @@ class NotificationServiceConfigProvider @Inject()(val runModeConfiguration: Conf
   private val LoggerNotificationType = "LOG"
   private val EmailNotificationType = "EMAIL"
 
+  private val UnknownEnvironmentName: String = "Unknown"
+
   override protected def mode: Mode = environment.mode
 
   override def get(): NotificationService = {
     runModeConfiguration.getConfig("notifications") match {
       case Some(notificationsConfig) => configureNotificationsService(notificationsConfig)
-      case None => new LoggingNotificationService
+      case None => new LoggingNotificationService(UnknownEnvironmentName)
     }
   }
 
   private def configureNotificationsService(configuration: Configuration): NotificationService = {
-    def defaultNotificationService(): NotificationService = {
+    def defaultNotificationService(environmentName: String): NotificationService = {
       Logger.warn("Using Default Notification Service")
-      new LoggingNotificationService
+      new LoggingNotificationService(environmentName)
     }
 
-    def configureEmailNotificationService(optionalEmailConfiguration: Option[Configuration]): NotificationService = {
+    def configureEmailNotificationService(environmentName: String, optionalEmailConfiguration: Option[Configuration]): NotificationService = {
       if(optionalEmailConfiguration.isEmpty) {
         Logger.warn(s"No Email configuration provided")
-        defaultNotificationService()
+        defaultNotificationService(environmentName)
       } else {
         val emailConfiguration = optionalEmailConfiguration.get
-        (emailConfiguration.getString("serviceURL"), emailConfiguration.getString("templateId"), emailConfiguration.getStringList("addresses")) match {
+        (emailConfiguration.getString("serviceURL"),
+          emailConfiguration.getString("templateId"),
+          emailConfiguration.getStringList("addresses")) match {
+
           case (Some(emailServiceURL), Some(emailTemplateId), Some(emailAddresses)) =>
-            Logger.info(s"Email notifications will be sent to $emailAddresses using template [$emailTemplateId]")
-            new EmailNotificationService(httpClient, emailServiceURL, emailTemplateId, emailAddresses.asScala.toSet)
+            Logger.info(s"Email notifications will be sent to $emailAddresses using template [$emailTemplateId] for [$environmentName] environment")
+            new EmailNotificationService(httpClient, emailServiceURL, emailTemplateId, environmentName, emailAddresses.asScala.toSet)
           case _ =>
             Logger.warn(s"Failed to create EmailNotificationService")
-            defaultNotificationService()
+            defaultNotificationService(environmentName)
         }
       }
     }
 
+    val environmentName = configuration.getString("environmentName").getOrElse(UnknownEnvironmentName)
     configuration.getString("type", Some(Set(LoggerNotificationType, EmailNotificationType))) match {
       case Some(LoggerNotificationType) =>
         Logger.info("Using Logging Notification Service")
-        new LoggingNotificationService
+        new LoggingNotificationService(environmentName)
       case Some(EmailNotificationType) =>
         Logger.info("Using Email Notification Service")
-        configureEmailNotificationService(configuration.getConfig("email"))
+        configureEmailNotificationService(environmentName, configuration.getConfig("email"))
       case _ =>
         Logger.warn("Notification type not recognised")
-        defaultNotificationService()
+        defaultNotificationService(environmentName)
     }
 
   }
