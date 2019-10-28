@@ -21,7 +21,7 @@ import play.api._
 import play.api.http.HeaderNames
 import play.api.libs.json._
 import play.api.mvc._
-import uk.gov.hmrc.apidefinition.config.AppContext
+import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.models.ErrorCode._
 import uk.gov.hmrc.apidefinition.models.JsonFormatters._
 import uk.gov.hmrc.apidefinition.models.{APIDefinition, ErrorCode}
@@ -37,7 +37,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class APIDefinitionController @Inject()(apiDefinitionValidator: ApiDefinitionValidator,
                                         apiDefinitionService: APIDefinitionService,
                                         apiDefinitionMapper: APIDefinitionMapper,
-                                        appContext: AppContext)
+                                        appContext: AppConfig)
                                        (implicit val ec: ExecutionContext) extends BaseController {
 
   val fetchByContextTtlInSeconds: String = appContext.fetchByContextTtlInSeconds

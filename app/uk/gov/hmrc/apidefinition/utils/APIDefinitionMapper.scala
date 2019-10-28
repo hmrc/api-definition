@@ -17,11 +17,11 @@
 package uk.gov.hmrc.apidefinition.utils
 
 import javax.inject.{Inject, Singleton}
-import uk.gov.hmrc.apidefinition.config.AppContext
+import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.models.{APIDefinition, APIStatus, APIVersion}
 
 @Singleton
-class APIDefinitionMapper @Inject()(val appContext: AppContext) {
+class APIDefinitionMapper @Inject()(val appContext: AppConfig) {
 
   val buildProductionUrlsForPrototypedAPIs = appContext.buildProductionUrlForPrototypedAPIs
 

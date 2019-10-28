@@ -60,7 +60,7 @@ class EmailNotificationService(httpClient: HttpClient,
           "currentStatus" -> existingAPIStatus.toString,
           "newStatus" -> newAPIStatus.toString,
           "environmentName" -> environmentName)
-       )).flatMap(_ => Future.successful())
+       )).flatMap(_ => Future.successful(Unit))
   }
 
   private def sendEmail(payload: SendEmailRequest)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[HttpResponse] = {

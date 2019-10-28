@@ -42,7 +42,7 @@ object JsonFormatters {
 
     override def writes(access: APIAccess) = access match {
       case _: PublicAPIAccess => Json.obj("type" -> PUBLIC)
-      case privApi: PrivateAPIAccess => privApiWrites.writes(PRIVATE, privApi.whitelistedApplicationIds, privApi.isTrial)
+      case privApi: PrivateAPIAccess => privApiWrites.writes((PRIVATE, privApi.whitelistedApplicationIds, privApi.isTrial))
       case acc => throw new RuntimeException(s"Unknown API Access $acc")
     }
   }

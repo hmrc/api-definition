@@ -1,0 +1,50 @@
+#%RAML 1.0
+---
+
+title: Test RAML File
+version: 1.0
+protocols: [ HTTPS ]
+baseUri: https://api.service.hmrc.gov.uk/
+
+documentation:
+ - title: Overview
+   content: !include docs/includedDoc1.md
+ - title: Changelog
+   content: !include docs/includedDoc2.md
+ - title: Versioning
+   content: !include https://developer.service.hmrc.gov.uk/api-documentation/assets/common/docs/versioning.md
+ - title: Errors
+   content: !include https://developer.service.hmrc.gov.uk/api-documentation/assets/common/docs/errors.md
+
+mediaType: [ application/json ]
+
+uses:
+  sec: https://developer.service.hmrc.gov.uk/api-documentation/assets/common/modules/securitySchemes.raml
+  headers: https://developer.service.hmrc.gov.uk/api-documentation/assets/common/modules/headers.raml
+  annotations: https://developer.service.hmrc.gov.uk/api-documentation/assets/common/modules/annotations.raml
+  types: https://developer.service.hmrc.gov.uk/api-documentation/assets/common/modules/types.raml
+
+types:
+  identifier:
+    type: string
+    pattern: ^[A-Z][0-9]{6}$
+    example: A000001
+
+/example:
+  /first:
+    /{identifier}:
+      uriParameters:
+        identifier:
+          description: The identifier of the record.
+          type: identifier
+      get:
+        displayName: Get example data
+        description: !include docs/includedDoc3.md
+        is: [headers.acceptHeader]
+        responses:
+          200:
+            body:
+              application/json:
+                schema: !include schemas/includedSchema.json
+                example: !include examples/includedExample.json
+
