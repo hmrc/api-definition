@@ -21,7 +21,7 @@ import org.mockito.BDDMockito.given
 import org.mockito.Mockito._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
-import uk.gov.hmrc.apidefinition.config.AppContext
+import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.connector.WSO2APIPublisherConnector
 import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.services.WSO2APIPublisher
@@ -41,7 +41,7 @@ class WSO2APIPublisherSpec extends UnitSpec
 
     val cookie = "login-cookie-123"
 
-    val underTest = new WSO2APIPublisher(mock[AppContext], mock[WSO2APIPublisherConnector])
+    val underTest = new WSO2APIPublisher(mock[AppConfig], mock[WSO2APIPublisherConnector])
 
     when(underTest.wso2PublisherConnector.login()).thenReturn(successful(cookie))
 

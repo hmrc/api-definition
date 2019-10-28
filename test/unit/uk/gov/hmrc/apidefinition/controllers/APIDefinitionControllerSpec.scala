@@ -30,7 +30,7 @@ import play.api.libs.json.Json
 import play.api.mvc.{AnyContentAsEmpty, Result}
 import play.api.test.FakeRequest
 import play.mvc.Http.HeaderNames
-import uk.gov.hmrc.apidefinition.config.AppContext
+import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.controllers.{APIDefinitionController, QueryOptions}
 import uk.gov.hmrc.apidefinition.models.ErrorCode.INVALID_REQUEST_PAYLOAD
 import uk.gov.hmrc.apidefinition.models.JsonFormatters._
@@ -66,7 +66,7 @@ class APIDefinitionControllerSpec extends UnitSpec
     val apiVersionValidator: ApiVersionValidator = new ApiVersionValidator(apiEndpointValidator)
     val apiDefinitionValidator: ApiDefinitionValidator = new ApiDefinitionValidator(mockAPIDefinitionService, apiContextValidator, apiVersionValidator)
 
-    val mockAppContext: AppContext = mock[AppContext]
+    val mockAppContext: AppConfig = mock[AppConfig]
     when(mockAppContext.fetchByContextTtlInSeconds).thenReturn("1234")
 
     val apiDefinitionMapper: APIDefinitionMapper = fakeApplication.injector.instanceOf[APIDefinitionMapper]

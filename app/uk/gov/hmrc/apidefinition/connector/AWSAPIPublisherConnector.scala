@@ -22,7 +22,7 @@ import play.api.http.ContentTypes.JSON
 import play.api.http.HeaderNames.CONTENT_TYPE
 import play.api.libs.json.Json
 import play.api.{Configuration, Environment}
-import uk.gov.hmrc.apidefinition.config.AppContext
+import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.models.JsonFormatters._
 import uk.gov.hmrc.apidefinition.models.WSO2SwaggerDetails
 import uk.gov.hmrc.http.HeaderCarrier
@@ -33,7 +33,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class AWSAPIPublisherConnector @Inject()(http: HttpClient,
                                          environment: Environment,
-                                         appContext: AppContext,
+                                         appContext: AppConfig,
                                          override val runModeConfiguration: Configuration)
                                         (implicit val ec: ExecutionContext) extends ServicesConfig {
 

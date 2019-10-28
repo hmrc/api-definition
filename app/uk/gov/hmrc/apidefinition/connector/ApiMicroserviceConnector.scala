@@ -14,15 +14,21 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.apidefinition.config
+package uk.gov.hmrc.apidefinition.connector
 
 import javax.inject.{Inject, Singleton}
-import net.ceedubs.ficus.Ficus._
-import play.api.Configuration
+import play.api.Logger
+import play.api.libs.ws.{StreamedResponse, WSClient}
+
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class AppContext @Inject()(val configuration: Configuration) {
-  lazy val buildProductionUrlForPrototypedAPIs: Boolean = configuration.getBoolean("buildProductionUrlForPrototypedAPIs").getOrElse(false)
-  lazy val isSandbox: Boolean = configuration.getBoolean("isSandbox").getOrElse(false)
-  lazy val fetchByContextTtlInSeconds: String = configuration.underlying.as[String]("fetchByContextTtlInSeconds")
+class ApiMicroserviceConnector @Inject()(ws: WSClient)(implicit val ec: ExecutionContext) {
+
+  // TODO : Migrate to new hmrc WS client
+  def fetchApiDocumentationResourceByUrl(serviceUrl: String, version: String, resource: String): Future[StreamedResponse] = {
+    Logger.info(s"Calling to local microservice to fetch documentation resource by URL: $serviceUrl, $version, $resource")
+    ws.url(s"$serviceUrl/api/conf/$version/$resource").withMethod("GET").stream()
+  }
+
 }

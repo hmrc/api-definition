@@ -19,7 +19,7 @@ package uk.gov.hmrc.apidefinition.services
 import javax.inject.{Inject, Singleton}
 import org.joda.time.{DateTime, DateTimeZone}
 import play.api.Logger
-import uk.gov.hmrc.apidefinition.config.AppContext
+import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.connector.ThirdPartyApplicationConnector
 import uk.gov.hmrc.apidefinition.models.APIStatus.APIStatus
 import uk.gov.hmrc.apidefinition.models._
@@ -35,7 +35,7 @@ class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
                                      thirdPartyApplicationConnector: ThirdPartyApplicationConnector,
                                      apiDefinitionRepository: APIDefinitionRepository,
                                      notificationService: NotificationService,
-                                     playApplicationContext: AppContext)
+                                     playApplicationContext: AppConfig)
                                     (implicit val ec: ExecutionContext) {
 
   def createOrUpdate(apiDefinition: APIDefinition)(implicit hc: HeaderCarrier): Future[Unit] = {

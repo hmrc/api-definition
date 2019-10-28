@@ -30,7 +30,7 @@ import play.api.http.ContentTypes.JSON
 import play.api.http.HeaderNames.{AUTHORIZATION, CONTENT_TYPE}
 import play.api.http.Status.{INTERNAL_SERVER_ERROR, OK}
 import play.api.{Configuration, Environment}
-import uk.gov.hmrc.apidefinition.config.AppContext
+import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.connector.AWSAPIPublisherConnector
 import uk.gov.hmrc.apidefinition.models.{WSO2APIInfo, WSO2HttpVerbDetails, WSO2Response, WSO2SwaggerDetails}
 import uk.gov.hmrc.http.logging.Authorization
@@ -67,7 +67,7 @@ class AWSAPIPublisherConnectorSpec extends UnitSpec with WithFakeApplication wit
     val http: HttpClient = fakeApplication.injector.instanceOf[HttpClient]
     val environment: Environment = fakeApplication.injector.instanceOf[Environment]
     val runModeConfiguration: Configuration = fakeApplication.injector.instanceOf[Configuration]
-    val appContext: AppContext = fakeApplication.injector.instanceOf[AppContext]
+    val appContext: AppConfig = fakeApplication.injector.instanceOf[AppConfig]
 
     val underTest: AWSAPIPublisherConnector = new AWSAPIPublisherConnector(http, environment, appContext, runModeConfiguration) {
       override val serviceBaseUrl = s"$wireMockUrl/api"

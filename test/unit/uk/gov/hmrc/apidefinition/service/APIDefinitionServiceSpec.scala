@@ -24,7 +24,7 @@ import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
-import uk.gov.hmrc.apidefinition.config.AppContext
+import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.connector.ThirdPartyApplicationConnector
 import uk.gov.hmrc.apidefinition.models
 import uk.gov.hmrc.apidefinition.models.APIStatus.APIStatus
@@ -78,7 +78,7 @@ class APIDefinitionServiceSpec extends UnitSpec
     val mockAPIDefinitionRepository: APIDefinitionRepository = mock[APIDefinitionRepository]
     val mockThirdPartyApplicationConnector: ThirdPartyApplicationConnector = mock[ThirdPartyApplicationConnector]
     val mockNotificationService: NotificationService = mock[NotificationService]
-    val mockAppContext: AppContext = mock[AppContext]
+    val mockAppContext: AppConfig = mock[AppConfig]
 
     val underTest = new APIDefinitionService(
       mockWSO2APIPublisher,

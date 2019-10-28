@@ -16,7 +16,7 @@
 
 package unit.uk.gov.hmrc.apidefinition.utils
 
-import uk.gov.hmrc.apidefinition.config.AppContext
+import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.models.APIStatus.APIStatus
 import org.scalatest.mockito.MockitoSugar
 import org.mockito.Mockito.when
@@ -37,7 +37,7 @@ class APIDefinitionMapperSpec extends UnitSpec with MockitoSugar {
   }
 
   private def underTest(enabledPrototypedEndpoints: Boolean = false) = {
-    val appContext = mock[AppContext]
+    val appContext = mock[AppConfig]
     when(appContext.buildProductionUrlForPrototypedAPIs).thenReturn(enabledPrototypedEndpoints)
 
     new APIDefinitionMapper(appContext)

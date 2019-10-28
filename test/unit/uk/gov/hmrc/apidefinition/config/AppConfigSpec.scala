@@ -19,18 +19,18 @@ package unit.uk.gov.hmrc.apidefinition.config
 import org.mockito.Mockito._
 import org.scalatest.mockito.MockitoSugar
 import org.scalatest.{BeforeAndAfterEach, Matchers}
-import org.scalatestplus.play.OneAppPerTest
-import play.api.Configuration
-import uk.gov.hmrc.apidefinition.config.AppContext
+import org.scalatestplus.play.{BaseOneAppPerSuite, OneAppPerTest}
+import play.api.{Configuration, Environment}
+import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.play.test.UnitSpec
 
-class AppContextSpec extends UnitSpec
+class AppConfigSpec extends UnitSpec
   with Matchers  with MockitoSugar
   with BeforeAndAfterEach with OneAppPerTest {
 
   trait Setup {
     val mockConfig =  mock[Configuration]
-    val underTest = new AppContext(mockConfig)
+    val underTest = new AppConfig(mockConfig, app.injector.instanceOf[Environment])
 
     def whenTestEnvironmentUndefined = when(mockConfig.getBoolean("buildProductionUrlForPrototypedAPIs")).thenReturn(None)
     def whenTestEnvironmentEnabled = when(mockConfig.getBoolean("buildProductionUrlForPrototypedAPIs")).thenReturn(Some(true))
@@ -53,7 +53,5 @@ class AppContextSpec extends UnitSpec
       whenTestEnvironmentDisable
       underTest.buildProductionUrlForPrototypedAPIs shouldBe false
     }
-
   }
-
 }
