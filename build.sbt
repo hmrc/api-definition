@@ -10,7 +10,7 @@ lazy val appDependencies: Seq[ModuleID] = compile ++ test ++ tmpMacWorkaround
 
 lazy val compile = Seq(
   ws,
-  "uk.gov.hmrc" %% "bootstrap-play-25" % "4.13.0",
+  "uk.gov.hmrc" %% "bootstrap-play-25" % "5.1.0",
   "uk.gov.hmrc" %% "simple-reactivemongo" % "7.20.0-play-25",
   "uk.gov.hmrc" %% "play-json-union-formatter" % "1.7.0",
   "org.typelevel" %% "cats-core" % "1.1.0"
@@ -24,7 +24,8 @@ lazy val test = Seq(
   "org.scalatestplus.play" %% "scalatestplus-play" % "2.0.1" % "test",
   "org.mockito" % "mockito-core" % "2.27.0" % "test",
   "com.typesafe.play" %% "play-test" % PlayVersion.current % "test",
-  "com.github.tomakehurst" % "wiremock" % "2.8.0" % "test"
+  "com.github.tomakehurst" % "wiremock" % "2.8.0" % "test",
+  "de.leanovate.play-mockws" %% "play-mockws" % "2.5.1" % "test"
 )
 
 // Temporary Workaround for intermittent (but frequent) failures of Mongo integration tests when running on a Mac

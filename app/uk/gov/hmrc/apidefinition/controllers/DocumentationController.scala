@@ -20,12 +20,14 @@ import javax.inject.{Inject, Singleton}
 import play.api.Logger
 import play.api.mvc.{Action, AnyContent}
 import uk.gov.hmrc.apidefinition.services.DocumentationService
+import uk.gov.hmrc.play.bootstrap.controller.BaseController
 
 import scala.concurrent.ExecutionContext
 
 @Singleton
 class DocumentationController @Inject()(service: DocumentationService)
-                                       (implicit val ec: ExecutionContext) extends CommonController {
+                                       (implicit val ec: ExecutionContext)
+                                        extends BaseController {
 
   def fetchApiDocumentationResource(serviceName: String, version: String, resource: String): Action[AnyContent] = Action.async {
     implicit request =>

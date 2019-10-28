@@ -32,16 +32,16 @@ import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.connector.ApiMicroserviceConnector
 import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.repository.{APIDefinitionRepository, ResourceData, ResourceRepository}
-import uk.gov.hmrc.apidefinition.services.{APIDefinitionService, DocumentationService}
+import uk.gov.hmrc.apidefinition.services.DocumentationService
 import uk.gov.hmrc.http.{HeaderCarrier, InternalServerException, NotFoundException}
 import uk.gov.hmrc.play.test.UnitSpec
-import unit.uk.gov.hmrc.apidefinition.utils._
+import unit.uk.gov.hmrc.apidefinition.Utils
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.Random
 
-class DocumentationServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar {
+class DocumentationServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar with Utils {
 
   val serviceName = "hello-world"
   val version = "1.0"

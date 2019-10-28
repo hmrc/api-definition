@@ -22,13 +22,12 @@ import akka.actor.ActorSystem
 import akka.stream.scaladsl.{FileIO, Sink, Source}
 import akka.stream.{ActorMaterializer, IOResult}
 import akka.util.ByteString
-import play.api.Logger
 import play.api.libs.ws.StreamedResponse
 
 import scala.concurrent.duration.{FiniteDuration, _}
 import scala.concurrent.{Await, Future}
 
-package object utils {
+trait Utils {
 
   implicit val system = ActorSystem("System")
   implicit val mat = ActorMaterializer()
