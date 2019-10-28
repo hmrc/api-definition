@@ -63,11 +63,12 @@ class NotificationServiceSpec extends UnitSpec with MockitoSugar {
 
     val emailServiceURL: String = "https://localhost:9876/hmrc/email"
     val emailTemplateId: String = UUID.randomUUID().toString
+    val environmentName: String = "Production"
     val emailAddresses: Set[String] = Set("foo@bar.com")
 
     val mockHTTPClient: HttpClient = mock[HttpClient]
 
-    val underTest: EmailNotificationService = new EmailNotificationService(mockHTTPClient, emailServiceURL, emailTemplateId, emailAddresses)
+    val underTest: EmailNotificationService = new EmailNotificationService(mockHTTPClient, emailServiceURL, emailTemplateId, environmentName, emailAddresses)
   }
 
   "Email Notification Service" should {
@@ -89,6 +90,7 @@ class NotificationServiceSpec extends UnitSpec with MockitoSugar {
       capturedRequest.parameters.get("apiVersion") shouldBe Some(apiVersion)
       capturedRequest.parameters.get("currentStatus") shouldBe Some(existingAPIStatus.toString)
       capturedRequest.parameters.get("newStatus") shouldBe Some(newAPIStatus.toString)
+      capturedRequest.parameters.get("environmentName") shouldBe Some(environmentName)
     }
 
     "throw RuntimeException if email service is not available" in new EmailNotificationSetup {
