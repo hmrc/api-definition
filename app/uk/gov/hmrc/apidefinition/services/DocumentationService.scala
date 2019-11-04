@@ -39,12 +39,14 @@ import uk.gov.hmrc.http.{HeaderCarrier, InternalServerException, NotFoundExcepti
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
+import scala.util.control.NonFatal
 
 @Singleton
 class DocumentationService @Inject()(apiDefinitionRepository: APIDefinitionRepository,
                                      apiMicroserviceConnector: ApiMicroserviceConnector,
                                      resourceRepository: ResourceRepository,
-                                     config: AppConfig)(implicit val ec: ExecutionContext) {
+                                     config: AppConfig)
+                                    (implicit val ec: ExecutionContext) {
 
   // TODO : Use play's Actor (inject)
   implicit val system: ActorSystem = ActorSystem("System")
@@ -74,7 +76,7 @@ class DocumentationService @Inject()(apiDefinitionRepository: APIDefinitionRepos
 
     def fetchStoredResource = resourceRepository.fetch(serviceName, version, resource)
 
-    def fetchLocalResource(serviceBaseUrl: String): Future[StreamedResponse] =
+    def fetchResourceFromMicroservice(serviceBaseUrl: String): Future[StreamedResponse] =
       apiMicroserviceConnector.fetchApiDocumentationResourceByUrl(serviceBaseUrl, version, resource)
 
     def storeResponseWhenOk(response: StreamedResponse): Future[StreamedResponse] =
@@ -117,7 +119,7 @@ class DocumentationService @Inject()(apiDefinitionRepository: APIDefinitionRepos
       case _ =>
         throw new NotFoundException(s"Stored resource not found. Fallback required: $serviceName, $version, $resource")
     }.recoverWith {
-      case e =>
+      case NonFatal(e) =>
         Logger.error("Fallback to retrieve local resource following exception.", e)
 
         //TODO fetchByServiceName() - Add specific method & index to get just the base uri by service name as this is called a lot.
@@ -126,12 +128,15 @@ class DocumentationService @Inject()(apiDefinitionRepository: APIDefinitionRepos
           _ <- getApiVersionOrThrow(api)
 
           serviceBaseUrl = api.serviceBaseUrl
-          response <- fetchLocalResource(serviceBaseUrl)  // TODO - solve get....)
+          response <- fetchResourceFromMicroservice(serviceBaseUrl)  // TODO - solve get....)
           storedResponse <- storeResponseWhenOk(response)
         } yield storedResponse
+
+      case e =>
+        Logger.error("Fatal error trying to retrieve stored resource following exception.", e)
+        throw e
     }
   }
-
 
   private def extractContentFromResponse(response: StreamedResponse): Future[Array[Byte]] = {
     response.body
