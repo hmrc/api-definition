@@ -38,9 +38,12 @@ class ConfigurationProvidersSpec extends UnitSpec with MockitoSugar {
   }
 
   trait NotificationServiceConfigProviderSetup extends Setup {
-    def notificationConfigReturnsValidLoggingConfiguration(): Unit = {
+    val environmentName: String = "External Test"
+
+    def notificationConfigReturnsValidLoggingConfiguration(environmentName: String): Unit = {
       val notificationsConfiguration: Configuration = mock[Configuration]
       when(notificationsConfiguration.getString(matches("type"), any[Option[Set[String]]])).thenReturn(Some("LOG"))
+      when(notificationsConfiguration.getString(matches("environmentName"), any[Option[Set[String]]])).thenReturn(Some(environmentName))
 
       when(mockRunModeConfiguration.getConfig("notifications")).thenReturn(Some(notificationsConfiguration))
     }
@@ -48,6 +51,7 @@ class ConfigurationProvidersSpec extends UnitSpec with MockitoSugar {
     def notificationConfigReturnsMissingNotificationType(): Unit = {
       val notificationsConfiguration: Configuration = mock[Configuration]
       when(notificationsConfiguration.getString(matches("type"), any[Option[Set[String]]])).thenReturn(None)
+      when(notificationsConfiguration.getString(matches("environmentName"), any[Option[Set[String]]])).thenReturn(Some(environmentName))
 
       when(mockRunModeConfiguration.getConfig("notifications")).thenReturn(Some(notificationsConfiguration))
     }
@@ -55,19 +59,24 @@ class ConfigurationProvidersSpec extends UnitSpec with MockitoSugar {
     def notificationConfigReturnsUnknownNotificationType(): Unit = {
       val notificationsConfiguration: Configuration = mock[Configuration]
       when(notificationsConfiguration.getString(matches("type"), any[Option[Set[String]]])).thenReturn(Some("FOO"))
+      when(notificationsConfiguration.getString(matches("environmentName"), any[Option[Set[String]]])).thenReturn(Some(environmentName))
 
       when(mockRunModeConfiguration.getConfig("notifications")).thenReturn(Some(notificationsConfiguration))
     }
 
-    def notificationsConfigReturnsValidEmailConfiguration(emailServiceURL:String, emailTemplateId:String, emailAddresses: List[String] = List.empty): Unit = {
+    def notificationsConfigReturnsValidEmailConfiguration(emailServiceURL:String,
+                                                          emailTemplateId:String,
+                                                          emailAddresses: List[String] = List.empty): Unit = {
       val notificationsConfiguration: Configuration = mock[Configuration]
       val emailConfiguration: Configuration = mock[Configuration]
 
       when(notificationsConfiguration.getString(matches("type"), any[Option[Set[String]]])).thenReturn(Some("EMAIL"))
+      when(notificationsConfiguration.getString(matches("environmentName"), any[Option[Set[String]]])).thenReturn(Some(environmentName))
       when(notificationsConfiguration.getConfig(matches("email"))).thenReturn(Some(emailConfiguration))
 
       when(emailConfiguration.getString(matches("serviceURL"), any[Option[Set[String]]])).thenReturn(Some(emailServiceURL))
       when(emailConfiguration.getString(matches("templateId"), any[Option[Set[String]]])).thenReturn(Some(emailTemplateId))
+
       when(emailConfiguration.getStringList("addresses")).thenReturn(Some(new util.ArrayList(emailAddresses.asJavaCollection)))
 
       when(mockRunModeConfiguration.getConfig("notifications")).thenReturn(Some(notificationsConfiguration))
@@ -77,6 +86,7 @@ class ConfigurationProvidersSpec extends UnitSpec with MockitoSugar {
       val notificationsConfiguration: Configuration = mock[Configuration]
 
       when(notificationsConfiguration.getString(matches("type"), any[Option[Set[String]]])).thenReturn(Some("EMAIL"))
+      when(notificationsConfiguration.getString(matches("environmentName"), any[Option[Set[String]]])).thenReturn(Some(environmentName))
       when(notificationsConfiguration.getConfig(matches("email"))).thenReturn(None)
 
       when(mockRunModeConfiguration.getConfig("notifications")).thenReturn(Some(notificationsConfiguration))
@@ -87,11 +97,37 @@ class ConfigurationProvidersSpec extends UnitSpec with MockitoSugar {
       val emailConfiguration: Configuration = mock[Configuration]
 
       when(notificationsConfiguration.getString(matches("type"), any[Option[Set[String]]])).thenReturn(Some("EMAIL"))
+      when(notificationsConfiguration.getString(matches("environmentName"), any[Option[Set[String]]])).thenReturn(Some(environmentName))
       when(notificationsConfiguration.getConfig(matches("email"))).thenReturn(Some(emailConfiguration))
 
       when(emailConfiguration.getString(matches("serviceURL"), any[Option[Set[String]]])).thenReturn(None)
       when(emailConfiguration.getString(matches("templateId"), any[Option[Set[String]]])).thenReturn(None)
       when(emailConfiguration.getStringList("addresses")).thenReturn(None)
+
+      when(mockRunModeConfiguration.getConfig("notifications")).thenReturn(Some(notificationsConfiguration))
+    }
+
+    def loggingNotificationsConfigReturnsMissingEnvironmentName(): Unit = {
+      val notificationsConfiguration: Configuration = mock[Configuration]
+      when(notificationsConfiguration.getString(matches("type"), any[Option[Set[String]]])).thenReturn(Some("LOG"))
+      when(notificationsConfiguration.getString(matches("environmentName"), any[Option[Set[String]]])).thenReturn(None)
+
+      when(mockRunModeConfiguration.getConfig("notifications")).thenReturn(Some(notificationsConfiguration))
+    }
+
+    def emailNotificationsConfigReturnsMissingEnvironmentName(emailServiceURL:String,
+                                                              emailTemplateId:String,
+                                                              emailAddresses: List[String] = List.empty): Unit = {
+      val notificationsConfiguration: Configuration = mock[Configuration]
+      val emailConfiguration: Configuration = mock[Configuration]
+
+      when(notificationsConfiguration.getString(matches("type"), any[Option[Set[String]]])).thenReturn(Some("EMAIL"))
+      when(notificationsConfiguration.getString(matches("environmentName"), any[Option[Set[String]]])).thenReturn(None)
+      when(notificationsConfiguration.getConfig(matches("email"))).thenReturn(Some(emailConfiguration))
+
+      when(emailConfiguration.getString(matches("serviceURL"), any[Option[Set[String]]])).thenReturn(Some(emailServiceURL))
+      when(emailConfiguration.getString(matches("templateId"), any[Option[Set[String]]])).thenReturn(Some(emailTemplateId))
+      when(emailConfiguration.getStringList("addresses")).thenReturn(Some(new util.ArrayList(emailAddresses.asJavaCollection)))
 
       when(mockRunModeConfiguration.getConfig("notifications")).thenReturn(Some(notificationsConfiguration))
     }
@@ -105,11 +141,12 @@ class ConfigurationProvidersSpec extends UnitSpec with MockitoSugar {
     val emailTemplateId: String = UUID.randomUUID().toString
 
     "return a LoggingNotificationService when type is specified as LOG" in new NotificationServiceConfigProviderSetup  {
-      notificationConfigReturnsValidLoggingConfiguration()
+      notificationConfigReturnsValidLoggingConfiguration(environmentName)
 
       val returnedNotificationService: NotificationService = underTest.get()
 
       returnedNotificationService shouldBe a[LoggingNotificationService]
+      returnedNotificationService.asInstanceOf[LoggingNotificationService].environmentName shouldBe environmentName
     }
 
     "return an EmailNotificationService when type is specified as EMAIL" in new NotificationServiceConfigProviderSetup  {
@@ -119,6 +156,7 @@ class ConfigurationProvidersSpec extends UnitSpec with MockitoSugar {
       val returnedNotificationService: NotificationService = underTest.get()
 
       returnedNotificationService shouldBe a[EmailNotificationService]
+      returnedNotificationService.asInstanceOf[EmailNotificationService].environmentName shouldBe environmentName
       returnedNotificationService.asInstanceOf[EmailNotificationService].emailAddresses.toSeq shouldEqual emailAddresses
     }
 
@@ -160,7 +198,26 @@ class ConfigurationProvidersSpec extends UnitSpec with MockitoSugar {
       val returnedNotificationService: NotificationService = underTest.get()
 
       returnedNotificationService shouldBe a[LoggingNotificationService]
+    }
 
+    "use the default environment name for Logging Notifications when it is not specified" in new NotificationServiceConfigProviderSetup {
+      loggingNotificationsConfigReturnsMissingEnvironmentName()
+
+      val returnedNotificationService: NotificationService = underTest.get()
+
+      returnedNotificationService shouldBe a[LoggingNotificationService]
+      returnedNotificationService.asInstanceOf[LoggingNotificationService].environmentName shouldBe "Unknown"
+    }
+
+    "use the default environment name for Email Notifications when it is not specified" in new NotificationServiceConfigProviderSetup {
+      private val emailAddresses = List("foo@bar.com", "bar@baz.com")
+      emailNotificationsConfigReturnsMissingEnvironmentName(emailServiceURL, emailTemplateId, emailAddresses)
+
+      val returnedNotificationService: NotificationService = underTest.get()
+
+      returnedNotificationService shouldBe a[EmailNotificationService]
+      returnedNotificationService.asInstanceOf[EmailNotificationService].environmentName shouldBe "Unknown"
+      returnedNotificationService.asInstanceOf[EmailNotificationService].emailAddresses.toSeq shouldEqual emailAddresses
     }
   }
 }

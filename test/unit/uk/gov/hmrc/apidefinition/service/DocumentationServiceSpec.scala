@@ -38,7 +38,6 @@ import unit.uk.gov.hmrc.apidefinition.Utils
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.reflect.io
 import scala.util.Random
 
 class DocumentationServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar with Utils {
@@ -72,21 +71,9 @@ class DocumentationServiceSpec extends UnitSpec with ScalaFutures with MockitoSu
 
   private val sampleFileSource: Source[ByteString, _] = createSourceFrom("hello")
 
-  private val applicationRamlFile1Name = "application1.raml"
-  private val applicationRamlFile2Name = "application2.raml"
-  private val applicationWithNestedRamlFileName = "applicationWithNestedRaml.raml"
-  private val applicationWithCircularDependencyRamlFileName = "applicationWithCircularDependencyRaml.raml"
-  private val applicationWithCapsInExtensionFileName = "applicationWithCapsInExtension.RaMl"
-  private val applicationWithUsesInRamlFileName = "applicationWithUsesThatAreNotAbsolute.raml"
-  private val applicationWithNestedUsesInRamlFileName = "applicationWithNestedUsesInRaml.raml"
-  private val applicationRamlFile1Source: Source[ByteString, _] = createSourceFrom(applicationRamlFile1Name)
-  private val applicationRamlFile2Source: Source[ByteString, _] = createSourceFrom(applicationRamlFile2Name)
-  private val applicationWithNestedRamlFileSource: Source[ByteString, _] = createSourceFrom(applicationWithNestedRamlFileName)
-  private val applicationWithCircularDependencyRamlFileSource: Source[ByteString, _] = createSourceFrom(applicationWithCircularDependencyRamlFileName)
-  private val applicationWithCapsInExtensionFileSource: Source[ByteString, _] = createSourceFrom(applicationWithCapsInExtensionFileName)
-  private val applicationWithUsesInRamlFileSource: Source[ByteString, _] = createSourceFrom(applicationWithUsesInRamlFileName)
-  private val applicationWithNestedUsesInRamlFileSource: Source[ByteString, _] = createSourceFrom(applicationWithNestedUsesInRamlFileName)
-  private val streamedResource = StreamedResponse(DefaultWSResponseHeaders(Status.OK, Map("Content-Type" -> Seq("application/text"), "Content-Length" -> Seq("hello".length.toString))), sampleFileSource)
+  private val streamedResource = StreamedResponse(
+    DefaultWSResponseHeaders(Status.OK, Map("Content-Type" -> Seq("application/text"), "Content-Length" -> Seq("hello".length.toString)))
+    , sampleFileSource)
   private val chunkedResource = StreamedResponse(DefaultWSResponseHeaders(Status.OK, Map.empty), sampleFileSource)
   private val notFoundResponse = StreamedResponse(DefaultWSResponseHeaders(Status.NOT_FOUND, Map.empty), sampleFileSource)
   private val internalServerErrorResponse = StreamedResponse(DefaultWSResponseHeaders(Status.INTERNAL_SERVER_ERROR, Map.empty), sampleFileSource)
@@ -123,34 +110,6 @@ class DocumentationServiceSpec extends UnitSpec with ScalaFutures with MockitoSu
         .thenReturn(Future.successful(response))
     }
 
-//    def theApiMicroserviceWillReturnTheNamedResourceByUrl(resource: String, version: String): OngoingStubbing[Future[StreamedResponse]] = {
-//      val source: Source[ByteString, _] = createSourceFrom(resource)
-//      val streamedResource = StreamedResponse(DefaultWSResponseHeaders(Status.OK, Map("Content-Type" -> Seq("application/text"))), source)
-//      when(mockApiMicroserviceConnector.fetchApiDocumentationResourceByUrl(anyString, meq(version), meq(resource)))
-//        .thenReturn(Future.successful(streamedResource))
-//    }
-//
-    def theApiMicroserviceWillReturnTheNamedResourceByUrlAsStreamWithLength(resource: String, version: String): OngoingStubbing[Future[StreamedResponse]] = {
-      val source: Source[ByteString, _] = createSourceFrom(resource)
-      val file: io.File = io.File(getClass.getResource("/" + resource).getPath)
-      file.length
-
-      val streamedResource = StreamedResponse(
-          DefaultWSResponseHeaders(
-            Status.OK
-            , Map("Content-Type" -> Seq("application/text"), "Content-Length" -> Seq(length.toString))
-          )
-        , source
-        )
-      when(mockApiMicroserviceConnector.fetchApiDocumentationResourceByUrl(anyString, meq(version), meq(resource)))
-        .thenReturn(Future.successful(streamedResource))
-    }
-
-//    def theApiMicroserviceWillReturnTheResourceByUrl(response: StreamedResponse, version: String): OngoingStubbing[Future[StreamedResponse]] = {
-//      when(mockApiMicroserviceConnector.fetchApiDocumentationResourceByUrl(anyString, meq(version), anyString))
-//        .thenReturn(Future.successful(response))
-//    }
-//
     def answer[T](f: InvocationOnMock => T): Answer[T] = {
       new Answer[T] {
         override def answer(invocation: InvocationOnMock): T = f(invocation)
@@ -179,17 +138,6 @@ class DocumentationServiceSpec extends UnitSpec with ScalaFutures with MockitoSu
       result.header.status should be(Status.OK)
       result.body.contentType should be(Some("application/text"))
     }
-
-//    "return the resource with given Content-Type when Content-Length header is present" in new Setup {
-//      theApiDefinitionWillBeReturned()
-//      theApiMicroserviceWillReturnTheResource("resource", "1.0")
-//
-//
-//      val result: Result = await(underTest.fetchApiDocumentationResource(serviceName, "1.0", "resource")(hc))
-//
-//      result.header.status should be(Status.OK)
-//      result.body.contentType should be(Some("application/text"))
-//    }
 
     "return the resource with default Content-Type when header is not present" in new Setup {
       theApiDefinitionWillBeReturned()

@@ -46,7 +46,6 @@ class APIDefinitionController @Inject()(apiDefinitionValidator: ApiDefinitionVal
     handleRequest[APIDefinition](request) { requestBody =>
       apiDefinitionValidator.validate(requestBody) { validatedDefinition =>
         Logger.info(s"Create/Update API definition request: $validatedDefinition")
-            // TODO - resourceRepository.deleteResourcesForService(serviceName)
         apiDefinitionService.createOrUpdate(apiDefinitionMapper.mapLegacyStatuses(validatedDefinition)).map { _ =>
           Logger.info("API definition successfully created/updated")
           NoContent
