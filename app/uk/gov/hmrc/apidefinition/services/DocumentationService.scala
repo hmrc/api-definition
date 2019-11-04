@@ -16,35 +16,27 @@
 
 package uk.gov.hmrc.apidefinition.services
 
-import java.lang.IllegalArgumentException
-
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
-import akka.stream.scaladsl.{Sink, Source}
-import akka.util.ByteString
-import cats.data.{Nested, OptionT}
 import javax.inject.{Inject, Singleton}
-import play.api.Logger
 import play.api.http.Status._
-import play.api.http.{HttpEntity, Status}
-import play.api.libs.ws.{DefaultWSResponseHeaders, StreamedResponse, WSResponseHeaders}
+import play.api.http.HttpEntity
+import play.api.libs.ws.StreamedResponse
 import play.api.mvc.Result
 import play.api.mvc.Results._
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.connector.ApiMicroserviceConnector
-import uk.gov.hmrc.apidefinition.models.{APIDefinition, APIVersion, ExtendedAPIVersion}
-import uk.gov.hmrc.apidefinition.repository.{APIDefinitionRepository, ResourceData, ResourceRepository}
-import uk.gov.hmrc.apidefinition.views.txt.definition
+import uk.gov.hmrc.apidefinition.models.{APIDefinition, APIVersion}
+import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.http.{HeaderCarrier, InternalServerException, NotFoundException}
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Try
 
 @Singleton
 class DocumentationService @Inject()(apiDefinitionRepository: APIDefinitionRepository,
                                      apiMicroserviceConnector: ApiMicroserviceConnector,
-                                     resourceRepository: ResourceRepository,
-                                     config: AppConfig)(implicit val ec: ExecutionContext) {
+                                     config: AppConfig)
+                                    (implicit val ec: ExecutionContext) {
 
   // TODO : Use play's Actor (inject)
   implicit val system: ActorSystem = ActorSystem("System")
@@ -72,20 +64,8 @@ class DocumentationService @Inject()(apiDefinitionRepository: APIDefinitionRepos
   private def fetchResource(serviceName: String, version: String, resource: String
                            )(implicit hc: HeaderCarrier): Future[StreamedResponse] = {
 
-    def fetchStoredResource = resourceRepository.fetch(serviceName, version, resource)
-
-    def fetchLocalResource(serviceBaseUrl: String): Future[StreamedResponse] =
+    def fetchResourceFromMicroservice(serviceBaseUrl: String): Future[StreamedResponse] =
       apiMicroserviceConnector.fetchApiDocumentationResourceByUrl(serviceBaseUrl, version, resource)
-
-    def storeResponseWhenOk(response: StreamedResponse): Future[StreamedResponse] =
-      response.headers.status match {
-        case OK =>
-          for {
-            content <- extractContentFromResponse(response)
-            _ <- resourceRepository.save(ResourceData(serviceName, version, resource, content))
-          } yield createStreamedResponse(response.headers, content) // Create new streamedResponse to cater for read-once streams
-        case _ => Future.successful(response)
-      }
 
     def getApiDefinitionOrThrow: Future[APIDefinition] = {
       import cats.implicits._
@@ -107,41 +87,14 @@ class DocumentationService @Inject()(apiDefinitionRepository: APIDefinitionRepos
     /*
     ** Start here
      */
-    fetchStoredResource.map {
-      case Some(resourceData) =>
-        val source = Source[ByteString](Seq(ByteString.fromArray(resourceData.contents)).to)
+    //TODO fetchByServiceName() - Add specific method & index to get just the base uri by service name as this is called a lot.
+    for {
+      api <- getApiDefinitionOrThrow
+      _ <- getApiVersionOrThrow(api)
 
-        val headers = Map("Content-Length" -> Seq(resourceData.contents.length.toString))
-        StreamedResponse(DefaultWSResponseHeaders(Status.OK, headers), source)
-
-      case _ =>
-        throw new NotFoundException(s"Stored resource not found. Fallback required: $serviceName, $version, $resource")
-    }.recoverWith {
-      case e =>
-        Logger.error("Fallback to retrieve local resource following exception.", e)
-
-        //TODO fetchByServiceName() - Add specific method & index to get just the base uri by service name as this is called a lot.
-        for {
-          api <- getApiDefinitionOrThrow
-          _ <- getApiVersionOrThrow(api)
-
-          serviceBaseUrl = api.serviceBaseUrl
-          response <- fetchLocalResource(serviceBaseUrl)  // TODO - solve get....)
-          storedResponse <- storeResponseWhenOk(response)
-        } yield storedResponse
-    }
-  }
-
-
-  private def extractContentFromResponse(response: StreamedResponse): Future[Array[Byte]] = {
-    response.body
-      .runWith(Sink.reduce[ByteString](_ ++ _))
-      .map { r: ByteString => r.toArray[Byte] }
-  }
-
-  private def createStreamedResponse(headers: WSResponseHeaders, content: Array[Byte]): StreamedResponse = {
-    val source = Source.single(ByteString(content))
-    StreamedResponse(headers, source)
+      serviceBaseUrl = api.serviceBaseUrl
+      response <- fetchResourceFromMicroservice(serviceBaseUrl)  // TODO - solve get....)
+    } yield response
   }
 
   private def newInternalServerException(serviceName: String, version: String, resource: String, status: Int) = {
@@ -151,5 +104,4 @@ class DocumentationService @Inject()(apiDefinitionRepository: APIDefinitionRepos
   private def newNotFoundException(serviceName: String, version: String, resource: String) = {
     new NotFoundException(s"$resource not found for $serviceName $version")
   }
-
 }
