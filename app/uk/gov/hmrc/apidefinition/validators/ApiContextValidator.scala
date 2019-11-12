@@ -52,9 +52,9 @@ class ApiContextValidator @Inject()(apiDefinitionService: APIDefinitionService,
   }
 
   private def validateAgainstDatabase(errorContext: String, apiDefinition: APIDefinition)(implicit context: String): Future[HMRCValidated[String]] = {
+    val existingAPIDefinition: Future[Option[APIDefinition]] = apiDefinitionService.fetchByContext(apiDefinition.context)
     for {
-      contextUniqueValidated <- validateFieldNotAlreadyUsed(apiDefinitionService
-        .fetchByContext(apiDefinition.context), s"Field 'context' must be unique $errorContext")(context, apiDefinition)
+      contextUniqueValidated <- validateFieldNotAlreadyUsed(existingAPIDefinition, s"Field 'context' must be unique $errorContext")(context, apiDefinition)
       contextNotChangedValidated <- validateContextNotChanged(errorContext, apiDefinition)
     } yield (contextUniqueValidated, contextNotChangedValidated).mapN((_, _) => context)
   }
