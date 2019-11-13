@@ -56,8 +56,15 @@ class ApiContextValidatorSpec extends UnitSpec with MockitoSugar {
   "ApiContextValidator" should {
     lazy val errorContext: String = "for API"
 
+    val prohibitedChars = List(
+      ' ', '@', '%', '£', '*', '\\', '|', '$', '~', '^', ';', '=', '\'',
+      '<', '>', '"', '?', '!', ',', '.', ':', '&', '[', ']', '(' ,')'
+    )
+
+    val permittedTopLevelContexts = List("agents", "customs", "individuals", "organisations")
+
     "pass validation for new API with legitimate context" in new Setup {
-      lazy val context: String = "money"
+      lazy val context: String = "individuals/money"
       lazy val serviceName: String = "money-service"
       lazy val apiDefinition: APIDefinition = testAPIDefinition(serviceName, context)
 
@@ -132,12 +139,7 @@ class ApiContextValidatorSpec extends UnitSpec with MockitoSugar {
       errors.head should be (s"Field 'context' should not have empty path segments $errorContext")
     }
 
-    val specialChars = List(
-      ' ', '@', '%', '£', '*', '\\', '|', '$', '~', '^', ';', '=', '\'',
-      '<', '>', '"', '?', '!', ',', '.', ':', '&', '[', ']', '(' ,')'
-    )
-
-    ('{' :: '}' :: specialChars).foreach { char: Char =>
+    ('{' :: '}' :: prohibitedChars).foreach { char: Char =>
       s"fail validation if the API contains '$char' in the context" in new Setup {
         lazy val badContext = s"my-context_$char"
         lazy val apiDefinition: APIDefinition = testAPIDefinition(context = badContext)
@@ -151,8 +153,8 @@ class ApiContextValidatorSpec extends UnitSpec with MockitoSugar {
     }
 
     "fail validation when context has been changed" in new Setup {
-      lazy val context: String = "money"
-      lazy val oldContext: String = "old-money"
+      lazy val context: String = "individuals/money"
+      lazy val oldContext: String = "individuals/old-money"
       lazy val serviceName: String = "money-service"
       val apiDefinition: APIDefinition = testAPIDefinition(serviceName, context)
       val oldAPIDefinition: APIDefinition = testAPIDefinition(serviceName, oldContext)
@@ -197,6 +199,37 @@ class ApiContextValidatorSpec extends UnitSpec with MockitoSugar {
         (s"Field 'context' should not start with '/' $errorContext",
           s"Field 'context' should not end with '/' $errorContext",
           s"Field 'context' should not have empty path segments $errorContext")
+    }
+
+    permittedTopLevelContexts.foreach(topLevelContext =>
+      s"pass validation with a top level context of $topLevelContext" in new Setup {
+        lazy val context: String = s"$topLevelContext/foo"
+        lazy val serviceName: String = "money-service"
+        lazy val apiDefinition: APIDefinition = testAPIDefinition(serviceName, context)
+
+        when(mockAPIDefinitionService.fetchByContext(context)).thenReturn(successful(None))
+        when(mockAPIDefinitionRepository.fetchByServiceName(serviceName)).thenReturn(successful(None))
+
+        val result: validatorUnderTest.HMRCValidated[String] = await(validatorUnderTest.validate(errorContext, apiDefinition)(context))
+
+        result.isValid should be (true)
+        val Valid(validatedContext) = result
+        validatedContext should be (context)
+      }
+    )
+
+    "fail validation when new API does not use correct top level context" in new Setup {
+      lazy val context: String = "foo/bar"
+      lazy val serviceName: String = "money-service"
+      lazy val apiDefinition: APIDefinition = testAPIDefinition(serviceName, context)
+
+      when(mockAPIDefinitionService.fetchByContext(context)).thenReturn(successful(None))
+      when(mockAPIDefinitionRepository.fetchByServiceName(serviceName)).thenReturn(successful(None))
+
+      val result: validatorUnderTest.HMRCValidated[String] = await(validatorUnderTest.validate(errorContext, apiDefinition)(context))
+
+      val Invalid(errors) = result
+      errors.size should be (1)
     }
   }
 }

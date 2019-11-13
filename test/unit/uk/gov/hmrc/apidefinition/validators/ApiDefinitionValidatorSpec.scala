@@ -71,7 +71,7 @@ class ApiDefinitionValidatorSpec extends UnitSpec with MockitoSugar {
   "ApiDefinitionValidator" should {
 
     "fail validation if an empty serviceBaseUrl is provided" in new Setup {
-      lazy val apiDefinition: APIDefinition = APIDefinition("calendar", "", "Calendar API", "My Calendar API", "calendar",
+      lazy val apiDefinition: APIDefinition = APIDefinition("calendar", "", "Calendar API", "My Calendar API", "individuals/calendar",
         Seq(APIVersion("1.0", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Seq(Endpoint("/today", "Get Today's Date",
           HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)))), Some(false))
 
@@ -80,7 +80,7 @@ class ApiDefinitionValidatorSpec extends UnitSpec with MockitoSugar {
     }
 
     "fail validation if an empty serviceName is provided" in new Setup {
-      lazy val apiDefinition: APIDefinition = APIDefinition("", "http://calendar", "Calendar API", "My Calendar API", "calendar",
+      lazy val apiDefinition: APIDefinition = APIDefinition("", "http://calendar", "Calendar API", "My Calendar API", "individuals/calendar",
         Seq(APIVersion("1.0", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Seq(Endpoint("/today", "Get Today's Date",
           HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)))), Some(false))
 
@@ -93,7 +93,7 @@ class ApiDefinitionValidatorSpec extends UnitSpec with MockitoSugar {
         "http://calendar",
         "Calendar API",
         "My Calendar API",
-        "calendar",
+        "individuals/calendar",
         Seq(
           APIVersion("1.0", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))),
           APIVersion("1.1", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))),
@@ -105,7 +105,7 @@ class ApiDefinitionValidatorSpec extends UnitSpec with MockitoSugar {
     }
 
     "fail validation if an empty name is provided" in new Setup {
-      lazy val apiDefinition: APIDefinition = APIDefinition("calendar", "http://calendar", "", "My Calendar API", "calendar",
+      lazy val apiDefinition: APIDefinition = APIDefinition("calendar", "http://calendar", "", "My Calendar API", "individuals/calendar",
         Seq(APIVersion("1.0", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Seq(Endpoint("/today", "Get Today's Date",
           HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)))), Some(false))
 
@@ -123,7 +123,7 @@ class ApiDefinitionValidatorSpec extends UnitSpec with MockitoSugar {
     }
 
     "fail validation if an empty description is provided" in new Setup {
-      lazy val apiDefinition: APIDefinition = APIDefinition("calendar", "http://calendar", "Calendar API", "", "calendar",
+      lazy val apiDefinition: APIDefinition = APIDefinition("calendar", "http://calendar", "Calendar API", "", "individuals/calendar",
         Seq(APIVersion("1.0", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Seq(Endpoint("/today", "Get Today's Date",
           HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)))), Some(false))
 
@@ -131,7 +131,7 @@ class ApiDefinitionValidatorSpec extends UnitSpec with MockitoSugar {
     }
 
     "fail validation when no APIVersion is provided" in new Setup {
-      lazy val apiDefinition: APIDefinition = APIDefinition("calendar", "http://calendar", "Calendar API", "My Calendar API", "calendar", Nil, None)
+      lazy val apiDefinition: APIDefinition = APIDefinition("calendar", "http://calendar", "Calendar API", "My Calendar API", "individuals/calendar", Nil, None)
       assertValidationFailure(apiDefinition, List("Field 'versions' must not be empty for API 'Calendar API'"))
     }
 
@@ -142,12 +142,13 @@ class ApiDefinitionValidatorSpec extends UnitSpec with MockitoSugar {
           APIVersion("", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)))
         )
 
-      lazy val apiDefinition: APIDefinition = APIDefinition("calendar", "http://calendar", "Calendar API", "My Calendar API", "calendar", versions, None)
+      lazy val apiDefinition: APIDefinition =
+        APIDefinition("calendar", "http://calendar", "Calendar API", "My Calendar API", "individuals/calendar", versions, None)
       assertValidationFailure(apiDefinition, List("Field 'versions.version' is required for API 'Calendar API'"))
     }
 
     "fail validation when no Endpoint is provided" in new Setup {
-      lazy val apiDefinition: APIDefinition = APIDefinition("calendar", "http://calendar", "Calendar API", "My Calendar API", "calendar",
+      lazy val apiDefinition: APIDefinition = APIDefinition("calendar", "http://calendar", "Calendar API", "My Calendar API", "individuals/calendar",
         Seq(APIVersion("1.0", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Nil)), Some(false))
       assertValidationFailure(apiDefinition, List("Field 'versions.endpoints' must not be empty for API 'Calendar API' version '1.0'"))
     }
@@ -170,22 +171,22 @@ class ApiDefinitionValidatorSpec extends UnitSpec with MockitoSugar {
       serviceBaseUrl = "http://www.money.com",
       name = "Money API",
       description = "API for checking payments",
-      context = "money",
+      context = "individuals/money",
       versions = Seq(moneyApiVersion),
       requiresTrust = Some(false))
 
     "fail validation when the context starts with '/' " in new Setup {
-      lazy val apiDefinition: APIDefinition = moneyApiDefinition.copy(context = "/hi")
+      lazy val apiDefinition: APIDefinition = moneyApiDefinition.copy(context = "/individuals/hi")
       assertValidationFailure(apiDefinition, List("Field 'context' should not start with '/' for API 'Money API'"))
     }
 
     "fail validation when the context ends with '/' " in new Setup {
-      lazy val apiDefinition: APIDefinition = moneyApiDefinition.copy(context = "hi/")
+      lazy val apiDefinition: APIDefinition = moneyApiDefinition.copy(context = "individuals/hi/")
       assertValidationFailure(apiDefinition, List("Field 'context' should not end with '/' for API 'Money API'"))
     }
 
     "fail validation when the context contains '//' " in new Setup {
-      lazy val apiDefinition: APIDefinition = moneyApiDefinition.copy(context = "hi//aloha")
+      lazy val apiDefinition: APIDefinition = moneyApiDefinition.copy(context = "individuals/hi//aloha")
       assertValidationFailure(apiDefinition, List("Field 'context' should not have empty path segments for API 'Money API'"))
     }
 
@@ -196,7 +197,7 @@ class ApiDefinitionValidatorSpec extends UnitSpec with MockitoSugar {
 
     ('{' :: '}' :: specialChars).foreach { char: Char =>
       s"fail validation if the API contains '$char' in the context" in new Setup {
-        lazy val ctx = s"my-context_$char"
+        lazy val ctx = s"individuals/my-context_$char"
         lazy val apiDefinition: APIDefinition = moneyApiDefinition.copy(context = ctx)
         assertValidationFailure(apiDefinition, List("Field 'context' should match regular expression '^[a-zA-Z0-9_\\-\\/]+$' for API 'Money API'"))
       }
@@ -205,11 +206,11 @@ class ApiDefinitionValidatorSpec extends UnitSpec with MockitoSugar {
     "fail validation when context has been changed" in new Setup {
       when(mockApiDefinitionRepository.fetchByServiceName("money")).thenReturn(successful(Some(moneyApiDefinition)))
 
-      assertValidationFailure(moneyApiDefinition.copy(context = "aNewContext"), List("Field 'context' must not be changed for API 'Money API'"))
+      assertValidationFailure(moneyApiDefinition.copy(context = "individuals/aNewContext"), List("Field 'context' must not be changed for API 'Money API'"))
     }
 
     "fail validation when context already exist for another API" in new Setup {
-      when(mockAPIDefinitionService.fetchByContext("money"))
+      when(mockAPIDefinitionService.fetchByContext("individuals/money"))
         .thenReturn(successful(Some(moneyApiDefinition.copy(serviceName = "anotherService"))))
 
       assertValidationFailure(moneyApiDefinition, List("Field 'context' must be unique for API 'Money API'"))
@@ -322,7 +323,7 @@ class ApiDefinitionValidatorSpec extends UnitSpec with MockitoSugar {
     }
 
     "fail validation when a scope is provided but auth type is 'application'" in new Setup {
-      lazy val apiDefinition: APIDefinition = APIDefinition("calendar", "http://calendar", "Calendar API", "My Calendar API", "calendar",
+      lazy val apiDefinition: APIDefinition = APIDefinition("calendar", "http://calendar", "Calendar API", "My Calendar API", "individuals/calendar",
         Seq(APIVersion("1.0", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Seq(Endpoint("/uriPattern", "endpointName", HttpMethod.GET,
           AuthType.APPLICATION, ResourceThrottlingTier.UNLIMITED, Some("scope"))))), None)
       assertValidationFailure(apiDefinition, List("Field 'endpoints.scope' is not allowed for API 'Calendar API' version '1.0' endpoint 'endpointName'"))
@@ -332,7 +333,7 @@ class ApiDefinitionValidatorSpec extends UnitSpec with MockitoSugar {
       lazy val apiDefinition: APIDefinition = moneyApiDefinition.copy(
         versions = Seq(moneyApiVersion.copy(endpoints = Seq(moneyEndpoint.copy(uriPattern = ""))))
       )
-      when(mockAPIDefinitionService.fetchByContext("money"))
+      when(mockAPIDefinitionService.fetchByContext("individuals/money"))
         .thenReturn(successful(Some(moneyApiDefinition.copy(serviceName = "anotherService"))))
       when(mockAPIDefinitionService.fetchByName("Money API"))
         .thenReturn(successful(Some(moneyApiDefinition.copy(serviceName = "anotherService"))))
