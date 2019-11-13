@@ -42,7 +42,7 @@ class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
 
     def publish(): Future[Unit] = {
       (for {
-        _ <- wso2Publisher.publish(apiDefinition)
+        _ <- if (playApplicationContext.bypassWso2) successful(()) else wso2Publisher.publish(apiDefinition)
         _ <- awsApiPublisher.publish(apiDefinition)
       } yield ()) recoverWith {
         case e: PublishingException =>
@@ -51,22 +51,21 @@ class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
       }
     }
 
-    checkAPIDefinitionForStatusChanges(apiDefinition)
-
-    publish().flatMap { _ =>
-      val definitionWithPublishTime = apiDefinition.copy(lastPublishedAt = Some(DateTime.now(DateTimeZone.UTC)))
-
-      apiDefinitionRepository.save(definitionWithPublishTime)
-        .flatMap(_ => Future.successful(()))
-        .recoverWith {
-          case e: Throwable =>
-            Logger.error(s"""API Definition for "${apiDefinition.name}" was published but not saved due to error: ${e.getMessage}""", e)
-            failed(e)
-        }
+    def recoverSave: PartialFunction[Throwable, Future[Nothing]] = {
+      case e: Throwable =>
+        Logger.error(s"""API Definition for "${apiDefinition.name}" was published but not saved due to error: ${e.getMessage}""", e)
+        failed(e)
     }
+
+    for {
+      _ <- checkAPIDefinitionForStatusChanges(apiDefinition)
+      _ <- publish()
+      definitionWithPublishTime = apiDefinition.copy(lastPublishedAt = Some(DateTime.now(DateTimeZone.UTC)))
+      _ <- apiDefinitionRepository.save(definitionWithPublishTime) recoverWith recoverSave
+    } yield ()
   }
 
-  private def checkAPIDefinitionForStatusChanges(apiDefinition: APIDefinition)(implicit hc: HeaderCarrier): Unit = {
+  private def checkAPIDefinitionForStatusChanges(apiDefinition: APIDefinition)(implicit hc: HeaderCarrier): Future[Unit] = {
     def findStatusDifferences(existingAPIVersions: Seq[APIVersion], newAPIVersions: Seq[APIVersion]): Seq[(String, APIStatus, APIStatus)] =
         (existingAPIVersions ++ newAPIVersions)
           .groupBy(_.version)
@@ -175,7 +174,7 @@ class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
         case true => failed(new UnauthorizedException("API has subscribers"))
         case false =>
           for {
-            _ <- wso2Publisher.delete(definition)
+            _ <- if (playApplicationContext.bypassWso2) successful(()) else wso2Publisher.delete(definition)
             _ <- awsApiPublisher.delete(definition)
             _ <- apiDefinitionRepository.delete(definition.serviceName)
           } yield ()

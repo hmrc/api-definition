@@ -154,6 +154,20 @@ class APIDefinitionServiceSpec extends UnitSpec
       verifyZeroInteractions(mockNotificationService)
     }
 
+    "not call WSO2 when configured to bypass it" in new Setup {
+      when(mockAPIDefinitionRepository.fetchByContext(apiDefinition.context)).thenReturn(Future.successful(Some(apiDefinition)))
+      when(mockAwsApiPublisher.publish(apiDefinition)).thenReturn(successful(()))
+      when(mockAPIDefinitionRepository.save(apiDefinitionWithSavingTime)).thenReturn(successful(apiDefinitionWithSavingTime))
+      when(mockAppContext.bypassWso2).thenReturn(true)
+
+      await(underTest.createOrUpdate(apiDefinition))
+
+      verify(mockAwsApiPublisher, times(1)).publish(apiDefinition)
+      verify(mockAPIDefinitionRepository, times(1)).save(apiDefinitionWithSavingTime)
+      verifyZeroInteractions(mockNotificationService)
+      verifyZeroInteractions(mockWSO2APIPublisher)
+    }
+
     "propagate unexpected errors that happen when trying to publish an API to WSO2" in new Setup {
       when(mockAPIDefinitionRepository.fetchByContext(apiDefinition.context)).thenReturn(Future.successful(Some(apiDefinition)))
       when(mockWSO2APIPublisher.publish(apiDefinition)).thenReturn(failed(new RuntimeException("Something went wrong")))
@@ -171,6 +185,20 @@ class APIDefinitionServiceSpec extends UnitSpec
       when(mockAPIDefinitionRepository.fetchByContext(apiDefinition.context)).thenReturn(Future.successful(Some(apiDefinition)))
       when(mockWSO2APIPublisher.publish(apiDefinition)).thenReturn(successful(()))
       when(mockAwsApiPublisher.publish(apiDefinition)).thenReturn(failed(new RuntimeException("Something went wrong")))
+
+      val thrown = intercept[RuntimeException] {
+        await(underTest.createOrUpdate(apiDefinition))
+      }
+
+      thrown.getMessage shouldBe "Something went wrong"
+      verifyZeroInteractions(mockNotificationService)
+    }
+
+    "propagate unexpected errors that happen when trying to save the definition" in new Setup {
+      when(mockAPIDefinitionRepository.fetchByContext(apiDefinition.context)).thenReturn(Future.successful(Some(apiDefinition)))
+      when(mockWSO2APIPublisher.publish(apiDefinition)).thenReturn(successful(()))
+      when(mockAwsApiPublisher.publish(apiDefinition)).thenReturn(successful(()))
+      when(mockAPIDefinitionRepository.save(apiDefinitionWithSavingTime)).thenReturn(failed(new RuntimeException("Something went wrong")))
 
       val thrown = intercept[RuntimeException] {
         await(underTest.createOrUpdate(apiDefinition))
@@ -661,6 +689,17 @@ class APIDefinitionServiceSpec extends UnitSpec
       verify(mockWSO2APIPublisher).delete(apiDefinition)
       verify(mockAwsApiPublisher).delete(apiDefinition)
       verify(mockAPIDefinitionRepository).delete(apiDefinition.serviceName)
+    }
+
+    "not call WSO2 when configured to bypass it" in new Setup {
+      when(mockThirdPartyApplicationConnector.fetchSubscribers(context, "1.0")).thenReturn(successful(Seq()))
+      when(mockAppContext.bypassWso2).thenReturn(true)
+
+      await(underTest.delete(apiDefinition.serviceName))
+
+      verify(mockAwsApiPublisher).delete(apiDefinition)
+      verify(mockAPIDefinitionRepository).delete(apiDefinition.serviceName)
+      verifyZeroInteractions(mockWSO2APIPublisher)
     }
 
     "fail when one API has a subscriber" in new Setup {
