@@ -113,15 +113,6 @@ class ApiDefinitionValidatorSpec extends UnitSpec with MockitoSugar {
       verify(mockAPIDefinitionService, never()).fetchByName(any[String])
     }
 
-    "fail validation if an empty context is provided" in new Setup {
-      lazy val apiDefinition: APIDefinition = APIDefinition("calendar", "http://calendar", "Calendar API", "My Calendar API", "",
-        Seq(APIVersion("1.0", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Seq(Endpoint("/today", "Get Today's Date",
-          HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)))), Some(false))
-
-      assertValidationFailure(apiDefinition, List("Field 'context' should not be empty for API 'Calendar API'"))
-      verify(mockAPIDefinitionService, never()).fetchByContext(any[String])
-    }
-
     "fail validation if an empty description is provided" in new Setup {
       lazy val apiDefinition: APIDefinition = APIDefinition("calendar", "http://calendar", "Calendar API", "", "individuals/calendar",
         Seq(APIVersion("1.0", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Seq(Endpoint("/today", "Get Today's Date",
@@ -175,46 +166,10 @@ class ApiDefinitionValidatorSpec extends UnitSpec with MockitoSugar {
       versions = Seq(moneyApiVersion),
       requiresTrust = Some(false))
 
-    "fail validation when the context starts with '/' " in new Setup {
-      lazy val apiDefinition: APIDefinition = moneyApiDefinition.copy(context = "/individuals/hi")
-      assertValidationFailure(apiDefinition, List("Field 'context' should not start with '/' for API 'Money API'"))
-    }
-
-    "fail validation when the context ends with '/' " in new Setup {
-      lazy val apiDefinition: APIDefinition = moneyApiDefinition.copy(context = "individuals/hi/")
-      assertValidationFailure(apiDefinition, List("Field 'context' should not end with '/' for API 'Money API'"))
-    }
-
-    "fail validation when the context contains '//' " in new Setup {
-      lazy val apiDefinition: APIDefinition = moneyApiDefinition.copy(context = "individuals/hi//aloha")
-      assertValidationFailure(apiDefinition, List("Field 'context' should not have empty path segments for API 'Money API'"))
-    }
-
     val specialChars = List(
       ' ', '@', '%', '£', '*', '\\', '|', '$', '~', '^', ';', '=', '\'',
       '<', '>', '"', '?', '!', ',', '.', ':', '&', '[', ']', '(' ,')'
     )
-
-    ('{' :: '}' :: specialChars).foreach { char: Char =>
-      s"fail validation if the API contains '$char' in the context" in new Setup {
-        lazy val ctx = s"individuals/my-context_$char"
-        lazy val apiDefinition: APIDefinition = moneyApiDefinition.copy(context = ctx)
-        assertValidationFailure(apiDefinition, List("Field 'context' should match regular expression '^[a-zA-Z0-9_\\-\\/]+$' for API 'Money API'"))
-      }
-    }
-
-    "fail validation when context has been changed" in new Setup {
-      when(mockApiDefinitionRepository.fetchByServiceName("money")).thenReturn(successful(Some(moneyApiDefinition)))
-
-      assertValidationFailure(moneyApiDefinition.copy(context = "individuals/aNewContext"), List("Field 'context' must not be changed for API 'Money API'"))
-    }
-
-    "fail validation when context already exist for another API" in new Setup {
-      when(mockAPIDefinitionService.fetchByContext("individuals/money"))
-        .thenReturn(successful(Some(moneyApiDefinition.copy(serviceName = "anotherService"))))
-
-      assertValidationFailure(moneyApiDefinition, List("Field 'context' must be unique for API 'Money API'"))
-    }
 
     "fail validation when name already exist for another API" in new Setup {
       when(mockAPIDefinitionService.fetchByName("Money API"))
