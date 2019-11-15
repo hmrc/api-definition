@@ -17,7 +17,7 @@
 package unit.uk.gov.hmrc.apidefinition.validators
 
 import cats.data.Validated.{Invalid, Valid}
-import org.mockito.Mockito.when
+import org.mockito.Mockito.{verifyZeroInteractions, when}
 import org.scalatest.mockito.MockitoSugar
 import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
@@ -47,6 +47,24 @@ class ApiContextValidatorSpec extends UnitSpec with MockitoSugar {
               Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)))),
         requiresTrust = Some(false))
 
+    def fetchByContextWillReturn(context: String, apiDefinitionToReturn: Option[APIDefinition]) =
+      when(mockAPIDefinitionService.fetchByContext(context)).thenReturn(successful(apiDefinitionToReturn))
+
+    def fetchByServiceNameWillReturn(serviceName: String, apiDefinitionToReturn: Option[APIDefinition]) =
+      when(mockAPIDefinitionRepository.fetchByServiceName(serviceName)).thenReturn(successful(apiDefinitionToReturn))
+
+    def verifyValidationPassed(result: validatorUnderTest.HMRCValidated[String], expectedContext: String) = {
+      result.isValid should be (true)
+      val Valid(validatedContext) = result
+      validatedContext should be (expectedContext)
+    }
+
+    def verifyValidationFailed(result: validatorUnderTest.HMRCValidated[String], expectedErrors: Seq[String]) = {
+      val Invalid(errors) = result
+      errors.size should be (expectedErrors.size)
+      errors.toList should contain allElementsOf expectedErrors
+    }
+
     val mockAPIDefinitionService: APIDefinitionService = mock[APIDefinitionService]
     val mockAPIDefinitionRepository: APIDefinitionRepository = mock[APIDefinitionRepository]
 
@@ -56,26 +74,17 @@ class ApiContextValidatorSpec extends UnitSpec with MockitoSugar {
   "ApiContextValidator" should {
     lazy val errorContext: String = "for API"
 
-    val prohibitedChars = List(
-      ' ', '@', '%', '£', '*', '\\', '|', '$', '~', '^', ';', '=', '\'',
-      '<', '>', '"', '?', '!', ',', '.', ':', '&', '[', ']', '(' ,')'
-    )
-
-    val permittedTopLevelContexts = List("agents", "customs", "individuals", "organisations")
-
     "pass validation for new API with legitimate context" in new Setup {
       lazy val context: String = "individuals/money"
       lazy val serviceName: String = "money-service"
       lazy val apiDefinition: APIDefinition = testAPIDefinition(serviceName, context)
 
-      when(mockAPIDefinitionService.fetchByContext(context)).thenReturn(successful(None))
-      when(mockAPIDefinitionRepository.fetchByServiceName(serviceName)).thenReturn(successful(None))
+      fetchByContextWillReturn(context, None)
+      fetchByServiceNameWillReturn(serviceName, None)
 
       val result: validatorUnderTest.HMRCValidated[String] = await(validatorUnderTest.validate(errorContext, apiDefinition)(context))
 
-      result.isValid should be (true)
-      val Valid(validatedContext) = result
-      validatedContext should be (context)
+      verifyValidationPassed(result, context)
     }
 
     "pass validation for existing API with legitimate context" in new Setup {
@@ -83,14 +92,12 @@ class ApiContextValidatorSpec extends UnitSpec with MockitoSugar {
       lazy val serviceName: String = "money-service"
       lazy val apiDefinition: APIDefinition = testAPIDefinition(serviceName, context)
 
-      when(mockAPIDefinitionService.fetchByContext(context)).thenReturn(successful(Some(apiDefinition)))
-      when(mockAPIDefinitionRepository.fetchByServiceName(serviceName)).thenReturn(successful(Some(apiDefinition)))
+      fetchByContextWillReturn(context, Some(apiDefinition))
+      fetchByServiceNameWillReturn(serviceName, Some(apiDefinition))
 
       val result: validatorUnderTest.HMRCValidated[String] = await(validatorUnderTest.validate(errorContext, apiDefinition)(context))
 
-      result.isValid should be (true)
-      val Valid(validatedContext) = result
-      validatedContext should be (context)
+      verifyValidationPassed(result, context)
     }
 
     "fail if context is empty" in new Setup {
@@ -99,11 +106,8 @@ class ApiContextValidatorSpec extends UnitSpec with MockitoSugar {
 
       val result: validatorUnderTest.HMRCValidated[String] = await(validatorUnderTest.validate(errorContext, apiDefinition)(context))
 
-      result.isInvalid should be (true)
-
-      val Invalid(errors) = result
-      errors.size should be (1)
-      errors.head should be (s"Field 'context' should not be empty $errorContext")
+      verifyZeroInteractions(mockAPIDefinitionService, mockAPIDefinitionRepository)
+      verifyValidationFailed(result, Seq(s"Field 'context' should not be empty $errorContext"))
     }
 
     "fail validation when the context starts with '/' " in new Setup {
@@ -112,9 +116,8 @@ class ApiContextValidatorSpec extends UnitSpec with MockitoSugar {
 
       val result: validatorUnderTest.HMRCValidated[String] = await(validatorUnderTest.validate(errorContext, apiDefinition)(context))
 
-      val Invalid(errors) = result
-      errors.size should be (1)
-      errors.head should be (s"Field 'context' should not start with '/' $errorContext")
+      verifyZeroInteractions(mockAPIDefinitionService, mockAPIDefinitionRepository)
+      verifyValidationFailed(result, Seq(s"Field 'context' should not start with '/' $errorContext"))
     }
 
     "fail validation when the context ends with '/' " in new Setup {
@@ -123,9 +126,8 @@ class ApiContextValidatorSpec extends UnitSpec with MockitoSugar {
 
       val result: validatorUnderTest.HMRCValidated[String] = await(validatorUnderTest.validate(errorContext, apiDefinition)(context))
 
-      val Invalid(errors) = result
-      errors.size should be (1)
-      errors.head should be (s"Field 'context' should not end with '/' $errorContext")
+      verifyZeroInteractions(mockAPIDefinitionService, mockAPIDefinitionRepository)
+      verifyValidationFailed(result, Seq(s"Field 'context' should not end with '/' $errorContext"))
     }
 
     "fail validation when the context contains '//' " in new Setup {
@@ -134,11 +136,14 @@ class ApiContextValidatorSpec extends UnitSpec with MockitoSugar {
 
       val result: validatorUnderTest.HMRCValidated[String] = await(validatorUnderTest.validate(errorContext, apiDefinition)(context))
 
-      val Invalid(errors) = result
-      errors.size should be (1)
-      errors.head should be (s"Field 'context' should not have empty path segments $errorContext")
+      verifyZeroInteractions(mockAPIDefinitionService, mockAPIDefinitionRepository)
+      verifyValidationFailed(result, Seq(s"Field 'context' should not have empty path segments $errorContext"))
     }
 
+    val prohibitedChars = List(
+      ' ', '@', '%', '£', '*', '\\', '|', '$', '~', '^', ';', '=', '\'',
+      '<', '>', '"', '?', '!', ',', '.', ':', '&', '[', ']', '(' ,')'
+    )
     ('{' :: '}' :: prohibitedChars).foreach { char: Char =>
       s"fail validation if the API contains '$char' in the context" in new Setup {
         lazy val badContext = s"my-context_$char"
@@ -146,9 +151,8 @@ class ApiContextValidatorSpec extends UnitSpec with MockitoSugar {
 
         val result: validatorUnderTest.HMRCValidated[String] = await(validatorUnderTest.validate(errorContext, apiDefinition)(badContext))
 
-        val Invalid(errors) = result
-        errors.size should be (1)
-        errors.head should be (s"Field 'context' should match regular expression '^[a-zA-Z0-9_\\-\\/]+$$' $errorContext")
+        verifyZeroInteractions(mockAPIDefinitionService, mockAPIDefinitionRepository)
+        verifyValidationFailed(result, Seq(s"Field 'context' should match regular expression '^[a-zA-Z0-9_\\-\\/]+$$' $errorContext"))
       }
     }
 
@@ -159,14 +163,12 @@ class ApiContextValidatorSpec extends UnitSpec with MockitoSugar {
       val apiDefinition: APIDefinition = testAPIDefinition(serviceName, context)
       val oldAPIDefinition: APIDefinition = testAPIDefinition(serviceName, oldContext)
 
-      when(mockAPIDefinitionService.fetchByContext(context)).thenReturn(successful(None))
-      when(mockAPIDefinitionRepository.fetchByServiceName(serviceName)).thenReturn(successful(Some(oldAPIDefinition)))
+      fetchByContextWillReturn(context, None)
+      fetchByServiceNameWillReturn(serviceName, Some(oldAPIDefinition))
 
       val result: validatorUnderTest.HMRCValidated[String] = await(validatorUnderTest.validate(errorContext, apiDefinition)(context))
 
-      val Invalid(errors) = result
-      errors.size should be (1)
-      errors.head should be (s"Field 'context' must not be changed $errorContext")
+      verifyValidationFailed(result, Seq(s"Field 'context' must not be changed $errorContext"))
     }
 
     "fail validation when context already exist for another API" in new Setup {
@@ -175,16 +177,14 @@ class ApiContextValidatorSpec extends UnitSpec with MockitoSugar {
       lazy val otherServiceName: String = "other-service"
 
       val apiDefinition: APIDefinition = testAPIDefinition(serviceName, context)
-      val otherAPIDefinition: APIDefinition =testAPIDefinition(otherServiceName, context)
+      val otherAPIDefinition: APIDefinition = testAPIDefinition(otherServiceName, context)
 
-      when(mockAPIDefinitionService.fetchByContext(context)).thenReturn(successful(Some(otherAPIDefinition)))
-      when(mockAPIDefinitionRepository.fetchByServiceName(serviceName)).thenReturn(successful(None))
+      fetchByContextWillReturn(context, Some(otherAPIDefinition))
+      fetchByServiceNameWillReturn(serviceName, None)
 
       val result: validatorUnderTest.HMRCValidated[String] = await(validatorUnderTest.validate(errorContext, apiDefinition)(context))
 
-      val Invalid(errors) = result
-      errors.size should be (1)
-      errors.head should be (s"Field 'context' must be unique $errorContext")
+      verifyValidationFailed(result, Seq(s"Field 'context' must be unique $errorContext"))
     }
 
     "accumulate multiple validation errors together" in new Setup {
@@ -193,28 +193,29 @@ class ApiContextValidatorSpec extends UnitSpec with MockitoSugar {
 
       val result: validatorUnderTest.HMRCValidated[String] = await(validatorUnderTest.validate(errorContext, apiDefinition)(context))
 
-      val Invalid(errors) = result
-      errors.size should be (3)
-      errors.toList should contain allOf
-        (s"Field 'context' should not start with '/' $errorContext",
+      verifyZeroInteractions(mockAPIDefinitionService, mockAPIDefinitionRepository)
+
+      verifyValidationFailed(
+        result,
+        Seq(
+          s"Field 'context' should not start with '/' $errorContext",
           s"Field 'context' should not end with '/' $errorContext",
-          s"Field 'context' should not have empty path segments $errorContext")
+          s"Field 'context' should not have empty path segments $errorContext"))
     }
 
+    val permittedTopLevelContexts = List("agents", "customs", "mobile", "individuals", "organisations", "test")
     permittedTopLevelContexts.foreach(topLevelContext =>
       s"pass validation with a top level context of $topLevelContext" in new Setup {
         lazy val context: String = s"$topLevelContext/foo"
         lazy val serviceName: String = "money-service"
         lazy val apiDefinition: APIDefinition = testAPIDefinition(serviceName, context)
 
-        when(mockAPIDefinitionService.fetchByContext(context)).thenReturn(successful(None))
-        when(mockAPIDefinitionRepository.fetchByServiceName(serviceName)).thenReturn(successful(None))
+        fetchByContextWillReturn(context, None)
+        fetchByServiceNameWillReturn(serviceName, None)
 
         val result: validatorUnderTest.HMRCValidated[String] = await(validatorUnderTest.validate(errorContext, apiDefinition)(context))
 
-        result.isValid should be (true)
-        val Valid(validatedContext) = result
-        validatedContext should be (context)
+        verifyValidationPassed(result, context)
       }
     )
 
@@ -223,13 +224,14 @@ class ApiContextValidatorSpec extends UnitSpec with MockitoSugar {
       lazy val serviceName: String = "money-service"
       lazy val apiDefinition: APIDefinition = testAPIDefinition(serviceName, context)
 
-      when(mockAPIDefinitionService.fetchByContext(context)).thenReturn(successful(None))
-      when(mockAPIDefinitionRepository.fetchByServiceName(serviceName)).thenReturn(successful(None))
+      val formattedTopLevelContexts: String = permittedTopLevelContexts.sorted.mkString("'","', '", "'")
+
+      fetchByContextWillReturn(context, None)
+      fetchByServiceNameWillReturn(serviceName, None)
 
       val result: validatorUnderTest.HMRCValidated[String] = await(validatorUnderTest.validate(errorContext, apiDefinition)(context))
 
-      val Invalid(errors) = result
-      errors.size should be (1)
+      verifyValidationFailed(result, Seq(s"Field 'context' must start with one of $formattedTopLevelContexts $errorContext"))
     }
   }
 }
