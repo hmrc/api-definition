@@ -116,7 +116,7 @@ class APIDefinitionControllerSpec extends UnitSpec
           "http://calendar",
           "Calendar API",
           "My Calendar API",
-          "calendar",
+          "individuals/calendar",
           versions =
             Seq(
               APIVersion(
@@ -146,7 +146,7 @@ class APIDefinitionControllerSpec extends UnitSpec
           "http://calendar",
           "Calendar API",
           "My Calendar API",
-          "calendar",
+          "individuals/calendar",
           versions =
             Seq(
               APIVersion(
@@ -195,7 +195,7 @@ class APIDefinitionControllerSpec extends UnitSpec
           |   "name":"",
           |   "description":"My Calendar API",
           |   "serviceBaseUrl":"http://calendar",
-          |   "context":"calendar",
+          |   "context":"individuals/calendar",
           |   "versions":[
           |      {
           |         "version":"1.0",
@@ -231,7 +231,7 @@ class APIDefinitionControllerSpec extends UnitSpec
           |   "name":"Calendar API",
           |   "description":"My Calendar API",
           |   "serviceBaseUrl":"http://calendar",
-          |   "context":"calendar",
+          |   "context":"individuals/calendar",
           |   "versions":[
           |      {
           |         "version":"1.0",
@@ -280,7 +280,7 @@ class APIDefinitionControllerSpec extends UnitSpec
           |  "name": "Calendar API",
           |  "description": "My Calendar API",
           |  "serviceBaseUrl": "http://calendar",
-          |  "context": "calendar",
+          |  "context": "individuals/calendar",
           |  "requiresTrust": true,
           |  "versions": [
           |  {
@@ -303,7 +303,7 @@ class APIDefinitionControllerSpec extends UnitSpec
           |  ]
           |}""".stripMargin.replaceAll("\n", " ")
 
-      val apiDefinition = APIDefinition("calendar", "http://calendar", "Calendar API", "My Calendar API", "calendar",
+      val apiDefinition = APIDefinition("calendar", "http://calendar", "Calendar API", "My Calendar API", "individuals/calendar",
         versions = Seq(APIVersion("1.0", APIStatus.STABLE, Some(PublicAPIAccess()),
           Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
           Some(true))), requiresTrust = Some(true), None, None)
@@ -324,7 +324,7 @@ class APIDefinitionControllerSpec extends UnitSpec
           |  "name": "Calendar API",
           |  "description": "My Calendar API",
           |  "serviceBaseUrl": "http://calendar",
-          |  "context": "calendar",
+          |  "context": "individuals/calendar",
           |  "requiresTrust": true,
           |  "versions": [
           |  {
@@ -344,7 +344,7 @@ class APIDefinitionControllerSpec extends UnitSpec
           |  ]
           |}""".stripMargin.replaceAll("\n", " ")
 
-      val apiDefinition = APIDefinition("calendar", "http://calendar", "Calendar API", "My Calendar API", "calendar",
+      val apiDefinition = APIDefinition("calendar", "http://calendar", "Calendar API", "My Calendar API", "individuals/calendar",
         versions = Seq(APIVersion("1.0", APIStatus.STABLE, None,
           Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
           Some(true))), requiresTrust = Some(true), None, None)
@@ -365,7 +365,7 @@ class APIDefinitionControllerSpec extends UnitSpec
           |  "name": "Calendar API",
           |  "description": "My Calendar API",
           |  "serviceBaseUrl": "http://calendar",
-          |  "context": "calendar",
+          |  "context": "individuals/calendar",
           |  "requiresTrust": true,
           |  "versions": [
           |  {
@@ -389,7 +389,7 @@ class APIDefinitionControllerSpec extends UnitSpec
           |  ]
           |}""".stripMargin.replaceAll("\n", " ")
 
-      val apiDefinition = APIDefinition("calendar", "http://calendar", "Calendar API", "My Calendar API", "calendar",
+      val apiDefinition = APIDefinition("calendar", "http://calendar", "Calendar API", "My Calendar API", "individuals/calendar",
         versions = Seq(APIVersion("1.0", APIStatus.STABLE, Some(PrivateAPIAccess(Seq("app-id-1", "app-id-2"))),
           Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
           Some(true))), requiresTrust = Some(true), None, None)
@@ -989,7 +989,7 @@ class APIDefinitionControllerSpec extends UnitSpec
       |  "name": "Calendar API",
       |  "description": "My Calendar API",
       |  "serviceBaseUrl": "http://calendar",
-      |  "context": "calendar",
+      |  "context": "individuals/calendar",
       |  "requiresTrust": true,
       |  "versions": [
       |  {
@@ -1013,7 +1013,7 @@ class APIDefinitionControllerSpec extends UnitSpec
       |  "name": "Calendar API",
       |  "description": "My Calendar API",
       |  "serviceBaseUrl": "http://calendar",
-      |  "context": "calendar",
+      |  "context": "individuals/calendar",
       |  "requiresTrust": true,
       |  "versions": [
       |  {

@@ -32,6 +32,7 @@ class ApiContextValidator @Inject()(apiDefinitionService: APIDefinitionService,
                                     apiDefinitionRepository: APIDefinitionRepository)
                                    (implicit override val ec: ExecutionContext) extends Validator[String] {
 
+  private val ValidTopLevelContexts: Set[String] = Set("agents", "customs", "individuals", "mobile", "organisations", "test")
   private val contextRegex: Regex = "^[a-zA-Z0-9_\\-\\/]+$".r
 
   def validate(errorContext: String, apiDefinition: APIDefinition)(implicit context: String): Future[HMRCValidated[String]] = {
@@ -52,11 +53,14 @@ class ApiContextValidator @Inject()(apiDefinitionService: APIDefinitionService,
   }
 
   private def validateAgainstDatabase(errorContext: String, apiDefinition: APIDefinition)(implicit context: String): Future[HMRCValidated[String]] = {
+    val existingAPIDefinitionFuture: Future[Option[APIDefinition]] = apiDefinitionService.fetchByContext(apiDefinition.context)
     for {
-      contextUniqueValidated <- validateFieldNotAlreadyUsed(apiDefinitionService
-        .fetchByContext(apiDefinition.context), s"Field 'context' must be unique $errorContext")(context, apiDefinition)
+      contextUniqueValidated
+        <- validateFieldNotAlreadyUsed(existingAPIDefinitionFuture, s"Field 'context' must be unique $errorContext")(context, apiDefinition)
       contextNotChangedValidated <- validateContextNotChanged(errorContext, apiDefinition)
-    } yield (contextUniqueValidated, contextNotChangedValidated).mapN((_, _) => context)
+      newAPITopLevelContextValidated
+        <- existingAPIDefinitionFuture.flatMap(existingAPIDefinition => validateTopLevelContextForNewAPIs(errorContext, existingAPIDefinition))
+    } yield (contextUniqueValidated, contextNotChangedValidated, newAPITopLevelContextValidated).mapN((_, _, _) => context)
   }
 
   private def validateContextNotChanged(errorContext: String, apiDefinition: APIDefinition)(implicit context: String): Future[HMRCValidated[String]] = {
@@ -65,5 +69,23 @@ class ApiContextValidator @Inject()(apiDefinitionService: APIDefinitionService,
         case Some(found: APIDefinition) => found.context != apiDefinition.context
         case _ => false
       }.map(contextChanged => validateThat(_ => !contextChanged, _ => s"Field 'context' must not be changed $errorContext"))
+  }
+
+  private def validateTopLevelContextForNewAPIs(errorContext: String,
+                                                existingAPIDefinitionOption: Option[APIDefinition])
+                                               (implicit context: String): Future[HMRCValidated[String]] = {
+    def topLevelContext: String = context.split('/').head
+    def formattedTopLevelContexts: String = ValidTopLevelContexts.toList.sorted.mkString("'","', '", "'")
+
+    successful(
+      existingAPIDefinitionOption match {
+        case None =>
+          validateThat(
+            _ => ValidTopLevelContexts.contains(topLevelContext),
+            _ => s"Field 'context' must start with one of $formattedTopLevelContexts $errorContext")
+        case Some(_) => context.validNel
+      }
+    )
+
   }
 }
