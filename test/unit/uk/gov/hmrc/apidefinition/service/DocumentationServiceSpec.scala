@@ -24,7 +24,7 @@ import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.{Answer, OngoingStubbing}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
-import play.api.http.Status
+import play.api.http.{ContentTypes, MediaType, Status}
 import play.api.libs.ws.{DefaultWSResponseHeaders, StreamedResponse}
 import play.api.mvc.Result
 import uk.gov.hmrc.apidefinition.config.AppConfig
@@ -41,6 +41,7 @@ import scala.concurrent.Future
 import scala.util.Random
 
 class DocumentationServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar with Utils {
+  import DocumentationService.PROXY_SAFE_CONTENT_TYPE
 
   val serviceName = "hello-world"
   val version = "1.0"
@@ -139,6 +140,16 @@ class DocumentationServiceSpec extends UnitSpec with ScalaFutures with MockitoSu
       result.body.contentType should be(Some("application/text"))
     }
 
+    "return the resource with Proxy Safe Content-Type when content type is present" in new Setup {
+      theApiDefinitionWillBeReturned()
+      theApiMicroserviceWillReturnTheResource(streamedResource)
+
+      val result: Result = await(underTest.fetchApiDocumentationResource(serviceName, "1.0", "resource")(hc))
+
+      result.header.status should be(Status.OK)
+      result.header.headers.get(PROXY_SAFE_CONTENT_TYPE) should be(Some("application/text"))
+    }
+
     "return the resource with default Content-Type when header is not present" in new Setup {
       theApiDefinitionWillBeReturned()
       theApiMicroserviceWillReturnTheResource(chunkedResource)
@@ -147,6 +158,7 @@ class DocumentationServiceSpec extends UnitSpec with ScalaFutures with MockitoSu
 
       result.header.status should be(Status.OK)
       result.body.contentType should be(Some("application/octet-stream"))
+      result.header.headers.get(PROXY_SAFE_CONTENT_TYPE) should be(Some("application/octet-stream"))
     }
 
     "fail with internal server error when microservice returns an error" in new Setup {
