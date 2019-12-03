@@ -20,7 +20,7 @@ import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import javax.inject.{Inject, Singleton}
 import play.api.http.Status._
-import play.api.http.HttpEntity
+import play.api.http.{ContentTypes, HttpEntity}
 import play.api.libs.ws.StreamedResponse
 import play.api.mvc.Result
 import play.api.mvc.Results._
@@ -43,6 +43,7 @@ class DocumentationService @Inject()(apiDefinitionRepository: APIDefinitionRepos
   implicit val mat: ActorMaterializer = ActorMaterializer()
 
   def fetchApiDocumentationResource(serviceName: String, version: String, resource: String)(implicit hc: HeaderCarrier): Future[Result] = {
+    def createProxySafeContentType(contentType: String): (String, String) = (("Proxy-Safe-Content-Type", contentType))
 
     for {
       streamedResponse <- fetchResource(serviceName, version, resource)
@@ -53,7 +54,10 @@ class DocumentationService @Inject()(apiDefinitionRepository: APIDefinitionRepos
 
         streamedResponse.headers.headers.get("Content-Length") match {
           case Some(Seq(length)) => Ok.sendEntity(HttpEntity.Streamed(streamedResponse.body, Some(length.toLong), Some(contentType)))
+            .withHeaders(createProxySafeContentType(contentType))
+
           case _ => Ok.chunked(streamedResponse.body).as(contentType)
+            .withHeaders(createProxySafeContentType(contentType))
         }
       case NOT_FOUND => throw newNotFoundException(serviceName, version, resource)
       case status => throw newInternalServerException(serviceName, version, resource, status)
