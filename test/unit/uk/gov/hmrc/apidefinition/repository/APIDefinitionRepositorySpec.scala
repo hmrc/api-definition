@@ -20,6 +20,7 @@ import org.joda.time.{DateTime, DateTimeZone}
 import org.scalatest.concurrent.Eventually
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import play.modules.reactivemongo.ReactiveMongoComponent
+import reactivemongo.api.ReadConcern
 import reactivemongo.api.indexes.Index
 import reactivemongo.api.indexes.IndexType.Ascending
 import reactivemongo.core.errors.DatabaseException
@@ -75,7 +76,7 @@ class APIDefinitionRepositorySpec extends UnitSpec
   private val repository = createRepository()
 
   private def saveApi(repo: APIDefinitionRepository, apiDefinition: APIDefinition): Future[APIDefinition] = {
-    repo.collection.insert(apiDefinition).map(_ => apiDefinition)
+    repo.collection.insert(ordered = false).one(apiDefinition).map(_ => apiDefinition)
   }
 
   private def getIndexes(repo: APIDefinitionRepository): List[Index] = {
@@ -87,8 +88,8 @@ class APIDefinitionRepositorySpec extends UnitSpec
     new APIDefinitionRepository(reactiveMongoComponent)
   }
 
-  private def collectionSize: Int = {
-    await(repository.collection.count())
+  private def collectionSize: Long = {
+    await(repository.collection.count(None,None,0,None,ReadConcern.Majority))
   }
 
   override def beforeEach(): Unit = {

@@ -173,7 +173,7 @@ class AwsAPIPublisherSpec extends UnitSpec with ScalaFutures with MockitoSugar {
 
       val result: Unit = await(underTest.delete(someAPIDefinition()))
 
-      result shouldBe ()
+      result shouldBe(())
     }
   }
 }

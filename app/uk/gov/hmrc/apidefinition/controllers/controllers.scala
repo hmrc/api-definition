@@ -16,30 +16,16 @@
 
 package uk.gov.hmrc.apidefinition
 
-import _root_.play.api.data.validation.ValidationError
-import _root_.play.api.libs.json.Json.toJson
-import _root_.play.api.libs.json._
-import _root_.play.api.mvc.Results._
-import _root_.play.api.mvc.{Request, Result}
+import play.api.data.validation.ValidationError
+import play.api.libs.json.Json.toJson
+import play.api.libs.json.{JsPath, JsResult, JsValue, Reads}
+import play.api.mvc.Results.UnprocessableEntity
+import play.api.mvc.{Request, Result}
 import uk.gov.hmrc.apidefinition.models.{ErrorCode, ErrorResponse, FieldErrorDescription}
-import uk.gov.hmrc.http.BadRequestException
 
 import scala.concurrent.Future
 
 package object controllers {
-
-  case class QueryOptions(alsoIncludePrivateTrials: Boolean)
-
-  object QueryOptions {
-    def apply(options: Option[String]): QueryOptions = {
-
-      options match {
-        case None | Some("") => QueryOptions(alsoIncludePrivateTrials = false)
-        case Some("alsoIncludePrivateTrials") => QueryOptions(alsoIncludePrivateTrials = true)
-        case Some(value) => throw new BadRequestException(s"Invalid options specified: $value")
-      }
-    }
-  }
 
   def validate[T](request:Request[JsValue])(implicit tjs: Reads[T]): Either[Result, JsResult[T]] = {
     try {
