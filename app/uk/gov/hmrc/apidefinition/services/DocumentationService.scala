@@ -19,8 +19,8 @@ package uk.gov.hmrc.apidefinition.services
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import javax.inject.{Inject, Singleton}
+import play.api.http.HttpEntity
 import play.api.http.Status._
-import play.api.http.{ContentTypes, HttpEntity}
 import play.api.libs.ws.StreamedResponse
 import play.api.mvc.Result
 import play.api.mvc.Results._
@@ -32,24 +32,31 @@ import uk.gov.hmrc.http.{HeaderCarrier, InternalServerException, NotFoundExcepti
 
 import scala.concurrent.{ExecutionContext, Future}
 
+object DocumentationService {
+  val PROXY_SAFE_CONTENT_TYPE = "Proxy-Safe-Content-Type"
+}
 @Singleton
 class DocumentationService @Inject()(apiDefinitionRepository: APIDefinitionRepository,
                                      apiMicroserviceConnector: ApiMicroserviceConnector,
                                      config: AppConfig)
                                     (implicit val ec: ExecutionContext) {
 
+  import DocumentationService._
+
   // TODO : Use play's Actor (inject)
   implicit val system: ActorSystem = ActorSystem("System")
   implicit val mat: ActorMaterializer = ActorMaterializer()
 
   def fetchApiDocumentationResource(serviceName: String, version: String, resource: String)(implicit hc: HeaderCarrier): Future[Result] = {
-    def createProxySafeContentType(contentType: String): (String, String) = (("Proxy-Safe-Content-Type", contentType))
+    def createProxySafeContentType(contentType: String): (String, String) = ((PROXY_SAFE_CONTENT_TYPE, contentType))
 
     for {
       streamedResponse <- fetchResource(serviceName, version, resource)
     } yield streamedResponse.headers.status match {
       case OK =>
-        val contentType = streamedResponse.headers.headers.get("Content-Type").flatMap(_.headOption)
+        val contentType = streamedResponse.headers.headers
+          .get("Content-Type")
+          .flatMap(_.headOption)
           .getOrElse("application/octet-stream")
 
         streamedResponse.headers.headers.get("Content-Length") match {
@@ -109,3 +116,4 @@ class DocumentationService @Inject()(apiDefinitionRepository: APIDefinitionRepos
     new NotFoundException(s"$resource not found for $serviceName $version")
   }
 }
+
