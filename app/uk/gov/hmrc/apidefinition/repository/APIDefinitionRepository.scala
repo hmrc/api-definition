@@ -53,8 +53,8 @@ class APIDefinitionRepository @Inject()(mongo: ReactiveMongoComponent)(implicit 
 
   def save(apiDefinition: APIDefinition): Future[APIDefinition] = {
     collection.find[JsObject, JsObject](selector = serviceNameSelector(apiDefinition.serviceName), empty).one[BSONDocument].flatMap {
-      case Some(document) => collection.update(selector = BSONDocument("_id" -> document.get("_id")), update = apiDefinition)
-      case _ => collection.insert(document = apiDefinition)
+      case Some(document) => collection.update(ordered=false).one(q = BSONDocument("_id" -> document.get("_id")), u = apiDefinition)
+      case _ => collection.insert(ordered=false).one(apiDefinition)
     } map (_ => apiDefinition)
   }
 

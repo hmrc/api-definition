@@ -46,6 +46,8 @@ class APIDefinitionServiceSpec extends UnitSpec
   private val serviceName = "calendar-service"
   private val fixedSavingTime = ISODateTimeFormat.dateTime().withZoneUTC().parseDateTime("2014-02-09T02:27:15.145Z")
 
+  def unitSuccess: Future[Unit] = successful{ () }
+
   override def beforeAll(): Unit = {
     setCurrentMillisFixed(fixedSavingTime.getMillis)
   }
@@ -142,8 +144,8 @@ class APIDefinitionServiceSpec extends UnitSpec
 
     "create or update the API Definition in all WSO2, AWS and the repository" in new Setup {
       when(mockAPIDefinitionRepository.fetchByContext(apiDefinition.context)).thenReturn(Future.successful(Some(apiDefinition)))
-      when(mockWSO2APIPublisher.publish(apiDefinition)).thenReturn(successful(()))
-      when(mockAwsApiPublisher.publish(apiDefinition)).thenReturn(successful(()))
+      when(mockWSO2APIPublisher.publish(apiDefinition)).thenReturn(unitSuccess)
+      when(mockAwsApiPublisher.publish(apiDefinition)).thenReturn(unitSuccess)
       when(mockAPIDefinitionRepository.save(apiDefinitionWithSavingTime)).thenReturn(successful(apiDefinitionWithSavingTime))
 
       await(underTest.createOrUpdate(apiDefinition))
@@ -156,7 +158,7 @@ class APIDefinitionServiceSpec extends UnitSpec
 
     "not call WSO2 when configured to bypass it" in new Setup {
       when(mockAPIDefinitionRepository.fetchByContext(apiDefinition.context)).thenReturn(Future.successful(Some(apiDefinition)))
-      when(mockAwsApiPublisher.publish(apiDefinition)).thenReturn(successful(()))
+      when(mockAwsApiPublisher.publish(apiDefinition)).thenReturn(unitSuccess)
       when(mockAPIDefinitionRepository.save(apiDefinitionWithSavingTime)).thenReturn(successful(apiDefinitionWithSavingTime))
       when(mockAppContext.bypassWso2).thenReturn(true)
 
@@ -171,7 +173,7 @@ class APIDefinitionServiceSpec extends UnitSpec
     "propagate unexpected errors that happen when trying to publish an API to WSO2" in new Setup {
       when(mockAPIDefinitionRepository.fetchByContext(apiDefinition.context)).thenReturn(Future.successful(Some(apiDefinition)))
       when(mockWSO2APIPublisher.publish(apiDefinition)).thenReturn(failed(new RuntimeException("Something went wrong")))
-      when(mockAwsApiPublisher.publish(apiDefinition)).thenReturn(successful(()))
+      when(mockAwsApiPublisher.publish(apiDefinition)).thenReturn(unitSuccess)
 
       val thrown = intercept[RuntimeException] {
         await(underTest.createOrUpdate(apiDefinition))
@@ -183,7 +185,7 @@ class APIDefinitionServiceSpec extends UnitSpec
 
     "propagate unexpected errors that happen when trying to publish an API to AWS" in new Setup {
       when(mockAPIDefinitionRepository.fetchByContext(apiDefinition.context)).thenReturn(Future.successful(Some(apiDefinition)))
-      when(mockWSO2APIPublisher.publish(apiDefinition)).thenReturn(successful(()))
+      when(mockWSO2APIPublisher.publish(apiDefinition)).thenReturn(unitSuccess)
       when(mockAwsApiPublisher.publish(apiDefinition)).thenReturn(failed(new RuntimeException("Something went wrong")))
 
       val thrown = intercept[RuntimeException] {
@@ -196,8 +198,8 @@ class APIDefinitionServiceSpec extends UnitSpec
 
     "propagate unexpected errors that happen when trying to save the definition" in new Setup {
       when(mockAPIDefinitionRepository.fetchByContext(apiDefinition.context)).thenReturn(Future.successful(Some(apiDefinition)))
-      when(mockWSO2APIPublisher.publish(apiDefinition)).thenReturn(successful(()))
-      when(mockAwsApiPublisher.publish(apiDefinition)).thenReturn(successful(()))
+      when(mockWSO2APIPublisher.publish(apiDefinition)).thenReturn(unitSuccess)
+      when(mockAwsApiPublisher.publish(apiDefinition)).thenReturn(unitSuccess)
       when(mockAPIDefinitionRepository.save(apiDefinitionWithSavingTime)).thenReturn(failed(new RuntimeException("Something went wrong")))
 
       val thrown = intercept[RuntimeException] {
@@ -218,9 +220,9 @@ class APIDefinitionServiceSpec extends UnitSpec
       val updatedAPIDefinitionWithSavingTime: APIDefinition = updatedAPIDefinition.copy(lastPublishedAt = Some(fixedSavingTime))
 
       when(mockAPIDefinitionRepository.fetchByContext(apiContext)).thenReturn(Future.successful(Some(existingAPIDefinition)))
-      when(mockNotificationService.notifyOfStatusChange(existingAPIDefinition.name, apiVersion, existingStatus, updatedStatus)).thenReturn(Future.successful())
-      when(mockWSO2APIPublisher.publish(updatedAPIDefinition)).thenReturn(successful(()))
-      when(mockAwsApiPublisher.publish(updatedAPIDefinition)).thenReturn(successful(()))
+      when(mockNotificationService.notifyOfStatusChange(existingAPIDefinition.name, apiVersion, existingStatus, updatedStatus)).thenReturn(unitSuccess)
+      when(mockWSO2APIPublisher.publish(updatedAPIDefinition)).thenReturn(unitSuccess)
+      when(mockAwsApiPublisher.publish(updatedAPIDefinition)).thenReturn(unitSuccess)
       when(mockAPIDefinitionRepository.save(updatedAPIDefinitionWithSavingTime)).thenReturn(successful(updatedAPIDefinitionWithSavingTime))
 
       await(underTest.createOrUpdate(updatedAPIDefinition))

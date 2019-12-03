@@ -17,7 +17,7 @@
 package uk.gov.hmrc.apidefinition.services
 
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
+import akka.stream.{ActorMaterializer, Materializer}
 import javax.inject.{Inject, Singleton}
 import play.api.http.HttpEntity
 import play.api.http.Status._
@@ -39,13 +39,12 @@ object DocumentationService {
 class DocumentationService @Inject()(apiDefinitionRepository: APIDefinitionRepository,
                                      apiMicroserviceConnector: ApiMicroserviceConnector,
                                      config: AppConfig)
-                                    (implicit val ec: ExecutionContext) {
+                                    (implicit val ec: ExecutionContext,
+                                     val actorSystem: ActorSystem,
+                                     val mat: Materializer) {
 
   import DocumentationService._
 
-  // TODO : Use play's Actor (inject)
-  implicit val system: ActorSystem = ActorSystem("System")
-  implicit val mat: ActorMaterializer = ActorMaterializer()
 
   def fetchApiDocumentationResource(serviceName: String, version: String, resource: String)(implicit hc: HeaderCarrier): Future[Result] = {
     def createProxySafeContentType(contentType: String): (String, String) = ((PROXY_SAFE_CONTENT_TYPE, contentType))
