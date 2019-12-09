@@ -203,7 +203,7 @@ class ApiContextValidatorSpec extends UnitSpec with MockitoSugar {
           s"Field 'context' should not have empty path segments $errorContext"))
     }
 
-    val permittedTopLevelContexts = List("agents", "customs", "mobile", "individuals", "organisations", "test")
+    val permittedTopLevelContexts = List("agents", "customs", "mobile", "individuals", "organisations", "test", "payments")
     permittedTopLevelContexts.foreach(topLevelContext =>
       s"pass validation with a top level context of $topLevelContext" in new Setup {
         lazy val context: String = s"$topLevelContext/foo"
