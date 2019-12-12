@@ -233,5 +233,17 @@ class ApiContextValidatorSpec extends UnitSpec with MockitoSugar {
 
       verifyValidationFailed(result, Seq(s"Field 'context' must start with one of $formattedTopLevelContexts $errorContext"))
     }
+
+    "fail validation when a new API does not have a multilevel context" in new Setup {
+      lazy val context: String = permittedTopLevelContexts.head
+      lazy val serviceName: String = "money-service"
+      lazy val apiDefinition: APIDefinition = testAPIDefinition(serviceName, context)
+      fetchByContextWillReturn(context, None)
+      fetchByServiceNameWillReturn(serviceName, None)
+
+      val result: validatorUnderTest.HMRCValidated[String] = await(validatorUnderTest.validate(errorContext, apiDefinition)(context))
+
+      verifyValidationFailed(result, Seq(s"Field 'context' must have at least two segments $errorContext"))
+    }
   }
 }
