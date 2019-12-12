@@ -33,7 +33,7 @@ class ApiContextValidator @Inject()(apiDefinitionService: APIDefinitionService,
                                    (implicit override val ec: ExecutionContext) extends Validator[String] {
 
   private val ValidTopLevelContexts: Set[String] = Set("agents", "customs", "individuals", "mobile", "organisations", "test", "payments")
-  private val contextRegex: Regex = "^[a-zA-Z0-9_\\-\\/]+$".r
+  private val contextRegex: Regex = """^[a-zA-Z0-9_\-\/]+$""".r
 
   def validate(errorContext: String, apiDefinition: APIDefinition)(implicit context: String): Future[HMRCValidated[String]] = {
     val validated = validateThat(_.nonEmpty, _ => s"Field 'context' should not be empty $errorContext").andThen(validateContext(errorContext)(_))
@@ -74,18 +74,25 @@ class ApiContextValidator @Inject()(apiDefinitionService: APIDefinitionService,
   private def validateTopLevelContextForNewAPIs(errorContext: String,
                                                 existingAPIDefinitionOption: Option[APIDefinition])
                                                (implicit context: String): Future[HMRCValidated[String]] = {
-    def topLevelContext: String = context.split('/').head
-    def formattedTopLevelContexts: String = ValidTopLevelContexts.toList.sorted.mkString("'","', '", "'")
+    val contextSegments = context.split('/')
+    val topLevelContext: String = contextSegments.head
+    val formattedTopLevelContexts: String = ValidTopLevelContexts.toList.sorted.mkString("'","', '", "'")
+    val validatedForNewApi: HMRCValidated[String] = {
+      (
+        validateThat(
+          _ => ValidTopLevelContexts.contains(topLevelContext),
+          _ => s"Field 'context' must start with one of $formattedTopLevelContexts $errorContext"),
+        validateThat(
+          _ => contextSegments.length > 1,
+          _ => s"Field 'context' must have at least two segments $errorContext")
+      ).mapN((_,_) => context)
+    }
 
     successful(
       existingAPIDefinitionOption match {
-        case None =>
-          validateThat(
-            _ => ValidTopLevelContexts.contains(topLevelContext),
-            _ => s"Field 'context' must start with one of $formattedTopLevelContexts $errorContext")
+        case None => validatedForNewApi
         case Some(_) => context.validNel
       }
     )
-
   }
 }
