@@ -69,6 +69,38 @@ class APIDefinitionRepositorySpec extends UnitSpec
     versions = Seq(calendarApiVersion),
     requiresTrust = None)
 
+  private val individualIncomeTaxApiVersion = APIVersion(
+    version = "1.0",
+    status = APIStatus.PUBLISHED,
+    access = None,
+    endpoints = Seq(Endpoint("/submit", "Submit Income Tax Return", HttpMethod.POST, AuthType.USER, ResourceThrottlingTier.UNLIMITED))
+  )
+
+  private val individualIncomeTaxApiDefinition = APIDefinition(
+    serviceName = "income-tax",
+    serviceBaseUrl = "income-tax.protected.mdtp",
+    name = "Individual Income Tax",
+    description = "This is the Individual Income Tax API",
+    context = "individuals/income-tax",
+    versions = Seq(individualIncomeTaxApiVersion),
+    requiresTrust = None)
+
+  private val individualNIApiVersion = APIVersion(
+    version = "1.0",
+    status = APIStatus.PUBLISHED,
+    access = None,
+    endpoints = Seq(Endpoint("/submit", "Submit National Insurance", HttpMethod.POST, AuthType.USER, ResourceThrottlingTier.UNLIMITED))
+  )
+
+  private val individualNIApiDefinition = APIDefinition(
+    serviceName = "ni",
+    serviceBaseUrl = "ni.protected.mdtp",
+    name = "Individual National Insurance",
+    description = "This is the Individual National Insurance API",
+    context = "individuals/ni",
+    versions = Seq(individualNIApiVersion),
+    requiresTrust = None)
+
   private val reactiveMongoComponent = new ReactiveMongoComponent {
     override def mongoConnector: MongoConnector = mongoConnectorForTest
   }
@@ -213,6 +245,27 @@ class APIDefinitionRepositorySpec extends UnitSpec
 
       val retrieved = await(repository.fetchByContext(calendarApiDefinition.context))
       retrieved shouldBe None
+    }
+  }
+
+  "fetchAllByTopLevelContext()" should {
+    "fetch API definitions starting with the given top level context" in {
+      await(repository.save(helloApiDefinition))
+      await(repository.save(individualIncomeTaxApiDefinition))
+      await(repository.save(individualNIApiDefinition))
+
+      val retrieved = await(repository.fetchAllByTopLevelContext("individuals"))
+
+      retrieved.size shouldBe 2
+    }
+
+    "return an empty collection when there are no matching API Definitions" in {
+      await(repository.save(helloApiDefinition))
+      await(repository.save(calendarApiDefinition))
+
+      val retrieved = await(repository.fetchAllByTopLevelContext("individuals"))
+
+      retrieved.size shouldBe 0
     }
   }
 

@@ -109,6 +109,14 @@ class APIDefinitionRepository @Inject()(mongo: ReactiveMongoComponent)(implicit 
       .collect[Seq](-1, FailOnError[Seq[APIDefinition]]())
   }
 
+  def fetchAllByTopLevelContext(topLevelContext: String): Future[Seq[APIDefinition]] = {
+    val contextRegex: JsObject = Json.obj("$regex" -> f"^$topLevelContext\\/.*$$")
+
+    collection.find[JsObject, JsObject](Json.obj("context"-> contextRegex), empty)
+      .cursor[APIDefinition]()
+      .collect[Seq](-1, FailOnError[Seq[APIDefinition]]())
+  }
+
   def delete(serviceName: String): Future[Unit] = {
     collection.delete().one(serviceNameSelector(serviceName))
       .map(_ => Logger.info(s"API with service name '$serviceName' has been deleted successfully"))
