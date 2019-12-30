@@ -1,2 +1,0 @@
-GET        /api/definition                 uk.gov.hmrc.apidefinition.controllers.PublishedDefinitionController.definition
-GET        /api/conf/:version/*file        uk.gov.hmrc.apidefinition.controllers.PublishedDefinitionController.raml(version, file)

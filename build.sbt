@@ -18,9 +18,9 @@ lazy val compile = Seq(
 
 lazy val test = Seq(
   "uk.gov.hmrc" %% "reactivemongo-test" % "4.15.0-play-25" % "test",
-  "uk.gov.hmrc" %% "hmrctest" % "3.9.0-play-25" % "test, it",
+  "uk.gov.hmrc" %% "hmrctest" % "3.9.0-play-25" % "test",
   "org.scalaj" %% "scalaj-http" % "2.3.0" % "test",
-  "org.scalatest" %% "scalatest" % "3.0.5" % "test, component, it",
+  "org.scalatest" %% "scalatest" % "3.0.5" % "test, component",
   "org.scalatestplus.play" %% "scalatestplus-play" % "2.0.1" % "test",
   "org.mockito" % "mockito-core" % "2.27.0" % "test",
   "com.typesafe.play" %% "play-test" % PlayVersion.current % "test",
@@ -32,12 +32,11 @@ lazy val test = Seq(
 // See Jira story GG-3666 for further information
 def tmpMacWorkaround =
   if (sys.props.get("os.name").exists(_.toLowerCase.contains("mac"))) {
-    Seq("org.reactivemongo" % "reactivemongo-shaded-native" % "0.16.1-osx-x86-64" % "runtime,test,it")
+    Seq("org.reactivemongo" % "reactivemongo-shaded-native" % "0.16.1-osx-x86-64" % "runtime,test")
   } else Seq()
 
 lazy val ComponentTest = config("component") extend Test
-lazy val IntegrationTest = config("it") extend Test
-val testConfig = Seq(IntegrationTest, ComponentTest, Test)
+val testConfig = Seq(ComponentTest, Test)
 
 lazy val plugins: Seq[Plugins] = Seq(PlayScala, SbtAutoBuildPlugin, SbtGitVersioning, SbtDistributablesPlugin, SbtArtifactory)
 lazy val playSettings: Seq[Setting[_]] = Seq.empty
@@ -60,8 +59,7 @@ lazy val microservice = (project in file("."))
   )
   .settings(
     unitTestSettings,
-    componentTestSettings,
-    itTestSettings
+    componentTestSettings
   )
   .settings(
     resolvers += Resolver.bintrayRepo("hmrc", "releases"),
@@ -87,16 +85,6 @@ lazy val componentTestSettings =
       fork in ComponentTest := false,
       parallelExecution in ComponentTest := false,
       addTestReportOption(ComponentTest, "component-reports")
-    )
-
-lazy val itTestSettings =
-  inConfig(IntegrationTest)(Defaults.testTasks) ++
-    Seq(
-      testOptions in IntegrationTest := Seq(Tests.Filter(onPackageName("it"))),
-      testOptions in IntegrationTest += Tests.Argument(TestFrameworks.ScalaTest, "-oDT"),
-      fork in IntegrationTest := false,
-      parallelExecution in IntegrationTest := false,
-      addTestReportOption(IntegrationTest, "integration-reports")
     )
 
 def onPackageName(rootPackage: String): String => Boolean = {
