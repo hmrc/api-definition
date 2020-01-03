@@ -96,13 +96,19 @@ class ApiContextValidator @Inject()(apiDefinitionService: APIDefinitionService,
       _ => context.split('/').length > 1,
       _ => s"Field 'context' must have at least two segments $errorContext"))
 
-  private def validateContextDoesNotOverlapExistingAPI(errorContext: String)(implicit context: String): Future[HMRCValidated[String]] =
-    apiDefinitionRepository.fetchAllByTopLevelContext(context.split('/').head)
-      .map(apiDefinitions => apiDefinitions.map(apiDefinition => apiDefinition.context))
-      .map(otherContexts => otherContexts.map(otherContext =>
+  private def validateContextDoesNotOverlapExistingAPI(errorContext: String)(implicit context: String): Future[HMRCValidated[String]] = {
+    for {
+      existingAPIDefinitions <- apiDefinitionRepository.fetchAllByTopLevelContext(context.split('/').head)
+      existingContexts = existingAPIDefinitions.map(_.context)
+      validations = existingContexts.map(otherContext =>
         validateThat(
           _ => !context.startsWith(otherContext) && !otherContext.startsWith(context),
-          _ => s"Field 'context' overlaps with '$otherContext' $errorContext")))
-      .map(validations => combineAll(validations))
+          _ => s"Field 'context' overlaps with '$otherContext' $errorContext"))
+    } yield combineAll(validations)
+    /* API-4094: The combineAll() here actually concatenates the 'context' String multiple times, so any valid HMRCValidation object returned is technically
+     * incorrect. However, as we discard the value upstream, this still works. If in future we need to work with the value returned here, this will need
+     * to be corrected. Anything failing validation here is not affected.
+     */
+  }
 
 }
