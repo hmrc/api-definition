@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 HM Revenue & Customs
+ * Copyright 2020 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package uk.gov.hmrc.apidefinition.validators
 
 import cats.data.Validated.Invalid
+import cats.Monoid._
 import cats.implicits._
 import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.apidefinition.models.APIDefinition
@@ -31,6 +32,7 @@ import scala.util.matching.Regex
 class ApiContextValidator @Inject()(apiDefinitionService: APIDefinitionService,
                                     apiDefinitionRepository: APIDefinitionRepository)
                                    (implicit override val ec: ExecutionContext) extends Validator[String] {
+
 
   private val ValidTopLevelContexts: Set[String] = Set("agents", "customs", "individuals", "mobile", "organisations", "test", "payments")
   private val contextRegex: Regex = """^[a-zA-Z0-9_\-\/]+$""".r
@@ -58,8 +60,10 @@ class ApiContextValidator @Inject()(apiDefinitionService: APIDefinitionService,
       contextUniqueValidated
         <- validateFieldNotAlreadyUsed(existingAPIDefinitionFuture, s"Field 'context' must be unique $errorContext")(context, apiDefinition)
       contextNotChangedValidated <- validateContextNotChanged(errorContext, apiDefinition)
-      newAPITopLevelContextValidated
-        <- existingAPIDefinitionFuture.flatMap(existingAPIDefinition => validateTopLevelContextForNewAPIs(errorContext, existingAPIDefinition))
+      newAPITopLevelContextValidated <- existingAPIDefinitionFuture.flatMap(existingAPIDefinition => existingAPIDefinition match {
+        case None => validationsForNewAPI(errorContext)
+        case Some(_) => successful(context.validNel)
+      })
     } yield (contextUniqueValidated, contextNotChangedValidated, newAPITopLevelContextValidated).mapN((_, _, _) => context)
   }
 
@@ -71,28 +75,40 @@ class ApiContextValidator @Inject()(apiDefinitionService: APIDefinitionService,
       }.map(contextChanged => validateThat(_ => !contextChanged, _ => s"Field 'context' must not be changed $errorContext"))
   }
 
-  private def validateTopLevelContextForNewAPIs(errorContext: String,
-                                                existingAPIDefinitionOption: Option[APIDefinition])
-                                               (implicit context: String): Future[HMRCValidated[String]] = {
-    val contextSegments = context.split('/')
-    val topLevelContext: String = contextSegments.head
-    val formattedTopLevelContexts: String = ValidTopLevelContexts.toList.sorted.mkString("'","', '", "'")
-    val validatedForNewApi: HMRCValidated[String] = {
-      (
-        validateThat(
-          _ => ValidTopLevelContexts.contains(topLevelContext),
-          _ => s"Field 'context' must start with one of $formattedTopLevelContexts $errorContext"),
-        validateThat(
-          _ => contextSegments.length > 1,
-          _ => s"Field 'context' must have at least two segments $errorContext")
-      ).mapN((_,_) => context)
-    }
-
-    successful(
-      existingAPIDefinitionOption match {
-        case None => validatedForNewApi
-        case Some(_) => context.validNel
-      }
-    )
+  private def validationsForNewAPI(errorContext: String)(implicit context: String): Future[HMRCValidated[String]] = {
+    for {
+      validTopLevelContext <- validateTopLevelContext(errorContext)
+      atLeastTwoContextSegments <- validateContextHasAtLeastTwoSegments(errorContext)
+      noContextOverlaps <- validateContextDoesNotOverlapExistingAPI(errorContext)
+    } yield (validTopLevelContext, atLeastTwoContextSegments, noContextOverlaps).mapN((_, _, _) => context)
   }
+
+  private def validateTopLevelContext(errorContext: String)(implicit context: String): Future[HMRCValidated[String]] = {
+    def formattedTopLevelContexts: String = ValidTopLevelContexts.toList.sorted.mkString("'","', '", "'")
+
+    successful(validateThat(
+      _ => ValidTopLevelContexts.contains(context.split('/').head),
+      _ => s"Field 'context' must start with one of $formattedTopLevelContexts $errorContext"))
+  }
+
+  private def validateContextHasAtLeastTwoSegments(errorContext: String)(implicit context: String): Future[HMRCValidated[String]] =
+    successful(validateThat(
+      _ => context.split('/').length > 1,
+      _ => s"Field 'context' must have at least two segments $errorContext"))
+
+  private def validateContextDoesNotOverlapExistingAPI(errorContext: String)(implicit context: String): Future[HMRCValidated[String]] = {
+    for {
+      existingAPIDefinitions <- apiDefinitionRepository.fetchAllByTopLevelContext(context.split('/').head)
+      existingContexts = existingAPIDefinitions.map(_.context)
+      validations = existingContexts.map(otherContext =>
+        validateThat(
+          _ => !context.startsWith(otherContext) && !otherContext.startsWith(context),
+          _ => s"Field 'context' overlaps with '$otherContext' $errorContext"))
+    } yield combineAll(validations)
+    /* API-4094: The combineAll() here actually concatenates the 'context' String multiple times, so any valid HMRCValidation object returned is technically
+     * incorrect. However, as we discard the value upstream, this still works. If in future we need to work with the value returned here, this will need
+     * to be corrected. Anything failing validation here is not affected.
+     */
+  }
+
 }

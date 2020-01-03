@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 HM Revenue & Customs
+ * Copyright 2020 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,9 @@
 package unit.uk.gov.hmrc.apidefinition.validators
 
 import cats.data.Validated.{Invalid, Valid}
+import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.{verifyZeroInteractions, when}
+import org.mockito.stubbing.OngoingStubbing
 import org.scalatest.mockito.MockitoSugar
 import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
@@ -26,6 +28,7 @@ import uk.gov.hmrc.apidefinition.validators.ApiContextValidator
 import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import scala.concurrent.Future.successful
 
 class ApiContextValidatorSpec extends UnitSpec with MockitoSugar {
@@ -65,6 +68,11 @@ class ApiContextValidatorSpec extends UnitSpec with MockitoSugar {
       errors.toList should contain allElementsOf expectedErrors
     }
 
+    def fetchByTopLevelContextWillReturn(apiDefinitions: Seq[APIDefinition]): OngoingStubbing[Future[Seq[APIDefinition]]] =
+      when(mockAPIDefinitionRepository.fetchAllByTopLevelContext(any[String])).thenReturn(Future.successful(apiDefinitions))
+
+    def thereAreNoOverlappingAPIContexts: OngoingStubbing[Future[Seq[APIDefinition]]] = fetchByTopLevelContextWillReturn(Seq.empty)
+
     val mockAPIDefinitionService: APIDefinitionService = mock[APIDefinitionService]
     val mockAPIDefinitionRepository: APIDefinitionRepository = mock[APIDefinitionRepository]
 
@@ -79,6 +87,7 @@ class ApiContextValidatorSpec extends UnitSpec with MockitoSugar {
       lazy val serviceName: String = "money-service"
       lazy val apiDefinition: APIDefinition = testAPIDefinition(serviceName, context)
 
+      thereAreNoOverlappingAPIContexts
       fetchByContextWillReturn(context, None)
       fetchByServiceNameWillReturn(serviceName, None)
 
@@ -163,6 +172,7 @@ class ApiContextValidatorSpec extends UnitSpec with MockitoSugar {
       val apiDefinition: APIDefinition = testAPIDefinition(serviceName, context)
       val oldAPIDefinition: APIDefinition = testAPIDefinition(serviceName, oldContext)
 
+      thereAreNoOverlappingAPIContexts
       fetchByContextWillReturn(context, None)
       fetchByServiceNameWillReturn(serviceName, Some(oldAPIDefinition))
 
@@ -210,6 +220,7 @@ class ApiContextValidatorSpec extends UnitSpec with MockitoSugar {
         lazy val serviceName: String = "money-service"
         lazy val apiDefinition: APIDefinition = testAPIDefinition(serviceName, context)
 
+        thereAreNoOverlappingAPIContexts
         fetchByContextWillReturn(context, None)
         fetchByServiceNameWillReturn(serviceName, None)
 
@@ -226,6 +237,7 @@ class ApiContextValidatorSpec extends UnitSpec with MockitoSugar {
 
       val formattedTopLevelContexts: String = permittedTopLevelContexts.sorted.mkString("'","', '", "'")
 
+      thereAreNoOverlappingAPIContexts
       fetchByContextWillReturn(context, None)
       fetchByServiceNameWillReturn(serviceName, None)
 
@@ -238,12 +250,59 @@ class ApiContextValidatorSpec extends UnitSpec with MockitoSugar {
       lazy val context: String = permittedTopLevelContexts.head
       lazy val serviceName: String = "money-service"
       lazy val apiDefinition: APIDefinition = testAPIDefinition(serviceName, context)
+
+      thereAreNoOverlappingAPIContexts
       fetchByContextWillReturn(context, None)
       fetchByServiceNameWillReturn(serviceName, None)
 
       val result: validatorUnderTest.HMRCValidated[String] = await(validatorUnderTest.validate(errorContext, apiDefinition)(context))
 
       verifyValidationFailed(result, Seq(s"Field 'context' must have at least two segments $errorContext"))
+    }
+
+    "fail validation when new API context is subset of existing" in new Setup {
+      lazy val newContext: String = "individuals/foo"
+      lazy val supersetContext: String = s"$newContext/bar"
+      lazy val existingAPI: APIDefinition = testAPIDefinition("existing-service", supersetContext)
+      lazy val newAPI: APIDefinition = testAPIDefinition("new-service", newContext)
+
+      fetchByTopLevelContextWillReturn(Seq(existingAPI))
+      fetchByContextWillReturn(newContext, None)
+      fetchByServiceNameWillReturn("new-service", None)
+
+      val result: validatorUnderTest.HMRCValidated[String] = await(validatorUnderTest.validate(errorContext, newAPI)(newContext))
+
+      verifyValidationFailed(result, Seq(s"Field 'context' overlaps with '$supersetContext' $errorContext"))
+    }
+
+    "fail validation when new API context is superset of existing" in new Setup {
+      lazy val subsetContext: String = "individuals/foo"
+      lazy val newContext: String = s"$subsetContext/bar"
+      lazy val existingAPI: APIDefinition = testAPIDefinition("existing-service", subsetContext)
+      lazy val newAPI: APIDefinition = testAPIDefinition("new-service", newContext)
+
+      fetchByTopLevelContextWillReturn(Seq(existingAPI))
+      fetchByContextWillReturn(newContext, None)
+      fetchByServiceNameWillReturn("new-service", None)
+
+      val result: validatorUnderTest.HMRCValidated[String] = await(validatorUnderTest.validate(errorContext, newAPI)(newContext))
+
+      verifyValidationFailed(result, Seq(s"Field 'context' overlaps with '$subsetContext' $errorContext"))
+    }
+
+    "pass validation when new API context does not overlap multiple other APIs in same top level context" in new Setup {
+      lazy val newContext: String = "individuals/baz"
+      lazy val newAPI: APIDefinition = testAPIDefinition("new-service", newContext)
+      lazy val existingAPI1: APIDefinition = testAPIDefinition("existing-service-1", "individuals/foo")
+      lazy val existingAPI2: APIDefinition = testAPIDefinition("existing-service-2", "individuals/bar")
+
+      fetchByTopLevelContextWillReturn(Seq(existingAPI1, existingAPI2))
+      fetchByContextWillReturn(newContext, None)
+      fetchByServiceNameWillReturn("new-service", None)
+
+      val result: validatorUnderTest.HMRCValidated[String] = await(validatorUnderTest.validate(errorContext, newAPI)(newContext))
+
+      verifyValidationPassed(result, newContext)
     }
   }
 }
