@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 HM Revenue & Customs
+ * Copyright 2020 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package uk.gov.hmrc.apidefinition.validators
 
 import cats.data.Validated.Invalid
+import cats.Monoid._
 import cats.implicits._
 import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.apidefinition.models.APIDefinition
@@ -31,6 +32,7 @@ import scala.util.matching.Regex
 class ApiContextValidator @Inject()(apiDefinitionService: APIDefinitionService,
                                     apiDefinitionRepository: APIDefinitionRepository)
                                    (implicit override val ec: ExecutionContext) extends Validator[String] {
+
 
   private val ValidTopLevelContexts: Set[String] = Set("agents", "customs", "individuals", "mobile", "organisations", "test", "payments")
   private val contextRegex: Regex = """^[a-zA-Z0-9_\-\/]+$""".r
@@ -75,12 +77,13 @@ class ApiContextValidator @Inject()(apiDefinitionService: APIDefinitionService,
 
   private def validationsForNewAPI(errorContext: String)(implicit context: String): Future[HMRCValidated[String]] = {
     for {
-      validTopLevelContext <- validateTopLevelContextForNewAPIs(errorContext)
+      validTopLevelContext <- validateTopLevelContext(errorContext)
       atLeastTwoContextSegments <- validateContextHasAtLeastTwoSegments(errorContext)
-    } yield (validTopLevelContext, atLeastTwoContextSegments).mapN((_, _) => context)
+      noContextOverlaps <- validateContextDoesNotOverlapExistingAPI(errorContext)
+    } yield (validTopLevelContext, atLeastTwoContextSegments, noContextOverlaps).mapN((_, _, _) => context)
   }
 
-  private def validateTopLevelContextForNewAPIs(errorContext: String)(implicit context: String): Future[HMRCValidated[String]] = {
+  private def validateTopLevelContext(errorContext: String)(implicit context: String): Future[HMRCValidated[String]] = {
     def formattedTopLevelContexts: String = ValidTopLevelContexts.toList.sorted.mkString("'","', '", "'")
 
     successful(validateThat(
@@ -92,4 +95,14 @@ class ApiContextValidator @Inject()(apiDefinitionService: APIDefinitionService,
     successful(validateThat(
       _ => context.split('/').length > 1,
       _ => s"Field 'context' must have at least two segments $errorContext"))
+
+  private def validateContextDoesNotOverlapExistingAPI(errorContext: String)(implicit context: String): Future[HMRCValidated[String]] =
+    apiDefinitionRepository.fetchAllByTopLevelContext(context.split('/').head)
+      .map(apiDefinitions => apiDefinitions.map(apiDefinition => apiDefinition.context))
+      .map(otherContexts => otherContexts.map(otherContext =>
+        validateThat(
+          _ => !context.startsWith(otherContext) && !otherContext.startsWith(context),
+          _ => s"Field 'context' overlaps with '$otherContext' $errorContext")))
+      .map(validations => combineAll(validations))
+
 }

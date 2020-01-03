@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 HM Revenue & Customs
+ * Copyright 2020 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,8 @@ class ApiDefinitionValidatorSpec extends UnitSpec with MockitoSugar {
     when(mockAPIDefinitionService.fetchByName(any[String])).thenReturn(successful(None))
     when(mockAPIDefinitionService.fetchByServiceBaseUrl(any[String])).thenReturn(successful(None))
     when(mockApiDefinitionRepository.fetchByServiceName(any[String])).thenReturn(successful(None))
-
+    when(mockApiDefinitionRepository.fetchAllByTopLevelContext(any[String])).thenReturn(Future.successful(Seq.empty))
+    
     def assertValidationSuccess(apiDefinition: => APIDefinition): Unit = {
       val result = await(apiDefinitionValidator.validate(apiDefinition)(_ => Future.successful(NoContent)))
       result.header.status shouldBe NoContent.header.status

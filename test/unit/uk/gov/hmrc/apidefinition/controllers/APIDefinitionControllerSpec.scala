@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 HM Revenue & Customs
+ * Copyright 2020 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -104,6 +104,9 @@ class APIDefinitionControllerSpec extends UnitSpec
     def theServiceWillCreateOrUpdateTheAPIDefinition: OngoingStubbing[Future[Unit]] = {
       when(mockAPIDefinitionService.createOrUpdate(any[APIDefinition])(any[HeaderCarrier])).thenReturn(Future.successful(()))
     }
+
+    def thereAreNoOverlappingAPIContexts: OngoingStubbing[Future[Seq[APIDefinition]]] =
+      when(mockApiDefinitionRepository.fetchAllByTopLevelContext(any[String])).thenReturn(Future.successful(Seq.empty))
   }
 
   "createOrUpdate" should {
@@ -129,6 +132,7 @@ class APIDefinitionControllerSpec extends UnitSpec
           None,
           lastPublishedAt = None)
 
+      thereAreNoOverlappingAPIContexts
       theServiceWillCreateOrUpdateTheAPIDefinition
 
       val result: Result = await(underTest.createOrUpdate()(request.withBody(Json.parse(calendarApiDefinition))))
@@ -159,6 +163,7 @@ class APIDefinitionControllerSpec extends UnitSpec
           None,
           lastPublishedAt = None)
 
+      thereAreNoOverlappingAPIContexts
       theServiceWillCreateOrUpdateTheAPIDefinition
 
       await(underTest.createOrUpdate()(request.withBody(Json.parse(legacyCalendarApiDefinition))))
@@ -179,6 +184,7 @@ class APIDefinitionControllerSpec extends UnitSpec
 
     "fail with a 500 (internal server error) when the service throws an exception" in new ValidatorSetup {
 
+      thereAreNoOverlappingAPIContexts
       when(mockAPIDefinitionService.createOrUpdate(any[APIDefinition])(any[HeaderCarrier]))
         .thenReturn(failed(new RuntimeException("Something went wrong")))
 
@@ -214,6 +220,7 @@ class APIDefinitionControllerSpec extends UnitSpec
           |   ]
           |}""".stripMargin.replaceAll("\n", " ")
 
+      thereAreNoOverlappingAPIContexts
       verifyZeroInteractions(mockAPIDefinitionService)
 
       val result: Result = await(underTest.createOrUpdate()(request.withBody(Json.parse(body))))
@@ -264,6 +271,7 @@ class APIDefinitionControllerSpec extends UnitSpec
           |   ]
           |}""".stripMargin.replaceAll("\n", " ")
 
+      thereAreNoOverlappingAPIContexts
       verifyZeroInteractions(mockAPIDefinitionService)
 
       val result: Result = await(underTest.createOrUpdate()(request.withBody(Json.parse(body))))
@@ -308,6 +316,7 @@ class APIDefinitionControllerSpec extends UnitSpec
           Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
           Some(true))), requiresTrust = Some(true), None, None)
 
+      thereAreNoOverlappingAPIContexts
       theServiceWillCreateOrUpdateTheAPIDefinition
 
       val result: Result = await(underTest.createOrUpdate()(request.withBody(Json.parse(apiDefinitionJson))))
@@ -349,6 +358,7 @@ class APIDefinitionControllerSpec extends UnitSpec
           Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
           Some(true))), requiresTrust = Some(true), None, None)
 
+      thereAreNoOverlappingAPIContexts
       theServiceWillCreateOrUpdateTheAPIDefinition
 
       private val result = await(underTest.createOrUpdate()(request.withBody(Json.parse(apiDefinitionJson))))
@@ -394,6 +404,7 @@ class APIDefinitionControllerSpec extends UnitSpec
           Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
           Some(true))), requiresTrust = Some(true), None, None)
 
+      thereAreNoOverlappingAPIContexts
       theServiceWillCreateOrUpdateTheAPIDefinition
 
       private val result = await(underTest.createOrUpdate()(request.withBody(Json.parse(apiDefinitionJson))))
@@ -860,6 +871,7 @@ class APIDefinitionControllerSpec extends UnitSpec
       when(mockAPIDefinitionService.fetchByName(any())).thenReturn(Future.successful(None))
       when(mockAPIDefinitionService.fetchByServiceBaseUrl(any())).thenReturn(Future.successful(None))
       when(mockAPIDefinitionService.fetchByContext(any())).thenReturn(Future.successful(None))
+      thereAreNoOverlappingAPIContexts
 
       private val result = await(underTest.validate()(request.withBody(Json.parse(calendarApiDefinition))))
 
