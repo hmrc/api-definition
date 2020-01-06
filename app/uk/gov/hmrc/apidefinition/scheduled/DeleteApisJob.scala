@@ -32,7 +32,7 @@ import scala.util.control.NonFatal
 
 object DeleteApisJob {
   val ApisToDelete: Seq[String] = Seq("api-scope", "api-subscription-fields", "api-publisher", "api-definition",
-    "third-party-application", "third-party-developer")
+    "third-party-application", "third-party-developer", "api-subscription-fields-sandbox")
 }
 
 class DeleteApisJob @Inject()(override val lockKeeper: DeleteApisJobLockKeeper,
