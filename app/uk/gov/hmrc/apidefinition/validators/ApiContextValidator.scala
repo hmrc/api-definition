@@ -62,6 +62,7 @@ class ApiContextValidator @Inject()(apiDefinitionService: APIDefinitionService,
       contextNotChangedValidated <- validateContextNotChanged(errorContext, apiDefinition)
       newAPITopLevelContextValidated <- existingAPIDefinitionFuture.flatMap(existingAPIDefinition => existingAPIDefinition match {
         case None => validationsForNewAPI(errorContext)
+        case Some(found: APIDefinition) if(found.versions.size < apiDefinition.versions.size)  => validationsForNewAPI(errorContext)
         case Some(_) => successful(context.validNel)
       })
     } yield (contextUniqueValidated, contextNotChangedValidated, newAPITopLevelContextValidated).mapN((_, _, _) => context)
