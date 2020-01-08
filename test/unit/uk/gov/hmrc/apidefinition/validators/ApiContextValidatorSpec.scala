@@ -34,21 +34,25 @@ import scala.concurrent.Future.successful
 class ApiContextValidatorSpec extends UnitSpec with MockitoSugar {
 
   trait Setup {
-    def testAPIDefinition(serviceName: String = "money-service", context: String = "money") =
+    def testAPIDefinition(serviceName: String = "money-service", context: String = "money", versions: Seq[String] = Seq("1.0")) =
       APIDefinition(
         serviceName = serviceName,
         serviceBaseUrl = "http://www.money.com",
         name = "Money API",
         description = "API for checking payments",
         context = context,
-        versions =
-          Seq(
-            APIVersion(
-              "1.0",
-              APIStatus.PROTOTYPED,
-              Some(PublicAPIAccess()),
-              Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)))),
+        versions = generateApiVersions(versions),
         requiresTrust = Some(false))
+
+    private def generateApiVersions(versions: Seq[String]): Seq[APIVersion] = {
+      versions.map(version => {
+        APIVersion(
+          version,
+          APIStatus.PROTOTYPED,
+          Some(PublicAPIAccess()),
+          Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)))
+      })
+    }
 
     def fetchByContextWillReturn(context: String, apiDefinitionToReturn: Option[APIDefinition]) =
       when(mockAPIDefinitionService.fetchByContext(context)).thenReturn(successful(apiDefinitionToReturn))
@@ -57,14 +61,14 @@ class ApiContextValidatorSpec extends UnitSpec with MockitoSugar {
       when(mockAPIDefinitionRepository.fetchByServiceName(serviceName)).thenReturn(successful(apiDefinitionToReturn))
 
     def verifyValidationPassed(result: validatorUnderTest.HMRCValidated[String], expectedContext: String) = {
-      result.isValid should be (true)
+      result.isValid should be(true)
       val Valid(validatedContext) = result
-      validatedContext should be (expectedContext)
+      validatedContext should be(expectedContext)
     }
 
     def verifyValidationFailed(result: validatorUnderTest.HMRCValidated[String], expectedErrors: Seq[String]) = {
       val Invalid(errors) = result
-      errors.size should be (expectedErrors.size)
+      errors.size should be(expectedErrors.size)
       errors.toList should contain allElementsOf expectedErrors
     }
 
@@ -109,6 +113,56 @@ class ApiContextValidatorSpec extends UnitSpec with MockitoSugar {
       verifyValidationPassed(result, context)
     }
 
+    "fail validation for new version of existing API with legacy context" in new Setup {
+      lazy val context: String = "money"
+      lazy val serviceName: String = "money-service"
+      lazy val apiDefinition: APIDefinition = testAPIDefinition(serviceName, context, Seq("1.0", "2.0"))
+      lazy val apiDefinitionWithNewVersion: APIDefinition = testAPIDefinition(serviceName, context, Seq("1.0", "2.0", "3.0"))
+
+      thereAreNoOverlappingAPIContexts
+      fetchByContextWillReturn(context, Some(apiDefinition))
+      fetchByServiceNameWillReturn(serviceName, Some(apiDefinition))
+
+      val result: validatorUnderTest.HMRCValidated[String] = await(validatorUnderTest.validate(errorContext, apiDefinitionWithNewVersion)(context))
+
+      verifyValidationFailed(result,
+        Seq(s"Field 'context' must start with one of 'agents', 'customs', 'individuals', 'mobile', 'organisations', 'payments', 'test' $errorContext",
+          s"Field 'context' must have at least two segments $errorContext"))
+    }
+
+    "fail validation when new version of existing API context is superset of existing" in new Setup {
+      lazy val existingContext: String = "individuals/foo"
+      lazy val newContext: String = s"$existingContext/bar"
+      lazy val differentExistingAPI: APIDefinition = testAPIDefinition("existing-service", existingContext)
+      lazy val existingAPI: APIDefinition = testAPIDefinition("new-service", newContext)
+      lazy val newVersionOfExistingAPI: APIDefinition = testAPIDefinition("new-service", newContext, Seq("1.0", "2.0", "3.0"))
+
+      fetchByTopLevelContextWillReturn(Seq(differentExistingAPI))
+      fetchByContextWillReturn(newContext, Some(existingAPI))
+      fetchByServiceNameWillReturn("new-service", Some(existingAPI))
+
+      val result: validatorUnderTest.HMRCValidated[String] = await(validatorUnderTest.validate(errorContext, newVersionOfExistingAPI)(newContext))
+
+      verifyValidationFailed(result, Seq(s"Field 'context' overlaps with '$existingContext' $errorContext"))
+    }
+
+    "fail validation when new version of existing API context is subset of existing" in new Setup {
+      lazy val newContext: String =  "individuals/foo"
+      lazy val existingContext: String = s"$newContext/bar"
+      lazy val differentExistingAPI: APIDefinition = testAPIDefinition("existing-service", existingContext)
+      lazy val existingAPI: APIDefinition = testAPIDefinition("new-service", newContext)
+      lazy val newVersionOfExistingAPI: APIDefinition = testAPIDefinition("new-service", newContext, Seq("1.0", "2.0", "3.0"))
+
+      fetchByTopLevelContextWillReturn(Seq(differentExistingAPI))
+      fetchByContextWillReturn(newContext, Some(existingAPI))
+      fetchByServiceNameWillReturn("new-service", Some(existingAPI))
+
+      val result: validatorUnderTest.HMRCValidated[String] = await(validatorUnderTest.validate(errorContext, newVersionOfExistingAPI)(newContext))
+
+      verifyValidationFailed(result, Seq(s"Field 'context' overlaps with '$existingContext' $errorContext"))
+    }
+
+
     "fail if context is empty" in new Setup {
       lazy val context: String = ""
       lazy val apiDefinition: APIDefinition = testAPIDefinition(context = context)
@@ -151,7 +205,7 @@ class ApiContextValidatorSpec extends UnitSpec with MockitoSugar {
 
     val prohibitedChars = List(
       ' ', '@', '%', '£', '*', '\\', '|', '$', '~', '^', ';', '=', '\'',
-      '<', '>', '"', '?', '!', ',', '.', ':', '&', '[', ']', '(' ,')'
+      '<', '>', '"', '?', '!', ',', '.', ':', '&', '[', ']', '(', ')'
     )
     ('{' :: '}' :: prohibitedChars).foreach { char: Char =>
       s"fail validation if the API contains '$char' in the context" in new Setup {
@@ -235,7 +289,7 @@ class ApiContextValidatorSpec extends UnitSpec with MockitoSugar {
       lazy val serviceName: String = "money-service"
       lazy val apiDefinition: APIDefinition = testAPIDefinition(serviceName, context)
 
-      val formattedTopLevelContexts: String = permittedTopLevelContexts.sorted.mkString("'","', '", "'")
+      val formattedTopLevelContexts: String = permittedTopLevelContexts.sorted.mkString("'", "', '", "'")
 
       thereAreNoOverlappingAPIContexts
       fetchByContextWillReturn(context, None)
