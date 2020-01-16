@@ -278,11 +278,22 @@ class ApiDefinitionValidatorSpec extends UnitSpec with MockitoSugar {
       }
     }
 
-    "fail validation when a scope is provided but auth type is 'application'" in new Setup {
-      lazy val apiDefinition: APIDefinition = APIDefinition("calendar", "http://calendar", "Calendar API", "My Calendar API", "individuals/calendar",
-        Seq(APIVersion("1.0", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Seq(Endpoint("/uriPattern", "endpointName", HttpMethod.GET,
-          AuthType.APPLICATION, ResourceThrottlingTier.UNLIMITED, Some("scope"))))), None)
-      assertValidationFailure(apiDefinition, List("Field 'endpoints.scope' is not allowed for API 'Calendar API' version '1.0' endpoint 'endpointName'"))
+    "fail validation when no scopes are provided for a user restricted endpoint" in new Setup {
+      lazy val apiDefinition: APIDefinition = moneyApiDefinition.copy(
+        versions = Seq(moneyApiVersion.copy(endpoints = Seq(moneyEndpoint.copy(scope = None)))))
+      assertValidationFailure(apiDefinition, List("Field 'endpoints.scope' is required for API 'Money API' version '1.0' endpoint 'Check Payments'"))
+    }
+
+    "pass validation when no scopes are provided for an application restricted endpoint" in new Setup {
+      lazy val apiDefinition: APIDefinition = moneyApiDefinition.copy(
+        versions = Seq(moneyApiVersion.copy(endpoints = Seq(moneyEndpoint.copy(authType = AuthType.APPLICATION, scope = None)))))
+      assertValidationSuccess(apiDefinition)
+    }
+
+    "pass validation when scopes are provided for an application restricted endpoint" in new Setup {
+      lazy val apiDefinition: APIDefinition = moneyApiDefinition.copy(
+        versions = Seq(moneyApiVersion.copy(endpoints = Seq(moneyEndpoint.copy(authType = AuthType.APPLICATION, scope = Some("scope"))))))
+      assertValidationSuccess(apiDefinition)
     }
 
     "accumulate multiple errors in the response" in new Setup {
