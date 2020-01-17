@@ -50,7 +50,6 @@ class ApiEndpointValidator @Inject()(queryParameterValidator: QueryParameterVali
   private def validateScope(errorContext: String)(implicit endpoint: Endpoint): HMRCValidated[Endpoint] = {
     endpoint.authType match {
       case AuthType.USER => validateThat(_ => endpoint.scope.nonEmpty, _ => s"Field 'endpoints.scope' is required $errorContext")
-      case AuthType.APPLICATION => validateThat(_ => endpoint.scope.isEmpty, _ => s"Field 'endpoints.scope' is not allowed $errorContext")
       case _ => endpoint.validNel
     }
   }
