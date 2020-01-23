@@ -99,7 +99,7 @@ class ApiContextValidator @Inject()(apiDefinitionService: APIDefinitionService,
 
   private def validateContextDoesNotOverlapExistingAPI(errorContext: String)(implicit context: String): Future[HMRCValidated[String]] = {
     for {
-      existingAPIDefinitions <- apiDefinitionRepository.fetchAllByTopLevelContext(context.split('/').head)
+      existingAPIDefinitions <- apiDefinitionRepository.fetchAllByTopLevelContext(context.split('/').head).map(_.filterNot(_.context == context))
       existingContexts = existingAPIDefinitions.map(_.context)
       validations = existingContexts.map(otherContext =>
         validateThat(

@@ -119,7 +119,7 @@ class ApiContextValidatorSpec extends UnitSpec with MockitoSugar {
       lazy val apiDefinition: APIDefinition = testAPIDefinition(serviceName, context, Seq("1.0", "2.0"))
       lazy val apiDefinitionWithNewVersion: APIDefinition = testAPIDefinition(serviceName, context, Seq("1.0", "2.0", "3.0"))
 
-      thereAreNoOverlappingAPIContexts
+      fetchByTopLevelContextWillReturn(Seq(apiDefinition))
       fetchByContextWillReturn(context, Some(apiDefinition))
       fetchByServiceNameWillReturn(serviceName, Some(apiDefinition))
 
