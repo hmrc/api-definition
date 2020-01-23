@@ -34,7 +34,7 @@ class ApiContextValidator @Inject()(apiDefinitionService: APIDefinitionService,
                                    (implicit override val ec: ExecutionContext) extends Validator[String] {
 
 
-  private val ValidTopLevelContexts: Set[String] = Set("agents", "customs", "individuals", "mobile", "organisations", "test", "payments")
+  private val ValidTopLevelContexts: Set[String] = Set("agents", "customs", "individuals", "mobile", "organisations", "test", "payments", "misc")
   private val contextRegex: Regex = """^[a-zA-Z0-9_\-\/]+$""".r
 
   def validate(errorContext: String, apiDefinition: APIDefinition)(implicit context: String): Future[HMRCValidated[String]] = {
