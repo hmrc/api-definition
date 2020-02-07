@@ -358,5 +358,20 @@ class ApiContextValidatorSpec extends UnitSpec with MockitoSugar {
 
       verifyValidationPassed(result, newContext)
     }
+
+    "pass validation when new API context string overlaps but does not path overlap" in new Setup {
+      lazy val newContext: String = "individuals/baz"
+      lazy val newAPI: APIDefinition = testAPIDefinition("new-service", newContext)
+      lazy val existingAPI1: APIDefinition = testAPIDefinition("existing-service-1", "individuals/ba")
+      lazy val existingAPI2: APIDefinition = testAPIDefinition("existing-service-2", "individuals/baz2")
+
+      fetchByTopLevelContextWillReturn(Seq(existingAPI1, existingAPI2))
+      fetchByContextWillReturn(newContext, None)
+      fetchByServiceNameWillReturn("new-service", None)
+
+      val result: validatorUnderTest.HMRCValidated[String] = await(validatorUnderTest.validate(errorContext, newAPI)(newContext))
+
+      verifyValidationPassed(result, newContext)
+    }
   }
 }
