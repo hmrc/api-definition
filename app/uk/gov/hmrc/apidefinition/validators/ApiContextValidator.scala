@@ -16,8 +16,10 @@
 
 package uk.gov.hmrc.apidefinition.validators
 
-import cats.data.Validated.Invalid
+import java.nio.file.{Path, Paths}
+
 import cats.Monoid._
+import cats.data.Validated.Invalid
 import cats.implicits._
 import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.apidefinition.models.APIDefinition
@@ -98,12 +100,16 @@ class ApiContextValidator @Inject()(apiDefinitionService: APIDefinitionService,
       _ => s"Field 'context' must have at least two segments $errorContext"))
 
   private def validateContextDoesNotOverlapExistingAPI(errorContext: String)(implicit context: String): Future[HMRCValidated[String]] = {
+    def overlap(firstPath: Path, secondPath: Path): Boolean = {
+      firstPath.startsWith(secondPath) || secondPath.startsWith(firstPath)
+    }
+
     for {
       existingAPIDefinitions <- apiDefinitionRepository.fetchAllByTopLevelContext(context.split('/').head).map(_.filterNot(_.context == context))
       existingContexts = existingAPIDefinitions.map(_.context)
       validations = existingContexts.map(otherContext =>
         validateThat(
-          _ => !context.startsWith(otherContext) && !otherContext.startsWith(context),
+          _ => !overlap(Paths.get(otherContext), Paths.get(context)),
           _ => s"Field 'context' overlaps with '$otherContext' $errorContext"))
     } yield combineAll(validations)
     /* API-4094: The combineAll() here actually concatenates the 'context' String multiple times, so any valid HMRCValidation object returned is technically
