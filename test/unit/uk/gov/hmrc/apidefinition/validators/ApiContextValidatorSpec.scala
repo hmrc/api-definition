@@ -126,7 +126,7 @@ class ApiContextValidatorSpec extends UnitSpec with MockitoSugar {
       val result: validatorUnderTest.HMRCValidated[String] = await(validatorUnderTest.validate(errorContext, apiDefinitionWithNewVersion)(context))
 
       verifyValidationFailed(result,
-        Seq(s"Field 'context' must start with one of 'agents', 'customs', 'individuals', 'misc', 'mobile', 'organisations', 'payments', 'test' $errorContext",
+        Seq(s"Field 'context' must start with one of 'accounts', 'agents', 'customs', 'individuals', 'misc', 'mobile', 'organisations', 'payments', 'test' $errorContext",
           s"Field 'context' must have at least two segments $errorContext"))
     }
 
@@ -267,7 +267,7 @@ class ApiContextValidatorSpec extends UnitSpec with MockitoSugar {
           s"Field 'context' should not have empty path segments $errorContext"))
     }
 
-    val permittedTopLevelContexts = List("agents", "customs", "mobile", "individuals", "organisations", "test", "payments", "misc")
+    val permittedTopLevelContexts = List("accounts", "agents", "customs", "mobile", "individuals", "organisations", "test", "payments", "misc")
     permittedTopLevelContexts.foreach(topLevelContext =>
       s"pass validation with a top level context of $topLevelContext" in new Setup {
         lazy val context: String = s"$topLevelContext/foo"
