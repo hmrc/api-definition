@@ -924,31 +924,6 @@ class APIDefinitionControllerSpec extends UnitSpec
     }
   }
 
-  "republishAll" should {
-    "succeed with status 204 when all APIs are republished" in new Setup {
-      given(mockAPIDefinitionService.publishAll()(any[HeaderCarrier]))
-        .willReturn(successful(()))
-
-      private val result = await(underTest.publishAll()(request))
-
-      status(result) shouldBe NO_CONTENT
-      bodyOf(result).isEmpty shouldBe true
-    }
-
-    "fail with status 500 and return the list of APIs which failed to publish" in new Setup {
-      val message = "Could not republish the following APIs to WSO2: [API-1, API-2]"
-
-      given(mockAPIDefinitionService.publishAll()(any[HeaderCarrier]))
-        .willReturn(failed(new RuntimeException(message)))
-
-      private val result = await(underTest.publishAll()(request))
-
-      status(result) shouldBe INTERNAL_SERVER_ERROR
-      (jsonBodyOf(result) \ "code").as[String] shouldBe "INTERNAL_SERVER_ERROR"
-      (jsonBodyOf(result) \ "message").as[String] shouldBe message
-    }
-  }
-
   "publishAllToAws" should {
     "succeed with status 204 when all APIs are republished" in new Setup {
       given(mockAPIDefinitionService.publishAllToAws()(any[HeaderCarrier])).willReturn(successful(()))

@@ -30,8 +30,7 @@ import scala.concurrent.Future.{failed, sequence, successful}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
-                                     awsApiPublisher: AwsApiPublisher,
+class APIDefinitionService @Inject()(awsApiPublisher: AwsApiPublisher,
                                      thirdPartyApplicationConnector: ThirdPartyApplicationConnector,
                                      apiDefinitionRepository: APIDefinitionRepository,
                                      notificationService: NotificationService,
@@ -42,7 +41,6 @@ class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
 
     def publish(): Future[Unit] = {
       (for {
-        _ <- if (playApplicationContext.bypassWso2) successful(()) else wso2Publisher.publish(apiDefinition)
         _ <- awsApiPublisher.publish(apiDefinition)
       } yield ()) recoverWith {
         case e: PublishingException =>
@@ -174,7 +172,6 @@ class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
         case true => failed(new UnauthorizedException("API has subscribers"))
         case false =>
           for {
-            _ <- if (playApplicationContext.bypassWso2) successful(()) else wso2Publisher.delete(definition)
             _ <- awsApiPublisher.delete(definition)
             _ <- apiDefinitionRepository.delete(definition.serviceName)
           } yield ()
@@ -242,21 +239,6 @@ class APIDefinitionService @Inject()(wso2Publisher: WSO2APIPublisher,
 
     if (filteredVersions.isEmpty) None
     else Some(api.copy(versions = filteredVersions))
-  }
-
-  def publishAll()(implicit hc: HeaderCarrier): Future[Unit] = {
-
-    def allFailures() = {
-      for {
-        definitions <- apiDefinitionRepository.fetchAll()
-        fs <- wso2Publisher.publish(definitions)
-      } yield fs
-    }
-
-    allFailures().flatMap {
-      case f if f.nonEmpty => failed(new RuntimeException(s"Could not republish the following APIs to WSO2: [${f.mkString(", ")}]"))
-      case _ => successful(())
-    }
   }
 
   def publishAllToAws()(implicit hc: HeaderCarrier): Future[Unit] = {
