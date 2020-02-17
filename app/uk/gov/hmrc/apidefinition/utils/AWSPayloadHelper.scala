@@ -17,7 +17,7 @@
 package uk.gov.hmrc.apidefinition.utils
 
 import uk.gov.hmrc.apidefinition.models._
-
+import uk.gov.hmrc.apidefinition.models.AWSAPIDefinition._
 import scala.collection.immutable.TreeMap
 
 object AWSPayloadHelper {
@@ -35,7 +35,10 @@ object AWSPayloadHelper {
     def buildAWSHttpVerbDetails(e: Endpoint): AWSHttpVerbDetails = {
       AWSHttpVerbDetails(
         parameters = buildAWSParameters(e),
-        responses = Map("200" -> AWSResponse(description = "OK")))
+        responses = Map("200" -> AWSResponse(description = "OK")),
+        `x-auth-type` = awsAuthType(e.authType),
+        `x-throttling-tier` = awsThrottlingTier(e.throttlingTier),
+        `x-scope` = e.scope)
     }
 
     def groupEndpointsByResource(endpoints: Seq[Endpoint]): Map[String, Seq[Endpoint]] = {
