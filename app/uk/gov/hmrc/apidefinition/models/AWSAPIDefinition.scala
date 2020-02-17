@@ -67,3 +67,7 @@ object AWSParameterType extends Enumeration {
   val PATH = Value("path")
 }
 
+object AWSAPIDefinition {
+  def awsApiGatewayName(version: String, apiDefinition: APIDefinition): String =
+    s"${apiDefinition.context.replaceAll("/", "--")}--$version"
+}

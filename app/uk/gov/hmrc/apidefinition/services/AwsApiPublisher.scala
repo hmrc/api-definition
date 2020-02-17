@@ -20,8 +20,8 @@ import com.google.inject.Singleton
 import javax.inject.Inject
 import play.api.Logger
 import uk.gov.hmrc.apidefinition.connector.AWSAPIPublisherConnector
+import uk.gov.hmrc.apidefinition.models.AWSAPIDefinition.awsApiGatewayName
 import uk.gov.hmrc.apidefinition.models.{APIDefinition, APIStatus, APIVersion}
-import uk.gov.hmrc.apidefinition.models.WSO2APIDefinition.wso2ApiName
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.utils.AWSPayloadHelper.buildAWSSwaggerDetails
 import uk.gov.hmrc.http.HeaderCarrier
@@ -49,7 +49,7 @@ class AwsApiPublisher @Inject()(val awsAPIPublisherConnector: AWSAPIPublisherCon
     } else {
       sequence {
         apiDefinition.versions.map { apiVersion =>
-          val apiName = wso2ApiName(apiVersion.version, apiDefinition)
+          val apiName = awsApiGatewayName(apiVersion.version, apiDefinition)
 
           apiVersion.status match {
             case APIStatus.RETIRED => deleteAPIVersion(apiName)
@@ -83,7 +83,7 @@ class AwsApiPublisher @Inject()(val awsAPIPublisherConnector: AWSAPIPublisherCon
     } else {
       sequence {
         apiDefinition.versions.map { apiVersion =>
-          deleteAPIVersion(wso2ApiName(apiVersion.version, apiDefinition))
+          deleteAPIVersion(awsApiGatewayName(apiVersion.version, apiDefinition))
         }
       } map {_ =>
         Logger.info(s"Successfully deleted all versions for API '${apiDefinition.serviceName}' from AWS API Gateway")

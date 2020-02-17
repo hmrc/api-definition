@@ -21,7 +21,7 @@ import org.joda.time.format.ISODateTimeFormat
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import uk.gov.hmrc.apidefinition.models.APIAccessType._
-import uk.gov.hmrc.apidefinition.models.WSO2ParameterType._
+import uk.gov.hmrc.apidefinition.models.AWSParameterType._
 import uk.gov.hmrc.play.json.Union
 
 object JsonFormatters {
