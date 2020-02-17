@@ -32,7 +32,7 @@ import play.api.http.Status.{INTERNAL_SERVER_ERROR, OK}
 import play.api.{Configuration, Environment}
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.connector.AWSAPIPublisherConnector
-import uk.gov.hmrc.apidefinition.models.{WSO2APIInfo, WSO2HttpVerbDetails, WSO2Response, WSO2SwaggerDetails}
+import uk.gov.hmrc.apidefinition.models.{AWSAPIInfo, AWSHttpVerbDetails, AWSResponse, AWSSwaggerDetails}
 import uk.gov.hmrc.http.logging.Authorization
 import uk.gov.hmrc.http.{HeaderCarrier, Upstream5xxResponse}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
@@ -47,17 +47,12 @@ class AWSAPIPublisherConnectorSpec extends UnitSpec with WithFakeApplication wit
   private val wireMockUrl = s"http://$stubHost:$stubPort"
   private val wireMockServer = new WireMockServer(wireMockConfig().port(stubPort))
 
-  private val aWSO2HttpVerbDetails = WSO2HttpVerbDetails(parameters = None,
-    responses = Map("200" -> WSO2Response(description = "OK")),
-    `x-auth-type` = "None",
-    `x-throttling-tier` = "Unlimited",
-    `x-scope` = None)
-
+  private val anAWSHttpVerbDetails = AWSHttpVerbDetails(parameters = None, responses = Map("200" -> AWSResponse(description = "OK")))
   private val apiName = "calendar--1.0"
   private val swagger =
-    WSO2SwaggerDetails(
-      paths = Map("/check-weather" -> Map("get" -> aWSO2HttpVerbDetails)),
-      info = WSO2APIInfo("calendar", "1.0"))
+    AWSSwaggerDetails(
+      paths = Map("/check-weather" -> Map("get" -> anAWSHttpVerbDetails)),
+      info = AWSAPIInfo("calendar", "1.0"))
 
   trait Setup {
     SharedMetricRegistries.clear()

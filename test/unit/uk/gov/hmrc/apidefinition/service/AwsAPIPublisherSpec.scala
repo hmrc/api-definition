@@ -74,7 +74,7 @@ class AwsAPIPublisherSpec extends UnitSpec with ScalaFutures with MockitoSugar {
 
   "publishAll" should {
     "create or update all the APIs in AWS" in new Setup {
-      val swaggerDetailsCaptor: ArgumentCaptor[WSO2SwaggerDetails] = ArgumentCaptor.forClass(classOf[WSO2SwaggerDetails])
+      val swaggerDetailsCaptor: ArgumentCaptor[AWSSwaggerDetails] = ArgumentCaptor.forClass(classOf[AWSSwaggerDetails])
       when(underTest.awsAPIPublisherConnector.createOrUpdateAPI(any[String], swaggerDetailsCaptor.capture())(any[HeaderCarrier]))
         .thenReturn(successful(UUID.randomUUID().toString))
       val apiDefinition1: APIDefinition = someAPIDefinition("API 1")
@@ -82,8 +82,8 @@ class AwsAPIPublisherSpec extends UnitSpec with ScalaFutures with MockitoSugar {
 
       await(underTest.publishAll(Seq(apiDefinition1, apiDefinition2)))
 
-      verify(underTest.awsAPIPublisherConnector, times(2)).createOrUpdateAPI(any[String], any[WSO2SwaggerDetails])(any[HeaderCarrier])
-      val swaggerDetails: Seq[WSO2SwaggerDetails] = swaggerDetailsCaptor.getAllValues.asScala
+      verify(underTest.awsAPIPublisherConnector, times(2)).createOrUpdateAPI(any[String], any[AWSSwaggerDetails])(any[HeaderCarrier])
+      val swaggerDetails: Seq[AWSSwaggerDetails] = swaggerDetailsCaptor.getAllValues.asScala
       swaggerDetails.head.info.title shouldBe apiDefinition1.name
       swaggerDetails(1).info.title shouldBe apiDefinition2.name
     }
@@ -91,7 +91,7 @@ class AwsAPIPublisherSpec extends UnitSpec with ScalaFutures with MockitoSugar {
 
   "publish" should {
     "create or update the API in AWS" in new Setup {
-      val swaggerDetailsCaptor: ArgumentCaptor[WSO2SwaggerDetails] = ArgumentCaptor.forClass(classOf[WSO2SwaggerDetails])
+      val swaggerDetailsCaptor: ArgumentCaptor[AWSSwaggerDetails] = ArgumentCaptor.forClass(classOf[AWSSwaggerDetails])
       when(underTest.awsAPIPublisherConnector.createOrUpdateAPI(any[String], swaggerDetailsCaptor.capture())(any[HeaderCarrier]))
         .thenReturn(successful(UUID.randomUUID().toString))
       val apiDefinition: APIDefinition = someAPIDefinition()
@@ -99,8 +99,8 @@ class AwsAPIPublisherSpec extends UnitSpec with ScalaFutures with MockitoSugar {
       await(underTest.publish(apiDefinition))
 
       verify(underTest.awsAPIPublisherConnector)
-        .createOrUpdateAPI(ArgumentMatchers.eq(s"${apiDefinition.context}--2.0"), any[WSO2SwaggerDetails])(any[HeaderCarrier])
-      val swaggerDetails: WSO2SwaggerDetails = swaggerDetailsCaptor.getValue
+        .createOrUpdateAPI(ArgumentMatchers.eq(s"${apiDefinition.context}--2.0"), any[AWSSwaggerDetails])(any[HeaderCarrier])
+      val swaggerDetails: AWSSwaggerDetails = swaggerDetailsCaptor.getValue
       swaggerDetails.host shouldBe Some(host)
       swaggerDetails.info.title shouldBe apiDefinition.name
     }
@@ -114,13 +114,13 @@ class AwsAPIPublisherSpec extends UnitSpec with ScalaFutures with MockitoSugar {
     }
 
     "populate correctly the host from service base URLs using HTTP" in new Setup {
-      val swaggerDetailsCaptor: ArgumentCaptor[WSO2SwaggerDetails] = ArgumentCaptor.forClass(classOf[WSO2SwaggerDetails])
+      val swaggerDetailsCaptor: ArgumentCaptor[AWSSwaggerDetails] = ArgumentCaptor.forClass(classOf[AWSSwaggerDetails])
       when(underTest.awsAPIPublisherConnector.createOrUpdateAPI(any[String], swaggerDetailsCaptor.capture())(any[HeaderCarrier]))
         .thenReturn(successful(UUID.randomUUID().toString))
 
       await(underTest.publish(someAPIDefinition(serviceBaseUrl = s"http://$host")))
 
-      val swaggerDetails: WSO2SwaggerDetails = swaggerDetailsCaptor.getValue
+      val swaggerDetails: AWSSwaggerDetails = swaggerDetailsCaptor.getValue
       swaggerDetails.host shouldBe Some(host)
     }
 
@@ -129,14 +129,14 @@ class AwsAPIPublisherSpec extends UnitSpec with ScalaFutures with MockitoSugar {
 
       when(underTest.awsAPIPublisherConnector.deleteAPI(any[String])(any[HeaderCarrier]))
         .thenReturn(successful(UUID.randomUUID().toString))
-      when(underTest.awsAPIPublisherConnector.createOrUpdateAPI(any[String], any[WSO2SwaggerDetails])(any[HeaderCarrier]))
+      when(underTest.awsAPIPublisherConnector.createOrUpdateAPI(any[String], any[AWSSwaggerDetails])(any[HeaderCarrier]))
         .thenReturn(successful(UUID.randomUUID().toString))
 
       await(underTest.publish(apiDefinition))
 
       verify(underTest.awsAPIPublisherConnector).deleteAPI(s"${apiDefinition.context}--1.0")(hc)
       verify(underTest.awsAPIPublisherConnector)
-        .createOrUpdateAPI(ArgumentMatchers.eq(s"${apiDefinition.context}--2.0"), any[WSO2SwaggerDetails])(any[HeaderCarrier])
+        .createOrUpdateAPI(ArgumentMatchers.eq(s"${apiDefinition.context}--2.0"), any[AWSSwaggerDetails])(any[HeaderCarrier])
     }
   }
 

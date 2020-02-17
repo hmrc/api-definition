@@ -23,8 +23,8 @@ import play.api.http.HeaderNames.CONTENT_TYPE
 import play.api.libs.json.Json
 import play.api.{Configuration, Environment}
 import uk.gov.hmrc.apidefinition.config.AppConfig
+import uk.gov.hmrc.apidefinition.models.AWSSwaggerDetails
 import uk.gov.hmrc.apidefinition.models.JsonFormatters._
-import uk.gov.hmrc.apidefinition.models.WSO2SwaggerDetails
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.play.config.ServicesConfig
@@ -44,9 +44,9 @@ class AWSAPIPublisherConnector @Inject()(http: HttpClient,
   val apiKeyHeaderName = "x-api-key"
   val headers: Seq[(String, String)] = Seq(CONTENT_TYPE -> JSON, apiKeyHeaderName -> awsApiKey)
 
-  def createOrUpdateAPI(apiName: String, wso2SwaggerDetails: WSO2SwaggerDetails)(hc: HeaderCarrier): Future[String] = {
+  def createOrUpdateAPI(apiName: String, awsSwaggerDetails: AWSSwaggerDetails)(hc: HeaderCarrier): Future[String] = {
     implicit val headersWithoutAuthorization: HeaderCarrier = hc.copy(authorization = None)
-    http.PUTString(s"$serviceBaseUrl/$apiName", Json.toJson(wso2SwaggerDetails).toString(), headers) map { result =>
+    http.PUTString(s"$serviceBaseUrl/$apiName", Json.toJson(awsSwaggerDetails).toString(), headers) map { result =>
       (result.json \ "RequestId").as[String]
     }
   }

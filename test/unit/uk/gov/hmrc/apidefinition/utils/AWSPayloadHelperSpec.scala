@@ -17,10 +17,10 @@
 package unit.uk.gov.hmrc.apidefinition.utils
 
 import uk.gov.hmrc.apidefinition.models._
-import uk.gov.hmrc.apidefinition.utils.WSO2PayloadHelper._
+import uk.gov.hmrc.apidefinition.utils.AWSPayloadHelper._
 import uk.gov.hmrc.play.test.UnitSpec
 
-class WSO2PayloadHelperSpec extends UnitSpec {
+class AWSPayloadHelperSpec extends UnitSpec {
 
   private val endpoint = Endpoint(
     uriPattern = "",
@@ -48,73 +48,54 @@ class WSO2PayloadHelperSpec extends UnitSpec {
 
   private val endpointWithPathParameters = endpoint.copy(uriPattern = "/hello/{surname}/{nickname}")
 
-  "buildWSO2Security()" should {
-
-    "be empty if there are no scopes in the endpoints" in {
-      buildWSO2Security(endpoints = Seq(endpoint)) shouldBe None
-    }
-
-    "contain all (distinct) scopes of the endpoints, sorted by `key` " in {
-      val wso2Scope1 = WSO2SwaggerScope(name = "a-scope", key = "a-scope")
-      val wso2Scope2 = WSO2SwaggerScope(name = "great-scope", key = "great-scope")
-      val wso2Scope3 = WSO2SwaggerScope(name = "my-scope", key = "my-scope")
-
-      val sortedWso2Scopes = Seq(wso2Scope1, wso2Scope2, wso2Scope3)
-
-      val expectedResult = Some(Map("apim" -> Map("x-wso2-scopes" -> sortedWso2Scopes)))
-
-      buildWSO2Security(endpoints = endpointsWithScopes) shouldBe expectedResult
-    }
-  }
-
-  "buildWSO2PathParameters()" should {
+  "buildAWSPathParameters()" should {
 
     "return an empty sequence if there are no path parameters" in {
-      buildWSO2PathParameters(endpoint.copy(uriPattern = "/hello/world")) shouldBe Seq()
+      buildAWSPathParameters(endpoint.copy(uriPattern = "/hello/world")) shouldBe Seq()
     }
 
     "return all path parameters sorted by segment precedence" in {
       val expectedPathParameters = Seq(
-        WSO2PathParameter(name = "surname"),
-        WSO2PathParameter(name = "nickname"))
+        AWSPathParameter(name = "surname"),
+        AWSPathParameter(name = "nickname"))
 
-      buildWSO2PathParameters(endpointWithPathParameters) shouldBe expectedPathParameters
+      buildAWSPathParameters(endpointWithPathParameters) shouldBe expectedPathParameters
     }
   }
 
-  "buildWSO2QueryParameters()" should {
+  "buildAWSQueryParameters()" should {
 
     "return an empty sequence if there are no query parameters" in {
-      buildWSO2QueryParameters(endpoint) shouldBe Seq()
+      buildAWSQueryParameters(endpoint) shouldBe Seq()
     }
 
     "return all query parameters sorted by name" in {
       val expectedQueryParameters = Seq(
-        WSO2QueryParameter(name = "address", required = true),
-        WSO2QueryParameter(name = "city", required = false),
-        WSO2QueryParameter(name = "postcode", required = true))
+        AWSQueryParameter(name = "address", required = true),
+        AWSQueryParameter(name = "city", required = false),
+        AWSQueryParameter(name = "postcode", required = true))
 
-      buildWSO2QueryParameters(endpointWithQueryParameters) shouldBe expectedQueryParameters
+      buildAWSQueryParameters(endpointWithQueryParameters) shouldBe expectedQueryParameters
     }
   }
 
-  "buildWSO2Parameters()" should {
+  "buildAWSParameters()" should {
 
     "return None if there are no query parameters, nor path parameters" in {
-      buildWSO2Parameters(endpoint) shouldBe None
+      buildAWSParameters(endpoint) shouldBe None
     }
 
     "return path parameters first and then the query parameters sorted alphabetically" in {
       val endpointWithManyParams = endpointWithQueryParameters.copy(uriPattern = "/hello/{surname}/{nickname}")
 
       val expectedParameters = Seq(
-        WSO2PathParameter(name = "surname"),
-        WSO2PathParameter(name = "nickname"),
-        WSO2QueryParameter(name = "address", required = true),
-        WSO2QueryParameter(name = "city", required = false),
-        WSO2QueryParameter(name = "postcode", required = true))
+        AWSPathParameter(name = "surname"),
+        AWSPathParameter(name = "nickname"),
+        AWSQueryParameter(name = "address", required = true),
+        AWSQueryParameter(name = "city", required = false),
+        AWSQueryParameter(name = "postcode", required = true))
 
-      buildWSO2Parameters(endpointWithManyParams) shouldBe Some(expectedParameters)
+      buildAWSParameters(endpointWithManyParams) shouldBe Some(expectedParameters)
     }
   }
 

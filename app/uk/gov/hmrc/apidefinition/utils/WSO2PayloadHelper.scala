@@ -16,8 +16,8 @@
 
 package uk.gov.hmrc.apidefinition.utils
 
-import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.models.WSO2APIDefinition._
+import uk.gov.hmrc.apidefinition.models._
 
 import scala.collection.immutable.TreeMap
 
@@ -82,42 +82,12 @@ object WSO2PayloadHelper {
     TreeMap() ++ buildHttpVerbsDetails(groupEndpointsByResource(apiVersion.endpoints))
   }
 
-  def buildWSO2SwaggerDetails(apiName: String, apiVersion: APIVersion): WSO2SwaggerDetails = {
-    WSO2SwaggerDetails(
-      paths = buildWSO2Paths(apiVersion),
-      info = WSO2APIInfo(apiName, apiVersion.version),
-      `x-wso2-security` = buildWSO2Security(apiVersion.endpoints))
-  }
-
   def buildAWSSwaggerDetails(apiName: String, apiVersion: APIVersion, basePath: String, host: String): WSO2SwaggerDetails = {
     WSO2SwaggerDetails(
       paths = buildWSO2Paths(apiVersion),
       info = WSO2APIInfo(apiName, apiVersion.version),
       basePath = Some(s"/$basePath"),
       host = Some(host))
-  }
-
-  private def buildWSO2EndpointConfig(apiDefinition: APIDefinition, apiVersion: APIVersion): WSO2EndpointConfig = {
-    WSO2EndpointConfig(
-      production_endpoints = buildProductionUrl(apiVersion, apiDefinition).map(WSO2Endpoint),
-      sandbox_endpoints = WSO2Endpoint(buildSandboxUrl(apiDefinition))
-    )
-  }
-
-  def buildWSO2APIDefinitions(apiDefinition: APIDefinition): Seq[WSO2APIDefinition] = {
-
-    def buildWSO2APIDefinition(apiVersion: APIVersion) = {
-      WSO2APIDefinition(
-        name = wso2ApiName(apiVersion.version, apiDefinition),
-        context = s"{version}/${apiDefinition.context}",
-        version = apiVersion.version,
-        subscribersCount = 0,
-        endpointConfig = buildWSO2EndpointConfig(apiDefinition, apiVersion),
-        swagger = Some(buildWSO2SwaggerDetails(apiDefinition.name, apiVersion))
-      )
-    }
-
-    apiDefinition.versions.map(buildWSO2APIDefinition)
   }
 
 }

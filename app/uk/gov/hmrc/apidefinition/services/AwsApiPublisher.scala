@@ -23,7 +23,7 @@ import uk.gov.hmrc.apidefinition.connector.AWSAPIPublisherConnector
 import uk.gov.hmrc.apidefinition.models.{APIDefinition, APIStatus, APIVersion}
 import uk.gov.hmrc.apidefinition.models.WSO2APIDefinition.wso2ApiName
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
-import uk.gov.hmrc.apidefinition.utils.WSO2PayloadHelper.buildAWSSwaggerDetails
+import uk.gov.hmrc.apidefinition.utils.AWSPayloadHelper.buildAWSSwaggerDetails
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.Future.sequence
