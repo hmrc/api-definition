@@ -22,7 +22,7 @@ import uk.gov.hmrc.play.test.UnitSpec
 
 class AWSPayloadHelperSpec extends UnitSpec {
 
-  private val endpoint = Endpoint(
+  val endpoint: Endpoint = Endpoint(
     uriPattern = "",
     endpointName = "",
     method = HttpMethod.GET,
@@ -30,13 +30,6 @@ class AWSPayloadHelperSpec extends UnitSpec {
     throttlingTier = ResourceThrottlingTier.UNLIMITED,
     scope = None,
     queryParameters = None)
-
-  private val endpointsWithScopes = Seq(
-    endpoint,
-    endpoint.copy(scope = Some("my-scope")),
-    endpoint.copy(scope = Some("a-scope")),
-    endpoint.copy(scope = Some("great-scope")),
-    endpoint.copy(scope = Some("a-scope")))
 
   private val queryParameters = Seq(
     Parameter(name = "city"),
@@ -46,9 +39,49 @@ class AWSPayloadHelperSpec extends UnitSpec {
 
   private val endpointWithQueryParameters = endpoint.copy(queryParameters = Some(queryParameters))
 
-  private val endpointWithPathParameters = endpoint.copy(uriPattern = "/hello/{surname}/{nickname}")
+  "buildAWSSwaggerDetails" should {
+    "correctly construct an AWSSwaggerDetails object" in {
+      val populatedEndpoint = Endpoint(
+        uriPattern = "/friend",
+        endpointName = "welcome my friend",
+        method = HttpMethod.GET,
+        authType = AuthType.USER,
+        throttlingTier = ResourceThrottlingTier.UNLIMITED,
+        scope = Some("read:user"),
+        queryParameters = Some(Seq(Parameter(name = "surname", required = true)))
+      )
+
+      val apiVersion = APIVersion(
+        version = "1.0",
+        status = APIStatus.PUBLISHED,
+        access = Some(PublicAPIAccess()),
+        endpoints = Seq(populatedEndpoint),
+        endpointsEnabled = Some(true)
+      )
+
+      val constructedSwaggerDetails: AWSSwaggerDetails = buildAWSSwaggerDetails("new-api", apiVersion, "foo/bar", "https://test.mdtp")
+
+      constructedSwaggerDetails.info.title should be ("new-api")
+      constructedSwaggerDetails.info.version should be ("1.0")
+      constructedSwaggerDetails.basePath should be (Some("/foo/bar"))
+      constructedSwaggerDetails.host should be (Some("https://test.mdtp"))
+      constructedSwaggerDetails.paths.size should be (1)
+
+      val constructedPath = constructedSwaggerDetails.paths.get("/friend")
+      constructedPath.isDefined should be (true)
+
+      val constructedVerb = constructedPath.get("get")
+      constructedVerb.`x-auth-type` should be ("Application User")
+      constructedVerb.`x-scope` should be (Some("read:user"))
+      constructedVerb.`x-throttling-tier` should be ("Unlimited")
+      constructedVerb.responses.size should be (1)
+      constructedVerb.responses.head should be (("200", AWSResponse("OK")))
+    }
+  }
 
   "buildAWSPathParameters()" should {
+
+    val endpointWithPathParameters = endpoint.copy(uriPattern = "/hello/{surname}/{nickname}")
 
     "return an empty sequence if there are no path parameters" in {
       buildAWSPathParameters(endpoint.copy(uriPattern = "/hello/world")) shouldBe Seq()

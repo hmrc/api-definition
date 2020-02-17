@@ -47,7 +47,13 @@ class AWSAPIPublisherConnectorSpec extends UnitSpec with WithFakeApplication wit
   private val wireMockUrl = s"http://$stubHost:$stubPort"
   private val wireMockServer = new WireMockServer(wireMockConfig().port(stubPort))
 
-  private val anAWSHttpVerbDetails = AWSHttpVerbDetails(parameters = None, responses = Map("200" -> AWSResponse(description = "OK")))
+  private val anAWSHttpVerbDetails =
+    AWSHttpVerbDetails(
+      parameters = None,
+      responses = Map("200" -> AWSResponse(description = "OK")),
+      `x-auth-type` = "None",
+      `x-throttling-tier` = "Unlimited",
+      `x-scope` = None)
   private val apiName = "calendar--1.0"
   private val swagger =
     AWSSwaggerDetails(
