@@ -28,7 +28,6 @@ class AppConfig @Inject()(override val runModeConfiguration: Configuration, envi
 
   lazy val buildProductionUrlForPrototypedAPIs: Boolean = runModeConfiguration.getBoolean("buildProductionUrlForPrototypedAPIs").getOrElse(false)
   lazy val isSandbox: Boolean = runModeConfiguration.getBoolean("isSandbox").getOrElse(false)
-  lazy val bypassWso2: Boolean = runModeConfiguration.getBoolean("bypassWso2").getOrElse(false)
 
   lazy val fetchByContextTtlInSeconds: String = runModeConfiguration.underlying.as[String]("fetchByContextTtlInSeconds")
 
