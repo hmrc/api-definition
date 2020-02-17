@@ -3,8 +3,6 @@
 
 The API Definition microservice is responsible for encapsulating the persistence of API definitions that are exposed to third parties via the API Platform.
 
-These API definitions are persisted in `Mongo` database and published to `WSO2 API Manager`.
-
 ### Unit tests
 
 Mongo DB needs to be running on the default port (27017). The tests can be run with the following command:

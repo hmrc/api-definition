@@ -106,10 +106,6 @@ class APIDefinitionController @Inject()(apiDefinitionValidator: ApiDefinitionVal
     }
   }
 
-  def publishAll(): Action[AnyContent] = Action.async { implicit request =>
-    apiDefinitionService.publishAll().map { _ => NoContent } recover recovery
-  }
-
   def publishAllToAws(): Action[AnyContent] = Action.async { implicit request =>
     apiDefinitionService.publishAllToAws().map { _ => NoContent } recover recovery
   }

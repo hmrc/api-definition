@@ -30,7 +30,7 @@ import uk.gov.hmrc.apidefinition.models
 import uk.gov.hmrc.apidefinition.models.APIStatus.APIStatus
 import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
-import uk.gov.hmrc.apidefinition.services.{APIDefinitionService, AwsApiPublisher, NotificationService, WSO2APIPublisher}
+import uk.gov.hmrc.apidefinition.services.{APIDefinitionService, AwsApiPublisher, NotificationService}
 import uk.gov.hmrc.http.HeaderNames._
 import uk.gov.hmrc.http.{HeaderCarrier, UnauthorizedException}
 import uk.gov.hmrc.play.test.UnitSpec
@@ -75,7 +75,6 @@ class APIDefinitionServiceSpec extends UnitSpec
 
     implicit val hc = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
 
-    val mockWSO2APIPublisher: WSO2APIPublisher = mock[WSO2APIPublisher]
     val mockAwsApiPublisher: AwsApiPublisher = mock[AwsApiPublisher]
     val mockAPIDefinitionRepository: APIDefinitionRepository = mock[APIDefinitionRepository]
     val mockThirdPartyApplicationConnector: ThirdPartyApplicationConnector = mock[ThirdPartyApplicationConnector]
@@ -83,7 +82,6 @@ class APIDefinitionServiceSpec extends UnitSpec
     val mockAppContext: AppConfig = mock[AppConfig]
 
     val underTest = new APIDefinitionService(
-      mockWSO2APIPublisher,
       mockAwsApiPublisher,
       mockThirdPartyApplicationConnector,
       mockAPIDefinitionRepository,
@@ -119,7 +117,6 @@ class APIDefinitionServiceSpec extends UnitSpec
     val apiDefinitionWithSavingTime = apiDefinition.copy(lastPublishedAt = Some(fixedSavingTime))
 
     when(mockAPIDefinitionRepository.fetchByServiceName(apiDefinition.serviceName)).thenReturn(successful(Some(apiDefinition)))
-    when(mockWSO2APIPublisher.delete(apiDefinition)).thenReturn(successful(()))
     when(mockAwsApiPublisher.delete(apiDefinition)).thenReturn(successful(()))
     when(mockAPIDefinitionRepository.delete(apiDefinition.serviceName)).thenReturn(successful(()))
   }
@@ -142,50 +139,20 @@ class APIDefinitionServiceSpec extends UnitSpec
 
   "createOrUpdate" should {
 
-    "create or update the API Definition in all WSO2, AWS and the repository" in new Setup {
+    "create or update the API Definition in all AWS and the repository" in new Setup {
       when(mockAPIDefinitionRepository.fetchByContext(apiDefinition.context)).thenReturn(Future.successful(Some(apiDefinition)))
-      when(mockWSO2APIPublisher.publish(apiDefinition)).thenReturn(unitSuccess)
       when(mockAwsApiPublisher.publish(apiDefinition)).thenReturn(unitSuccess)
       when(mockAPIDefinitionRepository.save(apiDefinitionWithSavingTime)).thenReturn(successful(apiDefinitionWithSavingTime))
 
       await(underTest.createOrUpdate(apiDefinition))
 
-      verify(mockWSO2APIPublisher, times(1)).publish(apiDefinition)
       verify(mockAwsApiPublisher, times(1)).publish(apiDefinition)
       verify(mockAPIDefinitionRepository, times(1)).save(apiDefinitionWithSavingTime)
-      verifyZeroInteractions(mockNotificationService)
-    }
-
-    "not call WSO2 when configured to bypass it" in new Setup {
-      when(mockAPIDefinitionRepository.fetchByContext(apiDefinition.context)).thenReturn(Future.successful(Some(apiDefinition)))
-      when(mockAwsApiPublisher.publish(apiDefinition)).thenReturn(unitSuccess)
-      when(mockAPIDefinitionRepository.save(apiDefinitionWithSavingTime)).thenReturn(successful(apiDefinitionWithSavingTime))
-      when(mockAppContext.bypassWso2).thenReturn(true)
-
-      await(underTest.createOrUpdate(apiDefinition))
-
-      verify(mockAwsApiPublisher, times(1)).publish(apiDefinition)
-      verify(mockAPIDefinitionRepository, times(1)).save(apiDefinitionWithSavingTime)
-      verifyZeroInteractions(mockNotificationService)
-      verifyZeroInteractions(mockWSO2APIPublisher)
-    }
-
-    "propagate unexpected errors that happen when trying to publish an API to WSO2" in new Setup {
-      when(mockAPIDefinitionRepository.fetchByContext(apiDefinition.context)).thenReturn(Future.successful(Some(apiDefinition)))
-      when(mockWSO2APIPublisher.publish(apiDefinition)).thenReturn(failed(new RuntimeException("Something went wrong")))
-      when(mockAwsApiPublisher.publish(apiDefinition)).thenReturn(unitSuccess)
-
-      val thrown = intercept[RuntimeException] {
-        await(underTest.createOrUpdate(apiDefinition))
-      }
-
-      thrown.getMessage shouldBe "Something went wrong"
       verifyZeroInteractions(mockNotificationService)
     }
 
     "propagate unexpected errors that happen when trying to publish an API to AWS" in new Setup {
       when(mockAPIDefinitionRepository.fetchByContext(apiDefinition.context)).thenReturn(Future.successful(Some(apiDefinition)))
-      when(mockWSO2APIPublisher.publish(apiDefinition)).thenReturn(unitSuccess)
       when(mockAwsApiPublisher.publish(apiDefinition)).thenReturn(failed(new RuntimeException("Something went wrong")))
 
       val thrown = intercept[RuntimeException] {
@@ -198,7 +165,6 @@ class APIDefinitionServiceSpec extends UnitSpec
 
     "propagate unexpected errors that happen when trying to save the definition" in new Setup {
       when(mockAPIDefinitionRepository.fetchByContext(apiDefinition.context)).thenReturn(Future.successful(Some(apiDefinition)))
-      when(mockWSO2APIPublisher.publish(apiDefinition)).thenReturn(unitSuccess)
       when(mockAwsApiPublisher.publish(apiDefinition)).thenReturn(unitSuccess)
       when(mockAPIDefinitionRepository.save(apiDefinitionWithSavingTime)).thenReturn(failed(new RuntimeException("Something went wrong")))
 
@@ -221,13 +187,11 @@ class APIDefinitionServiceSpec extends UnitSpec
 
       when(mockAPIDefinitionRepository.fetchByContext(apiContext)).thenReturn(Future.successful(Some(existingAPIDefinition)))
       when(mockNotificationService.notifyOfStatusChange(existingAPIDefinition.name, apiVersion, existingStatus, updatedStatus)).thenReturn(unitSuccess)
-      when(mockWSO2APIPublisher.publish(updatedAPIDefinition)).thenReturn(unitSuccess)
       when(mockAwsApiPublisher.publish(updatedAPIDefinition)).thenReturn(unitSuccess)
       when(mockAPIDefinitionRepository.save(updatedAPIDefinitionWithSavingTime)).thenReturn(successful(updatedAPIDefinitionWithSavingTime))
 
       await(underTest.createOrUpdate(updatedAPIDefinition))
 
-      verify(mockWSO2APIPublisher, times(1)).publish(updatedAPIDefinition)
       verify(mockAwsApiPublisher, times(1)).publish(updatedAPIDefinition)
       verify(mockAPIDefinitionRepository, times(1)).save(updatedAPIDefinitionWithSavingTime)
       verify(mockNotificationService).notifyOfStatusChange(existingAPIDefinition.name, apiVersion, existingStatus, updatedStatus)
@@ -683,25 +647,13 @@ class APIDefinitionServiceSpec extends UnitSpec
 
   "delete" should {
 
-    "delete the API in WSO2, AWS and the repository when there is no subscribers" in new Setup {
+    "delete the API in AWS and the repository when there is no subscribers" in new Setup {
       when(mockThirdPartyApplicationConnector.fetchSubscribers(context, "1.0")).thenReturn(successful(Seq()))
-
-      await(underTest.delete(apiDefinition.serviceName))
-
-      verify(mockWSO2APIPublisher).delete(apiDefinition)
-      verify(mockAwsApiPublisher).delete(apiDefinition)
-      verify(mockAPIDefinitionRepository).delete(apiDefinition.serviceName)
-    }
-
-    "not call WSO2 when configured to bypass it" in new Setup {
-      when(mockThirdPartyApplicationConnector.fetchSubscribers(context, "1.0")).thenReturn(successful(Seq()))
-      when(mockAppContext.bypassWso2).thenReturn(true)
 
       await(underTest.delete(apiDefinition.serviceName))
 
       verify(mockAwsApiPublisher).delete(apiDefinition)
       verify(mockAPIDefinitionRepository).delete(apiDefinition.serviceName)
-      verifyZeroInteractions(mockWSO2APIPublisher)
     }
 
     "fail when one API has a subscriber" in new Setup {
@@ -718,17 +670,6 @@ class APIDefinitionServiceSpec extends UnitSpec
       when(mockAPIDefinitionRepository.fetchByServiceName("service")).thenReturn(successful(None))
 
       await(underTest.delete("service"))
-    }
-
-    "fail when wso2 delete fails" in new Setup {
-      when(mockThirdPartyApplicationConnector.fetchSubscribers(context, "1.0")).thenReturn(successful(Seq()))
-      when(mockWSO2APIPublisher.delete(apiDefinition)).thenReturn(failed(new RuntimeException()))
-
-      val future = underTest.delete(apiDefinition.serviceName)
-
-      whenReady(future.failed) { ex =>
-        ex shouldBe a[RuntimeException]
-      }
     }
 
     "fail when AWS delete fails" in new Setup {
@@ -751,41 +692,6 @@ class APIDefinitionServiceSpec extends UnitSpec
       whenReady(future.failed) { ex =>
         ex shouldBe a[RuntimeException]
       }
-    }
-  }
-
-  "publishAll" should {
-
-    "publish all APIs" in new Setup {
-      val apiDefinition1 = someAPIDefinition
-      val apiDefinition2 = someAPIDefinition
-
-      when(mockAPIDefinitionRepository.fetchAll()).thenReturn(successful(Seq(apiDefinition1, apiDefinition2)))
-      when(mockWSO2APIPublisher.publish(Seq(apiDefinition1, apiDefinition2))).thenReturn(successful(Seq()))
-
-      await(underTest.publishAll()) shouldBe ((): Unit)
-
-      verify(mockWSO2APIPublisher, times(1)).publish(Seq(apiDefinition1, apiDefinition2))
-    }
-
-    "attempt to publish all APIs and report failures" in new Setup {
-      val apiDefinition1 = someAPIDefinition.copy(name = "API-1")
-      val apiDefinition2 = someAPIDefinition.copy(name = "API-2")
-      val apiDefinition3 = someAPIDefinition.copy(name = "API-3")
-
-      when(mockAPIDefinitionRepository.fetchAll())
-        .thenReturn(successful(Seq(apiDefinition1, apiDefinition2, apiDefinition3)))
-      when(mockWSO2APIPublisher.publish(Seq(apiDefinition1, apiDefinition2, apiDefinition3)))
-        .thenReturn(successful(Seq(apiDefinition1.name, apiDefinition2.name)))
-
-      val future = underTest.publishAll()
-
-      whenReady(future.failed) { ex =>
-        ex shouldBe a[RuntimeException]
-        ex.getMessage shouldBe s"Could not republish the following APIs to WSO2: [${apiDefinition1.name}, ${apiDefinition2.name}]"
-      }
-
-      verify(mockWSO2APIPublisher, times(1)).publish(Seq(apiDefinition1, apiDefinition2, apiDefinition3))
     }
   }
 

@@ -21,7 +21,7 @@ import org.joda.time.format.ISODateTimeFormat
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import uk.gov.hmrc.apidefinition.models.APIAccessType._
-import uk.gov.hmrc.apidefinition.models.WSO2ParameterType._
+import uk.gov.hmrc.apidefinition.models.AWSParameterType._
 import uk.gov.hmrc.play.json.Union
 
 object JsonFormatters {
@@ -85,25 +85,18 @@ object JsonFormatters {
   implicit val formatExtendedAPIVersion = Json.format[ExtendedAPIVersion]
   implicit val formatExtendedAPIDefinition = Json.format[ExtendedAPIDefinition]
 
-  implicit val formatWSO2HttpVerb = Json.format[WSO2HttpVerb]
-  implicit val formatWSO2Resource = Json.format[WSO2Resource]
-  implicit val formatWSO2Scope = Json.format[WSO2Scope]
-  implicit val formatWSO2Endpoint = Json.format[WSO2Endpoint]
-  implicit val formatWSO2EndpointConfig = Json.format[WSO2EndpointConfig]
-
-  implicit val formatWSO2ParameterType = EnumJson.enumFormat(WSO2ParameterType)
-  implicit val formatWSO2QueryParameter = Json.format[WSO2QueryParameter]
-  implicit val formatWSO2PathParameter = Json.format[WSO2PathParameter]
-  implicit val formatWSO2Parameter = Union.from[WSO2Parameter]("in")
-    .and[WSO2QueryParameter](QUERY.toString)
-    .and[WSO2PathParameter](PATH.toString)
+  implicit val formatAWSParameterType = EnumJson.enumFormat(AWSParameterType)
+  implicit val formatAWSQueryParameter = Json.format[AWSQueryParameter]
+  implicit val formatAWSPathParameter = Json.format[AWSPathParameter]
+  implicit val formatAWSParameter = Union.from[AWSParameter]("in")
+    .and[AWSQueryParameter](QUERY.toString)
+    .and[AWSPathParameter](PATH.toString)
     .format
 
-  implicit val formatWSO2Response = Json.format[WSO2Response]
-  implicit val formatWSO2HttpVerbDetails = Json.format[WSO2HttpVerbDetails]
-  implicit val formatWSO2APIInfo = Json.format[WSO2APIInfo]
-  implicit val formatWSO2SwaggerScope = Json.format[WSO2SwaggerScope]
-  implicit val formatWSO2SwaggerDetails = Json.format[WSO2SwaggerDetails]
+  implicit val formatAWSResponse = Json.format[AWSResponse]
+  implicit val formatAWSHttpVerbDetails = Json.format[AWSHttpVerbDetails]
+  implicit val formatAWSAPIInfo = Json.format[AWSAPIInfo]
+  implicit val formatAWSSwaggerDetails = Json.format[AWSSwaggerDetails]
 }
 
 object EnumJson {

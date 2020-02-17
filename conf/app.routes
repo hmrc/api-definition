@@ -8,7 +8,7 @@ GET         /api-definition/:serviceName/:version/documentation/*resource       
 POST        /api-definition                                                      uk.gov.hmrc.apidefinition.controllers.APIDefinitionController.createOrUpdate()
 POST        /api-definition/validate                                             uk.gov.hmrc.apidefinition.controllers.APIDefinitionController.validate
 
-POST        /api-definition/republish-all                                        uk.gov.hmrc.apidefinition.controllers.APIDefinitionController.publishAll()
+POST        /api-definition/republish-all                                        uk.gov.hmrc.apidefinition.controllers.APIDefinitionController.publishAllToAws()
 POST        /api-definition/republish-all-aws                                    uk.gov.hmrc.apidefinition.controllers.APIDefinitionController.publishAllToAws()
 
 DELETE      /api-definition/:serviceName                                         uk.gov.hmrc.apidefinition.controllers.APIDefinitionController.delete(serviceName)
