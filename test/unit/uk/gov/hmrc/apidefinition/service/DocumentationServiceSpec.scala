@@ -16,6 +16,7 @@
 
 package unit.uk.gov.hmrc.apidefinition.service
 
+import akka.protobuf.ByteString
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import org.mockito.ArgumentMatchers.{any, anyString, eq => meq}
@@ -24,8 +25,8 @@ import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.{Answer, OngoingStubbing}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
-import play.api.http.{ContentTypes, MediaType, Status}
-import play.api.libs.ws.{DefaultWSResponseHeaders, StreamedResponse}
+import play.api.http.Status
+import play.api.libs.ws.WSResponse
 import play.api.mvc.Result
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.connector.ApiMicroserviceConnector
@@ -72,12 +73,12 @@ class DocumentationServiceSpec extends UnitSpec with ScalaFutures with MockitoSu
 
   private val sampleFileSource: Source[ByteString, _] = createSourceFrom("hello")
 
-  private val streamedResource = StreamedResponse(
+  private val streamedResource = new WSResponse(
     DefaultWSResponseHeaders(Status.OK, Map("Content-Type" -> Seq("application/text"), "Content-Length" -> Seq("hello".length.toString)))
     , sampleFileSource)
-  private val chunkedResource = StreamedResponse(DefaultWSResponseHeaders(Status.OK, Map.empty), sampleFileSource)
-  private val notFoundResponse = StreamedResponse(DefaultWSResponseHeaders(Status.NOT_FOUND, Map.empty), sampleFileSource)
-  private val internalServerErrorResponse = StreamedResponse(DefaultWSResponseHeaders(Status.INTERNAL_SERVER_ERROR, Map.empty), sampleFileSource)
+  private val chunkedResource = new WSResponse(DefaultWSResponseHeaders(Status.OK, Map.empty), sampleFileSource)
+  private val notFoundResponse = new WSResponse(DefaultWSResponseHeaders(Status.NOT_FOUND, Map.empty), sampleFileSource)
+  private val internalServerErrorResponse = new WSResponse(DefaultWSResponseHeaders(Status.INTERNAL_SERVER_ERROR, Map.empty), sampleFileSource)
 
   trait Setup {
     implicit val hc: HeaderCarrier = HeaderCarrier()
@@ -106,7 +107,7 @@ class DocumentationServiceSpec extends UnitSpec with ScalaFutures with MockitoSu
         .thenReturn(Future.successful(None))
     }
 
-    def theApiMicroserviceWillReturnTheResource(response: StreamedResponse): OngoingStubbing[Future[StreamedResponse]] = {
+    def theApiMicroserviceWillReturnTheResource(response: WSResponse): OngoingStubbing[Future[WSResponse]] = {
       when(mockApiMicroserviceConnector.fetchApiDocumentationResourceByUrl(anyString, anyString, anyString))
         .thenReturn(Future.successful(response))
     }

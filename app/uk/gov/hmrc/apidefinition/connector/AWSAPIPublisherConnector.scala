@@ -17,30 +17,30 @@
 package uk.gov.hmrc.apidefinition.connector
 
 import javax.inject.Inject
-import play.api.Mode.Mode
 import play.api.http.ContentTypes.JSON
 import play.api.http.HeaderNames.CONTENT_TYPE
 import play.api.libs.json.Json
-import play.api.{Configuration, Environment}
+import play.api.{Configuration, Environment, Mode}
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.models.AWSSwaggerDetails
 import uk.gov.hmrc.apidefinition.models.JsonFormatters._
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
-import uk.gov.hmrc.play.config.ServicesConfig
 
 import scala.concurrent.{ExecutionContext, Future}
 
 class AWSAPIPublisherConnector @Inject()(http: HttpClient,
                                          environment: Environment,
                                          appContext: AppConfig,
-                                         override val runModeConfiguration: Configuration)
-                                        (implicit val ec: ExecutionContext) extends ServicesConfig {
+                                         val runModeConfiguration: Configuration,
+                                         servicesConfig: ServicesConfig)
+                                        (implicit val ec: ExecutionContext)  {
 
-  override protected def mode: Mode = environment.mode
+  protected def mode: Mode = environment.mode
 
-  val serviceBaseUrl: String = s"""${baseUrl("aws-gateway")}/v1/api"""
-  val awsApiKey: String = getString("awsApiKey")
+  val serviceBaseUrl: String = s"""${servicesConfig.baseUrl("aws-gateway")}/v1/api"""
+  val awsApiKey: String = runModeConfiguration.get[String]("awsApiKey")
   val apiKeyHeaderName = "x-api-key"
   val headers: Seq[(String, String)] = Seq(CONTENT_TYPE -> JSON, apiKeyHeaderName -> awsApiKey)
 

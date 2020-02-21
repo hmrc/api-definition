@@ -16,9 +16,8 @@
 
 package uk.gov.hmrc.apidefinition
 
-import play.api.data.validation.ValidationError
 import play.api.libs.json.Json.toJson
-import play.api.libs.json.{JsPath, JsResult, JsValue, Reads}
+import play.api.libs.json.{JsPath, JsResult, JsValue, JsonValidationError, Reads}
 import play.api.mvc.Results.UnprocessableEntity
 import play.api.mvc.{Request, Result}
 import uk.gov.hmrc.apidefinition.models.{ErrorCode, ErrorResponse, FieldErrorDescription}
@@ -53,7 +52,7 @@ package object controllers {
   /**
    * Used to improve the error messages that request.body.validate might return.
    */
-  def validationResult(errors : Seq[(JsPath, Seq[ValidationError])]): JsValue = {
+  def validationResult(errors : Seq[(JsPath, Seq[JsonValidationError])]): JsValue = {
     val errs: Seq[FieldErrorDescription] = errors flatMap { case (jsPath, seqValidationError) =>
       seqValidationError map {
         validationError =>

@@ -8,13 +8,15 @@ lazy val appName = "api-definition"
 
 lazy val appDependencies: Seq[ModuleID] = compile ++ test ++ tmpMacWorkaround
 
+
 lazy val compile = Seq(
   ws,
-  "uk.gov.hmrc" %% "bootstrap-play-25" % "5.1.0",
-  "uk.gov.hmrc" %% "simple-reactivemongo" % "7.22.0-play-25",
-  "uk.gov.hmrc" %% "play-json-union-formatter" % "1.7.0",
+  "uk.gov.hmrc" %% "bootstrap-play-26" % "1.3.0",
+  "uk.gov.hmrc" %% "simple-reactivemongo" % "7.22.0-play-26",
+  "uk.gov.hmrc" %% "play-json-union-formatter" % "1.8.0",
   "org.typelevel" %% "cats-core" % "1.1.0"
 )
+
 
 lazy val test = Seq(
   "uk.gov.hmrc" %% "reactivemongo-test" % "4.15.0-play-25" % "test",

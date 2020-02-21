@@ -17,11 +17,11 @@
 package uk.gov.hmrc.apidefinition.services
 
 import akka.actor.ActorSystem
-import akka.stream.{ActorMaterializer, Materializer}
+import akka.stream.Materializer
 import javax.inject.{Inject, Singleton}
 import play.api.http.HttpEntity
 import play.api.http.Status._
-import play.api.libs.ws.StreamedResponse
+import play.api.libs.ws.WSResponse
 import play.api.mvc.Result
 import play.api.mvc.Results._
 import uk.gov.hmrc.apidefinition.config.AppConfig
@@ -51,18 +51,15 @@ class DocumentationService @Inject()(apiDefinitionRepository: APIDefinitionRepos
 
     for {
       streamedResponse <- fetchResource(serviceName, version, resource)
-    } yield streamedResponse.headers.status match {
+    } yield streamedResponse.status match {
       case OK =>
-        val contentType = streamedResponse.headers.headers
-          .get("Content-Type")
-          .flatMap(_.headOption)
-          .getOrElse("application/octet-stream")
+        val contentType = streamedResponse.contentType
 
-        streamedResponse.headers.headers.get("Content-Length") match {
-          case Some(Seq(length)) => Ok.sendEntity(HttpEntity.Streamed(streamedResponse.body, Some(length.toLong), Some(contentType)))
+        streamedResponse.headers.get("Content-Length") match {
+          case Some(Seq(length)) => Ok.sendEntity(HttpEntity.Streamed(streamedResponse.bodyAsSource, Some(length.toLong), Some(contentType)))
             .withHeaders(createProxySafeContentType(contentType))
 
-          case _ => Ok.chunked(streamedResponse.body).as(contentType)
+          case _ => Ok.chunked(streamedResponse.bodyAsSource).as(contentType)
             .withHeaders(createProxySafeContentType(contentType))
         }
       case NOT_FOUND => throw newNotFoundException(serviceName, version, resource)
@@ -72,9 +69,9 @@ class DocumentationService @Inject()(apiDefinitionRepository: APIDefinitionRepos
 
   //noinspection ScalaStyle
   private def fetchResource(serviceName: String, version: String, resource: String
-                           )(implicit hc: HeaderCarrier): Future[StreamedResponse] = {
+                           )(implicit hc: HeaderCarrier): Future[WSResponse] = {
 
-    def fetchResourceFromMicroservice(serviceBaseUrl: String): Future[StreamedResponse] =
+    def fetchResourceFromMicroservice(serviceBaseUrl: String): Future[WSResponse] =
       apiMicroserviceConnector.fetchApiDocumentationResourceByUrl(serviceBaseUrl, version, resource)
 
     def getApiDefinitionOrThrow: Future[APIDefinition] = {

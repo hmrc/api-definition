@@ -18,7 +18,7 @@ package uk.gov.hmrc.apidefinition.connector
 
 import javax.inject.{Inject, Singleton}
 import play.api.Logger
-import play.api.libs.ws.{StreamedResponse, WSClient}
+import play.api.libs.ws.{WSClient, WSResponse}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -26,7 +26,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class ApiMicroserviceConnector @Inject()(ws: WSClient)(implicit val ec: ExecutionContext) {
 
   // TODO : Migrate to new hmrc WS client
-  def fetchApiDocumentationResourceByUrl(serviceUrl: String, version: String, resource: String): Future[StreamedResponse] = {
+  def fetchApiDocumentationResourceByUrl(serviceUrl: String, version: String, resource: String): Future[WSResponse] = {
     Logger.info(s"Calling to local microservice to fetch documentation resource by URL: $serviceUrl, $version, $resource")
     ws.url(s"$serviceUrl/api/conf/$version/$resource").withMethod("GET").stream()
   }

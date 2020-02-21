@@ -19,22 +19,23 @@ package uk.gov.hmrc.apidefinition.config
 
 import javax.inject.{Inject, Singleton}
 import net.ceedubs.ficus.Ficus._
-import play.api.{Configuration, Environment}
-import uk.gov.hmrc.play.config.ServicesConfig
+import play.api.{Configuration, Environment, Mode}
+import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+
 
 @Singleton
-class AppConfig @Inject()(override val runModeConfiguration: Configuration, environment: Environment) extends ServicesConfig {
-  override protected def mode = environment.mode
+class AppConfig @Inject()(val runModeConfiguration: Configuration, environment: Environment, servicesConfig: ServicesConfig) {
+  def mode: Mode = environment.mode
 
-  lazy val buildProductionUrlForPrototypedAPIs: Boolean = runModeConfiguration.getBoolean("buildProductionUrlForPrototypedAPIs").getOrElse(false)
-  lazy val isSandbox: Boolean = runModeConfiguration.getBoolean("isSandbox").getOrElse(false)
+  lazy val buildProductionUrlForPrototypedAPIs: Boolean = runModeConfiguration.getOptional[Boolean]("buildProductionUrlForPrototypedAPIs").getOrElse(false)
+  lazy val isSandbox: Boolean = runModeConfiguration.getOptional[Boolean]("isSandbox").getOrElse(false)
 
   lazy val fetchByContextTtlInSeconds: String = runModeConfiguration.underlying.as[String]("fetchByContextTtlInSeconds")
 
-  override def baseUrl(serviceName: String) = {
-    val context = getConfString(s"$serviceName.context", "")
+  def baseUrl(serviceName: String): String = {
+    val context = runModeConfiguration.getOptional[String](s"$serviceName.context").getOrElse("")
 
-    if (context.length > 0) s"${super.baseUrl(serviceName)}/$context"
-    else super.baseUrl(serviceName)
+    if (context.length > 0) s"${servicesConfig.baseUrl(serviceName)}/$context"
+    else servicesConfig.baseUrl(serviceName)
   }
 }

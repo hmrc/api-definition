@@ -64,7 +64,7 @@ class ApiMicroserviceConnectorSpec extends UnitSpec with MockitoSugar with Utils
 
       val result = await(underTest.fetchApiDocumentationResourceByUrl(serviceUrl, version, "resource"))
 
-      result.headers.status should be(OK)
+      result.status should be(OK)
       contentsFrom(result) should be("hello world")
     }
 
@@ -72,7 +72,7 @@ class ApiMicroserviceConnectorSpec extends UnitSpec with MockitoSugar with Utils
 
       val result = await(underTest.fetchApiDocumentationResourceByUrl(serviceUrl, version, "streamedResource"))
 
-      result.headers.status should be(OK)
+      result.status should be(OK)
       contentsFrom(result) should be("HELLO\n")
     }
 

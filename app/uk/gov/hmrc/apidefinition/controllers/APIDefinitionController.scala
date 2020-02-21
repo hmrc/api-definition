@@ -29,7 +29,7 @@ import uk.gov.hmrc.apidefinition.services.APIDefinitionService
 import uk.gov.hmrc.apidefinition.utils.APIDefinitionMapper
 import uk.gov.hmrc.apidefinition.validators.ApiDefinitionValidator
 import uk.gov.hmrc.http.{HeaderCarrier, UnauthorizedException}
-import uk.gov.hmrc.play.bootstrap.controller.BaseController
+import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -37,12 +37,14 @@ import scala.concurrent.{ExecutionContext, Future}
 class APIDefinitionController @Inject()(apiDefinitionValidator: ApiDefinitionValidator,
                                         apiDefinitionService: APIDefinitionService,
                                         apiDefinitionMapper: APIDefinitionMapper,
-                                        appContext: AppConfig)
-                                       (implicit val ec: ExecutionContext) extends BaseController {
+                                        appContext: AppConfig,
+                                        playBodyParsers: PlayBodyParsers,
+                                        cc: ControllerComponents)
+                                       (implicit val ec: ExecutionContext) extends BackendController(cc) {
 
   val fetchByContextTtlInSeconds: String = appContext.fetchByContextTtlInSeconds
 
-  def createOrUpdate(): Action[JsValue] = Action.async(BodyParsers.parse.json) { implicit request =>
+  def createOrUpdate(): Action[JsValue] = Action.async(playBodyParsers.json) { implicit request =>
     handleRequest[APIDefinition](request) { requestBody =>
       apiDefinitionValidator.validate(requestBody) { validatedDefinition =>
         Logger.info(s"Create/Update API definition request: $validatedDefinition")
@@ -81,7 +83,7 @@ class APIDefinitionController @Inject()(apiDefinitionValidator: ApiDefinitionVal
       InternalServerError(error(ErrorCode.INTERNAL_SERVER_ERROR, e.getMessage))
   }
 
-  def validate: Action[JsValue] = Action.async(BodyParsers.parse.json) { implicit request =>
+  def validate: Action[JsValue] = Action.async(playBodyParsers.json) { implicit request =>
     handleRequest[APIDefinition](request) { requestBody =>
       apiDefinitionValidator.validate(requestBody) { validatedDefinition =>
         Future.successful(Accepted(Json.toJson(validatedDefinition)))

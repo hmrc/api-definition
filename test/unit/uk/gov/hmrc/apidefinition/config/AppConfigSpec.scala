@@ -22,6 +22,7 @@ import org.scalatest.{BeforeAndAfterEach, Matchers}
 import org.scalatestplus.play.{BaseOneAppPerSuite, OneAppPerTest}
 import play.api.{Configuration, Environment}
 import uk.gov.hmrc.apidefinition.config.AppConfig
+import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.test.UnitSpec
 
 class AppConfigSpec extends UnitSpec
@@ -30,11 +31,12 @@ class AppConfigSpec extends UnitSpec
 
   trait Setup {
     val mockConfig =  mock[Configuration]
-    val underTest = new AppConfig(mockConfig, app.injector.instanceOf[Environment])
+    val mockServicesConfig = mock[ServicesConfig]
+    val underTest = new AppConfig(mockConfig, app.injector.instanceOf[Environment], mockServicesConfig)
 
-    def whenTestEnvironmentUndefined = when(mockConfig.getBoolean("buildProductionUrlForPrototypedAPIs")).thenReturn(None)
-    def whenTestEnvironmentEnabled = when(mockConfig.getBoolean("buildProductionUrlForPrototypedAPIs")).thenReturn(Some(true))
-    def whenTestEnvironmentDisable = when(mockConfig.getBoolean("buildProductionUrlForPrototypedAPIs")).thenReturn(Some(false))
+    def whenTestEnvironmentUndefined = when(mockConfig.getOptional[Boolean]("buildProductionUrlForPrototypedAPIs")).thenReturn(None)
+    def whenTestEnvironmentEnabled = when(mockConfig.getOptional[Boolean]("buildProductionUrlForPrototypedAPIs")).thenReturn(Some(true))
+    def whenTestEnvironmentDisable = when(mockConfig.getOptional[Boolean]("buildProductionUrlForPrototypedAPIs")).thenReturn(Some(false))
   }
 
   "App Context" should {
