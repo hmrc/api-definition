@@ -28,7 +28,7 @@ import org.scalatest.mockito.MockitoSugar
 import play.api.http.Status._
 import play.api.libs.json.Json
 import play.api.mvc.{AnyContentAsEmpty, Result}
-import play.api.test.FakeRequest
+import play.api.test.{FakeRequest, StubControllerComponentsFactory, StubPlayBodyParsersFactory}
 import play.mvc.Http.HeaderNames
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.controllers.{APIDefinitionController, QueryOptions}
@@ -47,7 +47,7 @@ import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
 
 class APIDefinitionControllerSpec extends UnitSpec
-  with WithFakeApplication with ScalaFutures with MockitoSugar {
+  with WithFakeApplication with ScalaFutures with MockitoSugar with StubControllerComponentsFactory with StubPlayBodyParsersFactory {
 
   trait Setup {
     implicit lazy val materializer: Materializer = fakeApplication.materializer
@@ -71,7 +71,7 @@ class APIDefinitionControllerSpec extends UnitSpec
 
     val apiDefinitionMapper: APIDefinitionMapper = fakeApplication.injector.instanceOf[APIDefinitionMapper]
 
-    val underTest = new APIDefinitionController(apiDefinitionValidator, mockAPIDefinitionService, apiDefinitionMapper, mockAppContext)
+    val underTest = new APIDefinitionController(apiDefinitionValidator, mockAPIDefinitionService, apiDefinitionMapper, mockAppContext, stubPlayBodyParsers, stubControllerComponents())
   }
 
   trait QueryDispatcherSetup extends Setup {
