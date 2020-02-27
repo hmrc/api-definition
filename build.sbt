@@ -29,6 +29,17 @@ lazy val test = Seq(
   "com.github.tomakehurst" % "wiremock" % "2.8.0" % "test",
   "de.leanovate.play-mockws" %% "play-mockws" % "2.5.1" % "test"
 )
+// we need to override the akka version for now as newer versions are not compatible with reactivemongo
+lazy val akkaVersion = "2.5.23"
+lazy val akkaHttpVersion = "10.0.15"
+
+lazy val overrides = Set(
+  "com.typesafe.akka" %% "akka-stream" % akkaVersion,
+  "com.typesafe.akka" %% "akka-protobuf" % akkaVersion,
+  "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
+  "com.typesafe.akka" %% "akka-actor" % akkaVersion,
+  "com.typesafe.akka" %% "akka-http-core" % akkaHttpVersion
+)
 
 // Temporary Workaround for intermittent (but frequent) failures of Mongo integration tests when running on a Mac
 // See Jira story GG-3666 for further information
@@ -57,6 +68,7 @@ lazy val microservice = (project in file("."))
     scalaVersion := "2.11.11",
     scalacOptions += "-Ypartial-unification",
     libraryDependencies ++= appDependencies,
+    dependencyOverrides ++= overrides,
     retrieveManaged := true
   )
   .settings(
