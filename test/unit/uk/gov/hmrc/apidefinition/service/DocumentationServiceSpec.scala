@@ -16,7 +16,6 @@
 
 package unit.uk.gov.hmrc.apidefinition.service
 
-import akka.protobuf.ByteString
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import org.mockito.ArgumentMatchers.{any, anyString, eq => meq}
