@@ -18,24 +18,22 @@ package unit.uk.gov.hmrc.apidefinition
 
 import java.nio.file.Paths
 
-import akka.protobuf.ByteString
+import akka.actor.ActorSystem
 import akka.stream.scaladsl.{FileIO, Sink, Source}
-import akka.stream.{ActorMaterializer, IOResult, Materializer}
+import akka.stream.{ActorMaterializer, IOResult}
+import akka.util.ByteString
 import play.api.libs.ws.WSResponse
-import uk.gov.hmrc.play.test.WithFakeApplication
-
 import scala.concurrent.duration.{FiniteDuration, _}
 import scala.concurrent.{Await, Future}
 
-trait Utils extends WithFakeApplication{
+trait Utils {
 
-
-
-  implicit val mat: Materializer = fakeApplication.materializer
+  implicit val system = ActorSystem("System")
+  implicit val mat = ActorMaterializer()
 
   private val defaultTimeout: FiniteDuration = 5 seconds
 
-  def createSourceFrom(fileName: String): Source[Any, Future[IOResult]] = {
+  def createSourceFrom(fileName: String): Source[ByteString, Future[IOResult]] = {
     val path = Paths.get(getClass.getResource("/" + fileName).toURI)
     FileIO.fromPath(path)
   }
@@ -51,7 +49,7 @@ trait Utils extends WithFakeApplication{
 
   def contentsFrom(source: Source[ByteString, _]): String = {
     val sink = Sink.fold[String, ByteString]("") { (content, bytes) =>
-      content + bytes.toStringUtf8
+      content + bytes.utf8String
     }
     Await.result(source.runWith(sink), defaultTimeout)
   }
