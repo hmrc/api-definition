@@ -16,6 +16,8 @@
 
 package unit.uk.gov.hmrc.apidefinition.service
 
+import java.util
+
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import org.mockito.ArgumentMatchers.{any, anyString, eq => meq}
@@ -26,8 +28,11 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
 import play.api.http.Status
 import play.api.libs.ws.WSResponse
-import play.api.libs.ws.DefaultWSResponseHeaders
+import play.api.libs.ws.ahc.cache.{CacheableHttpResponseBodyPart, CacheableHttpResponseHeaders, CacheableHttpResponseStatus, CacheableResponse}
+import play.api.libs.ws.ahc.{AhcWSResponse, StandaloneAhcWSResponse}
 import play.api.mvc.Result
+import play.shaded.ahc.io.netty.handler.codec.http.DefaultHttpHeaders
+import play.shaded.ahc.org.asynchttpclient.uri.Uri
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.connector.ApiMicroserviceConnector
 import uk.gov.hmrc.apidefinition.models._
@@ -73,12 +78,21 @@ class DocumentationServiceSpec extends UnitSpec with ScalaFutures with MockitoSu
 
   private val sampleFileSource: Source[ByteString, _] = createSourceFrom("hello")
 
-  private val streamedResource = new WSResponse(
-    DefaultWSResponseHeaders(Status.OK, Map("Content-Type" -> Seq("application/text"), "Content-Length" -> Seq("hello".length.toString)))
-    , sampleFileSource)
-  private val chunkedResource = new WSResponse(DefaultWSResponseHeaders(Status.OK, Map.empty), sampleFileSource)
-  private val notFoundResponse = new WSResponse(DefaultWSResponseHeaders(Status.NOT_FOUND, Map.empty), sampleFileSource)
-  private val internalServerErrorResponse = new WSResponse(DefaultWSResponseHeaders(Status.INTERNAL_SERVER_ERROR, Map.empty), sampleFileSource)
+  def createResponse(statusCode: Int,  headers: Map[String, Seq[String]], fileSource: Source[ByteString, _]): AhcWSResponse = {
+    val uri: Uri = Uri.create(serviceUrl)
+    val status = new CacheableHttpResponseStatus(uri, statusCode , "", "")
+    val headers = new DefaultHttpHeaders()
+    val responseHeaders = CacheableHttpResponseHeaders(trailingHeaders = false, headers = headers)
+    val bodyParts = util.Collections.emptyList[CacheableHttpResponseBodyPart]
+    
+    //TODO work out how to add source bytestream to bodyparts & copy headers
+    new AhcWSResponse(new StandaloneAhcWSResponse(CacheableResponse(status = status, headers = responseHeaders, bodyParts = bodyParts)))
+  }
+
+  private val streamedResource: AhcWSResponse = createResponse(Status.OK, Map("Content-Type" -> Seq("application/text"), "Content-Length" -> Seq("hello".length.toString)), sampleFileSource)
+  private val chunkedResource: AhcWSResponse = createResponse(Status.OK, Map.empty, sampleFileSource)
+  private val notFoundResponse: AhcWSResponse = createResponse(Status.NOT_FOUND, Map.empty, sampleFileSource)
+  private val internalServerErrorResponse: AhcWSResponse = createResponse(Status.INTERNAL_SERVER_ERROR, Map.empty, sampleFileSource)
 
   trait Setup {
     implicit val hc: HeaderCarrier = HeaderCarrier()
