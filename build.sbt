@@ -18,11 +18,11 @@ lazy val compile = Seq(
 )
 
 lazy val test = Seq(
-  "uk.gov.hmrc" %% "reactivemongo-test" % "4.15.0-play-26" % "test",
+  "uk.gov.hmrc" %% "reactivemongo-test" % "4.16.0-play-26" % "test",
   "uk.gov.hmrc" %% "hmrctest" % "3.9.0-play-26" % "test",
   "org.scalaj" %% "scalaj-http" % "2.3.0" % "test",
   "org.scalatest" %% "scalatest" % "3.0.5" % "test, component",
-  "org.scalatestplus.play" %% "scalatestplus-play" % "2.0.1" % "test",
+  "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % "test",
   "org.mockito" % "mockito-core" % "2.27.0" % "test",
   "com.typesafe.play" %% "play-test" % PlayVersion.current % "test",
   "com.github.tomakehurst" % "wiremock" % "2.8.0" % "test",
