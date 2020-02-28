@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package unit.uk.gov.hmrc.apidefinition
+package unit.uk.gov.hmrc.apidefinition.utils
 
 import java.nio.file.Paths
 
@@ -41,7 +41,8 @@ trait Utils {
 
   def contentsFrom(fileName: String): String = {
     val stream = getClass.getResourceAsStream("/" + fileName)
-    scala.io.Source.fromInputStream(stream).mkString
+    if(stream != null) scala.io.Source.fromInputStream(stream).mkString else fileName
+
   }
 
   def contentsFrom(response: WSResponse): String = {
@@ -56,4 +57,3 @@ trait Utils {
   }
 
 }
-

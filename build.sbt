@@ -26,7 +26,7 @@ lazy val test = Seq(
   "org.mockito" % "mockito-core" % "2.27.0" % "test",
   "com.typesafe.play" %% "play-test" % PlayVersion.current % "test",
   "com.github.tomakehurst" % "wiremock" % "2.8.0" % "test",
-  "de.leanovate.play-mockws" %% "play-mockws" % "2.5.1" % "test"
+  "de.leanovate.play-mockws" %% "play-mockws" % "2.6.6" % "test"
 )
 // we need to override the akka version for now as newer versions are not compatible with reactivemongo
 lazy val akkaVersion = "2.5.23"

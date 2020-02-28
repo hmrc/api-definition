@@ -40,7 +40,7 @@ import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.services.DocumentationService
 import uk.gov.hmrc.http.{HeaderCarrier, InternalServerException, NotFoundException}
 import uk.gov.hmrc.play.test.UnitSpec
-import unit.uk.gov.hmrc.apidefinition.Utils
+import unit.uk.gov.hmrc.apidefinition.utils.Utils
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
