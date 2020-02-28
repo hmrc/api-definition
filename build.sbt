@@ -17,10 +17,9 @@ lazy val compile = Seq(
   "org.typelevel" %% "cats-core" % "1.1.0"
 )
 
-
 lazy val test = Seq(
-  "uk.gov.hmrc" %% "reactivemongo-test" % "4.15.0-play-25" % "test",
-  "uk.gov.hmrc" %% "hmrctest" % "3.9.0-play-25" % "test",
+  "uk.gov.hmrc" %% "reactivemongo-test" % "4.15.0-play-26" % "test",
+  "uk.gov.hmrc" %% "hmrctest" % "3.9.0-play-26" % "test",
   "org.scalaj" %% "scalaj-http" % "2.3.0" % "test",
   "org.scalatest" %% "scalatest" % "3.0.5" % "test, component",
   "org.scalatestplus.play" %% "scalatestplus-play" % "2.0.1" % "test",
