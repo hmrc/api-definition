@@ -13,7 +13,7 @@ lazy val compile = Seq(
   ws,
   "uk.gov.hmrc" %% "bootstrap-play-26" % "1.3.0",
   "uk.gov.hmrc" %% "simple-reactivemongo" % "7.22.0-play-26",
-  "uk.gov.hmrc" %% "play-json-union-formatter" % "1.8.0",
+  "uk.gov.hmrc" %% "play-json-union-formatter" % "1.11.0",
   "org.typelevel" %% "cats-core" % "1.1.0"
 )
 
@@ -33,7 +33,7 @@ lazy val akkaVersion = "2.5.23"
 lazy val akkaHttpVersion = "10.0.15"
 val jettyVersion = "9.4.26.v20200117"
 
-lazy val overrides = Set(
+lazy val overrides = Seq(
   "com.typesafe.akka" %% "akka-stream" % akkaVersion,
   "com.typesafe.akka" %% "akka-protobuf" % akkaVersion,
   "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
@@ -79,7 +79,7 @@ lazy val microservice = (project in file("."))
     name := appName,
     majorVersion := 1,
     targetJvm := "jvm-1.8",
-    scalaVersion := "2.11.11",
+    scalaVersion := "2.12.10",
     scalacOptions += "-Ypartial-unification",
     libraryDependencies ++= appDependencies,
     dependencyOverrides ++= overrides,
@@ -92,9 +92,6 @@ lazy val microservice = (project in file("."))
   .settings(
     resolvers += Resolver.bintrayRepo("hmrc", "releases"),
     resolvers += Resolver.jcenterRepo)
-  .settings(ivyScala := ivyScala.value map {
-    _.copy(overrideScalaVersion = true)
-  })
 
 lazy val unitTestSettings =
   inConfig(Test)(Defaults.testTasks) ++
