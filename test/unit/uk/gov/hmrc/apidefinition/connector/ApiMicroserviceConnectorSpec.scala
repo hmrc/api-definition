@@ -18,17 +18,22 @@ package unit.uk.gov.hmrc.apidefinition.connector
 
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
-import mockws.MockWS
+import mockws.{MockWS, MockWSHelpers}
+import org.scalatest.BeforeAndAfterAll
 import org.scalatest.mockito.MockitoSugar
 import play.api.http.HttpEntity
 import play.api.http.Status._
-import play.api.mvc.{Action, ResponseHeader, Result, Results}
+import play.api.mvc.{ResponseHeader, Result, Results}
 import uk.gov.hmrc.apidefinition.connector.ApiMicroserviceConnector
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.test.UnitSpec
-import unit.uk.gov.hmrc.apidefinition.Utils
+import unit.uk.gov.hmrc.apidefinition.utils.Utils
 
-class ApiMicroserviceConnectorSpec extends UnitSpec with MockitoSugar with Utils {
+class ApiMicroserviceConnectorSpec extends UnitSpec with MockitoSugar with Utils with MockWSHelpers with BeforeAndAfterAll{
+
+  override def afterAll(): Unit = {
+    shutdownHelpers()
+  }
 
   val serviceUrl = "http://localhost"
 
@@ -64,7 +69,7 @@ class ApiMicroserviceConnectorSpec extends UnitSpec with MockitoSugar with Utils
 
       val result = await(underTest.fetchApiDocumentationResourceByUrl(serviceUrl, version, "resource"))
 
-      result.headers.status should be(OK)
+      result.status should be(OK)
       contentsFrom(result) should be("hello world")
     }
 
@@ -72,7 +77,7 @@ class ApiMicroserviceConnectorSpec extends UnitSpec with MockitoSugar with Utils
 
       val result = await(underTest.fetchApiDocumentationResourceByUrl(serviceUrl, version, "streamedResource"))
 
-      result.headers.status should be(OK)
+      result.status should be(OK)
       contentsFrom(result) should be("HELLO\n")
     }
 

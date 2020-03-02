@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package unit.uk.gov.hmrc.apidefinition
+package unit.uk.gov.hmrc.apidefinition.utils
 
 import java.nio.file.Paths
 
@@ -22,7 +22,7 @@ import akka.actor.ActorSystem
 import akka.stream.scaladsl.{FileIO, Sink, Source}
 import akka.stream.{ActorMaterializer, IOResult}
 import akka.util.ByteString
-import play.api.libs.ws.StreamedResponse
+import play.api.libs.ws.WSResponse
 
 import scala.concurrent.duration.{FiniteDuration, _}
 import scala.concurrent.{Await, Future}
@@ -41,10 +41,11 @@ trait Utils {
 
   def contentsFrom(fileName: String): String = {
     val stream = getClass.getResourceAsStream("/" + fileName)
-    scala.io.Source.fromInputStream(stream).mkString
+    if(stream != null) scala.io.Source.fromInputStream(stream).mkString else fileName
+
   }
 
-  def contentsFrom(response: StreamedResponse): String = {
+  def contentsFrom(response: WSResponse): String = {
     contentsFrom(response.body)
   }
 

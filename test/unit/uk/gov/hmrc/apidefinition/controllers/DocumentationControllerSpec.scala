@@ -28,7 +28,7 @@ import play.api.http.HeaderNames.CONTENT_TYPE
 import play.api.http.Status._
 import play.api.libs.json.Json
 import play.api.mvc.Results
-import play.api.test.FakeRequest
+import play.api.test.{FakeRequest, StubControllerComponentsFactory}
 import uk.gov.hmrc.apidefinition.controllers.DocumentationController
 import uk.gov.hmrc.apidefinition.services.DocumentationService
 import uk.gov.hmrc.http.{HeaderCarrier, Upstream5xxResponse}
@@ -37,7 +37,7 @@ import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class DocumentationControllerSpec extends UnitSpec with ScalaFutures with MockitoSugar with WithFakeApplication {
+class DocumentationControllerSpec extends UnitSpec with ScalaFutures with MockitoSugar with WithFakeApplication with StubControllerComponentsFactory {
 
   trait Setup {
     implicit val mat: Materializer = fakeApplication.materializer
@@ -50,7 +50,7 @@ class DocumentationControllerSpec extends UnitSpec with ScalaFutures with Mockit
     val body = Array[Byte](0x1, 0x2, 0x3)
     val contentType = "application/text"
 
-    val underTest = new DocumentationController(documentationService)
+    val underTest = new DocumentationController(documentationService, stubControllerComponents())
 
     def theDocumentationServiceWillReturnTheResource = {
       when(documentationService.fetchApiDocumentationResource(anyString, anyString, anyString)(any[HeaderCarrier]))

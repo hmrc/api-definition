@@ -18,12 +18,11 @@ package uk.gov.hmrc.apidefinition.config
 
 
 import javax.inject.{Inject, Provider, Singleton}
-import play.api.Mode.Mode
 import play.api.inject.{Binding, Module}
-import play.api.{Configuration, Environment, Logger}
+import play.api.{Configuration, Environment, Logger, Mode}
 import uk.gov.hmrc.apidefinition.services.{EmailNotificationService, LoggingNotificationService, NotificationService}
+import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
-import uk.gov.hmrc.play.config.ServicesConfig
 
 import scala.collection.JavaConverters._
 
@@ -37,18 +36,20 @@ class ConfigurationModule extends Module {
 }
 
 @Singleton
-class NotificationServiceConfigProvider @Inject()(val runModeConfiguration: Configuration, environment: Environment, httpClient: HttpClient)
-  extends Provider[NotificationService] with ServicesConfig {
+class NotificationServiceConfigProvider @Inject()(val runModeConfiguration: Configuration,
+                                                  environment: Environment,
+                                                  httpClient: HttpClient,
+                                                  servicesConfig: ServicesConfig) extends Provider[NotificationService]{
 
   private val LoggerNotificationType = "LOG"
   private val EmailNotificationType = "EMAIL"
 
   private val UnknownEnvironmentName: String = "Unknown"
 
-  override protected def mode: Mode = environment.mode
+  protected def mode: Mode = environment.mode
 
   override def get(): NotificationService = {
-    runModeConfiguration.getConfig("notifications") match {
+    runModeConfiguration.getOptional[Configuration]("notifications") match {
       case Some(notificationsConfig) => configureNotificationsService(notificationsConfig)
       case None => new LoggingNotificationService(UnknownEnvironmentName)
     }
@@ -66,8 +67,8 @@ class NotificationServiceConfigProvider @Inject()(val runModeConfiguration: Conf
         defaultNotificationService(environmentName)
       } else {
         val emailConfiguration = optionalEmailConfiguration.get
-        (emailConfiguration.getString("serviceURL"),
-          emailConfiguration.getString("templateId"),
+        (emailConfiguration.getOptional[String]("serviceURL"),
+          emailConfiguration.getOptional[String]("templateId"),
           emailConfiguration.getStringList("addresses")) match {
 
           case (Some(emailServiceURL), Some(emailTemplateId), Some(emailAddresses)) =>
@@ -80,14 +81,14 @@ class NotificationServiceConfigProvider @Inject()(val runModeConfiguration: Conf
       }
     }
 
-    val environmentName = configuration.getString("environmentName").getOrElse(UnknownEnvironmentName)
-    configuration.getString("type", Some(Set(LoggerNotificationType, EmailNotificationType))) match {
-      case Some(LoggerNotificationType) =>
+    val environmentName = configuration.getOptional[String]("environmentName").getOrElse(UnknownEnvironmentName)
+    configuration.getAndValidate("type", Set(LoggerNotificationType, EmailNotificationType)) match {
+      case LoggerNotificationType =>
         Logger.info("Using Logging Notification Service")
         new LoggingNotificationService(environmentName)
-      case Some(EmailNotificationType) =>
+      case EmailNotificationType =>
         Logger.info("Using Email Notification Service")
-        configureEmailNotificationService(environmentName, configuration.getConfig("email"))
+        configureEmailNotificationService(environmentName, configuration.getOptional[Configuration]("email"))
       case _ =>
         Logger.warn("Notification type not recognised")
         defaultNotificationService(environmentName)

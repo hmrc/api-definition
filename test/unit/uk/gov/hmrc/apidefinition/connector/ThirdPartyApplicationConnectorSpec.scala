@@ -34,6 +34,7 @@ import uk.gov.hmrc.apidefinition.connector.ThirdPartyApplicationConnector
 import uk.gov.hmrc.apidefinition.models.Application
 import uk.gov.hmrc.http.HeaderNames.xRequestId
 import uk.gov.hmrc.http.{HeaderCarrier, Upstream5xxResponse}
+import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 
@@ -59,8 +60,9 @@ class ThirdPartyApplicationConnectorSpec extends UnitSpec
     val http: HttpClient = fakeApplication.injector.instanceOf[HttpClient]
     val environment: Environment = fakeApplication.injector.instanceOf[Environment]
     val runModeConfiguration: Configuration = fakeApplication.injector.instanceOf[Configuration]
+    val servicesConfig: ServicesConfig = fakeApplication.injector.instanceOf[ServicesConfig]
 
-    val underTest: ThirdPartyApplicationConnector = new ThirdPartyApplicationConnector(http, environment, runModeConfiguration) {
+    val underTest: ThirdPartyApplicationConnector = new ThirdPartyApplicationConnector(http, environment, runModeConfiguration, servicesConfig) {
       override lazy val serviceUrl = s"$wireMockUrl"
     }
   }

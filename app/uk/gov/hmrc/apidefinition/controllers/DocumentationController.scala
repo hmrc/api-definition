@@ -18,16 +18,16 @@ package uk.gov.hmrc.apidefinition.controllers
 
 import javax.inject.{Inject, Singleton}
 import play.api.Logger
-import play.api.mvc.{Action, AnyContent}
+import play.api.mvc.{Action, AnyContent, ControllerComponents}
 import uk.gov.hmrc.apidefinition.services.DocumentationService
-import uk.gov.hmrc.play.bootstrap.controller.BaseController
+import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
 import scala.concurrent.ExecutionContext
 
 @Singleton
-class DocumentationController @Inject()(service: DocumentationService)
+class DocumentationController @Inject()(service: DocumentationService, cc: ControllerComponents)
                                        (implicit val ec: ExecutionContext)
-                                        extends BaseController {
+                                        extends BackendController(cc) {
 
   def fetchApiDocumentationResource(serviceName: String, version: String, resource: String): Action[AnyContent] = Action.async {
     implicit request =>
