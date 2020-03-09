@@ -30,8 +30,8 @@ import play.api.http.Status
 import play.api.libs.ws.WSResponse
 import play.api.libs.ws.ahc.cache.{CacheableHttpResponseBodyPart, CacheableHttpResponseHeaders, CacheableHttpResponseStatus, CacheableResponse}
 import play.api.libs.ws.ahc.{AhcWSResponse, StandaloneAhcWSResponse}
-import play.api.mvc.{Headers, Result}
-import play.shaded.ahc.io.netty.handler.codec.http.{DefaultHttpHeaders, HttpHeaders}
+import play.api.mvc.Result
+import play.shaded.ahc.io.netty.handler.codec.http.DefaultHttpHeaders
 import play.shaded.ahc.org.asynchttpclient.uri.Uri
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.connector.ApiMicroserviceConnector
@@ -52,15 +52,15 @@ class DocumentationServiceSpec extends UnitSpec with ScalaFutures with MockitoSu
   val serviceName = "hello-world"
   val version = "1.0"
   val serviceUrl = "http://localhost"
-  val productionV1Availability = APIAvailability(
+  val productionV1Availability: APIAvailability = APIAvailability(
     endpointsEnabled = true, PrivateAPIAccess(Seq.empty), loggedIn = false, authorised = false)
-  val productionV2Availability = APIAvailability(
+  val productionV2Availability: APIAvailability = APIAvailability(
     endpointsEnabled = true, PrivateAPIAccess(Seq.empty), loggedIn = false, authorised = false)
-  val sandboxV2Availability = APIAvailability(
+  val sandboxV2Availability: APIAvailability = APIAvailability(
     endpointsEnabled = true, PublicAPIAccess(),loggedIn = false, authorised = false)
-  val sandboxV3Availability = APIAvailability(
+  val sandboxV3Availability: APIAvailability = APIAvailability(
     endpointsEnabled = false, PublicAPIAccess(), loggedIn = false, authorised = false)
-  val apiDefinition = APIDefinition(
+  val apiDefinition: APIDefinition = APIDefinition(
     serviceName = serviceName,
     serviceBaseUrl = serviceUrl,
     name = "Hello World",
@@ -91,7 +91,8 @@ class DocumentationServiceSpec extends UnitSpec with ScalaFutures with MockitoSu
     AhcWSResponse(new StandaloneAhcWSResponse(CacheableResponse(status = status, headers = responseHeaders, bodyParts = bodyParts)))
   }
 
-  private val streamedResource: AhcWSResponse = createResponse(Status.OK, Map("Content-Type" -> "application/text", "Content-Length" -> "hello".length.toString), sampleFileSource)
+  private val streamedResource: AhcWSResponse =
+    createResponse(Status.OK, Map("Content-Type" -> "application/text", "Content-Length" -> "hello".length.toString), sampleFileSource)
   private val chunkedResource: AhcWSResponse = createResponse(Status.OK, Map.empty, sampleFileSource)
   private val notFoundResponse: AhcWSResponse = createResponse(Status.NOT_FOUND, Map.empty, sampleFileSource)
   private val internalServerErrorResponse: AhcWSResponse = createResponse(Status.INTERNAL_SERVER_ERROR, Map.empty, sampleFileSource)
@@ -113,12 +114,12 @@ class DocumentationServiceSpec extends UnitSpec with ScalaFutures with MockitoSu
 
     def theServiceIsRunningInSandboxMode(): OngoingStubbing[Boolean] = when(mockServiceConfig.isSandbox).thenReturn(true)
 
-    def theApiDefinitionWillBeReturned() = {
+    def theApiDefinitionWillBeReturned(): OngoingStubbing[Future[Option[APIDefinition]]] = {
       when(mockAPIDefinitionRepository.fetchByServiceName(any()))
         .thenReturn(Future.successful(Some(apiDefinition)))
     }
 
-    def noApiDefinitionWillBeReturned() = {
+    def noApiDefinitionWillBeReturned(): OngoingStubbing[Future[Option[APIDefinition]]] = {
       when(mockAPIDefinitionRepository.fetchByServiceName(any()))
         .thenReturn(Future.successful(None))
     }
@@ -129,9 +130,7 @@ class DocumentationServiceSpec extends UnitSpec with ScalaFutures with MockitoSu
     }
 
     def answer[T](f: InvocationOnMock => T): Answer[T] = {
-      new Answer[T] {
-        override def answer(invocation: InvocationOnMock): T = f(invocation)
-      }
+      invocation: InvocationOnMock => f(invocation)
     }
   }
 
@@ -199,7 +198,7 @@ class DocumentationServiceSpec extends UnitSpec with ScalaFutures with MockitoSu
     "fail when API definition is not found" in new Setup {
       noApiDefinitionWillBeReturned()
 
-      intercept[IllegalArgumentException] {
+      intercept[NotFoundException] {
         await(underTest.fetchApiDocumentationResource(serviceName, "1.0", "resource")(hc))
       }
     }
