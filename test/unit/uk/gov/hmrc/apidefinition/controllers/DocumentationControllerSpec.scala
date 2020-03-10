@@ -21,17 +21,17 @@ import akka.stream.scaladsl.{Sink, Source}
 import akka.util.ByteString
 import org.mockito.ArgumentMatchers.{any, anyString, eq => eqTo}
 import org.mockito.Mockito._
+import org.mockito.stubbing.OngoingStubbing
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
-import play.api.http.HeaderNames
 import play.api.http.HeaderNames.CONTENT_TYPE
 import play.api.http.Status._
-import play.api.libs.json.Json
-import play.api.mvc.Results
+import play.api.libs.json.{JsValue, Json}
+import play.api.mvc.{AnyContentAsEmpty, Result, Results}
 import play.api.test.{FakeRequest, StubControllerComponentsFactory}
 import uk.gov.hmrc.apidefinition.controllers.DocumentationController
 import uk.gov.hmrc.apidefinition.services.DocumentationService
-import uk.gov.hmrc.http.{HeaderCarrier, Upstream5xxResponse}
+import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -41,39 +41,46 @@ class DocumentationControllerSpec extends UnitSpec with ScalaFutures with Mockit
 
   trait Setup {
     implicit val mat: Materializer = fakeApplication.materializer
-    val request = FakeRequest()
-    val documentationService = mock[DocumentationService]
-    val hc = HeaderCarrier()
-    val serviceName = "api-example-microservice"
-    val version = "1.0"
-    val resourceName = "application.raml"
-    val body = Array[Byte](0x1, 0x2, 0x3)
-    val contentType = "application/text"
+    val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
+    val documentationService: DocumentationService = mock[DocumentationService]
+    val hc: HeaderCarrier = HeaderCarrier()
+    val serviceName: String = "api-example-microservice"
+    val version: String = "1.0"
+    val resourceName: String = "application.raml"
+    // scalastyle:off magic.number
+    val body: Array[Byte] = Array[Byte](0x1, 0x2, 0x3)
+    // scalastyle:on magic.number
+    val contentType: String = "application/text"
 
     val underTest = new DocumentationController(documentationService, stubControllerComponents())
 
-    def theDocumentationServiceWillReturnTheResource = {
+    def theDocumentationServiceWillReturnTheResource: OngoingStubbing[Future[Result]] = {
       when(documentationService.fetchApiDocumentationResource(anyString, anyString, anyString)(any[HeaderCarrier]))
         .thenReturn(Future.successful(Results.Ok(body).withHeaders(CONTENT_TYPE -> contentType)))
     }
 
-    def theDocumentationServiceWillFailToReturnTheResource = {
+    def theDocumentationServiceWillFailToReturnTheResource: OngoingStubbing[Future[Result]] = {
       when(documentationService.fetchApiDocumentationResource(anyString, anyString, anyString)(any[HeaderCarrier]))
-        .thenReturn(Future.failed(new RuntimeException))
+        .thenReturn(Future.failed(new RuntimeException("Some message")))
+    }
+
+    def theDocumentationServiceWillReturnNotFound: OngoingStubbing[Future[Result]] = {
+      when(documentationService.fetchApiDocumentationResource(anyString, anyString, anyString)(any[HeaderCarrier]))
+        .thenReturn(Future.failed(new NotFoundException("some message")))
     }
   }
 
   trait RegistrationSetup extends Setup {
     val versions = Seq("1.0", "1.1", "2.0")
-    val versionsJsonString = versions.map(v => s""""$v"""").mkString(",")
+    val versionsJsonString: String = versions.map(v => s""""$v"""").mkString(",")
     val url = "https://abc.example.com"
-    val registrationRequestBody =
+    val registrationRequestBody: String =
       s"""{
          |  "serviceName": "$serviceName",
          |  "serviceUrl": "$url",
          |  "serviceVersions": [$versionsJsonString]
          }""".stripMargin
-    val registrationRequest = FakeRequest().withBody(Json.parse(registrationRequestBody))
+    val registrationRequest: FakeRequest[JsValue] = FakeRequest().withBody(Json.parse(registrationRequestBody))
 
   }
 
@@ -90,11 +97,11 @@ class DocumentationControllerSpec extends UnitSpec with ScalaFutures with Mockit
     "return the resource with a Content-type header when the content type is known" in new Setup {
       theDocumentationServiceWillReturnTheResource
 
-      val result = await(underTest.fetchApiDocumentationResource(serviceName, version, resourceName)(request))
+      val result: Result = await(underTest.fetchApiDocumentationResource(serviceName, version, resourceName)(request))
 
       status(result) shouldBe OK
 
-      val resultData = sourceToArray(result.body.dataStream)
+      val resultData: Array[Byte] = sourceToArray(result.body.dataStream)
       resultData.toList shouldBe body.toList
 
       result.header.headers(CONTENT_TYPE) shouldBe contentType
@@ -103,23 +110,31 @@ class DocumentationControllerSpec extends UnitSpec with ScalaFutures with Mockit
     "return the resource with no Content-type header when the content type is unknown" in new Setup {
       theDocumentationServiceWillReturnTheResource
 
-      val result = await(underTest.fetchApiDocumentationResource(serviceName, version, resourceName)(request))
+      val result: Result = await(underTest.fetchApiDocumentationResource(serviceName, version, resourceName)(request))
 
       status(result) shouldBe OK
 
       sourceToArray(result.body.dataStream).toList shouldBe body
     }
 
-    "fail when the service fails to return the resource" in new Setup {
+    "return internal server error when the service fails to return the resource" in new Setup {
       theDocumentationServiceWillFailToReturnTheResource
 
-      intercept[RuntimeException] {
-        await(underTest.fetchApiDocumentationResource(serviceName, version, resourceName)(request))
-      }
+      val result: Result = await(underTest.fetchApiDocumentationResource(serviceName, version, resourceName)(request))
+
+      status(result) shouldBe INTERNAL_SERVER_ERROR
+    }
+
+    "return not found when the service is unable to find the api or version" in new Setup {
+      theDocumentationServiceWillReturnNotFound
+
+      val result: Result = await(underTest.fetchApiDocumentationResource(serviceName, version, resourceName)(request))
+
+      status(result) shouldBe NOT_FOUND
     }
   }
 
-  def sourceToArray(dataStream: Source[ByteString, _])(implicit mat: Materializer) = {
+  def sourceToArray(dataStream: Source[ByteString, _])(implicit mat: Materializer): Array[Byte] = {
     await(dataStream
       .runWith(Sink.reduce[ByteString](_ ++ _))
       .map { r: ByteString => r.toArray[Byte] })

@@ -77,7 +77,7 @@ class DocumentationService @Inject()(apiDefinitionRepository: APIDefinitionRepos
     def getApiDefinitionOrThrow: Future[APIDefinition] = {
       import cats.implicits._
 
-      val failure = Future.failed[APIDefinition](new IllegalArgumentException(s"$serviceName not found"))
+      val failure = Future.failed[APIDefinition](new NotFoundException(s"$serviceName not found"))
 
       apiDefinitionRepository.fetchByServiceName(serviceName).flatMap( _.fold(failure)(_.pure[Future]) )
     }
@@ -85,7 +85,7 @@ class DocumentationService @Inject()(apiDefinitionRepository: APIDefinitionRepos
     def getApiVersionOrThrow(apiDefinition: APIDefinition): Future[APIVersion] = {
       import cats.implicits._
 
-      val failure = Future.failed[APIVersion](new IllegalArgumentException(s"Version $version of $serviceName not found"))
+      val failure = Future.failed[APIVersion](new NotFoundException(s"Version $version of $serviceName not found"))
       val oVersion = apiDefinition.versions.find(_.version == version)
 
       oVersion.fold(failure)(v => v.pure[Future])
