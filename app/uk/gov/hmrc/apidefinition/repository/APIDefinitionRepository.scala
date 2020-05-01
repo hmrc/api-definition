@@ -122,4 +122,12 @@ class APIDefinitionRepository @Inject()(mongo: ReactiveMongoComponent)(implicit 
       .map(_ => Logger.info(s"API with service name '$serviceName' has been deleted successfully"))
   }
 
+  @scala.deprecated("only needed temporarily for a job")
+  def updateContext(context: String, newContext: String): Future[Option[APIDefinition]] = {
+    findAndUpdate(
+      Json.obj("context" -> context),
+      Json.obj("$set" -> Json.obj("context" -> newContext)),
+      fetchNewObject = true)
+      .map(_.result[APIDefinition])
+  }
 }
