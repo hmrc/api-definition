@@ -36,32 +36,26 @@ class AwsApiPublisher @Inject()(val awsAPIPublisherConnector: AWSAPIPublisherCon
                                (implicit val ec: ExecutionContext) {
 
   val hostRegex: Regex = "https?://(.+)".r
-  val IgnoredContexts: Seq[String] = Seq("sso-in", "web-session")
 
   def publishAll(apiDefinitions: Seq[APIDefinition])(implicit hc: HeaderCarrier): Unit = {
     apiDefinitions.foreach(publish)
   }
 
   def publish(apiDefinition: APIDefinition)(implicit hc: HeaderCarrier): Future[Unit] = {
-    if (IgnoredContexts.contains(apiDefinition.context)) {
-      Logger.info(s"Ignoring publishing of ${apiDefinition.context}")
-      Future.successful(())
-    } else {
-      sequence {
-        apiDefinition.versions.map { apiVersion =>
-          val apiName = awsApiGatewayName(apiVersion.version, apiDefinition)
+    sequence {
+      apiDefinition.versions.map { apiVersion =>
+        val apiName = awsApiGatewayName(apiVersion.version, apiDefinition)
 
-          apiVersion.status match {
-            case APIStatus.RETIRED => deleteAPIVersion(apiName)
-            case _ => publishAPIVersion(apiName, apiDefinition.name, apiDefinition.serviceBaseUrl, apiDefinition.context, apiVersion)
-          }
+        apiVersion.status match {
+          case APIStatus.RETIRED => deleteAPIVersion(apiName)
+          case _ => publishAPIVersion(apiName, apiDefinition.name, apiDefinition.serviceBaseUrl, apiDefinition.context, apiVersion)
         }
-      } map { _ =>
-        Logger.info(s"Successfully published API '${apiDefinition.serviceName}' to AWS API Gateway")
-      } recover {
-        case NonFatal(e) =>
-          Logger.error(s"Failed to publish API '${apiDefinition.serviceName}' to AWS API Gateway", e)
       }
+    } map { _ =>
+      Logger.info(s"Successfully published API '${apiDefinition.serviceName}' to AWS API Gateway")
+    } recover {
+      case NonFatal(e) =>
+        Logger.error(s"Failed to publish API '${apiDefinition.serviceName}' to AWS API Gateway", e)
     }
   }
 
@@ -77,19 +71,14 @@ class AwsApiPublisher @Inject()(val awsAPIPublisherConnector: AWSAPIPublisherCon
   }
 
   def delete(apiDefinition: APIDefinition)(implicit hc: HeaderCarrier): Future[Unit] = {
-    if (IgnoredContexts.contains(apiDefinition.context)) {
-      Logger.info(s"Ignoring deletion of ${apiDefinition.context}")
-      Future.successful(())
-    } else {
-      sequence {
-        apiDefinition.versions.map { apiVersion =>
-          deleteAPIVersion(awsApiGatewayName(apiVersion.version, apiDefinition))
-        }
-      } map {_ =>
-        Logger.info(s"Successfully deleted all versions for API '${apiDefinition.serviceName}' from AWS API Gateway")
-      } recover {
-        case NonFatal(e) => Logger.error(s"Failed to delete API '${apiDefinition.serviceName}' from AWS API Gateway", e)
+    sequence {
+      apiDefinition.versions.map { apiVersion =>
+        deleteAPIVersion(awsApiGatewayName(apiVersion.version, apiDefinition))
       }
+    } map {_ =>
+      Logger.info(s"Successfully deleted all versions for API '${apiDefinition.serviceName}' from AWS API Gateway")
+    } recover {
+      case NonFatal(e) => Logger.error(s"Failed to delete API '${apiDefinition.serviceName}' from AWS API Gateway", e)
     }
   }
 

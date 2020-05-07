@@ -19,7 +19,7 @@ package unit.uk.gov.hmrc.apidefinition.service
 import java.util.UUID
 
 import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.{times, verify, verifyZeroInteractions, when}
+import org.mockito.Mockito.{times, verify, when}
 import org.mockito.{ArgumentCaptor, ArgumentMatchers}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
@@ -105,14 +105,6 @@ class AwsAPIPublisherSpec extends UnitSpec with ScalaFutures with MockitoSugar {
       swaggerDetails.info.title shouldBe apiDefinition.name
     }
 
-    Seq("sso-in", "web-session").foreach { context =>
-      s"skip publishing if the context is $context" in new Setup {
-        await(underTest.publish(someAPIDefinition(context = context)))
-
-        verifyZeroInteractions(underTest.awsAPIPublisherConnector)
-      }
-    }
-
     "populate correctly the host from service base URLs using HTTP" in new Setup {
       val swaggerDetailsCaptor: ArgumentCaptor[AWSSwaggerDetails] = ArgumentCaptor.forClass(classOf[AWSSwaggerDetails])
       when(underTest.awsAPIPublisherConnector.createOrUpdateAPI(any[String], swaggerDetailsCaptor.capture())(any[HeaderCarrier]))
@@ -148,14 +140,6 @@ class AwsAPIPublisherSpec extends UnitSpec with ScalaFutures with MockitoSugar {
       await(underTest.delete(apiDefinition))
 
       verify(underTest.awsAPIPublisherConnector).deleteAPI(s"${apiDefinition.context}--2.0")(hc)
-    }
-
-    Seq("sso-in", "web-session").foreach { context =>
-      s"skip deletion if the context is $context" in new Setup {
-        await(underTest.delete(someAPIDefinition(context = context)))
-
-        verifyZeroInteractions(underTest.awsAPIPublisherConnector)
-      }
     }
 
     "delete multiple versions of the API in AWS" in new Setup {
