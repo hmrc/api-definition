@@ -623,6 +623,17 @@ class APIDefinitionServiceSpec extends UnitSpec
     }
   }
 
+  "fetchAll" should {
+    "return all APIs" in new Setup {
+      val expectedApiDefinitions = Seq(apiDefinitionWithAllVersions, apiDefinition)
+      when(mockAPIDefinitionRepository.fetchAll()).thenReturn(successful(expectedApiDefinitions))
+
+      val result: Seq[APIDefinition] = await(underTest.fetchAll)
+
+      result shouldBe expectedApiDefinitions
+    }
+  }
+
   "fetchAllPrivateAPIs" should {
 
     "return all Private API Definitions" in new Setup {

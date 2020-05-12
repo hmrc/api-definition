@@ -83,6 +83,7 @@ class APIDefinitionControllerSpec extends UnitSpec
     when(mockAPIDefinitionService.fetchByContext(any[String])).thenReturn(successful(Some(apiDefinitions.head)))
     when(mockAPIDefinitionService.fetchAllPublicAPIs(any())).thenReturn(successful(apiDefinitions))
     when(mockAPIDefinitionService.fetchAllPrivateAPIs()).thenReturn(successful(apiDefinitions))
+    when(mockAPIDefinitionService.fetchAll).thenReturn(successful(apiDefinitions))
     when(mockAPIDefinitionService.fetchAllAPIsForApplication(any(), any())).thenReturn(successful(apiDefinitions))
     when(mockAPIDefinitionService.fetchAllAPIsForCollaborator(any(), any())(any[HeaderCarrier])).thenReturn(apiDefinitions)
 
@@ -694,6 +695,23 @@ class APIDefinitionControllerSpec extends UnitSpec
         .thenReturn(failed(new RuntimeException("Something went wrong")))
 
       private val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?type=private")))
+
+      status(result) shouldBe INTERNAL_SERVER_ERROR
+    }
+
+    "return all APIs when the type parameter is defined as all" in new QueryDispatcherSetup {
+      private val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?type=all")))
+
+      verifyApiDefinitionsReturnedOkWithNoCacheControl(result)
+
+      verify(mockAPIDefinitionService).fetchAll
+    }
+
+    "fail with a 500 (internal server error) when all is defined and the service throws an exception" in new QueryDispatcherSetup {
+      when(mockAPIDefinitionService.fetchAll)
+        .thenReturn(failed(new RuntimeException("Something went wrong")))
+
+      private val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?type=all")))
 
       status(result) shouldBe INTERNAL_SERVER_ERROR
     }

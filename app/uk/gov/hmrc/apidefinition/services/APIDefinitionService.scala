@@ -191,6 +191,10 @@ class APIDefinitionService @Inject()(awsApiPublisher: AwsApiPublisher,
     apiDefinitionRepository.fetchAll().map(filterAPIsForApplications(alsoIncludePrivateTrials))
   }
 
+  def fetchAll: Future[Seq[APIDefinition]] = {
+    apiDefinitionRepository.fetchAll()
+  }
+
   def fetchAllPrivateAPIs(): Future[Seq[APIDefinition]] = {
 
     def hasPrivateAccess(apiVersion: APIVersion) = apiVersion.access match {
