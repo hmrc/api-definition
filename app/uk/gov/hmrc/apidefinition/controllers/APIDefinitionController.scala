@@ -131,6 +131,10 @@ class APIDefinitionController @Inject()(apiDefinitionValidator: ApiDefinitionVal
       .map(apiDefinitionToResult) recover recovery
   }
 
+  private def fetchAll: Future[Result] = {
+    apiDefinitionService.fetchAll.map(apiDefinitionToResult) recover recovery
+  }
+
   private def fetchByContext(context: String) = {
     apiDefinitionService
       .fetchByContext(context).map {
@@ -155,6 +159,7 @@ class APIDefinitionController @Inject()(apiDefinitionValidator: ApiDefinitionVal
     typeParam match {
       case "public" => fetchAllPublicAPIs(alsoIncludePrivateTrials)
       case "private" => fetchAllPrivateAPIs()
+      case "all" => fetchAll
       case _ => Future(BadRequest(error(UNSUPPORTED_ACCESS_TYPE, s"$typeParam is not a supported access type")))
     }
   }
