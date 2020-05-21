@@ -22,7 +22,6 @@ import java.util.concurrent.TimeUnit.{DAYS, SECONDS}
 import javax.inject.{Inject, Provider, Singleton}
 import play.api.inject.{Binding, Module}
 import play.api.{Configuration, Environment, Logger, Mode}
-import uk.gov.hmrc.apidefinition.scheduled.RenameContextJobConfig
 import uk.gov.hmrc.apidefinition.services.{EmailNotificationService, LoggingNotificationService, NotificationService}
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
@@ -35,7 +34,6 @@ class ConfigurationModule extends Module {
   override def bindings(environment: Environment, configuration: Configuration): Seq[Binding[_]] = {
     Seq(
       bind[NotificationService].toProvider[NotificationServiceConfigProvider],
-      bind[RenameContextJobConfig].toProvider[RenameContextJobConfigProvider]
     )
   }
 }
@@ -99,19 +97,5 @@ class NotificationServiceConfigProvider @Inject()(val runModeConfiguration: Conf
         defaultNotificationService(environmentName)
     }
 
-  }
-}
-
-@Singleton
-class RenameContextJobConfigProvider  @Inject()(configuration: Configuration)
-  extends Provider[RenameContextJobConfig] {
-
-  override def get(): RenameContextJobConfig = {
-    val initialDelay = configuration.getOptional[String]("renameContextJob.initialDelay").map(Duration.create(_).asInstanceOf[FiniteDuration])
-      .getOrElse(FiniteDuration(120, SECONDS))
-    val interval = configuration.getOptional[String]("renameContextJob.interval").map(Duration.create(_).asInstanceOf[FiniteDuration])
-      .getOrElse(FiniteDuration(1, DAYS))
-    val enabled = configuration.getOptional[Boolean]("renameContextJob.enabled").getOrElse(false)
-    RenameContextJobConfig(initialDelay, interval, enabled)
   }
 }
