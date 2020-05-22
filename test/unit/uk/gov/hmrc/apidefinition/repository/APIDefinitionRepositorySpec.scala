@@ -283,26 +283,6 @@ class APIDefinitionRepositorySpec extends UnitSpec
 
   }
 
-  "updateContext()" should {
-    "update the matching context" in {
-      await(repository.save(helloApiDefinition))
-      await(repository.save(calendarApiDefinition))
-      val newContext = "hello-new-context"
-
-      await(repository.updateContext(helloApiDefinition.context, newContext))
-
-      val retrieved = await(repository.fetchAll())
-      retrieved should have size 2
-      retrieved.map(_.context) should contain allOf(newContext, calendarApiDefinition.context)
-    }
-
-    "not fail when there are no matches" in {
-      val result = await(repository.updateContext("some-context", "new-context"))
-
-      result shouldBe None
-    }
-  }
-
   "The 'api' Mongo collection" should {
 
     def assertMongoError(caught: DatabaseException, fieldName: String, duplicateFieldValue: String): Unit = {
