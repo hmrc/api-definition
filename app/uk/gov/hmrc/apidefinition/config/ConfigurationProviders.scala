@@ -33,7 +33,7 @@ class ConfigurationModule extends Module {
 
   override def bindings(environment: Environment, configuration: Configuration): Seq[Binding[_]] = {
     Seq(
-      bind[NotificationService].toProvider[NotificationServiceConfigProvider],
+      bind[NotificationService].toProvider[NotificationServiceConfigProvider]
     )
   }
 }
@@ -96,6 +96,5 @@ class NotificationServiceConfigProvider @Inject()(val runModeConfiguration: Conf
         Logger.warn("Notification type not recognised")
         defaultNotificationService(environmentName)
     }
-
   }
 }
