@@ -17,8 +17,6 @@
 package unit.uk.gov.hmrc.apidefinition.controllers
 
 import akka.stream.Materializer
-import org.joda.time.format.ISODateTimeFormat
-import org.joda.time.{DateTime, DateTimeZone}
 import org.mockito.ArgumentMatchers.{any, refEq, eq => isEq}
 import org.mockito.BDDMockito.given
 import org.mockito.Mockito.{verify, verifyZeroInteractions, when}
@@ -554,91 +552,24 @@ class APIDefinitionControllerSpec extends UnitSpec
   }
 
   "fetch" should {
-
-    "pass on the alsoIncludePrivateTrials option when it is set" in new Setup {
-      val alsoIncludePrivateTrials = true
-      val alsoIncludePrivateTrialsQueryParameter = "options=alsoIncludePrivateTrials"
-      when(mockAPIDefinitionService.fetchByServiceName(isEq(serviceName), isEq(None), any[Boolean])(any[HeaderCarrier]))
-        .thenReturn(successful(None))
-
-      private val result = await(underTest.fetch(serviceName)(FakeRequest("GET", s"?$alsoIncludePrivateTrialsQueryParameter")))
-
-      status(result) shouldBe NOT_FOUND
-      verify(mockAPIDefinitionService).fetchByServiceName(isEq(serviceName), isEq(None), isEq(alsoIncludePrivateTrials))(any[HeaderCarrier])
-    }
-
-    "pass on the alsoIncludePrivateTrials option as false when it is not specified" in new Setup {
-      val alsoIncludePrivateTrials = false
-      when(mockAPIDefinitionService.fetchByServiceName(isEq(serviceName), isEq(None), any[Boolean])(any[HeaderCarrier]))
-        .thenReturn(successful(None))
-
-      private val result = await(underTest.fetch(serviceName)(request))
-
-      status(result) shouldBe NOT_FOUND
-      verify(mockAPIDefinitionService).fetchByServiceName(isEq(serviceName), isEq(None), isEq(alsoIncludePrivateTrials))(any[HeaderCarrier])
-    }
-
-    "succeed with a 200 (ok) when an API exists for the given serviceName and user" in new Setup {
-
-      private val aTime = DateTime.now(DateTimeZone.forID("Asia/Harbin"))
-
-      val apiDefinition = APIDefinition(serviceName, "http://calendar", "Calendar API", "My Calendar API", "calendar",
-        versions = Seq(APIVersion("1.0", APIStatus.BETA, Some(PublicAPIAccess()),
-          Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
-          Some(true))),
-        requiresTrust = None, lastPublishedAt = Some(aTime))
-
-      when(mockAPIDefinitionService.fetchByServiceName(isEq(serviceName), isEq(Some(userEmail)), any[Boolean])(any[HeaderCarrier]))
-        .thenReturn(successful(Some(apiDefinition)))
-
-      private val result = await(underTest.fetch(serviceName)(FakeRequest("GET", s"?email=$userEmail")))
-
-      status(result) shouldBe OK
-      Json.prettyPrint(jsonBodyOf(result)) shouldBe
-        s"""{
-           |  "serviceName" : "calendar",
-           |  "serviceBaseUrl" : "http://calendar",
-           |  "name" : "Calendar API",
-           |  "description" : "My Calendar API",
-           |  "context" : "calendar",
-           |  "versions" : [ {
-           |    "version" : "1.0",
-           |    "status" : "BETA",
-           |    "access" : {
-           |      "type" : "PUBLIC"
-           |    },
-           |    "endpoints" : [ {
-           |      "uriPattern" : "/today",
-           |      "endpointName" : "Get Today's Date",
-           |      "method" : "GET",
-           |      "authType" : "NONE",
-           |      "throttlingTier" : "UNLIMITED"
-           |    } ],
-           |    "endpointsEnabled" : true
-           |  } ],
-           |  "lastPublishedAt" : "${ISODateTimeFormat.dateTime().withZoneUTC().print(aTime)}"
-           |}""".trim.stripMargin
-    }
-
     "succeed with a 200 (ok) when a public API exists for the given serviceName" in new Setup {
-
       val apiDefinition = APIDefinition(serviceName, "http://calendar", "Calendar API", "My Calendar API", "calendar",
         versions = Seq(APIVersion("1.0", APIStatus.BETA, Some(PublicAPIAccess()),
           Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
           Some(true))),
         requiresTrust = None)
 
-      when(mockAPIDefinitionService.fetchByServiceName(isEq(serviceName), isEq(None), any[Boolean])(any[HeaderCarrier]))
+      when(mockAPIDefinitionService.fetchByServiceName(isEq(serviceName))(any[HeaderCarrier]))
         .thenReturn(successful(Some(apiDefinition)))
 
       private val result = await(underTest.fetch(serviceName)(request))
 
       status(result) shouldBe OK
+      jsonBodyOf(result) shouldBe Json.toJson(apiDefinition)
     }
 
-    "fail with a 404 (not found) when no public API exists for the given serviceName" in new Setup {
-
-      when(mockAPIDefinitionService.fetchByServiceName(isEq(serviceName), isEq(None), any[Boolean])(any[HeaderCarrier]))
+    "fail with a 404 (not found) when no API exists for the given serviceName" in new Setup {
+      when(mockAPIDefinitionService.fetchByServiceName(isEq(serviceName))(any[HeaderCarrier]))
         .thenReturn(successful(None))
 
       private val result = await(underTest.fetch(serviceName)(request))
@@ -646,19 +577,8 @@ class APIDefinitionControllerSpec extends UnitSpec
       status(result) shouldBe NOT_FOUND
     }
 
-    "fail with a 404 (not found) when no API exists for the given serviceName and user" in new Setup {
-
-      when(mockAPIDefinitionService.fetchByServiceName(isEq(serviceName), isEq(Some(userEmail)), any[Boolean])(any[HeaderCarrier]))
-        .thenReturn(successful(None))
-
-      private val result = await(underTest.fetch(serviceName)(FakeRequest("GET", s"?email=$userEmail")))
-
-      status(result) shouldBe NOT_FOUND
-    }
-
     "fail with a 500 (internal server error) when the service throws an exception" in new Setup {
-
-      when(mockAPIDefinitionService.fetchByServiceName(isEq(serviceName), isEq(None), any[Boolean])(any[HeaderCarrier]))
+      when(mockAPIDefinitionService.fetchByServiceName(isEq(serviceName))(any[HeaderCarrier]))
         .thenReturn(failed(new RuntimeException("Something went wrong")))
 
       private val result = await(underTest.fetch(serviceName)(request))

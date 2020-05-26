@@ -70,8 +70,7 @@ class APIDefinitionController @Inject()(apiDefinitionValidator: ApiDefinitionVal
   }
 
   def fetch(serviceName: String): Action[AnyContent] = Action.async { implicit request =>
-    val queryOptions = extractQueryOptions(request)
-    apiDefinitionService.fetchByServiceName(serviceName, request.queryString.get("email").flatMap(_.headOption), queryOptions.alsoIncludePrivateTrials) map {
+    apiDefinitionService.fetchByServiceName(serviceName) map {
       case Some(apiDefinition) => Ok(Json.toJson(apiDefinition))
       case _ => NotFound(error(API_DEFINITION_NOT_FOUND, "No API Definition was found"))
     } recover recovery
