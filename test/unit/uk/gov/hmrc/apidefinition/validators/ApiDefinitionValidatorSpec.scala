@@ -22,6 +22,7 @@ import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.{never, verify, when}
 import org.scalatest.mockito.MockitoSugar
 import play.api.mvc.Results.{NoContent, UnprocessableEntity}
+import uk.gov.hmrc.apidefinition.models.APICategory.OTHER
 import uk.gov.hmrc.apidefinition.models.ErrorCode.INVALID_REQUEST_PAYLOAD
 import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
@@ -67,63 +68,67 @@ class ApiDefinitionValidatorSpec extends UnitSpec with MockitoSugar {
       validationErrors.code shouldBe INVALID_REQUEST_PAYLOAD
       validationErrors.messages shouldBe failureMessages
     }
+
+    val calendarApi = APIDefinition("calendar", "http://calendar", "Calendar API", "My Calendar API", "individuals/calendar",
+      Seq(APIVersion("1.0", APIStatus.PROTOTYPED, Some(PublicAPIAccess()),
+        Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)))),
+      Some(false), categories = Some(Seq(OTHER)))
   }
 
   "ApiDefinitionValidator" should {
 
     "fail validation if an empty serviceBaseUrl is provided" in new Setup {
-      lazy val apiDefinition: APIDefinition = APIDefinition("calendar", "", "Calendar API", "My Calendar API", "individuals/calendar",
-        Seq(APIVersion("1.0", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Seq(Endpoint("/today", "Get Today's Date",
-          HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)))), Some(false))
+      lazy val apiDefinition: APIDefinition = calendarApi.copy(serviceBaseUrl = "")
 
       assertValidationFailure(apiDefinition, List("Field 'serviceBaseUrl' should not be empty for API 'Calendar API'"))
       verify(mockAPIDefinitionService, never()).fetchByServiceBaseUrl(any[String])
     }
 
     "fail validation if an empty serviceName is provided" in new Setup {
-      lazy val apiDefinition: APIDefinition = APIDefinition("", "http://calendar", "Calendar API", "My Calendar API", "individuals/calendar",
-        Seq(APIVersion("1.0", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Seq(Endpoint("/today", "Get Today's Date",
-          HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)))), Some(false))
+      lazy val apiDefinition: APIDefinition = calendarApi.copy(serviceName = "")
 
       assertValidationFailure(apiDefinition, List("Field 'serviceName' should not be empty for API 'Calendar API'"))
     }
 
     "fail validation if a version number is referenced more than once" in new Setup {
-      lazy val apiDefinition: APIDefinition = APIDefinition(
-        "calendar",
-        "http://calendar",
-        "Calendar API",
-        "My Calendar API",
-        "individuals/calendar",
+      lazy val apiDefinition: APIDefinition = calendarApi.copy(versions =
         Seq(
           APIVersion("1.0", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))),
           APIVersion("1.1", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))),
           APIVersion("1.1", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))),
-          APIVersion("1.2", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)))),
-        Some(false))
+          APIVersion("1.2", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))))
+      )
 
       assertValidationFailure(apiDefinition, List("Field 'version' must be unique for API 'Calendar API'"))
     }
 
     "fail validation if an empty name is provided" in new Setup {
-      lazy val apiDefinition: APIDefinition = APIDefinition("calendar", "http://calendar", "", "My Calendar API", "individuals/calendar",
-        Seq(APIVersion("1.0", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Seq(Endpoint("/today", "Get Today's Date",
-          HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)))), Some(false))
+      lazy val apiDefinition: APIDefinition = calendarApi.copy(name = "")
 
       assertValidationFailure(apiDefinition, List("Field 'name' should not be empty for API with service name 'calendar'"))
       verify(mockAPIDefinitionService, never()).fetchByName(any[String])
     }
 
     "fail validation if an empty description is provided" in new Setup {
-      lazy val apiDefinition: APIDefinition = APIDefinition("calendar", "http://calendar", "Calendar API", "", "individuals/calendar",
-        Seq(APIVersion("1.0", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Seq(Endpoint("/today", "Get Today's Date",
-          HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)))), Some(false))
+      lazy val apiDefinition: APIDefinition = calendarApi.copy(description = "")
 
       assertValidationFailure(apiDefinition, List("Field 'description' should not be empty for API 'Calendar API'"))
     }
 
+    "fail validation if categories is None" in new Setup {
+      lazy val apiDefinition: APIDefinition = calendarApi.copy(categories = None)
+
+      assertValidationFailure(apiDefinition, List("Field 'categories' should exist and not be empty for API 'Calendar API'"))
+    }
+
+    "fail validation if categories is empty" in new Setup {
+      lazy val apiDefinition: APIDefinition = calendarApi.copy(categories = Some(Seq()))
+
+      assertValidationFailure(apiDefinition, List("Field 'categories' should exist and not be empty for API 'Calendar API'"))
+    }
+
     "fail validation when no APIVersion is provided" in new Setup {
-      lazy val apiDefinition: APIDefinition = APIDefinition("calendar", "http://calendar", "Calendar API", "My Calendar API", "individuals/calendar", Nil, None)
+      lazy val apiDefinition: APIDefinition = calendarApi.copy(versions = Nil)
       assertValidationFailure(apiDefinition, List("Field 'versions' must not be empty for API 'Calendar API'"))
     }
 
@@ -133,15 +138,14 @@ class ApiDefinitionValidatorSpec extends UnitSpec with MockitoSugar {
           APIVersion("1.0", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))),
           APIVersion("", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)))
         )
+      lazy val apiDefinition: APIDefinition = calendarApi.copy(versions = versions)
 
-      lazy val apiDefinition: APIDefinition =
-        APIDefinition("calendar", "http://calendar", "Calendar API", "My Calendar API", "individuals/calendar", versions, None)
       assertValidationFailure(apiDefinition, List("Field 'versions.version' is required for API 'Calendar API'"))
     }
 
     "fail validation when no Endpoint is provided" in new Setup {
-      lazy val apiDefinition: APIDefinition = APIDefinition("calendar", "http://calendar", "Calendar API", "My Calendar API", "individuals/calendar",
-        Seq(APIVersion("1.0", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Nil)), Some(false))
+      lazy val apiDefinition: APIDefinition = calendarApi.copy(versions = Seq(APIVersion("1.0", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Nil)))
+
       assertValidationFailure(apiDefinition, List("Field 'versions.endpoints' must not be empty for API 'Calendar API' version '1.0'"))
     }
 
@@ -165,7 +169,8 @@ class ApiDefinitionValidatorSpec extends UnitSpec with MockitoSugar {
       description = "API for checking payments",
       context = "individuals/money",
       versions = Seq(moneyApiVersion),
-      requiresTrust = Some(false))
+      requiresTrust = Some(false),
+      categories = Some(Seq(OTHER)))
 
     val specialChars = List(
       ' ', '@', '%', '£', '*', '\\', '|', '$', '~', '^', ';', '=', '\'',
