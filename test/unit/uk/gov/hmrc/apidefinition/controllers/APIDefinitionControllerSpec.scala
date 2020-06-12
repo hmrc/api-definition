@@ -30,6 +30,7 @@ import play.api.test.{FakeRequest, StubControllerComponentsFactory, StubPlayBody
 import play.mvc.Http.HeaderNames
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.controllers.{APIDefinitionController, QueryOptions}
+import uk.gov.hmrc.apidefinition.models.APICategory.OTHER
 import uk.gov.hmrc.apidefinition.models.ErrorCode.INVALID_REQUEST_PAYLOAD
 import uk.gov.hmrc.apidefinition.models.JsonFormatters._
 import uk.gov.hmrc.apidefinition.models._
@@ -129,7 +130,8 @@ class APIDefinitionControllerSpec extends UnitSpec
                 Some(true))),
           requiresTrust = Some(true),
           None,
-          lastPublishedAt = None)
+          lastPublishedAt = None,
+          Some(Seq(OTHER)))
 
       thereAreNoOverlappingAPIContexts
       theServiceWillCreateOrUpdateTheAPIDefinition
@@ -160,7 +162,8 @@ class APIDefinitionControllerSpec extends UnitSpec
                 Some(true))),
           requiresTrust = Some(true),
           None,
-          lastPublishedAt = None)
+          lastPublishedAt = None,
+          Some(Seq(OTHER)))
 
       thereAreNoOverlappingAPIContexts
       theServiceWillCreateOrUpdateTheAPIDefinition
@@ -201,6 +204,7 @@ class APIDefinitionControllerSpec extends UnitSpec
           |   "description":"My Calendar API",
           |   "serviceBaseUrl":"http://calendar",
           |   "context":"individuals/calendar",
+          |   "categories" : ["OTHER"],
           |   "versions":[
           |      {
           |         "version":"1.0",
@@ -238,6 +242,7 @@ class APIDefinitionControllerSpec extends UnitSpec
           |   "description":"My Calendar API",
           |   "serviceBaseUrl":"http://calendar",
           |   "context":"individuals/calendar",
+          |   "categories" : ["OTHER"],
           |   "versions":[
           |      {
           |         "version":"1.0",
@@ -289,6 +294,7 @@ class APIDefinitionControllerSpec extends UnitSpec
           |  "serviceBaseUrl": "http://calendar",
           |  "context": "individuals/calendar",
           |  "requiresTrust": true,
+          |  "categories" : ["OTHER"],
           |  "versions": [
           |  {
           |    "access" : {
@@ -313,7 +319,7 @@ class APIDefinitionControllerSpec extends UnitSpec
       val apiDefinition = APIDefinition("calendar", "http://calendar", "Calendar API", "My Calendar API", "individuals/calendar",
         versions = Seq(APIVersion("1.0", APIStatus.STABLE, Some(PublicAPIAccess()),
           Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
-          Some(true))), requiresTrust = Some(true), None, None)
+          Some(true))), requiresTrust = Some(true), None, None, Some(Seq(OTHER)))
 
       thereAreNoOverlappingAPIContexts
       theServiceWillCreateOrUpdateTheAPIDefinition
@@ -334,6 +340,7 @@ class APIDefinitionControllerSpec extends UnitSpec
           |  "serviceBaseUrl": "http://calendar",
           |  "context": "individuals/calendar",
           |  "requiresTrust": true,
+          |  "categories" : ["OTHER"],
           |  "versions": [
           |  {
           |    "version" : "1.0",
@@ -355,7 +362,7 @@ class APIDefinitionControllerSpec extends UnitSpec
       val apiDefinition = APIDefinition("calendar", "http://calendar", "Calendar API", "My Calendar API", "individuals/calendar",
         versions = Seq(APIVersion("1.0", APIStatus.STABLE, None,
           Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
-          Some(true))), requiresTrust = Some(true), None, None)
+          Some(true))), requiresTrust = Some(true), None, None, Some(Seq(OTHER)))
 
       thereAreNoOverlappingAPIContexts
       theServiceWillCreateOrUpdateTheAPIDefinition
@@ -376,6 +383,7 @@ class APIDefinitionControllerSpec extends UnitSpec
           |  "serviceBaseUrl": "http://calendar",
           |  "context": "individuals/calendar",
           |  "requiresTrust": true,
+          |  "categories" : ["OTHER"],
           |  "versions": [
           |  {
           |    "version" : "1.0",
@@ -401,7 +409,7 @@ class APIDefinitionControllerSpec extends UnitSpec
       val apiDefinition = APIDefinition("calendar", "http://calendar", "Calendar API", "My Calendar API", "individuals/calendar",
         versions = Seq(APIVersion("1.0", APIStatus.STABLE, Some(PrivateAPIAccess(Seq("app-id-1", "app-id-2"))),
           Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
-          Some(true))), requiresTrust = Some(true), None, None)
+          Some(true))), requiresTrust = Some(true), None, None, Some(Seq(OTHER)))
 
       thereAreNoOverlappingAPIContexts
       theServiceWillCreateOrUpdateTheAPIDefinition
@@ -916,6 +924,7 @@ class APIDefinitionControllerSpec extends UnitSpec
       |  "serviceBaseUrl": "http://calendar",
       |  "context": "individuals/calendar",
       |  "requiresTrust": true,
+      |  "categories": ["OTHER"],
       |  "versions": [
       |  {
       |    "version" : "1.0",
@@ -940,6 +949,7 @@ class APIDefinitionControllerSpec extends UnitSpec
       |  "serviceBaseUrl": "http://calendar",
       |  "context": "individuals/calendar",
       |  "requiresTrust": true,
+      |  "categories" : ["OTHER"],
       |  "versions": [
       |  {
       |    "version" : "1.0",

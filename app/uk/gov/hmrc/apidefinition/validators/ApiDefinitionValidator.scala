@@ -57,11 +57,12 @@ class ApiDefinitionValidator @Inject()(apiDefinitionService: APIDefinitionServic
       validated: HMRCValidated[APIDefinition] = (
         validateThat(_.serviceName.nonEmpty, _ => s"Field 'serviceName' should not be empty $errorContext"),
         validateThat(_.description.nonEmpty, _ => s"Field 'description' should not be empty $errorContext"),
+        validateThat(_.categories.exists(_.nonEmpty), _ => s"Field 'categories' should exist and not be empty $errorContext"),
         contextValidated,
         nameValidated,
         serviceBaseUrlValidated,
         validateVersions(errorContext)
-      ).mapN((_, _, _, _, _, _) => apiDefinition)
+      ).mapN((_, _, _, _, _, _, _) => apiDefinition)
 
     } yield validated
   }
