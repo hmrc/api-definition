@@ -24,6 +24,7 @@ import reactivemongo.api.Cursor.FailOnError
 import reactivemongo.api.indexes.Index
 import reactivemongo.bson.{BSONDocument, BSONObjectID}
 import reactivemongo.play.json.ImplicitBSONHandlers._
+import uk.gov.hmrc.apidefinition.models.APICategory.APICategory
 import uk.gov.hmrc.apidefinition.models.APIDefinition
 import uk.gov.hmrc.apidefinition.models.JsonFormatters._
 import uk.gov.hmrc.apidefinition.utils.IndexHelper.createUniqueBackgroundSingleFieldAscendingIndex
@@ -120,5 +121,21 @@ class APIDefinitionRepository @Inject()(mongo: ReactiveMongoComponent)(implicit 
   def delete(serviceName: String): Future[Unit] = {
     collection.delete().one(serviceNameSelector(serviceName))
       .map(_ => Logger.info(s"API with service name '$serviceName' has been deleted successfully"))
+  }
+
+  @scala.deprecated("only needed temporarily for a job")
+  def fetchAllWithMissingCategories: Future[Seq[APIDefinition]] = {
+    collection.find[JsObject, JsObject](Json.obj("categories" -> Json.obj(f"$$exists" -> false)), empty)
+      .cursor[APIDefinition]()
+      .collect[Seq](-1, FailOnError[Seq[APIDefinition]]())
+  }
+
+  @scala.deprecated("only needed temporarily for a job")
+  def updateCategories(context: String, newCategories: Seq[APICategory]): Future[Option[APIDefinition]] = {
+    findAndUpdate(
+      Json.obj("context" -> context),
+      Json.obj("$set" -> Json.obj("categories" -> newCategories)),
+      fetchNewObject = true)
+      .map(_.result[APIDefinition])
   }
 }
