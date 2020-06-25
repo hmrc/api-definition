@@ -24,12 +24,14 @@ import reactivemongo.api.ReadConcern
 import reactivemongo.api.indexes.Index
 import reactivemongo.api.indexes.IndexType.Ascending
 import reactivemongo.core.errors.DatabaseException
+import uk.gov.hmrc.apidefinition.models.APICategory.OTHER
 import uk.gov.hmrc.apidefinition.models.JsonFormatters._
 import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport}
 import uk.gov.hmrc.play.test.UnitSpec
 
+import scala.collection.Seq
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -281,6 +283,49 @@ class APIDefinitionRepositorySpec extends UnitSpec
       retrieved shouldBe Seq(helloApiDefinition)
     }
 
+  }
+
+  "fetchAllWithMissingCategories()" should {
+    "return API definitions with missing categories" in {
+      val expectedApi = helloApiDefinition.copy(categories = None)
+      await(repository.save(expectedApi))
+      await(repository.save(calendarApiDefinition.copy(categories = Some(Seq(OTHER)))))
+
+
+      val retrieved: Seq[APIDefinition] = await(repository.fetchAllWithMissingCategories)
+
+      retrieved should contain only expectedApi
+    }
+
+    "return None when there are no APIs with missing categories" in {
+      await(repository.save(helloApiDefinition.copy(categories = Some(Seq(OTHER)))))
+      await(repository.save(calendarApiDefinition.copy(categories = Some(Seq(OTHER)))))
+
+      val retrieved: Seq[APIDefinition] = await(repository.fetchAllWithMissingCategories)
+
+      retrieved shouldBe empty
+    }
+  }
+
+  "updateCategories()" should {
+    "update only the matching API definition" in {
+      await(repository.save(helloApiDefinition.copy(categories = None)))
+      await(repository.save(calendarApiDefinition.copy(categories = None)))
+      val newCategories = Seq(OTHER)
+
+      await(repository.updateCategories(helloApiDefinition.context, newCategories))
+
+      val retrieved: Seq[APIDefinition] = await(repository.fetchAll())
+      retrieved should have size 2
+      retrieved.find(_.context == helloApiDefinition.context).get.categories shouldBe Some(newCategories)
+      retrieved.find(_.context == calendarApiDefinition.context).get.categories shouldBe None
+    }
+
+    "not fail when there are no matches" in {
+      val result = await(repository.updateCategories("some-context", Seq(OTHER)))
+
+      result shouldBe None
+    }
   }
 
   "The 'api' Mongo collection" should {
