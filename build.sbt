@@ -15,7 +15,6 @@ lazy val compile = Seq(
   "uk.gov.hmrc" %% "simple-reactivemongo" % "7.23.0-play-26",
   "uk.gov.hmrc" %% "play-json-union-formatter" % "1.11.0",
   "org.typelevel" %% "cats-core" % "1.1.0",
-  "uk.gov.hmrc" %% "play-scheduling" % "7.4.0-play-26"
 )
 
 lazy val test = Seq(
@@ -85,8 +84,7 @@ lazy val microservice = (project in file("."))
     scalacOptions += "-Ypartial-unification",
     libraryDependencies ++= appDependencies,
     dependencyOverrides ++= overrides,
-    retrieveManaged := true,
-    Compile / unmanagedResourceDirectories += baseDirectory.value / "app/resources"
+    retrieveManaged := true
   )
   .settings(
     unitTestSettings,

@@ -22,7 +22,6 @@ import java.util.concurrent.TimeUnit.{DAYS, SECONDS}
 import javax.inject.{Inject, Provider, Singleton}
 import play.api.inject.{Binding, Module}
 import play.api.{Configuration, Environment, Logger, Mode}
-import uk.gov.hmrc.apidefinition.scheduled.DefaultCategoriesJobConfig
 import uk.gov.hmrc.apidefinition.services.{EmailNotificationService, LoggingNotificationService, NotificationService}
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
@@ -34,8 +33,7 @@ class ConfigurationModule extends Module {
 
   override def bindings(environment: Environment, configuration: Configuration): Seq[Binding[_]] = {
     Seq(
-      bind[NotificationService].toProvider[NotificationServiceConfigProvider],
-      bind[DefaultCategoriesJobConfig].toProvider[DefaultCategoriesJobConfigProvider]
+      bind[NotificationService].toProvider[NotificationServiceConfigProvider]
     )
   }
 }
@@ -98,19 +96,5 @@ class NotificationServiceConfigProvider @Inject()(val runModeConfiguration: Conf
         Logger.warn("Notification type not recognised")
         defaultNotificationService(environmentName)
     }
-  }
-}
-
-@Singleton
-class DefaultCategoriesJobConfigProvider  @Inject()(configuration: Configuration)
-  extends Provider[DefaultCategoriesJobConfig] {
-
-  override def get(): DefaultCategoriesJobConfig = {
-    val initialDelay = configuration.getOptional[String]("defaultCategoriesJob.initialDelay").map(Duration.create(_).asInstanceOf[FiniteDuration])
-      .getOrElse(FiniteDuration(120, SECONDS))
-    val interval = configuration.getOptional[String]("defaultCategoriesJob.interval").map(Duration.create(_).asInstanceOf[FiniteDuration])
-      .getOrElse(FiniteDuration(1, DAYS))
-    val enabled = configuration.getOptional[Boolean]("defaultCategoriesJob.enabled").getOrElse(false)
-    DefaultCategoriesJobConfig(initialDelay, interval, enabled)
   }
 }
