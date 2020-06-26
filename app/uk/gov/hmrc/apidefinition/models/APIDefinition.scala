@@ -17,15 +17,12 @@
 package uk.gov.hmrc.apidefinition.models
 
 import org.joda.time.DateTime
-import play.api.libs.json.{JsObject, Json, Reads}
+import play.api.libs.json.{JsObject, Json, Reads, Writes}
 import uk.gov.hmrc.apidefinition.models.APICategory.APICategory
 import uk.gov.hmrc.apidefinition.models.APIStatus.APIStatus
 import uk.gov.hmrc.apidefinition.models.AuthType.AuthType
 import uk.gov.hmrc.apidefinition.models.HttpMethod.HttpMethod
-import uk.gov.hmrc.apidefinition.models.JsonFormatters.formatAPICategory
 import uk.gov.hmrc.apidefinition.models.ResourceThrottlingTier.ResourceThrottlingTier
-
-import scala.io.Source
 
 case class APIDefinition(serviceName: String,
                          serviceBaseUrl: String,
@@ -100,9 +97,6 @@ object APICategory extends Enumeration {
   val EXAMPLE, AGENTS, BUSINESS_RATES, CHARITIES, CONSTRUCTION_INDUSTRY_SCHEME, CORPORATION_TAX, CUSTOMS, ESTATES, HELP_TO_SAVE, INCOME_TAX_MTD,
     LIFETIME_ISA, MARRIAGE_ALLOWANCE, NATIONAL_INSURANCE, PAYE, PENSIONS, PRIVATE_GOVERNMENT,
     RELIEF_AT_SOURCE, SELF_ASSESSMENT, STAMP_DUTY, TRUSTS, VAT, VAT_MTD, OTHER = Value
-
-  lazy val categoryMap: Map[String, Seq[APICategory]] =
-    Json.parse(Source.fromInputStream(getClass.getResourceAsStream("/categories.json")).mkString).as[Map[String, Seq[APICategory]]]
 }
 
 object APIStatus extends Enumeration {
