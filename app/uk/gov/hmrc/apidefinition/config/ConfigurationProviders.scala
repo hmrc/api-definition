@@ -28,12 +28,18 @@ import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
 import scala.collection.JavaConverters._
 import scala.concurrent.duration.{Duration, FiniteDuration}
+import uk.gov.hmrc.ramltools.loaders.RamlLoader
+import uk.gov.hmrc.apidefinition.raml.DocumentationRamlLoader
+import uk.gov.hmrc.ramltools.loaders.UrlRewriter
+import uk.gov.hmrc.apidefinition.raml.DocumentationUrlRewriter
 
 class ConfigurationModule extends Module {
 
   override def bindings(environment: Environment, configuration: Configuration): Seq[Binding[_]] = {
     Seq(
-      bind[NotificationService].toProvider[NotificationServiceConfigProvider]
+      bind[NotificationService].toProvider[NotificationServiceConfigProvider],
+      bind[RamlLoader].to[DocumentationRamlLoader],
+      bind[UrlRewriter].to[DocumentationUrlRewriter]
     )
   }
 }
