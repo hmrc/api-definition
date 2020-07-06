@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.apidocumentationloader.domain.wiremodel
+package uk.gov.hmrc.apidefinition.models.wiremodel
 
 case class HmrcResourceGroup(name: Option[String] = None, description: Option[String] = None, resources: List[HmrcResource] = Nil) {
   def +(resource: HmrcResource) = {
