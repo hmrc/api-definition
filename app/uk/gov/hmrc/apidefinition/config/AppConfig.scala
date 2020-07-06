@@ -32,10 +32,19 @@ class AppConfig @Inject()(val runModeConfiguration: Configuration, environment: 
 
   lazy val fetchByContextTtlInSeconds: String = runModeConfiguration.underlying.as[String]("fetchByContextTtlInSeconds")
 
+  val ramlLoaderRewrites = buildRamlLoaderRewrites
+
   def baseUrl(serviceName: String): String = {
     val context = runModeConfiguration.getOptional[String](s"$serviceName.context").getOrElse("")
 
     if (context.length > 0) s"${servicesConfig.baseUrl(serviceName)}/$context"
     else servicesConfig.baseUrl(serviceName)
+  }
+  
+   private def buildRamlLoaderRewrites: Map[String, String] = {
+    Map(
+      runModeConfiguration.getOptional[String](s"ramlLoaderUrlRewrite.from").getOrElse("") ->
+      runModeConfiguration.getOptional[String](s"ramlLoaderUrlRewrite.to").getOrElse("")
+    )
   }
 }
