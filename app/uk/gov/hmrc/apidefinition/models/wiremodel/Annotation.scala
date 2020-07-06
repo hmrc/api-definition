@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.apidocumentationloader.domain.wiremodel
+package uk.gov.hmrc.apidefinition.models.wiremodel
 
 import scala.collection.JavaConverters._
 

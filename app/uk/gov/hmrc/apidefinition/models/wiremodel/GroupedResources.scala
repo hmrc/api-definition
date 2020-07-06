@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.apidocumentationloader.domain.wiremodel
+package uk.gov.hmrc.apidefinition.models.wiremodel
 
 object GroupedResources {
   def apply(resources: List[HmrcResource]): List[HmrcResourceGroup] = {
