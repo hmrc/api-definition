@@ -5,6 +5,8 @@ GET         /api-definition/:serviceName                                        
 GET         /api-definition/:serviceName/extended                                uk.gov.hmrc.apidefinition.controllers.APIDefinitionController.fetchExtended(serviceName)
 GET         /api-definition/:serviceName/:version/documentation/*resource        uk.gov.hmrc.apidefinition.controllers.DocumentationController.fetchApiDocumentationResource(serviceName, version, resource)
 
+GET         /api-definition/:serviceName/:version/specification                  uk.gov.hmrc.apidefinition.controllers.SpecificationController.fetchSpecification(serviceName, version)
+
 POST        /api-definition                                                      uk.gov.hmrc.apidefinition.controllers.APIDefinitionController.createOrUpdate()
 POST        /api-definition/validate                                             uk.gov.hmrc.apidefinition.controllers.APIDefinitionController.validate
 

@@ -15,6 +15,8 @@ lazy val compile = Seq(
   "uk.gov.hmrc" %% "simple-reactivemongo" % "7.30.0-play-26",
   "uk.gov.hmrc" %% "play-json-union-formatter" % "1.11.0",
   "org.typelevel" %% "cats-core" % "1.1.0",
+  "uk.gov.hmrc" %% "raml-tools" % "1.18.0",
+  "org.raml" % "raml-parser-2" % "1.0.13"
 )
 
 lazy val test = Seq(
@@ -80,7 +82,7 @@ lazy val microservice = (project in file("."))
     name := appName,
     majorVersion := 1,
     targetJvm := "jvm-1.8",
-    scalaVersion := "2.12.10",
+    scalaVersion := "2.12.11",
     scalacOptions += "-Ypartial-unification",
     libraryDependencies ++= appDependencies,
     dependencyOverrides ++= overrides,
@@ -91,8 +93,13 @@ lazy val microservice = (project in file("."))
     componentTestSettings
   )
   .settings(
-    resolvers += Resolver.bintrayRepo("hmrc", "releases"),
-    resolvers += Resolver.jcenterRepo)
+    resolvers ++= Seq(
+      Resolver.bintrayRepo("hmrc", "releases"),
+      Resolver.jcenterRepo,
+      Resolver.sonatypeRepo("releases")
+    ),
+    resolvers += "hmrc-releases" at "https://artefacts.tax.service.gov.uk/artifactory/hmrc-releases/"
+  )
 
 lazy val unitTestSettings =
   inConfig(Test)(Defaults.testTasks) ++
