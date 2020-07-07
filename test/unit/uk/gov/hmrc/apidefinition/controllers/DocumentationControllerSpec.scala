@@ -36,6 +36,7 @@ import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import uk.gov.hmrc.apidefinition.controllers.SpecificationController
 
 class DocumentationControllerSpec extends UnitSpec with ScalaFutures with MockitoSugar with WithFakeApplication with StubControllerComponentsFactory {
 
@@ -43,6 +44,7 @@ class DocumentationControllerSpec extends UnitSpec with ScalaFutures with Mockit
     implicit val mat: Materializer = fakeApplication.materializer
     val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
     val documentationService: DocumentationService = mock[DocumentationService]
+    val specificationController: SpecificationController = mock[SpecificationController]
     val hc: HeaderCarrier = HeaderCarrier()
     val serviceName: String = "api-example-microservice"
     val version: String = "1.0"
@@ -52,7 +54,9 @@ class DocumentationControllerSpec extends UnitSpec with ScalaFutures with Mockit
     // scalastyle:on magic.number
     val contentType: String = "application/text"
 
-    val underTest = new DocumentationController(documentationService, stubControllerComponents())
+    
+
+    val underTest = new DocumentationController(documentationService, specificationController, stubControllerComponents())
 
     def theDocumentationServiceWillReturnTheResource: OngoingStubbing[Future[Result]] = {
       when(documentationService.fetchApiDocumentationResource(anyString, anyString, anyString)(any[HeaderCarrier]))
