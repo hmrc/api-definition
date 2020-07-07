@@ -26,32 +26,28 @@ import play.api.mvc.Action
 import play.api.mvc.AnyContent
 import uk.gov.hmrc.apidocumentation.services.SchemaService
 import uk.gov.hmrc.ramltools.loaders.RamlLoader
-import scala.util.Failure
-import scala.util.Success
+import uk.gov.hmrc.apidefinition.config.AppConfig
+import uk.gov.hmrc.apidefinition.models.wiremodel.WireModel
+import play.api.libs.json.Json
 
 @Singleton
-class SpecificationController @Inject()(schemaService: SchemaService, ramlLoader: RamlLoader, cc: ControllerComponents)
+class SpecificationController @Inject()(config: AppConfig, schemaService: SchemaService, ramlLoader: RamlLoader, cc: ControllerComponents)
                                        (implicit val ec: ExecutionContext)
                                         extends BackendController(cc) {
 
+  import uk.gov.hmrc.apidefinition.models.wiremodel.WireModelFormatters._
+
   def fetchSpecification(serviceName: String, version: String): Action[AnyContent] = Action.async {
-    implicit request => {
+    _ => {
 
-      // val serviceBaseUrl = "http://localhost:9604"
-      // val rootRamlUrl = s"${serviceLocation.serviceUrl}/api/conf/$version/application.raml")
-      // ramlLoader.load(
+      val serviceBaseUrl = config.serviceBaseUrl
 
-      // Future.fromTry(ramlLoader.load(rootRamlUrl))
-      //   .map(raml => Ok("Raml loaded: " + raml.description()))
-      // Logger.info(s"API Documentation received request for resource: $serviceName, $version, $resource")      
-      
-      // TODO: serviceBaseUrl
-      val serviceBaseUrl = "http://localhost:9604"
       val rootRamlUrl = serviceBaseUrl + routes.DocumentationController.fetchApiDocumentationResource(serviceName,version, "application.raml").url
       Future.fromTry(ramlLoader.load(rootRamlUrl))
-        .map(raml => Ok("Raml loaded: " + raml.title().value()))
-      
-        // Logger.info(s"API Documentation received request for resource: $serviceName, $version, $resource")      
+        .map(raml => {
+          // val schemas = schemaService.loadSchemas(serviceBaseUrl, raml)
+          Ok(Json.prettyPrint(Json.toJson(WireModel(raml))))
+        })
     }
   }
 }
