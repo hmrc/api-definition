@@ -11,14 +11,14 @@ lazy val appDependencies: Seq[ModuleID] = compile ++ test ++ tmpMacWorkaround
 
 lazy val compile = Seq(
   ws,
-  "uk.gov.hmrc" %% "bootstrap-play-26" % "1.4.0",
-  "uk.gov.hmrc" %% "simple-reactivemongo" % "7.23.0-play-26",
+  "uk.gov.hmrc" %% "bootstrap-play-26" % "1.13.0",
+  "uk.gov.hmrc" %% "simple-reactivemongo" % "7.30.0-play-26",
   "uk.gov.hmrc" %% "play-json-union-formatter" % "1.11.0",
   "org.typelevel" %% "cats-core" % "1.1.0",
 )
 
 lazy val test = Seq(
-  "uk.gov.hmrc" %% "reactivemongo-test" % "4.16.0-play-26" % "test",
+  "uk.gov.hmrc" %% "reactivemongo-test" % "4.21.0-play-26" % "test",
   "uk.gov.hmrc" %% "hmrctest" % "3.9.0-play-26" % "test",
   "org.scalaj" %% "scalaj-http" % "2.4.1" % "test",
   "org.scalatest" %% "scalatest" % "3.0.5" % "test, component",
