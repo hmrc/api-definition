@@ -32,7 +32,7 @@ class AppConfig @Inject()(val runModeConfiguration: Configuration, environment: 
 
   lazy val fetchByContextTtlInSeconds: String = runModeConfiguration.underlying.as[String]("fetchByContextTtlInSeconds")
 
-  val ramlLoaderRewrites = buildRamlLoaderRewrites
+  lazy val ramlLoaderRewrites = buildRamlLoaderRewrites
 
   lazy val serviceBaseUrl = runModeConfiguration.getOptional[String]("serviceBaseUrl").getOrElse("http://localhost")
 
