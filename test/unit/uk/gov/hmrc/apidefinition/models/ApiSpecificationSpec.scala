@@ -22,6 +22,7 @@ import uk.gov.hmrc.ramltools.loaders.ComprehensiveClasspathRamlLoader
 import uk.gov.hmrc.apidefinition.models.wiremodel.ApiSpecification
 import uk.gov.hmrc.apidefinition.models.wiremodel.RAML
 import uk.gov.hmrc.apidefinition.models.wiremodel.RAML.RAML
+import RamlSpecHelper.loadRaml
 
 class ApiSpecificationSpec extends UnitSpec {
   "RAML to apiSpec" should {
@@ -91,7 +92,9 @@ class ApiSpecificationSpec extends UnitSpec {
       qp2.enumValues shouldBe List("a","b","c")
     }
   }
+}
 
+object RamlSpecHelper {
   def loadRaml(filename: String) : RAML = {
     new ComprehensiveClasspathRamlLoader().load(s"test/resources/raml/$filename") match {
       case Failure(exception) => throw exception
