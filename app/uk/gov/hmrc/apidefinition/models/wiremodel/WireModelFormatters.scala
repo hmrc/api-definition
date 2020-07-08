@@ -19,18 +19,18 @@ package uk.gov.hmrc.apidefinition.models.wiremodel
 object WireModelFormatters {
   import play.api.libs.json.Json
 
-  implicit val hmrcExampleSpecJF = Json.format[HmrcExampleSpec]
+  implicit val hmrcExampleSpecJF = Json.format[ExampleSpec]
   implicit val typeDeclarationJF = Json.format[TypeDeclaration]
 
   implicit val securitySchemeJF = Json.format[SecurityScheme]
 
   implicit val groupJF = Json.format[Group]
-  implicit val hmrcResponseJF = Json.format[HmrcResponse]
-  implicit val hmrcMethodJF = Json.format[HmrcMethod]
-  implicit val hmrcResourceJF = Json.format[HmrcResource]
+  implicit val hmrcResponseJF = Json.format[Response]
+  implicit val hmrcMethodJF = Json.format[Method]
+  implicit val hmrcResourceJF = Json.format[Resource]
 
   implicit val documentationItemJF = Json.format[DocumentationItem]
-  implicit val hmrcResourceGroupJF = Json.format[HmrcResourceGroup]
+  implicit val hmrcResourceGroupJF = Json.format[ResourceGroup]
 
-  implicit val wireModelJF = Json.format[WireModel]
+  implicit val wireModelJF = Json.format[ApiSpecification]
 }

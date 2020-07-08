@@ -16,16 +16,16 @@
 
 package uk.gov.hmrc.apidefinition.models.wiremodel
 
-case class HmrcResourceGroup(name: Option[String] = None, description: Option[String] = None, resources: List[HmrcResource] = Nil) {
-  def +(resource: HmrcResource) = {
+case class ResourceGroup(name: Option[String] = None, description: Option[String] = None, resources: List[Resource] = Nil) {
+  def +(resource: Resource) = {
     // TODO not efficient
-    HmrcResourceGroup(name, description, resources :+ resource)
+    ResourceGroup(name, description, resources :+ resource)
   }
 }
 
-object HmrcResourceGroup {
-  def apply(resources: List[HmrcResource]): List[HmrcResourceGroup] = {
-    def flatten(resources: List[HmrcResource], acc: List[HmrcResource]): List[HmrcResource] = {
+object ResourceGroup {
+  def apply(resources: List[Resource]): List[ResourceGroup] = {
+    def flatten(resources: List[Resource], acc: List[Resource]): List[Resource] = {
       resources match {
         case Nil => acc
         case head :: tail =>
@@ -34,11 +34,11 @@ object HmrcResourceGroup {
       }
     }
 
-    def group(resources: List[HmrcResource], currentGroup: HmrcResourceGroup = HmrcResourceGroup(), groups: List[HmrcResourceGroup] = Nil): List[HmrcResourceGroup] = {
+    def group(resources: List[Resource], currentGroup: ResourceGroup = ResourceGroup(), groups: List[ResourceGroup] = Nil): List[ResourceGroup] = {
       resources match {
         case head :: tail => {
           if (head.group.isDefined) {
-            group(tail, HmrcResourceGroup(head.group.map(_.name), head.group.map(_.description), List(head)), groups :+ currentGroup)
+            group(tail, ResourceGroup(head.group.map(_.name), head.group.map(_.description), List(head)), groups :+ currentGroup)
           } else {
             group(tail, currentGroup + head, groups)
           }

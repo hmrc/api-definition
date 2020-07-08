@@ -16,12 +16,11 @@
 
 package uk.gov.hmrc.apidefinition.models.wiremodel
 
-import org.raml.v2.api.model.v10.resources.{Resource => RamlResource}
 import org.raml.v2.api.model.v10.methods.{Method => RamlMethod}
 import scala.collection.JavaConverters._
 import RamlSyntax._
 
-case class HmrcMethod(
+case class Method(
   method: String,
   displayName: String,
   body: List[TypeDeclaration],
@@ -29,22 +28,22 @@ case class HmrcMethod(
   queryParameters: List[TypeDeclaration],
   description: Option[String],
   securedBy: Option[SecurityScheme],
-  responses: List[HmrcResponse],
+  responses: List[Response],
   sandboxData: Option[String]
 )
 
-object HmrcMethod {
+object Method {
 
-  def apply(method: RamlMethod): HmrcMethod = {
-    val queryParameters = method.queryParameters.asScala.toList.map(TypeDeclaration.apply)
-    val headers = method.headers.asScala.toList.map(TypeDeclaration.apply)
-    val body = method.body.asScala.toList.map(TypeDeclaration.apply)
+  def apply(ramlMethod: RamlMethod): Method = {
+    val queryParameters = ramlMethod.queryParameters.asScala.toList.map(TypeDeclaration.apply)
+    val headers = ramlMethod.headers.asScala.toList.map(TypeDeclaration.apply)
+    val body = ramlMethod.body.asScala.toList.map(TypeDeclaration.apply)
 
 
     def fetchAuthorisation: Option[SecurityScheme] = {
-      if (method.securedBy().asScala.nonEmpty) {
-        method.securedBy.get(0).securityScheme.`type` match {
-          case "OAuth 2.0" => Some(SecurityScheme("user", method.annotation("(scope)")))
+      if (ramlMethod.securedBy().asScala.nonEmpty) {
+        ramlMethod.securedBy.get(0).securityScheme.`type` match {
+          case "OAuth 2.0" => Some(SecurityScheme("user", ramlMethod.annotation("(scope)")))
           case _ => Some(SecurityScheme("application", None))
         }
       } else {
@@ -52,9 +51,9 @@ object HmrcMethod {
       }
     }
 
-    def responses: List[HmrcResponse] = {
-      method.responses().asScala.toList.map( r => {
-        HmrcResponse(
+    def responses: List[Response] = {
+      ramlMethod.responses().asScala.toList.map( r => {
+        Response(
           code = SafeValueAsString(r.code()),
           body = r.body.asScala.toList.map(TypeDeclaration.apply),
           headers = r.headers().asScala.toList.map(TypeDeclaration.apply),
@@ -63,15 +62,15 @@ object HmrcMethod {
       })
     }
 
-    def sandboxData = method.annotation("(sandboxData)")
+    def sandboxData = ramlMethod.annotation("(sandboxData)")
 
-    HmrcMethod(
-      method.method,
-      SafeValueAsString(method.displayName),
+    Method(
+      ramlMethod.method,
+      SafeValueAsString(ramlMethod.displayName),
       body,
       headers,
       queryParameters,
-      SafeValue(method.description),
+      SafeValue(ramlMethod.description),
       fetchAuthorisation,
       responses,
       sandboxData

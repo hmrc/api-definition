@@ -25,7 +25,7 @@ case class DocumentationItem(title: String, content: String)
 
 case class SecurityScheme(`type`: String, scope: Option[String])
 
-case class HmrcResponse(
+case class Response(
   code: String,
   body: List[TypeDeclaration],
   headers: List[TypeDeclaration],
@@ -39,19 +39,19 @@ case class TypeDeclaration(
   `type`: String,
   required: Boolean,
   description: Option[String],
-  examples: List[HmrcExampleSpec],
+  examples: List[ExampleSpec],
   enumValues: List[String],
   pattern: Option[String]){
-    val example : Option[HmrcExampleSpec] = examples.headOption
+    val example : Option[ExampleSpec] = examples.headOption
   }
 
 object TypeDeclaration {
   def apply(td: RamlTypeDeclaration): TypeDeclaration = {
     val examples =
       if(td.example != null)
-        List(HmrcExampleSpec(td.example))
+        List(ExampleSpec(td.example))
       else
-        td.examples.asScala.toList.map(HmrcExampleSpec.apply)
+        td.examples.asScala.toList.map(ExampleSpec.apply)
 
     val enumValues = td match {
       case t: RamlStringTypeDeclaration => t.enumValues().asScala.toList
@@ -76,17 +76,17 @@ object TypeDeclaration {
   }
 }
 
-case class HmrcExampleSpec(
+case class ExampleSpec(
   description: Option[String],
   documentation: Option[String],
   code: Option[String],
   value: Option[String]
 )
 
-object HmrcExampleSpec {
+object ExampleSpec {
   import RamlSyntax._
 
-  def apply(example : RamlExampleSpec) : HmrcExampleSpec = {
+  def apply(example : RamlExampleSpec) : ExampleSpec = {
 
     val description: Option[String] = {
       example.structuredValue.property("description", "value")
@@ -106,22 +106,22 @@ object HmrcExampleSpec {
       .orElse(SafeValue(example))
     }
 
-    HmrcExampleSpec(description, documentation, code, value)
+    ExampleSpec(description, documentation, code, value)
   }
 }
 
-case class WireModel (
+case class ApiSpecification (
   title: String,
   version: String,
   deprecationMessage: Option[String],
   documentationItems: List[DocumentationItem],
-  resourceGroups: List[HmrcResourceGroup],
+  resourceGroups: List[ResourceGroup],
   types: List[TypeDeclaration],
   isFieldOptionalityKnown: Boolean
 )
 
-object WireModel {
-  def apply(raml: RAML.RAML) : WireModel = {
+object ApiSpecification {
+  def apply(raml: RAML.RAML) : ApiSpecification = {
 
     def title: String = SafeValueAsString(raml.title)
 
@@ -134,15 +134,15 @@ object WireModel {
         SafeValueAsString(item.title), SafeValueAsString(item.content)
       ))
 
-    def resources: List[HmrcResource] = raml.resources.asScala.toList.map(HmrcResource.recursiveResource)
+    def resources: List[Resource] = raml.resources.asScala.toList.map(Resource.recursiveResource)
 
-    def resourceGroups: List[HmrcResourceGroup] = GroupedResources(resources).toList
+    def resourceGroups: List[ResourceGroup] = GroupedResources(resources).toList
 
     def types: List[TypeDeclaration] = (raml.types.asScala.toList ++ raml.uses.asScala.flatMap(_.types.asScala)).map(TypeDeclaration.apply)
 
     def isFieldOptionalityKnown: Boolean = !raml.hasAnnotation("(fieldOptionalityUnknown)")
 
-    WireModel(
+    ApiSpecification(
       title,
       version,
       deprecationMessage,

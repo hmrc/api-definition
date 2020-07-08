@@ -20,11 +20,11 @@ import org.raml.v2.api.model.v10.resources.{Resource => RamlResource}
 import scala.collection.JavaConverters._
 import RamlSyntax._
 
-case class HmrcResource(resourcePath: String, group: Option[Group], methods: List[HmrcMethod], uriParameters: List[TypeDeclaration], relativeUri: String, displayName: String, children: List[HmrcResource])
+case class Resource(resourcePath: String, group: Option[Group], methods: List[Method], uriParameters: List[TypeDeclaration], relativeUri: String, displayName: String, children: List[Resource])
 
-object HmrcResource {
-  def recursiveResource(resource: RamlResource): HmrcResource = {
-    val children: List[HmrcResource] = resource.resources().asScala.toList.map(recursiveResource)
+object Resource {
+  def recursiveResource(resource: RamlResource): Resource = {
+    val children: List[Resource] = resource.resources().asScala.toList.map(recursiveResource)
 
     val group = if (resource.hasAnnotation("(group)")) {
         val groupName = resource.annotation("(group)", "name").getOrElse("")
@@ -35,7 +35,7 @@ object HmrcResource {
       None
     }
 
-    HmrcResource(
+    Resource(
       resourcePath = resource.resourcePath,
       methods = methodsForResource(resource),
       group = group,
@@ -46,7 +46,7 @@ object HmrcResource {
     )
   }
 
-  private def methodsForResource(resource: RamlResource): List[HmrcMethod] = {
+  private def methodsForResource(resource: RamlResource): List[Method] = {
     val correctOrder = Map("get" -> 0, "post" -> 1, "put" -> 2, "delete" -> 3, "head" -> 4, "patch" -> 5, "options" -> 6)
 
     resource.methods.asScala.toList.sortWith { (left, right) =>
@@ -55,6 +55,6 @@ object HmrcResource {
         r <- correctOrder.get(right.method)
       } yield l < r).getOrElse(false)
     }
-    .map(m => HmrcMethod(m))
+    .map(m => Method(m))
   }
 }

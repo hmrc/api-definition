@@ -17,8 +17,8 @@
 package uk.gov.hmrc.apidefinition.models.wiremodel
 
 object GroupedResources {
-  def apply(resources: List[HmrcResource]): List[HmrcResourceGroup] = {
-    def flatten(resources: List[HmrcResource], acc: List[HmrcResource]): List[HmrcResource] = {
+  def apply(resources: List[Resource]): List[ResourceGroup] = {
+    def flatten(resources: List[Resource], acc: List[Resource]): List[Resource] = {
       resources match {
         case Nil => acc
         case head :: tail =>
@@ -27,11 +27,11 @@ object GroupedResources {
       }
     }
 
-    def group(resources: List[HmrcResource], currentGroup: HmrcResourceGroup = HmrcResourceGroup(), groups: List[HmrcResourceGroup] = Nil): List[HmrcResourceGroup] = {
+    def group(resources: List[Resource], currentGroup: ResourceGroup = ResourceGroup(), groups: List[ResourceGroup] = Nil): List[ResourceGroup] = {
       resources match {
         case head :: tail => {
           if (head.group.isDefined) {
-            group(tail, HmrcResourceGroup(head.group.map(_.name), head.group.map(_.description), List(head)), groups :+ currentGroup)
+            group(tail, ResourceGroup(head.group.map(_.name), head.group.map(_.description), List(head)), groups :+ currentGroup)
           } else {
             group(tail, currentGroup + head, groups)
           }
