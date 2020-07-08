@@ -19,27 +19,27 @@ package unit.uk.gov.hmrc.apidefinition.models
 import uk.gov.hmrc.play.test.UnitSpec
 import scala.util.{Failure, Success}
 import uk.gov.hmrc.ramltools.loaders.ComprehensiveClasspathRamlLoader
-import uk.gov.hmrc.apidefinition.models.wiremodel.WireModel
+import uk.gov.hmrc.apidefinition.models.wiremodel.ApiSpecification
 import uk.gov.hmrc.apidefinition.models.wiremodel.RAML
 import uk.gov.hmrc.apidefinition.models.wiremodel.RAML.RAML
 
-class WireModelSpec extends UnitSpec {
-  "RAML to wireModel" should {
+class ApiSpecificationSpec extends UnitSpec {
+  "RAML to apiSpec" should {
     "Simple.raml should parse title and version to our model" in {
       val raml = loadRaml("V2/simple.raml")
 
-      val wireModel = WireModel(raml)
-      wireModel.title shouldBe "My simple title"
-      wireModel.version shouldBe "My version"
+      val apiSpec = ApiSpecification(raml)
+      apiSpec.title shouldBe "My simple title"
+      apiSpec.version shouldBe "My version"
     }
 
     "With single method" in {
       val raml = loadRaml("V2/single-method.raml")
 
-      val wireModel = WireModel(raml)
-      wireModel.resourceGroups.size shouldBe 1
+      val apiSpec = ApiSpecification(raml)
+      apiSpec.resourceGroups.size shouldBe 1
 
-      val rg = wireModel.resourceGroups(0)
+      val rg = apiSpec.resourceGroups(0)
       rg.description shouldBe None
       rg.name shouldBe None
 
@@ -59,10 +59,10 @@ class WireModelSpec extends UnitSpec {
     "With multiple endpoints maintain RAML ordering" in {
       val raml = loadRaml("V2/multiple-methods.raml")
 
-      val wireModel = WireModel(raml)
-      wireModel.resourceGroups.size shouldBe 1
+      val apiSpec = ApiSpecification(raml)
+      apiSpec.resourceGroups.size shouldBe 1
 
-      val rg = wireModel.resourceGroups(0)
+      val rg = apiSpec.resourceGroups(0)
 
       // println("**** Actual Method Ordering: " + rg.resources.map(r=>r.displayName).mkString(","))
 
@@ -74,10 +74,10 @@ class WireModelSpec extends UnitSpec {
     "With global type with enums" in {
       val raml = loadRaml("V2/typed-enums.raml")
 
-      val wireModel = WireModel(raml)
-      wireModel.resourceGroups.size shouldBe 1
+      val apiSpec = ApiSpecification(raml)
+      apiSpec.resourceGroups.size shouldBe 1
 
-      val rg = wireModel.resourceGroups(0)
+      val rg = apiSpec.resourceGroups(0)
 
       rg.resources(0).displayName shouldBe "/my/endpoint"
       val qps = rg.resources(0).methods.head.queryParameters

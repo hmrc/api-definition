@@ -27,7 +27,7 @@ import play.api.mvc.AnyContent
 import uk.gov.hmrc.apidocumentation.services.SchemaService
 import uk.gov.hmrc.ramltools.loaders.RamlLoader
 import uk.gov.hmrc.apidefinition.config.AppConfig
-import uk.gov.hmrc.apidefinition.models.wiremodel.WireModel
+import uk.gov.hmrc.apidefinition.models.wiremodel.ApiSpecification
 import play.api.libs.json.Json
 
 @Singleton
@@ -46,7 +46,7 @@ class SpecificationController @Inject()(config: AppConfig, schemaService: Schema
       Future.fromTry(ramlLoader.load(rootRamlUrl))
         .map(raml => {
           // val schemas = schemaService.loadSchemas(serviceBaseUrl, raml)
-          Ok(Json.prettyPrint(Json.toJson(WireModel(raml))))
+          Ok(Json.prettyPrint(Json.toJson(ApiSpecification(raml))))
         })
     }
   }
