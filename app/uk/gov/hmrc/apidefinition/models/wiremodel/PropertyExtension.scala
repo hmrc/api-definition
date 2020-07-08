@@ -19,20 +19,23 @@ package uk.gov.hmrc.apidefinition.models.wiremodel
 import org.raml.v2.api.model.v10.datamodel.{TypeInstance => RamlTypeInstance, TypeInstanceProperty => RamlTypeInstanceProperty}
 import scala.collection.JavaConverters._
 
-object FindProperty {
-  def apply(typeInstance: RamlTypeInstance, names: String*): Option[String] = {
-    val properties = typeInstance.properties.asScala
-    names match {
+final class PropertyExtension(val context: RamlTypeInstance) extends AnyVal {
+
+  def property(names: String*): Option[String] = {
+    val properties = context.properties.asScala
+    (names match {
       case head +: Nil => {
         properties.find(_.name == head).map(scalarValue)
       }
       case head +: tail => {
         properties.find(_.name == head) match {
-          case Some(property) => FindProperty(property.value, tail: _*)
+          case Some(nestedProperty) => 
+            new PropertyExtension(nestedProperty.value).property(tail: _*)
           case _ => None
         }
       }
-    }
+    })
+    .filter(_.nonEmpty)
   }
 
   private def scalarValue(property: RamlTypeInstanceProperty): String = {

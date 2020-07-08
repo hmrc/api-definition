@@ -16,21 +16,11 @@
 
 package uk.gov.hmrc.apidefinition.models.wiremodel
 
-object WireModelFormatters {
-  import play.api.libs.json.Json
+import org.raml.v2.api.model.v10.common.{Annotable => RamlAnnotable}
+import org.raml.v2.api.model.v10.datamodel.{TypeInstance => RamlTypeInstance}
 
-  implicit val hmrcExampleSpecJF = Json.format[HmrcExampleSpec]
-  implicit val typeDeclarationJF = Json.format[TypeDeclaration]
+object RamlSyntax {
+  implicit def toAnnotationExtension(context: RamlAnnotable): AnnotationExtension = new AnnotationExtension(context)
 
-  implicit val securitySchemeJF = Json.format[SecurityScheme]
-
-  implicit val groupJF = Json.format[Group]
-  implicit val hmrcResponseJF = Json.format[HmrcResponse]
-  implicit val hmrcMethodJF = Json.format[HmrcMethod]
-  implicit val hmrcResourceJF = Json.format[HmrcResource]
-
-  implicit val documentationItemJF = Json.format[DocumentationItem]
-  implicit val hmrcResourceGroupJF = Json.format[HmrcResourceGroup]
-
-  implicit val wireModelJF = Json.format[WireModel]
+  implicit def toPropertyExtension(context: RamlTypeInstance): PropertyExtension = new PropertyExtension(context)
 }

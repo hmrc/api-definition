@@ -17,15 +17,16 @@
 package uk.gov.hmrc.apidefinition.models.wiremodel
 
 import org.raml.v2.api.model.v10.resources.{Resource => RamlResource}
-import scala.collection.JavaConverters._
 import org.raml.v2.api.model.v10.methods.{Method => RamlMethod}
+import scala.collection.JavaConverters._
+import RamlSyntax._
 
 case class HmrcMethod(
   method: String,
   displayName: String,
-  body: List[TypeDeclaration2],
-  headers: List[TypeDeclaration2],
-  queryParameters: List[TypeDeclaration2],
+  body: List[TypeDeclaration],
+  headers: List[TypeDeclaration],
+  queryParameters: List[TypeDeclaration],
   description: Option[String],
   securedBy: Option[SecurityScheme],
   responses: List[HmrcResponse],
@@ -34,21 +35,16 @@ case class HmrcMethod(
 
 object HmrcMethod {
 
-private val correctOrder = Map(
-    "get" -> 0, "post" -> 1, "put" -> 2, "delete" -> 3,
-    "head" -> 4, "patch" -> 5, "options" -> 6
-  )
-
   def apply(method: RamlMethod): HmrcMethod = {
-    val queryParameters = method.queryParameters.asScala.toList.map(TypeDeclaration2.apply)
-    val headers = method.headers.asScala.toList.map(TypeDeclaration2.apply)
-    val body = method.body.asScala.toList.map(TypeDeclaration2.apply)
+    val queryParameters = method.queryParameters.asScala.toList.map(TypeDeclaration.apply)
+    val headers = method.headers.asScala.toList.map(TypeDeclaration.apply)
+    val body = method.body.asScala.toList.map(TypeDeclaration.apply)
 
 
     def fetchAuthorisation: Option[SecurityScheme] = {
       if (method.securedBy().asScala.nonEmpty) {
         method.securedBy.get(0).securityScheme.`type` match {
-          case "OAuth 2.0" => Some(SecurityScheme("user", Some(Annotation(method, "(scope)"))))
+          case "OAuth 2.0" => Some(SecurityScheme("user", method.annotation("(scope)")))
           case _ => Some(SecurityScheme("application", None))
         }
       } else {
@@ -57,21 +53,21 @@ private val correctOrder = Map(
     }
 
     def responses: List[HmrcResponse] = {
-      method.responses().asScala.toList.map(r => {
+      method.responses().asScala.toList.map( r => {
         HmrcResponse(
-          code = DefaultToEmptyValue(r.code()),
-          body = r.body.asScala.toList.map(TypeDeclaration2.apply),
-          headers = r.headers().asScala.toList.map(TypeDeclaration2.apply),
-          description = Option(r.description()).map(_.value())
+          code = SafeValueAsString(r.code()),
+          body = r.body.asScala.toList.map(TypeDeclaration.apply),
+          headers = r.headers().asScala.toList.map(TypeDeclaration.apply),
+          description = SafeValue(r.description())
         )
       })
     }
 
-    def sandboxData = Annotation.optional(method, "(sandboxData)")
+    def sandboxData = method.annotation("(sandboxData)")
 
     HmrcMethod(
       method.method,
-      DefaultToEmptyValue(method.displayName),
+      SafeValueAsString(method.displayName),
       body,
       headers,
       queryParameters,
@@ -81,21 +77,4 @@ private val correctOrder = Map(
       sandboxData
     )
   }
-
-  def apply(resource: RamlResource): List[HmrcMethod] =
-    resource.methods.asScala.toList.sortWith { (left, right) =>
-      (for {
-        l <- correctOrder.get(left.method)
-        r <- correctOrder.get(right.method)
-      } yield l < r).getOrElse(false)
-    }
-    .map(m => HmrcMethod.apply(m))
-
-  def apply(resource: HmrcResource): List[HmrcMethod] =
-    resource.methods.sortWith { (left, right) =>
-      (for {
-        l <- correctOrder.get(left.method)
-        r <- correctOrder.get(right.method)
-      } yield l < r).getOrElse(false)
-    }
 }

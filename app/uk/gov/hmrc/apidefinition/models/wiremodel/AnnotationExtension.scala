@@ -21,14 +21,12 @@ import scala.collection.JavaConverters._
 import org.raml.v2.api.model.v10.common.{Annotable => RamlAnnotable}
 import org.raml.v2.api.model.v10.datamodel.{TypeInstance => RamlTypeInstance}
 
-object Annotation {
-  def apply(context: RamlAnnotable, names: String*): String = getAnnotation(context, names: _*).getOrElse("")
+final class AnnotationExtension(val context: RamlAnnotable) extends AnyVal {
+    def hasAnnotation(names: String*): Boolean = getAnnotation(context, names: _*).isDefined
 
-  def exists(context: RamlAnnotable, names: String*): Boolean = getAnnotation(context, names: _*).isDefined
+    def annotation(names: String*): Option[String] = getAnnotation(context, names: _*).filter(_.nonEmpty)
 
-  def optional(context: RamlAnnotable, names: String*): Option[String] = getAnnotation(context, names: _*).filterNot(_.isEmpty)
-
-  def getAnnotation(context: RamlAnnotable, names: String*): Option[String] = {
+    private def getAnnotation(context: RamlAnnotable, names: String*): Option[String] = {
     val matches = context.annotations.asScala.find { ann =>
       Option(ann.name).exists(stripNamespace(_) == names.head)
     }

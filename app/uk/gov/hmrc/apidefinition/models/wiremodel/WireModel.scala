@@ -16,10 +16,10 @@
 
 package uk.gov.hmrc.apidefinition.models.wiremodel
 
-import org.raml.v2.api.model.v10.datamodel.{ExampleSpec, TypeDeclaration}
-
-import scala.collection.JavaConverters._
+import org.raml.v2.api.model.v10.datamodel.{ExampleSpec => RamlExampleSpec, TypeDeclaration => RamlTypeDeclaration}
 import org.raml.v2.api.model.v10.datamodel.{StringTypeDeclaration => RamlStringTypeDeclaration}
+import scala.collection.JavaConverters._
+import  RamlSyntax._
 
 case class DocumentationItem(title: String, content: String)
 
@@ -27,16 +27,13 @@ case class SecurityScheme(`type`: String, scope: Option[String])
 
 case class HmrcResponse(
   code: String,
-  body: List[TypeDeclaration2],
-  headers: List[TypeDeclaration2],
+  body: List[TypeDeclaration],
+  headers: List[TypeDeclaration],
   description: Option[String])
-
 
 case class Group(name: String, description: String)
 
-
-//TODO: Change description from MarkDown and example from ExampleSpec
-case class TypeDeclaration2(
+case class TypeDeclaration(
   name: String,
   displayName: String,
   `type`: String,
@@ -48,8 +45,8 @@ case class TypeDeclaration2(
     val example : Option[HmrcExampleSpec] = examples.headOption
   }
 
-object TypeDeclaration2 {
-  def apply(td: TypeDeclaration): TypeDeclaration2 = {
+object TypeDeclaration {
+  def apply(td: RamlTypeDeclaration): TypeDeclaration = {
     val examples =
       if(td.example != null)
         List(HmrcExampleSpec(td.example))
@@ -58,20 +55,20 @@ object TypeDeclaration2 {
 
     val enumValues = td match {
       case t: RamlStringTypeDeclaration => t.enumValues().asScala.toList
-      case _                        => List()
+      case _                            => List()
     }
 
     val patterns = td match {
       case t: RamlStringTypeDeclaration => Some(t.pattern())
-      case _                        => None
+      case _                            => None
     }
 
-    TypeDeclaration2(
+    TypeDeclaration(
       td.name,
-      DefaultToEmptyValue(td.displayName),
+      SafeValueAsString(td.displayName),
       td.`type`,
       td.required,
-      Option(td.description).map(_.value()),
+      SafeValue(td.description),
       examples,
       enumValues,
       patterns
@@ -87,29 +84,26 @@ case class HmrcExampleSpec(
 )
 
 object HmrcExampleSpec {
-  def apply(example : ExampleSpec) : HmrcExampleSpec = {
+  import RamlSyntax._
+
+  def apply(example : RamlExampleSpec) : HmrcExampleSpec = {
 
     val description: Option[String] = {
-      FindProperty(example.structuredValue, "description", "value")
+      example.structuredValue.property("description", "value")
     }
 
     val documentation: Option[String] = {
-      if (Annotation.exists(example, "(documentation)")) {
-        Option(Annotation(example, "(documentation)"))
-      } else {
-        None
-      }
+      example.annotation("(documentation)")
     }
 
     val code: Option[String] = {
-      FindProperty(example.structuredValue, "value", "code")
-        .orElse(FindProperty(example.structuredValue, "code"))
+      example.structuredValue.property("value", "code")
+      .orElse(example.structuredValue.property("code"))
     }
 
-    val value = {
-      println(example.structuredValue().value())
-      SafeValue(FindProperty(example.structuredValue, "value"))
-        .orElse(SafeValue(example))
+    val value: Option[String] = {
+      example.structuredValue.property("value")
+      .orElse(SafeValue(example))
     }
 
     HmrcExampleSpec(description, documentation, code, value)
@@ -122,31 +116,31 @@ case class WireModel (
   deprecationMessage: Option[String],
   documentationItems: List[DocumentationItem],
   resourceGroups: List[HmrcResourceGroup],
-  types: List[TypeDeclaration2],
+  types: List[TypeDeclaration],
   isFieldOptionalityKnown: Boolean
 )
 
 object WireModel {
   def apply(raml: RAML.RAML) : WireModel = {
 
-    def title: String = DefaultToEmptyValue(raml.title)
+    def title: String = SafeValueAsString(raml.title)
 
     def version: String = raml.version.value
 
-    def deprecationMessage: Option[String] = Annotation.optional(raml, "(deprecationMessage)")
+    def deprecationMessage: Option[String] = raml.annotation("(deprecationMessage)")
 
     def documentationItems: List[DocumentationItem] =
       raml.documentation.asScala.toList.map(item => DocumentationItem(
-        DefaultToEmptyValue(item.title), DefaultToEmptyValue(item.content)
+        SafeValueAsString(item.title), SafeValueAsString(item.content)
       ))
 
     def resources: List[HmrcResource] = raml.resources.asScala.toList.map(HmrcResource.recursiveResource)
 
     def resourceGroups: List[HmrcResourceGroup] = GroupedResources(resources).toList
 
-    def types: List[TypeDeclaration2] = (raml.types.asScala.toList ++ raml.uses.asScala.flatMap(_.types.asScala)).map(TypeDeclaration2.apply)
+    def types: List[TypeDeclaration] = (raml.types.asScala.toList ++ raml.uses.asScala.flatMap(_.types.asScala)).map(TypeDeclaration.apply)
 
-    def isFieldOptionalityKnown: Boolean = !Annotation.exists(raml, "(fieldOptionalityUnknown)")
+    def isFieldOptionalityKnown: Boolean = !raml.hasAnnotation("(fieldOptionalityUnknown)")
 
     WireModel(
       title,
@@ -160,16 +154,24 @@ object WireModel {
   }
 }
 
-// TODO: Add some tests
 object SafeValue {
-  //Convert nulls and empty strings to Option.None
-  def apply(v: String): Option[String] = apply(Option(v))
-  def apply(v: {def value(): String}): Option[String] = apply(Option(v).map(_.value()))
-  def apply(v: Option[String]): Option[String] = v.filter(_.nonEmpty)
+  // Handle nulls from RAML
+  // Convert nulls and empty strings to Option.None
+
+  def apply(nullableString: String): Option[String] = {
+    Option(nullableString).filter(_.nonEmpty)
+  }
+
+  def apply(nullableObj: {def value(): String}): Option[String] = {
+    Option(nullableObj).flatMap(obj => Option(obj.value())).filter(_.nonEmpty)
+  }
 }
 
-object DefaultToEmptyValue {
-  def apply(v: {def value(): String}): String = SafeValue(v.value()).getOrElse("")
+object SafeValueAsString {
+  // Handle nulls from RAML
+
+  def apply(nullableString: String): String = SafeValue(nullableString).getOrElse("")
+
+  def apply(nullableObj: {def value(): String}): String = SafeValue(nullableObj).getOrElse("")
+
 }
-
-

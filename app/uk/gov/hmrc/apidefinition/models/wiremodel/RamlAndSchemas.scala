@@ -20,5 +20,3 @@ object RAML {
     type RAML = org.raml.v2.api.model.v10.api.Api
 }
 
-case class RamlAndSchemas(raml: RAML.RAML, schemas: Map[String, JsonSchema])
-
