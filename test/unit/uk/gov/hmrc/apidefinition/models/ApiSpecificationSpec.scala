@@ -20,7 +20,6 @@ import uk.gov.hmrc.play.test.UnitSpec
 import scala.util.{Failure, Success}
 import uk.gov.hmrc.ramltools.loaders.ComprehensiveClasspathRamlLoader
 import uk.gov.hmrc.apidefinition.models.wiremodel.ApiSpecification
-import uk.gov.hmrc.apidefinition.models.wiremodel.RAML
 import uk.gov.hmrc.apidefinition.models.wiremodel.RAML.RAML
 import RamlSpecHelper.loadRaml
 import uk.gov.hmrc.apidefinition.models.wiremodel.SecurityScheme
