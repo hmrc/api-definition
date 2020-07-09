@@ -20,30 +20,58 @@ import org.raml.v2.api.model.v10.resources.{Resource => RamlResource}
 import scala.collection.JavaConverters._
 import RamlSyntax._
 
-case class Resource(resourcePath: String, group: Option[Group], methods: List[Method], uriParameters: List[TypeDeclaration], relativeUri: String, displayName: String, children: List[Resource])
+case class Resource(resourcePath: String, methods: List[Method], uriParameters: List[TypeDeclaration], relativeUri: String, displayName: String, children: List[Resource])
+
+/*
+1
+1.1 A
+1.2
+
+2
+3   B
+*/
+
+object Output {
+  type GroupMap = Map[Resource,Group]
+
+  val emptyGroupMap: GroupMap = Map.empty
+
+  def flatten(gm: GroupMap, gms: List[GroupMap]): GroupMap = gms.fold(gm)( (l,r) => l ++ r)
+
+  def flatten(gms: List[GroupMap]): GroupMap = flatten(emptyGroupMap, gms)
+}
+
+case class Output(resource: Resource, groupMap: Output.GroupMap)
+
 
 object Resource {
-  def recursiveResource(resource: RamlResource): Resource = {
-    val children: List[Resource] = resource.resources().asScala.toList.map(recursiveResource)
+  def process(ramlResource: RamlResource): Output = {
+    val childNodes: List[Output] = ramlResource.resources().asScala.toList.map(process)
 
-    val group = if (resource.hasAnnotation("(group)")) {
-        val groupName = resource.annotation("(group)", "name").getOrElse("")
-        val groupDesc = resource.annotation("(group)", "description").getOrElse("")
+    val children = childNodes.map(_.resource)
+
+    val group = if (ramlResource.hasAnnotation("(group)")) {
+        val groupName = ramlResource.annotation("(group)", "name").getOrElse("")
+        val groupDesc = ramlResource.annotation("(group)", "description").getOrElse("")
         Some(Group(groupName, groupDesc))
     }
     else {
       None
     }
 
-    Resource(
-      resourcePath = resource.resourcePath,
-      methods = methodsForResource(resource),
-      group = group,
-      relativeUri = resource.relativeUri.value,
-      uriParameters = resource.uriParameters.asScala.toList.map(TypeDeclaration.apply),
-      displayName = resource.displayName.value,
+    val resource = Resource(
+      resourcePath = ramlResource.resourcePath,
+      methods = methodsForResource(ramlResource),
+      relativeUri = ramlResource.relativeUri.value,
+      uriParameters = ramlResource.uriParameters.asScala.toList.map(TypeDeclaration.apply),
+      displayName = ramlResource.displayName.value,
       children = children
     )
+
+    val thisMap: Output.GroupMap          = group.fold(Output.emptyGroupMap)(g => Map(resource -> g) )
+    val childMaps: List[Output.GroupMap]  = childNodes.map(_.groupMap)
+
+    Output(resource, Output.flatten(thisMap, childMaps))
   }
 
   private def methodsForResource(resource: RamlResource): List[Method] = {

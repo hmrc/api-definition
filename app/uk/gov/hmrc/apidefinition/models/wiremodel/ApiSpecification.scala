@@ -134,9 +134,13 @@ object ApiSpecification {
         SafeValueAsString(item.title), SafeValueAsString(item.content)
       ))
 
-    def resources: List[Resource] = raml.resources.asScala.toList.map(Resource.recursiveResource)
+    def output: List[Output] = raml.resources.asScala.toList.map(Resource.process)
 
-    def resourceGroups: List[ResourceGroup] = GroupedResources(resources).toList
+    lazy val resources = output.map(_.resource)
+
+    lazy val groupMap = Output.flatten(output.map(_.groupMap))
+
+    def resourceGroups: List[ResourceGroup] = ResourceGroup.generateFrom(resources, groupMap)
 
     def types: List[TypeDeclaration] = (raml.types.asScala.toList ++ raml.uses.asScala.flatMap(_.types.asScala)).map(TypeDeclaration.apply)
 
