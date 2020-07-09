@@ -287,7 +287,14 @@ class APIDefinitionRepositorySpec extends UnitSpec
 
     def assertMongoError(caught: DatabaseException, fieldName: String, duplicateFieldValue: String): Unit = {
       caught.code shouldBe Some(11000)
-      caught.message shouldBe s"""E11000 duplicate key error collection: test-APIDefinitionRepositorySpec.api index: ${fieldName}Index dup key: { : "$duplicateFieldValue" }"""
+      
+      // Mongo 3.x and 4.x return slightly different error messages for dup keys.
+      val mongpV3ErrorMessage = s"""E11000 duplicate key error collection: test-APIDefinitionRepositorySpec.api index: ${fieldName}Index dup key: { : "$duplicateFieldValue" }"""
+      val mongoV4ErrorMessage = s"""E11000 duplicate key error collection: test-APIDefinitionRepositorySpec.api index: ${fieldName}Index dup key: { $fieldName: "$duplicateFieldValue" }"""
+      
+      val errors = Seq(mongpV3ErrorMessage, mongoV4ErrorMessage)
+
+      errors.exists(expected => expected == caught.message) shouldBe true
     }
 
     "have a unique index based on `context`" in {
