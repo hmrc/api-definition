@@ -23,6 +23,8 @@ import uk.gov.hmrc.apidefinition.models.wiremodel.ApiSpecification
 import uk.gov.hmrc.apidefinition.models.wiremodel.RAML
 import uk.gov.hmrc.apidefinition.models.wiremodel.RAML.RAML
 import RamlSpecHelper.loadRaml
+import uk.gov.hmrc.apidefinition.models.wiremodel.SecurityScheme
+import uk.gov.hmrc.apidefinition.models.wiremodel.DocumentationItem
 
 class ApiSpecificationSpec extends UnitSpec {
   "RAML to apiSpec" should {
@@ -32,6 +34,10 @@ class ApiSpecificationSpec extends UnitSpec {
       val apiSpec = ApiSpecification(raml)
       apiSpec.title shouldBe "My simple title"
       apiSpec.version shouldBe "My version"
+
+      apiSpec.documentationItems.size shouldBe 2
+      apiSpec.documentationItems(0) shouldBe DocumentationItem("Overview", "Some overview")
+      apiSpec.documentationItems(1) shouldBe DocumentationItem("Versioning", "Some versioning")
     }
 
     "With single method" in {
@@ -44,17 +50,25 @@ class ApiSpecificationSpec extends UnitSpec {
       rg.description shouldBe None
       rg.name shouldBe None
 
-      val r = rg.resources(0)
+      val resource = rg.resources(0)
 
-      r.resourcePath shouldBe "/my/endpoint"
-      r.methods.length shouldBe 1
+      resource.resourcePath shouldBe "/my/endpoint"
+      resource.methods.length shouldBe 1
 
-      val m = r.methods(0)
+      val m = resource.methods(0)
       m.displayName shouldBe "My endpoint"
       m.description shouldBe Some("My description")
 
-      // TODO: Check endpoint URL, description
-      // TODO: Doesn't handle missing description (null pointer)
+      m.headers(0).name shouldBe "Accept"
+      m.headers(0).`type` shouldBe "string"
+      m.headers(0).required shouldBe true
+
+      val response = m.responses(0)
+      response.code shouldBe "200"
+      response.description shouldBe Some("When it works")
+      response.body.size shouldBe 1
+      response.body(0).name shouldBe "application/json"
+      response.body(0).example.get.value shouldBe Some("""{ "message": "good" }"""+"\n")    // TODO - why the newline ?
     }
 
     "With multiple endpoints maintain RAML ordering" in {
@@ -94,6 +108,24 @@ class ApiSpecificationSpec extends UnitSpec {
       r1.methods(1).method shouldBe "post"
       r1.methods(1).description shouldBe Some("2b")
     }
+
+    "With security schemes in RAML" in {
+      val raml = loadRaml("V2/multiple-security-options.raml")
+
+      val apiSpec = ApiSpecification(raml)
+
+      val rg = apiSpec.resourceGroups(0)
+
+      val m0 = rg.resources(0).methods(0)
+      val m1 = rg.resources(1).methods(0)
+      val m2 = rg.resources(2).methods(0)
+
+      m0.securedBy shouldBe None
+
+      m1.securedBy shouldBe Some(SecurityScheme("user", Some("all:test-me")))
+      m2.securedBy shouldBe Some(SecurityScheme("application", None))
+    }
+
 
     "With global type with enums" in {
       val raml = loadRaml("V2/typed-enums.raml")

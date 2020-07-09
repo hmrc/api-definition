@@ -17,7 +17,7 @@
 package uk.gov.hmrc.apidefinition.models
 
 import org.joda.time.DateTime
-import play.api.libs.json.{JsObject, Json, Reads, Writes}
+import play.api.libs.json.{JsObject, Json, Reads}
 import uk.gov.hmrc.apidefinition.models.APICategory.APICategory
 import uk.gov.hmrc.apidefinition.models.APIStatus.APIStatus
 import uk.gov.hmrc.apidefinition.models.AuthType.AuthType
