@@ -58,18 +58,41 @@ class ApiSpecificationSpec extends UnitSpec {
     }
 
     "With multiple endpoints maintain RAML ordering" in {
-      val raml = loadRaml("V2/multiple-methods.raml")
+      val raml = loadRaml("V2/multiple-endpoints.raml")
 
       val apiSpec = ApiSpecification(raml)
       apiSpec.resourceGroups.size shouldBe 1
 
       val rg = apiSpec.resourceGroups(0)
 
-      // println("**** Actual Method Ordering: " + rg.resources.map(r=>r.displayName).mkString(","))
-
       rg.resources(0).displayName shouldBe "/endpoint1"
       rg.resources(1).displayName shouldBe "/endpoint2"
       rg.resources(2).displayName shouldBe "/endpoint3"
+    }
+
+    "With multiple methods maintain RAML ordering" in {
+      val raml = loadRaml("V2/multiple-methods.raml")
+
+      val apiSpec = ApiSpecification(raml)
+
+      val rg = apiSpec.resourceGroups(0)
+
+      val r0 = rg.resources(0)
+      val r1 = rg.resources(1)
+
+      r0.displayName shouldBe "/endpoint1"
+      r0.methods.size shouldBe 2
+      r0.methods(0).method shouldBe "get"
+      r0.methods(0).description shouldBe Some("1")
+      r0.methods(1).method shouldBe "post"
+      r0.methods(1).description shouldBe Some("1b")
+
+      r1.displayName shouldBe "/endpoint2"
+      r1.methods.size shouldBe 2
+      r1.methods(0).method shouldBe "get"
+      r1.methods(0).description shouldBe Some("2")
+      r1.methods(1).method shouldBe "post"
+      r1.methods(1).description shouldBe Some("2b")
     }
 
     "With global type with enums" in {
