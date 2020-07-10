@@ -125,6 +125,6 @@ def onPackageName(rootPackage: String): String => Boolean = {
 }
 
 // Coverage configuration
-coverageMinimum := 85
+coverageMinimum := 84
 coverageFailOnMinimum := true
 coverageExcludedPackages := "<empty>;com.kenshoo.play.metrics.*;prod.*;testOnlyDoNotUseInAppConf.*;app.*;uk.gov.hmrc.BuildInfo"
