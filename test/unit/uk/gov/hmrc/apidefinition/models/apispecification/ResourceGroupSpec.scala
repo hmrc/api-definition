@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package unit.uk.gov.hmrc.apidefinition.models
+package unit.uk.gov.hmrc.apidefinition.models.apispecification
 
 import RamlSpecHelper.loadRaml
 import uk.gov.hmrc.play.test.UnitSpec
-import uk.gov.hmrc.apidefinition.models.wiremodel.ApiSpecification
+import uk.gov.hmrc.apidefinition.models.apispecification.ApiSpecification
 import org.scalatest.prop.TableDrivenPropertyChecks._
 
 class GroupedResourcesSpec extends UnitSpec {

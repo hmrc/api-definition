@@ -14,16 +14,13 @@
  * limitations under the License.
  */
 
-package unit.uk.gov.hmrc.apidefinition.models
+package unit.uk.gov.hmrc.apidefinition.models.apispecification
 
 import uk.gov.hmrc.play.test.UnitSpec
-import scala.util.{Failure, Success}
-import uk.gov.hmrc.ramltools.loaders.ComprehensiveClasspathRamlLoader
-import uk.gov.hmrc.apidefinition.models.wiremodel.ApiSpecification
-import uk.gov.hmrc.apidefinition.models.wiremodel.RAML.RAML
+import uk.gov.hmrc.apidefinition.models.apispecification.ApiSpecification
 import RamlSpecHelper.loadRaml
-import uk.gov.hmrc.apidefinition.models.wiremodel.SecurityScheme
-import uk.gov.hmrc.apidefinition.models.wiremodel.DocumentationItem
+import uk.gov.hmrc.apidefinition.models.apispecification.SecurityScheme
+import uk.gov.hmrc.apidefinition.models.apispecification.DocumentationItem
 
 class ApiSpecificationSpec extends UnitSpec {
   "RAML to apiSpec" should {
@@ -144,15 +141,6 @@ class ApiSpecificationSpec extends UnitSpec {
 
       qp2.name shouldBe "anotherParam"
       qp2.enumValues shouldBe List("a","b","c")
-    }
-  }
-}
-
-object RamlSpecHelper {
-  def loadRaml(filename: String) : RAML = {
-    new ComprehensiveClasspathRamlLoader().load(s"test/resources/raml/$filename") match {
-      case Failure(exception) => throw exception
-      case Success(raml) => raml
     }
   }
 }

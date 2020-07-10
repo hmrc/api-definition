@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.apidefinition.models.wiremodel
+package uk.gov.hmrc.apidefinition.models.apispecification
 
 import play.api.libs.json._
 

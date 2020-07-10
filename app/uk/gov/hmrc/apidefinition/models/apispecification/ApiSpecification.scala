@@ -14,10 +14,8 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.apidefinition.models.wiremodel
+package uk.gov.hmrc.apidefinition.models.apispecification
 
-import org.raml.v2.api.model.v10.datamodel.{ExampleSpec => RamlExampleSpec, TypeDeclaration => RamlTypeDeclaration}
-import org.raml.v2.api.model.v10.datamodel.{StringTypeDeclaration => RamlStringTypeDeclaration}
 import scala.collection.JavaConverters._
 import  RamlSyntax._
 
@@ -32,83 +30,6 @@ case class Response(
   description: Option[String])
 
 case class Group(name: String, description: String)
-
-case class TypeDeclaration(
-  name: String,
-  displayName: String,
-  `type`: String,
-  required: Boolean,
-  description: Option[String],
-  examples: List[ExampleSpec],
-  enumValues: List[String],
-  pattern: Option[String]){
-    val example : Option[ExampleSpec] = examples.headOption
-  }
-
-object TypeDeclaration {
-  def apply(td: RamlTypeDeclaration): TypeDeclaration = {
-    val examples =
-      if(td.example != null)
-        List(ExampleSpec(td.example))
-      else
-        td.examples.asScala.toList.map(ExampleSpec.apply)
-
-    val enumValues = td match {
-      case t: RamlStringTypeDeclaration => t.enumValues().asScala.toList
-      case _                            => List()
-    }
-
-    val patterns = td match {
-      case t: RamlStringTypeDeclaration => Some(t.pattern())
-      case _                            => None
-    }
-
-    TypeDeclaration(
-      td.name,
-      SafeValueAsString(td.displayName),
-      td.`type`,
-      td.required,
-      SafeValue(td.description),
-      examples,
-      enumValues,
-      patterns
-    )
-  }
-}
-
-case class ExampleSpec(
-  description: Option[String],
-  documentation: Option[String],
-  code: Option[String],
-  value: Option[String]
-)
-
-object ExampleSpec {
-  import RamlSyntax._
-
-  def apply(example : RamlExampleSpec) : ExampleSpec = {
-
-    val description: Option[String] = {
-      example.structuredValue.property("description", "value")
-    }
-
-    val documentation: Option[String] = {
-      example.annotation("(documentation)")
-    }
-
-    val code: Option[String] = {
-      example.structuredValue.property("value", "code")
-      .orElse(example.structuredValue.property("code"))
-    }
-
-    val value: Option[String] = {
-      example.structuredValue.property("value")
-      .orElse(SafeValue(example))
-    }
-
-    ExampleSpec(description, documentation, code, value)
-  }
-}
 
 case class ApiSpecification (
   title: String,
@@ -134,11 +55,11 @@ object ApiSpecification {
         SafeValueAsString(item.title), SafeValueAsString(item.content)
       ))
 
-    def output: List[Output] = raml.resources.asScala.toList.map(Resource.process)
+    def output: List[ResourcesAndGroups] = raml.resources.asScala.toList.map(Resource.process)
 
     lazy val resources = output.map(_.resource)
 
-    lazy val groupMap = Output.flatten(output.map(_.groupMap))
+    lazy val groupMap = ResourcesAndGroups.flatten(output.map(_.groupMap))
 
     def resourceGroups: List[ResourceGroup] = ResourceGroup.generateFrom(resources, groupMap)
 

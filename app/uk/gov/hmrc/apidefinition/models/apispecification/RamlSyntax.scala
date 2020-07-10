@@ -14,9 +14,13 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.apidefinition.models.wiremodel
+package uk.gov.hmrc.apidefinition.models.apispecification
 
-object RAML {
-    type RAML = org.raml.v2.api.model.v10.api.Api
+import org.raml.v2.api.model.v10.common.{Annotable => RamlAnnotable}
+import org.raml.v2.api.model.v10.datamodel.{TypeInstance => RamlTypeInstance}
+
+object RamlSyntax {
+  implicit def toAnnotationExtension(context: RamlAnnotable): AnnotationExtension = new AnnotationExtension(context)
+
+  implicit def toPropertyExtension(context: RamlTypeInstance): PropertyExtension = new PropertyExtension(context)
 }
-

@@ -79,7 +79,7 @@ class APIDefinitionService @Inject()(awsApiPublisher: AwsApiPublisher,
           .map(_.foreach(diff => notificationService.notifyOfStatusChange(apiDefinition.name, diff._1, diff._2, diff._3))))
   }
 
-  def fetchByServiceName(serviceName: String)(implicit hc: HeaderCarrier): Future[Option[APIDefinition]] = {
+  def fetchByServiceName(serviceName: String): Future[Option[APIDefinition]] = {
     apiDefinitionRepository.fetchByServiceName(serviceName)
   }
 

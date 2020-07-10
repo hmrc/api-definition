@@ -27,7 +27,7 @@ import play.api.mvc.AnyContent
 import uk.gov.hmrc.apidocumentation.services.SchemaService
 import uk.gov.hmrc.ramltools.loaders.RamlLoader
 import uk.gov.hmrc.apidefinition.config.AppConfig
-import uk.gov.hmrc.apidefinition.models.wiremodel.ApiSpecification
+import uk.gov.hmrc.apidefinition.models.apispecification.ApiSpecification
 import play.api.libs.json.Json
 
 @Singleton
@@ -35,7 +35,7 @@ class SpecificationController @Inject()(config: AppConfig, schemaService: Schema
                                        (implicit val ec: ExecutionContext)
                                         extends BackendController(cc) {
 
-  import uk.gov.hmrc.apidefinition.models.wiremodel.WireModelFormatters._
+  import uk.gov.hmrc.apidefinition.models.apispecification.ApiSpecificationFormatters._
 
   def fetchSpecification(serviceName: String, version: String): Action[AnyContent] = Action.async {
     _ => {

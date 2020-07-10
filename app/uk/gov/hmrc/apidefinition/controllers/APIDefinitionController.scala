@@ -142,7 +142,7 @@ class APIDefinitionController @Inject()(apiDefinitionValidator: ApiDefinitionVal
     } recover recovery
   }
 
-  private def fetchAllForApplication(applicationId: String, alsoIncludePrivateTrials: Boolean = false) = {
+  private def fetchAllForApplication(applicationId: String, alsoIncludePrivateTrials: Boolean) = {
     apiDefinitionService
       .fetchAllAPIsForApplication(applicationId, alsoIncludePrivateTrials)
       .map(apiDefinitionToResult) recover recovery

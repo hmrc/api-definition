@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.apidefinition.models.wiremodel
+package uk.gov.hmrc.apidefinition.models.apispecification
 
 import org.raml.v2.api.model.v10.resources.{Resource => RamlResource}
 import scala.collection.JavaConverters._
@@ -22,16 +22,7 @@ import RamlSyntax._
 
 case class Resource(resourcePath: String, methods: List[Method], uriParameters: List[TypeDeclaration], relativeUri: String, displayName: String, children: List[Resource])
 
-/*
-1
-1.1 A
-1.2
-
-2
-3   B
-*/
-
-object Output {
+object ResourcesAndGroups {
   type GroupMap = Map[Resource,Group]
 
   val emptyGroupMap: GroupMap = Map.empty
@@ -41,12 +32,12 @@ object Output {
   def flatten(gms: List[GroupMap]): GroupMap = flatten(emptyGroupMap, gms)
 }
 
-case class Output(resource: Resource, groupMap: Output.GroupMap)
+case class ResourcesAndGroups(resource: Resource, groupMap: ResourcesAndGroups.GroupMap)
 
 
 object Resource {
-  def process(ramlResource: RamlResource): Output = {
-    val childNodes: List[Output] = ramlResource.resources().asScala.toList.map(process)
+  def process(ramlResource: RamlResource): ResourcesAndGroups = {
+    val childNodes: List[ResourcesAndGroups] = ramlResource.resources().asScala.toList.map(process)
 
     val children = childNodes.map(_.resource)
 
@@ -68,10 +59,10 @@ object Resource {
       children = children
     )
 
-    val thisMap: Output.GroupMap          = group.fold(Output.emptyGroupMap)(g => Map(resource -> g) )
-    val childMaps: List[Output.GroupMap]  = childNodes.map(_.groupMap)
+    val thisMap: ResourcesAndGroups.GroupMap          = group.fold(ResourcesAndGroups.emptyGroupMap)(g => Map(resource -> g) )
+    val childMaps: List[ResourcesAndGroups.GroupMap]  = childNodes.map(_.groupMap)
 
-    Output(resource, Output.flatten(thisMap, childMaps))
+    ResourcesAndGroups(resource, ResourcesAndGroups.flatten(thisMap, childMaps))
   }
 
   private def methodsForResource(resource: RamlResource): List[Method] = {

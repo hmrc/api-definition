@@ -68,8 +68,7 @@ class DocumentationService @Inject()(apiDefinitionRepository: APIDefinitionRepos
   }
 
   //noinspection ScalaStyle
-  private def fetchResource(serviceName: String, version: String, resource: String
-                           )(implicit hc: HeaderCarrier): Future[WSResponse] = {
+  private def fetchResource(serviceName: String, version: String, resource: String): Future[WSResponse] = {
 
     def fetchResourceFromMicroservice(serviceBaseUrl: String): Future[WSResponse] =
       apiMicroserviceConnector.fetchApiDocumentationResourceByUrl(serviceBaseUrl, version, resource)
@@ -77,7 +76,7 @@ class DocumentationService @Inject()(apiDefinitionRepository: APIDefinitionRepos
     def getApiDefinitionOrThrow: Future[APIDefinition] = {
       import cats.implicits._
 
-      val failure = Future.failed[APIDefinition](new NotFoundException(s"$serviceName not found"))
+      lazy val failure = Future.failed[APIDefinition](new NotFoundException(s"$serviceName not found"))
 
       apiDefinitionRepository.fetchByServiceName(serviceName).flatMap( _.fold(failure)(_.pure[Future]) )
     }

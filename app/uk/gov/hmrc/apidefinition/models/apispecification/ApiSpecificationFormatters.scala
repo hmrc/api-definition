@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.apidefinition.models.wiremodel
+package uk.gov.hmrc.apidefinition.models.apispecification
 
-object WireModelFormatters {
+object ApiSpecificationFormatters {
   import play.api.libs.json.Json
 
   implicit val hmrcExampleSpecJF = Json.format[ExampleSpec]
@@ -32,5 +32,5 @@ object WireModelFormatters {
   implicit val documentationItemJF = Json.format[DocumentationItem]
   implicit val hmrcResourceGroupJF = Json.format[ResourceGroup]
 
-  implicit val wireModelJF = Json.format[ApiSpecification]
+  implicit val apiSpecificationJF = Json.format[ApiSpecification]
 }

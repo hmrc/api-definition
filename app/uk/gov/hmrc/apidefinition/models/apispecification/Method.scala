@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.apidefinition.models.wiremodel
+package uk.gov.hmrc.apidefinition.models.apispecification
 
 import org.raml.v2.api.model.v10.methods.{Method => RamlMethod}
 import scala.collection.JavaConverters._

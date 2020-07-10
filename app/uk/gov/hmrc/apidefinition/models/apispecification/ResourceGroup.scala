@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.apidefinition.models.wiremodel
+package uk.gov.hmrc.apidefinition.models.apispecification
 
 case class ResourceGroup(name: Option[String] = None, description: Option[String] = None, resources: List[Resource] = Nil) {
   def +(resource: Resource) = {
@@ -24,7 +24,7 @@ case class ResourceGroup(name: Option[String] = None, description: Option[String
 }
 
 object ResourceGroup {
-  def generateFrom(rootResources: List[Resource], groupMap: Output.GroupMap): List[ResourceGroup] = {
+  def generateFrom(rootResources: List[Resource], groupMap: ResourcesAndGroups.GroupMap): List[ResourceGroup] = {
 
     def flatten(resources: List[Resource], acc: List[Resource]): List[Resource] = {
       resources match {
