@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.apidefinition.models.apispecification
 
-import uk.gov.hmrc.apidefinition.raml._
-
 case class DocumentationItem(title: String, content: String)
 
 case class SecurityScheme(`type`: String, scope: Option[String])

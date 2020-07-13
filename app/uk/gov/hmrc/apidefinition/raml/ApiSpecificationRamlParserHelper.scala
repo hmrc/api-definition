@@ -19,28 +19,15 @@ package uk.gov.hmrc.apidefinition.raml
 import scala.collection.JavaConverters._
 
 import org.raml.v2.api.model.v10.resources.{Resource => RamlResource}
-
 import org.raml.v2.api.model.v10.datamodel.{ExampleSpec => RamlExampleSpec}
 import org.raml.v2.api.model.v10.datamodel.{TypeDeclaration => RamlTypeDeclaration}
 import org.raml.v2.api.model.v10.datamodel.{StringTypeDeclaration => RamlStringTypeDeclaration}
 import org.raml.v2.api.model.v10.methods.{Method => RamlMethod}
 
-// TODO: Tidy me
-import uk.gov.hmrc.apidefinition.models.apispecification.ExampleSpec
-import uk.gov.hmrc.apidefinition.models.apispecification.TypeDeclaration
-import uk.gov.hmrc.apidefinition.models.apispecification.ResourcesAndGroups
-import uk.gov.hmrc.apidefinition.models.apispecification.Group
-import uk.gov.hmrc.apidefinition.models.apispecification.Resource
-import uk.gov.hmrc.apidefinition.models.apispecification.Method
-import uk.gov.hmrc.apidefinition.models.apispecification.SecurityScheme
-import uk.gov.hmrc.apidefinition.models.apispecification.Response
-import uk.gov.hmrc.apidefinition.models.apispecification.ApiSpecification
-import uk.gov.hmrc.apidefinition.models.apispecification.DocumentationItem
-import uk.gov.hmrc.apidefinition.models.apispecification.ResourceGroup
+import uk.gov.hmrc.apidefinition.models.apispecification._
 
 object ApiSpecificationRamlParserHelper {
   import uk.gov.hmrc.apidefinition.raml.RamlSyntax._
-
 
   def toApiSpecification(raml: RAML.RAML) : ApiSpecification = {
 
@@ -78,9 +65,7 @@ object ApiSpecificationRamlParserHelper {
     )
   }
 
-
-
-  def toExampleSpec(example : RamlExampleSpec) : ExampleSpec = {
+  private def toExampleSpec(example : RamlExampleSpec) : ExampleSpec = {
 
     val description: Option[String] = {
       example.structuredValue.property("description", "value")
@@ -103,7 +88,7 @@ object ApiSpecificationRamlParserHelper {
     ExampleSpec(description, documentation, code, value)
   }
 
-  def toTypeDeclaration(td: RamlTypeDeclaration): TypeDeclaration = {
+  private def toTypeDeclaration(td: RamlTypeDeclaration): TypeDeclaration = {
     val examples =
       if(td.example != null)
         List(ApiSpecificationRamlParserHelper.toExampleSpec(td.example))
@@ -133,7 +118,7 @@ object ApiSpecificationRamlParserHelper {
   }
 
 
-  def toResourcesAndGroups(ramlResource: RamlResource): ResourcesAndGroups = {
+  private def toResourcesAndGroups(ramlResource: RamlResource): ResourcesAndGroups = {
     val childNodes: List[ResourcesAndGroups] = ramlResource.resources().asScala.toList.map(toResourcesAndGroups)
 
     val children = childNodes.map(_.resource)
@@ -174,7 +159,7 @@ object ApiSpecificationRamlParserHelper {
     .map(ApiSpecificationRamlParserHelper.toMethod)
   }
 
-  def toMethod(ramlMethod: RamlMethod): Method = {
+  private def toMethod(ramlMethod: RamlMethod): Method = {
     val queryParameters = ramlMethod.queryParameters.asScala.toList.map(ApiSpecificationRamlParserHelper.toTypeDeclaration)
     val headers = ramlMethod.headers.asScala.toList.map(ApiSpecificationRamlParserHelper.toTypeDeclaration)
     val body = ramlMethod.body.asScala.toList.map(ApiSpecificationRamlParserHelper.toTypeDeclaration)

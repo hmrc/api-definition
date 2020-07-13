@@ -31,9 +31,7 @@ object SafeValue {
 
 object SafeValueAsString {
   // Handle nulls from RAML
-
   def apply(nullableString: String): String = SafeValue(nullableString).getOrElse("")
 
   def apply(nullableObj: {def value(): String}): String = SafeValue(nullableObj).getOrElse("")
-
 }
