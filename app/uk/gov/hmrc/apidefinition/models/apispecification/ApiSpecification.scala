@@ -57,7 +57,7 @@ object ApiSpecification {
         SafeValueAsString(item.title), SafeValueAsString(item.content)
       ))
 
-    def output: List[ResourcesAndGroups] = raml.resources.asScala.toList.map(Resource.process)
+    def output: List[ResourcesAndGroups] = raml.resources.asScala.toList.map(ApiSpecificationRamlParserHelper.toResourcesAndGroups)
 
     lazy val resources = output.map(_.resource)
 
