@@ -25,7 +25,7 @@ import uk.gov.hmrc.ramltools.Implicits._
 import scala.collection.JavaConverters._
 import scala.collection.immutable.ListMap
 import scala.io.Source
-import uk.gov.hmrc.apidefinition.models.apispecification.RAML
+import uk.gov.hmrc.apidefinition.raml.RAML
 import uk.gov.hmrc.apidefinition.models.apispecification.JsonSchema
 import uk.gov.hmrc.apidefinition.models.apispecification.JsonSchema.JsonSchemaWithReference
 

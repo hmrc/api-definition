@@ -16,7 +16,7 @@
 
 package unit.uk.gov.hmrc.apidefinition.models.apispecification
 
-import uk.gov.hmrc.apidefinition.models.apispecification.RAML.RAML
+import uk.gov.hmrc.apidefinition.raml.RAML.RAML
 import uk.gov.hmrc.ramltools.loaders.ComprehensiveClasspathRamlLoader
 
 import scala.util.{Failure, Success}
