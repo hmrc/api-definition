@@ -19,6 +19,7 @@ package uk.gov.hmrc.apidefinition.models.apispecification
 import org.raml.v2.api.model.v10.datamodel.{ExampleSpec => RamlExampleSpec, TypeDeclaration => RamlTypeDeclaration}
 import org.raml.v2.api.model.v10.datamodel.{StringTypeDeclaration => RamlStringTypeDeclaration}
 import scala.collection.JavaConverters._
+import uk.gov.hmrc.apidefinition.raml.ApiSpecificationRamlParserHelper
 
 case class TypeDeclaration(
   name: String,
@@ -36,9 +37,9 @@ object TypeDeclaration {
   def apply(td: RamlTypeDeclaration): TypeDeclaration = {
     val examples =
       if(td.example != null)
-        List(ExampleSpec(td.example))
+        List(ApiSpecificationRamlParserHelper.toExampleSpec(td.example))
       else
-        td.examples.asScala.toList.map(ExampleSpec.apply)
+        td.examples.asScala.toList.map(ApiSpecificationRamlParserHelper.toExampleSpec)
 
     val enumValues = td match {
       case t: RamlStringTypeDeclaration => t.enumValues().asScala.toList

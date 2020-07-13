@@ -16,38 +16,9 @@
 
 package uk.gov.hmrc.apidefinition.models.apispecification
 
-import org.raml.v2.api.model.v10.datamodel.{ExampleSpec => RamlExampleSpec}
-
 case class ExampleSpec(
   description: Option[String],
   documentation: Option[String],
   code: Option[String],
   value: Option[String]
 )
-
-object ExampleSpec {
-  import RamlSyntax._
-
-  def apply(example : RamlExampleSpec) : ExampleSpec = {
-
-    val description: Option[String] = {
-      example.structuredValue.property("description", "value")
-    }
-
-    val documentation: Option[String] = {
-      example.annotation("(documentation)")
-    }
-
-    val code: Option[String] = {
-      example.structuredValue.property("value", "code")
-      .orElse(example.structuredValue.property("code"))
-    }
-
-    val value: Option[String] = {
-      example.structuredValue.property("value")
-      .orElse(SafeValue(example))
-    }
-
-    ExampleSpec(description, documentation, code, value)
-  }
-}
