@@ -16,8 +16,13 @@
 
 package uk.gov.hmrc.apidefinition.raml
 
+import scala.collection.JavaConverters._
+
 import uk.gov.hmrc.apidefinition.models.apispecification.ExampleSpec
 import org.raml.v2.api.model.v10.datamodel.{ExampleSpec => RamlExampleSpec}
+import org.raml.v2.api.model.v10.datamodel.{TypeDeclaration => RamlTypeDeclaration}
+import org.raml.v2.api.model.v10.datamodel.{StringTypeDeclaration => RamlStringTypeDeclaration}
+import uk.gov.hmrc.apidefinition.models.apispecification.TypeDeclaration
 
 object ApiSpecificationRamlParserHelper {
   import uk.gov.hmrc.apidefinition.models.apispecification.RamlSyntax._
@@ -43,5 +48,34 @@ object ApiSpecificationRamlParserHelper {
     }
 
     ExampleSpec(description, documentation, code, value)
+  }
+
+  def toTypeDeclaration(td: RamlTypeDeclaration): TypeDeclaration = {
+    val examples =
+      if(td.example != null)
+        List(ApiSpecificationRamlParserHelper.toExampleSpec(td.example))
+      else
+        td.examples.asScala.toList.map(ApiSpecificationRamlParserHelper.toExampleSpec)
+
+    val enumValues = td match {
+      case t: RamlStringTypeDeclaration => t.enumValues().asScala.toList
+      case _                            => List()
+    }
+
+    val patterns = td match {
+      case t: RamlStringTypeDeclaration => Some(t.pattern())
+      case _                            => None
+    }
+
+    TypeDeclaration(
+      td.name,
+      SafeValueAsString(td.displayName),
+      td.`type`,
+      td.required,
+      SafeValue(td.description),
+      examples,
+      enumValues,
+      patterns
+    )
   }
 }

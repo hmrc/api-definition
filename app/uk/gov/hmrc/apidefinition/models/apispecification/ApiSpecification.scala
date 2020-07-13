@@ -65,7 +65,7 @@ object ApiSpecification {
 
     def resourceGroups: List[ResourceGroup] = ResourceGroup.generateFrom(resources, groupMap)
 
-    def types: List[TypeDeclaration] = (raml.types.asScala.toList ++ raml.uses.asScala.flatMap(_.types.asScala)).map(TypeDeclaration.apply)
+    def types: List[TypeDeclaration] = (raml.types.asScala.toList ++ raml.uses.asScala.flatMap(_.types.asScala)).map(ApiSpecificationRamlParserHelper.toTypeDeclaration)
 
     def isFieldOptionalityKnown: Boolean = !raml.hasAnnotation("(fieldOptionalityUnknown)")
 

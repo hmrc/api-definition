@@ -20,6 +20,7 @@ import org.raml.v2.api.model.v10.methods.{Method => RamlMethod}
 import scala.collection.JavaConverters._
 import RamlSyntax._
 import uk.gov.hmrc.apidefinition.raml.{SafeValueAsString, SafeValue}
+import uk.gov.hmrc.apidefinition.raml.ApiSpecificationRamlParserHelper
 
 case class Method(
   method: String,
@@ -37,10 +38,9 @@ case class Method(
 object Method {
 
   def apply(ramlMethod: RamlMethod): Method = {
-    val queryParameters = ramlMethod.queryParameters.asScala.toList.map(TypeDeclaration.apply)
-    val headers = ramlMethod.headers.asScala.toList.map(TypeDeclaration.apply)
-    val body = ramlMethod.body.asScala.toList.map(TypeDeclaration.apply)
-
+    val queryParameters = ramlMethod.queryParameters.asScala.toList.map(ApiSpecificationRamlParserHelper.toTypeDeclaration)
+    val headers = ramlMethod.headers.asScala.toList.map(ApiSpecificationRamlParserHelper.toTypeDeclaration)
+    val body = ramlMethod.body.asScala.toList.map(ApiSpecificationRamlParserHelper.toTypeDeclaration)
 
     def fetchAuthorisation: Option[SecurityScheme] = {
       if (ramlMethod.securedBy().asScala.nonEmpty) {
@@ -57,8 +57,8 @@ object Method {
       ramlMethod.responses().asScala.toList.map( r => {
         Response(
           code = SafeValueAsString(r.code()),
-          body = r.body.asScala.toList.map(TypeDeclaration.apply),
-          headers = r.headers().asScala.toList.map(TypeDeclaration.apply),
+          body = r.body.asScala.toList.map(ApiSpecificationRamlParserHelper.toTypeDeclaration),
+          headers = r.headers().asScala.toList.map(ApiSpecificationRamlParserHelper.toTypeDeclaration),
           description = SafeValue(r.description())
         )
       })

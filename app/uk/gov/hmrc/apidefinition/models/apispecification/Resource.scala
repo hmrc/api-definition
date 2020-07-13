@@ -19,6 +19,7 @@ package uk.gov.hmrc.apidefinition.models.apispecification
 import org.raml.v2.api.model.v10.resources.{Resource => RamlResource}
 import scala.collection.JavaConverters._
 import RamlSyntax._
+import uk.gov.hmrc.apidefinition.raml.ApiSpecificationRamlParserHelper
 
 case class Resource(resourcePath: String, methods: List[Method], uriParameters: List[TypeDeclaration], relativeUri: String, displayName: String, children: List[Resource])
 
@@ -54,7 +55,7 @@ object Resource {
       resourcePath = ramlResource.resourcePath,
       methods = methodsForResource(ramlResource),
       relativeUri = ramlResource.relativeUri.value,
-      uriParameters = ramlResource.uriParameters.asScala.toList.map(TypeDeclaration.apply),
+      uriParameters = ramlResource.uriParameters.asScala.toList.map(ApiSpecificationRamlParserHelper.toTypeDeclaration),
       displayName = ramlResource.displayName.value,
       children = children
     )
