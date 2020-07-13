@@ -18,7 +18,6 @@ package uk.gov.hmrc.apidefinition.raml
 
 import uk.gov.hmrc.apidefinition.models.apispecification.ExampleSpec
 import org.raml.v2.api.model.v10.datamodel.{ExampleSpec => RamlExampleSpec}
-import uk.gov.hmrc.apidefinition.models.apispecification.SafeValue
 
 object ApiSpecificationRamlParserHelper {
   import uk.gov.hmrc.apidefinition.models.apispecification.RamlSyntax._

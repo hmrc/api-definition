@@ -18,8 +18,7 @@ package unit.uk.gov.hmrc.apidefinition.models.raml
 
 import org.scalatest.{WordSpec, Matchers}
 import org.scalatest.prop.TableDrivenPropertyChecks._
-import uk.gov.hmrc.apidefinition.models.apispecification.SafeValue
-import uk.gov.hmrc.apidefinition.models.apispecification.SafeValueAsString
+import uk.gov.hmrc.apidefinition.raml.{SafeValueAsString, SafeValue}
 
 class RamlAccessorsSpec extends WordSpec with Matchers {
 

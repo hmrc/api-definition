@@ -19,6 +19,7 @@ package uk.gov.hmrc.apidefinition.models.apispecification
 import org.raml.v2.api.model.v10.methods.{Method => RamlMethod}
 import scala.collection.JavaConverters._
 import RamlSyntax._
+import uk.gov.hmrc.apidefinition.raml.{SafeValueAsString, SafeValue}
 
 case class Method(
   method: String,
@@ -32,6 +33,7 @@ case class Method(
   sandboxData: Option[String]
 )
 
+// TODO: Move me
 object Method {
 
   def apply(ramlMethod: RamlMethod): Method = {

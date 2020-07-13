@@ -18,7 +18,7 @@ package uk.gov.hmrc.apidefinition.models.apispecification
 
 import org.raml.v2.api.model.v10.common.{Annotable => RamlAnnotable}
 import org.raml.v2.api.model.v10.datamodel.{TypeInstance => RamlTypeInstance}
-
+// TODO: Move me
 object RamlSyntax {
   implicit def toAnnotationExtension(context: RamlAnnotable): AnnotationExtension = new AnnotationExtension(context)
 

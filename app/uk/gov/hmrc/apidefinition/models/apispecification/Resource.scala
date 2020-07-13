@@ -34,7 +34,7 @@ object ResourcesAndGroups {
 
 case class ResourcesAndGroups(resource: Resource, groupMap: ResourcesAndGroups.GroupMap)
 
-
+// TODO: Move me
 object Resource {
   def process(ramlResource: RamlResource): ResourcesAndGroups = {
     val childNodes: List[ResourcesAndGroups] = ramlResource.resources().asScala.toList.map(process)

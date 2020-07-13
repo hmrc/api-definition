@@ -16,10 +16,11 @@
 
 package uk.gov.hmrc.apidefinition.models.apispecification
 
-import org.raml.v2.api.model.v10.datamodel.{ExampleSpec => RamlExampleSpec, TypeDeclaration => RamlTypeDeclaration}
+import org.raml.v2.api.model.v10.datamodel.{TypeDeclaration => RamlTypeDeclaration}
 import org.raml.v2.api.model.v10.datamodel.{StringTypeDeclaration => RamlStringTypeDeclaration}
 import scala.collection.JavaConverters._
 import uk.gov.hmrc.apidefinition.raml.ApiSpecificationRamlParserHelper
+import uk.gov.hmrc.apidefinition.raml.{SafeValueAsString, SafeValue}
 
 case class TypeDeclaration(
   name: String,
@@ -33,6 +34,7 @@ case class TypeDeclaration(
     val example : Option[ExampleSpec] = examples.headOption
   }
 
+// TODO: Move me
 object TypeDeclaration {
   def apply(td: RamlTypeDeclaration): TypeDeclaration = {
     val examples =

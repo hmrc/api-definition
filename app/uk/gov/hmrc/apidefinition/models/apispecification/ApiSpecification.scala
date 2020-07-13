@@ -18,6 +18,7 @@ package uk.gov.hmrc.apidefinition.models.apispecification
 
 import scala.collection.JavaConverters._
 import  RamlSyntax._
+import uk.gov.hmrc.apidefinition.raml._
 
 case class DocumentationItem(title: String, content: String)
 
@@ -41,6 +42,7 @@ case class ApiSpecification (
   isFieldOptionalityKnown: Boolean
 )
 
+// TODO: Move me
 object ApiSpecification {
   def apply(raml: RAML.RAML) : ApiSpecification = {
 
@@ -77,26 +79,4 @@ object ApiSpecification {
       isFieldOptionalityKnown
     )
   }
-}
-
-object SafeValue {
-  // Handle nulls from RAML
-  // Convert nulls and empty strings to Option.None
-
-  def apply(nullableString: String): Option[String] = {
-    Option(nullableString).filter(_.nonEmpty)
-  }
-
-  def apply(nullableObj: {def value(): String}): Option[String] = {
-    Option(nullableObj).flatMap(obj => Option(obj.value())).filter(_.nonEmpty)
-  }
-}
-
-object SafeValueAsString {
-  // Handle nulls from RAML
-
-  def apply(nullableString: String): String = SafeValue(nullableString).getOrElse("")
-
-  def apply(nullableObj: {def value(): String}): String = SafeValue(nullableObj).getOrElse("")
-
 }

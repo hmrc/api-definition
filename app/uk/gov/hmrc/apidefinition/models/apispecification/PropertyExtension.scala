@@ -19,6 +19,7 @@ package uk.gov.hmrc.apidefinition.models.apispecification
 import org.raml.v2.api.model.v10.datamodel.{TypeInstance => RamlTypeInstance, TypeInstanceProperty => RamlTypeInstanceProperty}
 import scala.collection.JavaConverters._
 
+// TODO: Move me
 final class PropertyExtension(val context: RamlTypeInstance) extends AnyVal {
 
   def property(names: String*): Option[String] = {
