@@ -20,15 +20,20 @@ import scala.collection.JavaConverters._
 
 import org.raml.v2.api.model.v10.resources.{Resource => RamlResource}
 
-import uk.gov.hmrc.apidefinition.models.apispecification.ExampleSpec
 import org.raml.v2.api.model.v10.datamodel.{ExampleSpec => RamlExampleSpec}
 import org.raml.v2.api.model.v10.datamodel.{TypeDeclaration => RamlTypeDeclaration}
 import org.raml.v2.api.model.v10.datamodel.{StringTypeDeclaration => RamlStringTypeDeclaration}
+import org.raml.v2.api.model.v10.methods.{Method => RamlMethod}
+
+// TODO: Tidy me
+import uk.gov.hmrc.apidefinition.models.apispecification.ExampleSpec
 import uk.gov.hmrc.apidefinition.models.apispecification.TypeDeclaration
 import uk.gov.hmrc.apidefinition.models.apispecification.ResourcesAndGroups
 import uk.gov.hmrc.apidefinition.models.apispecification.Group
 import uk.gov.hmrc.apidefinition.models.apispecification.Resource
 import uk.gov.hmrc.apidefinition.models.apispecification.Method
+import uk.gov.hmrc.apidefinition.models.apispecification.SecurityScheme
+import uk.gov.hmrc.apidefinition.models.apispecification.Response
 
 object ApiSpecificationRamlParserHelper {
   import uk.gov.hmrc.apidefinition.raml.RamlSyntax._
@@ -124,6 +129,48 @@ object ApiSpecificationRamlParserHelper {
         r <- correctOrder.get(right.method)
       } yield l < r).getOrElse(false)
     }
-    .map(m => Method(m))
+    .map(ApiSpecificationRamlParserHelper.toMethod)
+  }
+
+  def toMethod(ramlMethod: RamlMethod): Method = {
+    val queryParameters = ramlMethod.queryParameters.asScala.toList.map(ApiSpecificationRamlParserHelper.toTypeDeclaration)
+    val headers = ramlMethod.headers.asScala.toList.map(ApiSpecificationRamlParserHelper.toTypeDeclaration)
+    val body = ramlMethod.body.asScala.toList.map(ApiSpecificationRamlParserHelper.toTypeDeclaration)
+
+    def fetchAuthorisation: Option[SecurityScheme] = {
+      if (ramlMethod.securedBy().asScala.nonEmpty) {
+        ramlMethod.securedBy.get(0).securityScheme.`type` match {
+          case "OAuth 2.0" => Some(SecurityScheme("user", ramlMethod.annotation("(scope)")))
+          case _ => Some(SecurityScheme("application", None))
+        }
+      } else {
+        None
+      }
+    }
+
+    def responses: List[Response] = {
+      ramlMethod.responses().asScala.toList.map( r => {
+        Response(
+          code = SafeValueAsString(r.code()),
+          body = r.body.asScala.toList.map(ApiSpecificationRamlParserHelper.toTypeDeclaration),
+          headers = r.headers().asScala.toList.map(ApiSpecificationRamlParserHelper.toTypeDeclaration),
+          description = SafeValue(r.description())
+        )
+      })
+    }
+
+    def sandboxData = ramlMethod.annotation("(sandboxData)")
+
+    Method(
+      ramlMethod.method,
+      SafeValueAsString(ramlMethod.displayName),
+      body,
+      headers,
+      queryParameters,
+      SafeValue(ramlMethod.description),
+      fetchAuthorisation,
+      responses,
+      sandboxData
+    )
   }
 }

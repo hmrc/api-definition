@@ -16,12 +16,6 @@
 
 package uk.gov.hmrc.apidefinition.models.apispecification
 
-import org.raml.v2.api.model.v10.methods.{Method => RamlMethod}
-import scala.collection.JavaConverters._
-import uk.gov.hmrc.apidefinition.raml.RamlSyntax._
-import uk.gov.hmrc.apidefinition.raml.{SafeValueAsString, SafeValue}
-import uk.gov.hmrc.apidefinition.raml.ApiSpecificationRamlParserHelper
-
 case class Method(
   method: String,
   displayName: String,
@@ -33,49 +27,3 @@ case class Method(
   responses: List[Response],
   sandboxData: Option[String]
 )
-
-// TODO: Move me
-object Method {
-
-  def apply(ramlMethod: RamlMethod): Method = {
-    val queryParameters = ramlMethod.queryParameters.asScala.toList.map(ApiSpecificationRamlParserHelper.toTypeDeclaration)
-    val headers = ramlMethod.headers.asScala.toList.map(ApiSpecificationRamlParserHelper.toTypeDeclaration)
-    val body = ramlMethod.body.asScala.toList.map(ApiSpecificationRamlParserHelper.toTypeDeclaration)
-
-    def fetchAuthorisation: Option[SecurityScheme] = {
-      if (ramlMethod.securedBy().asScala.nonEmpty) {
-        ramlMethod.securedBy.get(0).securityScheme.`type` match {
-          case "OAuth 2.0" => Some(SecurityScheme("user", ramlMethod.annotation("(scope)")))
-          case _ => Some(SecurityScheme("application", None))
-        }
-      } else {
-        None
-      }
-    }
-
-    def responses: List[Response] = {
-      ramlMethod.responses().asScala.toList.map( r => {
-        Response(
-          code = SafeValueAsString(r.code()),
-          body = r.body.asScala.toList.map(ApiSpecificationRamlParserHelper.toTypeDeclaration),
-          headers = r.headers().asScala.toList.map(ApiSpecificationRamlParserHelper.toTypeDeclaration),
-          description = SafeValue(r.description())
-        )
-      })
-    }
-
-    def sandboxData = ramlMethod.annotation("(sandboxData)")
-
-    Method(
-      ramlMethod.method,
-      SafeValueAsString(ramlMethod.displayName),
-      body,
-      headers,
-      queryParameters,
-      SafeValue(ramlMethod.description),
-      fetchAuthorisation,
-      responses,
-      sandboxData
-    )
-  }
-}
