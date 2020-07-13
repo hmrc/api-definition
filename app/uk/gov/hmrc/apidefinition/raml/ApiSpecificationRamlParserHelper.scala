@@ -34,9 +34,51 @@ import uk.gov.hmrc.apidefinition.models.apispecification.Resource
 import uk.gov.hmrc.apidefinition.models.apispecification.Method
 import uk.gov.hmrc.apidefinition.models.apispecification.SecurityScheme
 import uk.gov.hmrc.apidefinition.models.apispecification.Response
+import uk.gov.hmrc.apidefinition.models.apispecification.ApiSpecification
+import uk.gov.hmrc.apidefinition.models.apispecification.DocumentationItem
+import uk.gov.hmrc.apidefinition.models.apispecification.ResourceGroup
 
 object ApiSpecificationRamlParserHelper {
   import uk.gov.hmrc.apidefinition.raml.RamlSyntax._
+
+
+  def toApiSpecification(raml: RAML.RAML) : ApiSpecification = {
+
+    def title: String = SafeValueAsString(raml.title)
+
+    def version: String = raml.version.value
+
+    def deprecationMessage: Option[String] = raml.annotation("(deprecationMessage)")
+
+    def documentationItems: List[DocumentationItem] =
+      raml.documentation.asScala.toList.map(item => DocumentationItem(
+        SafeValueAsString(item.title), SafeValueAsString(item.content)
+      ))
+
+    def output: List[ResourcesAndGroups] = raml.resources.asScala.toList.map(ApiSpecificationRamlParserHelper.toResourcesAndGroups)
+
+    lazy val resources = output.map(_.resource)
+
+    lazy val groupMap = ResourcesAndGroups.flatten(output.map(_.groupMap))
+
+    def resourceGroups: List[ResourceGroup] = ResourceGroup.generateFrom(resources, groupMap)
+
+    def types: List[TypeDeclaration] = (raml.types.asScala.toList ++ raml.uses.asScala.flatMap(_.types.asScala)).map(ApiSpecificationRamlParserHelper.toTypeDeclaration)
+
+    def isFieldOptionalityKnown: Boolean = !raml.hasAnnotation("(fieldOptionalityUnknown)")
+
+    ApiSpecification(
+      title,
+      version,
+      deprecationMessage,
+      documentationItems,
+      resourceGroups,
+      types,
+      isFieldOptionalityKnown
+    )
+  }
+
+
 
   def toExampleSpec(example : RamlExampleSpec) : ExampleSpec = {
 

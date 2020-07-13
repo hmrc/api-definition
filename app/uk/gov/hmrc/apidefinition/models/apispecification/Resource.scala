@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.apidefinition.models.apispecification
 
-import uk.gov.hmrc.apidefinition.raml.ApiSpecificationRamlParserHelper
-
 case class Resource(resourcePath: String, methods: List[Method], uriParameters: List[TypeDeclaration], relativeUri: String, displayName: String, children: List[Resource])
 
 object ResourcesAndGroups {

@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.apidefinition.models.apispecification
 
-import scala.collection.JavaConverters._
-import uk.gov.hmrc.apidefinition.raml.RamlSyntax._
 import uk.gov.hmrc.apidefinition.raml._
 
 case class DocumentationItem(title: String, content: String)
@@ -41,42 +39,3 @@ case class ApiSpecification (
   types: List[TypeDeclaration],
   isFieldOptionalityKnown: Boolean
 )
-
-// TODO: Move me
-object ApiSpecification {
-  def apply(raml: RAML.RAML) : ApiSpecification = {
-
-    def title: String = SafeValueAsString(raml.title)
-
-    def version: String = raml.version.value
-
-    def deprecationMessage: Option[String] = raml.annotation("(deprecationMessage)")
-
-    def documentationItems: List[DocumentationItem] =
-      raml.documentation.asScala.toList.map(item => DocumentationItem(
-        SafeValueAsString(item.title), SafeValueAsString(item.content)
-      ))
-
-    def output: List[ResourcesAndGroups] = raml.resources.asScala.toList.map(ApiSpecificationRamlParserHelper.toResourcesAndGroups)
-
-    lazy val resources = output.map(_.resource)
-
-    lazy val groupMap = ResourcesAndGroups.flatten(output.map(_.groupMap))
-
-    def resourceGroups: List[ResourceGroup] = ResourceGroup.generateFrom(resources, groupMap)
-
-    def types: List[TypeDeclaration] = (raml.types.asScala.toList ++ raml.uses.asScala.flatMap(_.types.asScala)).map(ApiSpecificationRamlParserHelper.toTypeDeclaration)
-
-    def isFieldOptionalityKnown: Boolean = !raml.hasAnnotation("(fieldOptionalityUnknown)")
-
-    ApiSpecification(
-      title,
-      version,
-      deprecationMessage,
-      documentationItems,
-      resourceGroups,
-      types,
-      isFieldOptionalityKnown
-    )
-  }
-}

@@ -17,17 +17,17 @@
 package unit.uk.gov.hmrc.apidefinition.models.apispecification
 
 import uk.gov.hmrc.play.test.UnitSpec
-import uk.gov.hmrc.apidefinition.models.apispecification.ApiSpecification
 import RamlSpecHelper.loadRaml
 import uk.gov.hmrc.apidefinition.models.apispecification.SecurityScheme
 import uk.gov.hmrc.apidefinition.models.apispecification.DocumentationItem
+import uk.gov.hmrc.apidefinition.raml.ApiSpecificationRamlParserHelper
 
 class ApiSpecificationSpec extends UnitSpec {
   "RAML to apiSpec" should {
     "Simple.raml should parse title and version to our model" in {
       val raml = loadRaml("V2/simple.raml")
 
-      val apiSpec = ApiSpecification(raml)
+      val apiSpec = ApiSpecificationRamlParserHelper.toApiSpecification(raml)
       apiSpec.title shouldBe "My simple title"
       apiSpec.version shouldBe "My version"
 
@@ -39,7 +39,7 @@ class ApiSpecificationSpec extends UnitSpec {
     "With single method" in {
       val raml = loadRaml("V2/single-method.raml")
 
-      val apiSpec = ApiSpecification(raml)
+      val apiSpec = ApiSpecificationRamlParserHelper.toApiSpecification(raml)
       apiSpec.resourceGroups.size shouldBe 1
 
       val rg = apiSpec.resourceGroups(0)
@@ -70,7 +70,7 @@ class ApiSpecificationSpec extends UnitSpec {
     "With multiple endpoints maintain RAML ordering" in {
       val raml = loadRaml("V2/multiple-endpoints.raml")
 
-      val apiSpec = ApiSpecification(raml)
+      val apiSpec = ApiSpecificationRamlParserHelper.toApiSpecification(raml)
       apiSpec.resourceGroups.size shouldBe 1
 
       val rg = apiSpec.resourceGroups(0)
@@ -83,7 +83,7 @@ class ApiSpecificationSpec extends UnitSpec {
     "With multiple methods maintain RAML ordering" in {
       val raml = loadRaml("V2/multiple-methods.raml")
 
-      val apiSpec = ApiSpecification(raml)
+      val apiSpec = ApiSpecificationRamlParserHelper.toApiSpecification(raml)
 
       val rg = apiSpec.resourceGroups(0)
 
@@ -108,7 +108,7 @@ class ApiSpecificationSpec extends UnitSpec {
     "With security schemes in RAML" in {
       val raml = loadRaml("V2/multiple-security-options.raml")
 
-      val apiSpec = ApiSpecification(raml)
+      val apiSpec = ApiSpecificationRamlParserHelper.toApiSpecification(raml)
 
       val rg = apiSpec.resourceGroups(0)
 
@@ -126,7 +126,7 @@ class ApiSpecificationSpec extends UnitSpec {
     "With global type with enums" in {
       val raml = loadRaml("V2/typed-enums.raml")
 
-      val apiSpec = ApiSpecification(raml)
+      val apiSpec = ApiSpecificationRamlParserHelper.toApiSpecification(raml)
       apiSpec.resourceGroups.size shouldBe 1
 
       val rg = apiSpec.resourceGroups(0)
