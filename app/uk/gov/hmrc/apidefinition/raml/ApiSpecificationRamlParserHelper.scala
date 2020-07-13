@@ -31,7 +31,7 @@ import uk.gov.hmrc.apidefinition.models.apispecification.Resource
 import uk.gov.hmrc.apidefinition.models.apispecification.Method
 
 object ApiSpecificationRamlParserHelper {
-  import uk.gov.hmrc.apidefinition.models.apispecification.RamlSyntax._
+  import uk.gov.hmrc.apidefinition.raml.RamlSyntax._
 
   def toExampleSpec(example : RamlExampleSpec) : ExampleSpec = {
 

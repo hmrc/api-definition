@@ -18,7 +18,7 @@ package uk.gov.hmrc.apidefinition.models.apispecification
 
 import org.raml.v2.api.model.v10.methods.{Method => RamlMethod}
 import scala.collection.JavaConverters._
-import RamlSyntax._
+import uk.gov.hmrc.apidefinition.raml.RamlSyntax._
 import uk.gov.hmrc.apidefinition.raml.{SafeValueAsString, SafeValue}
 import uk.gov.hmrc.apidefinition.raml.ApiSpecificationRamlParserHelper
 

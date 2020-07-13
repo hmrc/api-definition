@@ -17,7 +17,7 @@
 package uk.gov.hmrc.apidefinition.models.apispecification
 
 import scala.collection.JavaConverters._
-import  RamlSyntax._
+import uk.gov.hmrc.apidefinition.raml.RamlSyntax._
 import uk.gov.hmrc.apidefinition.raml._
 
 case class DocumentationItem(title: String, content: String)
