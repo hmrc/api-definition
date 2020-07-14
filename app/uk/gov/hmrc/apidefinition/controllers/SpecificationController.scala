@@ -24,7 +24,6 @@ import scala.concurrent.Future
 import play.api.mvc.ControllerComponents
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
-import uk.gov.hmrc.apidocumentation.services.SchemaService
 import uk.gov.hmrc.ramltools.loaders.RamlLoader
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import play.api.libs.json.Json
@@ -32,7 +31,7 @@ import uk.gov.hmrc.apidefinition.raml.ApiSpecificationRamlParser
 
 // TODO: ebridge - Add tests
 @Singleton
-class SpecificationController @Inject()(config: AppConfig, schemaService: SchemaService, ramlLoader: RamlLoader, cc: ControllerComponents)
+class SpecificationController @Inject()(config: AppConfig, ramlLoader: RamlLoader, cc: ControllerComponents)
                                        (implicit val ec: ExecutionContext)
                                         extends BackendController(cc) {
 
