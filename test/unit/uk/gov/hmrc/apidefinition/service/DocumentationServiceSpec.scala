@@ -45,6 +45,7 @@ import unit.uk.gov.hmrc.apidefinition.utils.Utils
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.Random
+import uk.gov.hmrc.apidefinition.services.SpecificationService
 
 class DocumentationServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar with Utils {
   import DocumentationService.PROXY_SAFE_CONTENT_TYPE
@@ -103,10 +104,12 @@ class DocumentationServiceSpec extends UnitSpec with ScalaFutures with MockitoSu
     val mockAPIDefinitionRepository: APIDefinitionRepository = mock[APIDefinitionRepository]
     val mockApiMicroserviceConnector: ApiMicroserviceConnector = mock[ApiMicroserviceConnector]
     val mockServiceConfig: AppConfig = mock[AppConfig]
+    val mockSpecificationService : SpecificationService = mock[SpecificationService]
 
     val underTest = new DocumentationService(
       mockAPIDefinitionRepository,
       mockApiMicroserviceConnector,
+      mockSpecificationService,
       mockServiceConfig
     )
 

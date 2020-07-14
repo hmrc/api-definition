@@ -28,18 +28,14 @@ import scala.concurrent.ExecutionContext
 import scala.util.control.NonFatal
 
 @Singleton
-class DocumentationController @Inject()(service: DocumentationService, specificationController: SpecificationController, cc: ControllerComponents)
+class DocumentationController @Inject()(service: DocumentationService, cc: ControllerComponents)
                                        (implicit val ec: ExecutionContext)
                                         extends BackendController(cc) {
 
   def fetchApiDocumentationResource(serviceName: String, version: String, resource: String): Action[AnyContent] = Action.async {
     implicit request => {
       Logger.info(s"API Documentation received request for resource: $serviceName, $version, $resource")
-      if(resource == "packed(application.raml)") {
-        specificationController.fetchSpecification(serviceName, version)(request)
-      } else {
-        service.fetchApiDocumentationResource(serviceName, version, resource)
-      }
+      service.fetchApiDocumentationResource(serviceName, version, resource)
     } recover recovery
   }
 

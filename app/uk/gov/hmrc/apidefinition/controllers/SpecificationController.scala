@@ -20,34 +20,24 @@ import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
 import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
 import play.api.mvc.ControllerComponents
 import play.api.mvc.Action
 import play.api.mvc.AnyContent
-import uk.gov.hmrc.ramltools.loaders.RamlLoader
-import uk.gov.hmrc.apidefinition.config.AppConfig
 import play.api.libs.json.Json
-import uk.gov.hmrc.apidefinition.raml.ApiSpecificationRamlParser
+import uk.gov.hmrc.apidefinition.services.SpecificationService
+import uk.gov.hmrc.apidefinition.config.AppConfig
 
-// TODO: ebridge - Add tests
 @Singleton
-class SpecificationController @Inject()(config: AppConfig, ramlLoader: RamlLoader, cc: ControllerComponents)
+class SpecificationController @Inject()(specificationService: SpecificationService, config: AppConfig, cc: ControllerComponents)
                                        (implicit val ec: ExecutionContext)
                                         extends BackendController(cc) {
 
-  import uk.gov.hmrc.apidefinition.models.apispecification.ApiSpecificationFormatters._
+  
 
   def fetchSpecification(serviceName: String, version: String): Action[AnyContent] = Action.async {
     _ => {
-
-      val serviceBaseUrl = config.serviceBaseUrl
-
-      val rootRamlUrl = serviceBaseUrl + routes.DocumentationController.fetchApiDocumentationResource(serviceName,version, "application.raml").url
-      Future.fromTry(ramlLoader.load(rootRamlUrl))
-        .map(raml => {
-          // val schemas = schemaService.loadSchemas(serviceBaseUrl, raml)
-          Ok(Json.prettyPrint(Json.toJson(ApiSpecificationRamlParser.toApiSpecification(raml))))
-        })
+      specificationService.fetchSpecification(serviceName, version)
+        .map(json => Ok(Json.prettyPrint(json)))
     }
   }
 }

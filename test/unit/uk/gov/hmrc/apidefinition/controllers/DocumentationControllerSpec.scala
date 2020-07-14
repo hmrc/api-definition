@@ -44,7 +44,6 @@ class DocumentationControllerSpec extends UnitSpec with ScalaFutures with Mockit
     implicit val mat: Materializer = fakeApplication.materializer
     val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
     val documentationService: DocumentationService = mock[DocumentationService]
-    val specificationController: SpecificationController = mock[SpecificationController]
     val hc: HeaderCarrier = HeaderCarrier()
     val serviceName: String = "api-example-microservice"
     val version: String = "1.0"
@@ -54,9 +53,7 @@ class DocumentationControllerSpec extends UnitSpec with ScalaFutures with Mockit
     // scalastyle:on magic.number
     val contentType: String = "application/text"
 
-    
-
-    val underTest = new DocumentationController(documentationService, specificationController, stubControllerComponents())
+    val underTest = new DocumentationController(documentationService, stubControllerComponents())
 
     def theDocumentationServiceWillReturnTheResource: OngoingStubbing[Future[Result]] = {
       when(documentationService.fetchApiDocumentationResource(anyString, anyString, anyString)(any[HeaderCarrier]))

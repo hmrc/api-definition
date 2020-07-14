@@ -64,7 +64,7 @@ class ApiSpecificationRamlParserSpec extends UnitSpec {
       response.description shouldBe Some("When it works")
       response.body.size shouldBe 1
       response.body(0).name shouldBe "application/json"
-      response.body(0).example.get.value shouldBe Some("""{ "message": "good" }"""+"\n")    // TODO: ebridge - why the newline ?
+      response.body(0).example.get.value shouldBe Some("""{ "message": "good" }"""+"\n")
     }
 
     "With multiple endpoints maintain RAML ordering" in {
