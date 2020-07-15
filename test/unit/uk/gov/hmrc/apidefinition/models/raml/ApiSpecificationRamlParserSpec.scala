@@ -158,7 +158,9 @@ class ApiSpecificationRamlParserSpec extends UnitSpec {
         val body = apiSpec.resourceGroups(0).resources(0).methods(0).body(0)
 
         val json: JsValue = Json.parse(body.`type`)
-        val jsonSchema = json.validate[JsonSchema].asOpt.get
+        println("*****body" + body.`type`)
+        val jsonSchema = Json.parse(body.`type`).as[JsonSchema]
+        // val jsonSchema = json.validate[JsonSchema].asOpt.get
 
         jsonSchema.description shouldBe Some("Schema details")
       }
@@ -175,6 +177,25 @@ class ApiSpecificationRamlParserSpec extends UnitSpec {
         val jsonSchema = json.validate[JsonSchema].asOpt.get
 
         jsonSchema.description shouldBe Some("External schema details")
+      }
+
+      "Load basic !include json schema with reference" in {
+        val raml = loadRaml("V2/with-json-schema-with-references.raml")
+
+        val apiSpec = ApiSpecificationRamlParser.toApiSpecification(raml)
+        apiSpec.resourceGroups.size shouldBe 1
+
+        val body = apiSpec.resourceGroups(0).resources(0).methods(0).body(0)
+
+        val json: JsValue = Json.parse(body.`type`)
+        val jsonSchema = json.validate[JsonSchema].asOpt.get
+
+        jsonSchema.description shouldBe Some("reference schema details")
+
+        val properties = jsonSchema.properties("my-id")
+        
+        properties.description shouldBe Some("my-description")
+        properties.example shouldBe Some("my-example")
       }
     }
   }

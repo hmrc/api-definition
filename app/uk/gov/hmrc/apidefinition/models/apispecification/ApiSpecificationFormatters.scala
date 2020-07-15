@@ -32,5 +32,5 @@ object ApiSpecificationFormatters {
   implicit val documentationItemJF = Json.format[DocumentationItem]
   implicit val hmrcResourceGroupJF = Json.format[ResourceGroup]
 
-  implicit val apiSpecificationJF = Json.format[ApiSpecification]
+  implicit val apiSpecificationJF = Json.format[ApiSpecification]  
 }

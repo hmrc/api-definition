@@ -98,6 +98,29 @@ object JsonSchema {
     }
   }
 
+  // implicit def listMapWrites[V](implicit formatV: Writes[V]): Writes[ListMap[String, V]] = new Writes[ListMap[String, V]] {
+  //   def writes(o: ListMap[String, V]): JsValue = {
+  //     JsNull
+  //   }
+  //   // def temp(json: JsValue) = json match {
+  //   //   case JsObject(m) =>
+  //   //     type Errors = Seq[(JsPath, Seq[JsonValidationError])]
+
+  //   //     def locate(e: Errors, key: String) = e.map { case (path, validationError) => (JsPath \ key) ++ path -> validationError }
+
+  //   //     m.foldLeft(Right(ListMap.empty): Either[Errors, ListMap[String, V]]) {
+  //   //       case (acc, (key, value)) => (acc, fromJson[V](value)(formatV)) match {
+  //   //         case (Right(vs), JsSuccess(v, _)) => Right(vs + (key -> v))
+  //   //         case (Right(_), JsError(e)) => Left(locate(e, key))
+  //   //         case (Left(e), _: JsSuccess[_]) => Left(e)
+  //   //         case (Left(e1), JsError(e2)) => Left(e1 ++ locate(e2, key))
+  //   //       }
+  //   //     }.fold(JsError.apply, res => JsSuccess(res))
+
+  //   //   case _ => JsError(Seq(JsPath() -> Seq(JsonValidationError("error.expected.jsobject"))))
+  //   // }
+  // }
+
   implicit lazy val reads: Reads[JsonSchema] = (
     ( __ \ "description" ).readNullable[String] and
       ( __ \ "id" ).readNullable[String] and
@@ -114,4 +137,23 @@ object JsonSchema {
       ( __ \ "oneOf" ).lazyReadNullable[Seq[JsonSchema]](Reads.seq[JsonSchema]).map(_.toSeq.flatten) and
       ( __ \ "pattern" ).readNullable[String]
     )(JsonSchema.apply _)
+
+    // implicit val jsonSchemaFormatter = Json.format[JsonSchema]
+
+    // implicit lazy val writes: Writes[JsonSchema] = (
+    // ( __ \ "description" ).writeNullable[String] and
+    //   ( __ \ "id" ).writeNullable[String] and
+    //   ( __ \ "type" ).writeNullable[String] and
+    //   ( __ \ "example" ).writeNullable[String] and
+    //   ( __ \ "title" ).writeNullable[String] and
+    //   ( __ \ "properties" ).lazyWriteNullable[ListMap[String,JsonSchema]](listMapWrites[JsonSchema]) and
+    //   ( __ \ "patternProperties" ).lazyWriteNullable[ListMap[String,JsonSchema]](listMapWrites[JsonSchema]) and
+    //   ( __ \ "items" ).lazyWriteNullable[JsonSchema](JsonSchema.writes) and
+    //   ( __ \ "required" ).writeNullable[Seq[String]] and
+    //   ( __ \ "definitions" ).lazyWriteNullable[ListMap[String,JsonSchema]](listMapWrites[JsonSchema]) and
+    //   ( __ \ """$ref""" ).writeNullable[String] and
+    //   ( __ \ "enum" ).writeNullable[Seq[EnumerationValue]] and
+    //   ( __ \ "oneOf" ).lazyWriteNullable[Seq[JsonSchema]](Writes.seq[JsonSchema]) and
+    //   ( __ \ "pattern" ).writeNullable[String]
+    // )(JsonSchema.unapply _)
 }

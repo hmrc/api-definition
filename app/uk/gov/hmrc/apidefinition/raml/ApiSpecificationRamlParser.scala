@@ -25,6 +25,9 @@ import org.raml.v2.api.model.v10.datamodel.{StringTypeDeclaration => RamlStringT
 import org.raml.v2.api.model.v10.methods.{Method => RamlMethod}
 
 import uk.gov.hmrc.apidefinition.models.apispecification._
+import play.api.libs.json.Json
+import scala.collection.immutable.ListMap
+import play.api.libs.json.Reads
 
 object ApiSpecificationRamlParser {
   import uk.gov.hmrc.apidefinition.raml.RamlSyntax._
@@ -108,15 +111,38 @@ object ApiSpecificationRamlParser {
     TypeDeclaration(
       td.name,
       SafeValueAsString(td.displayName),
-      td.`type`,
+      toType(td.`type`, td),
       td.required,
       SafeValue(td.description),
       examples,
       enumValues,
       patterns
-    )
+    )    
   }
+  
+  private def toType(`type`: String, td: RamlTypeDeclaration) : String ={
 
+    // implicit val formatterListMap = Json.format[ListMap[String, JsonSchema]]
+    // implicit val formatterJsonSchema = Json.format[JsonSchema]
+
+    implicit val reads = uk.gov.hmrc.apidefinition.models.apispecification.JsonSchema.reads
+
+    if (`type`.trim.startsWith("{")){
+
+      val jsonSchema = Json.parse(`type`).as[JsonSchema]
+      
+      // // println("***** I'm here! - " + `type` + td.defaultValue(), td.description(), td.displayName(), td.example())
+
+      println(jsonSchema)
+
+      // TODO Make compile & work
+      Json.toJson(jsonSchema)
+  
+      `type` // TODO: pass through SchemaService      
+    } else {
+      `type`
+    }
+  }
 
   private def toResourcesAndGroups(ramlResource: RamlResource): ResourcesAndGroups = {
     val childNodes: List[ResourcesAndGroups] = ramlResource.resources().asScala.toList.map(toResourcesAndGroups)
