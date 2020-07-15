@@ -21,6 +21,11 @@ import RamlSpecHelper.loadRaml
 import uk.gov.hmrc.apidefinition.models.apispecification.SecurityScheme
 import uk.gov.hmrc.apidefinition.models.apispecification.DocumentationItem
 import uk.gov.hmrc.apidefinition.raml.ApiSpecificationRamlParser
+import uk.gov.hmrc.apidefinition.models.apispecification.Method
+import uk.gov.hmrc.apidefinition.models.apispecification.TypeDeclaration
+import play.api.libs.json.Json
+import play.api.libs.json.JsValue
+import uk.gov.hmrc.apidefinition.models.apispecification.JsonSchema
 
 class ApiSpecificationRamlParserSpec extends UnitSpec {
   "RAML to apiSpec" should {
@@ -141,6 +146,22 @@ class ApiSpecificationRamlParserSpec extends UnitSpec {
 
       qp2.name shouldBe "anotherParam"
       qp2.enumValues shouldBe List("a","b","c")
+    }
+
+    "schema" when {
+      "Load basic inline RAML json schema" in {
+        val raml = loadRaml("V2/with-inline-json-schema.raml")
+
+        val apiSpec = ApiSpecificationRamlParser.toApiSpecification(raml)
+        apiSpec.resourceGroups.size shouldBe 1
+
+        val body = apiSpec.resourceGroups(0).resources(0).methods(0).body(0)
+
+        val json: JsValue = Json.parse(body.`type`)
+        val jsonSchema = json.validate[JsonSchema].asOpt.get
+
+        jsonSchema.description shouldBe Some("Schema details")
+      }
     }
   }
 }
