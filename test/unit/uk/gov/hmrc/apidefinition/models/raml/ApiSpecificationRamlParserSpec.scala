@@ -149,7 +149,7 @@ class ApiSpecificationRamlParserSpec extends UnitSpec {
     }
 
     "schema" when {
-      "Load basic inline RAML json schema" in {
+      "Load basic inline json schema" in {
         val raml = loadRaml("V2/with-inline-json-schema.raml")
 
         val apiSpec = ApiSpecificationRamlParser.toApiSpecification(raml)
@@ -161,6 +161,20 @@ class ApiSpecificationRamlParserSpec extends UnitSpec {
         val jsonSchema = json.validate[JsonSchema].asOpt.get
 
         jsonSchema.description shouldBe Some("Schema details")
+      }
+
+      "Load basic !include json schema" in {
+        val raml = loadRaml("V2/with-included-json-schema.raml")
+
+        val apiSpec = ApiSpecificationRamlParser.toApiSpecification(raml)
+        apiSpec.resourceGroups.size shouldBe 1
+
+        val body = apiSpec.resourceGroups(0).resources(0).methods(0).body(0)
+
+        val json: JsValue = Json.parse(body.`type`)
+        val jsonSchema = json.validate[JsonSchema].asOpt.get
+
+        jsonSchema.description shouldBe Some("External schema details")
       }
     }
   }
