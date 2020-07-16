@@ -27,11 +27,13 @@ import scala.collection.immutable.ListMap
 import scala.io.Source
 import uk.gov.hmrc.apidefinition.models.apispecification.JsonSchema
 import uk.gov.hmrc.apidefinition.models.apispecification.JsonSchema.JsonSchemaWithReference
+import javax.inject.{Singleton, Inject}
 
 // object SchemaService {
 //   type Schemas = Map[String, JsonSchema]
 // }
 
+@Singleton
 class SchemaService {
   // import SchemaService.Schemas
 

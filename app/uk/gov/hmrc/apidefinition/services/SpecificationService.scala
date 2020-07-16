@@ -27,7 +27,7 @@ import play.api.libs.json.JsValue
 import uk.gov.hmrc.apidefinition.controllers.routes
 
 @Singleton
-class SpecificationService @Inject() (config: AppConfig, ramlLoader: RamlLoader)(implicit ec: ExecutionContext) {
+class SpecificationService @Inject() (config: AppConfig, ramlLoader: RamlLoader, apiSpecificationRamlParser : ApiSpecificationRamlParser)(implicit ec: ExecutionContext) {
   def fetchSpecification(serviceName: String, version: String): Future[JsValue] = {
     
     import uk.gov.hmrc.apidefinition.models.apispecification.ApiSpecificationFormatters._
@@ -35,6 +35,6 @@ class SpecificationService @Inject() (config: AppConfig, ramlLoader: RamlLoader)
     val rootRamlUrl = config.serviceBaseUrl + routes.DocumentationController.fetchApiDocumentationResource(serviceName,version, "application.raml").url
     
     Future.fromTry(ramlLoader.load(rootRamlUrl))
-        .map(raml => Json.toJson(ApiSpecificationRamlParser.toApiSpecification(raml)))
+        .map(raml => Json.toJson(apiSpecificationRamlParser.toApiSpecification(raml)))
   }
 }

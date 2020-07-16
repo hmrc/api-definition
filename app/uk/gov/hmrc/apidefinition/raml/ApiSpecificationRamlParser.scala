@@ -23,17 +23,16 @@ import org.raml.v2.api.model.v10.datamodel.{ExampleSpec => RamlExampleSpec}
 import org.raml.v2.api.model.v10.datamodel.{TypeDeclaration => RamlTypeDeclaration}
 import org.raml.v2.api.model.v10.datamodel.{StringTypeDeclaration => RamlStringTypeDeclaration}
 import org.raml.v2.api.model.v10.methods.{Method => RamlMethod}
-
-import uk.gov.hmrc.apidefinition.models.apispecification._
 import play.api.libs.json.Json
+import javax.inject.{Singleton, Inject}
+
+import uk.gov.hmrc.apidefinition.raml.RamlSyntax._
+import uk.gov.hmrc.apidefinition.models.apispecification._
 import uk.gov.hmrc.apidocumentation.services.SchemaService
 
-object ApiSpecificationRamlParser {
-  import uk.gov.hmrc.apidefinition.raml.RamlSyntax._
-
-  val schemaService = new SchemaService()
-
-  def toApiSpecification(raml: RAML.RAML) : ApiSpecification = {
+@Singleton
+class ApiSpecificationRamlParser @Inject()(schemaService : SchemaService){
+def toApiSpecification(raml: RAML.RAML) : ApiSpecification = {
 
     def title: String = SafeValueAsString(raml.title)
 
@@ -46,7 +45,7 @@ object ApiSpecificationRamlParser {
         SafeValueAsString(item.title), SafeValueAsString(item.content)
       ))
 
-    def output: List[ResourcesAndGroups] = raml.resources.asScala.toList.map(ApiSpecificationRamlParser.toResourcesAndGroups)
+    def output: List[ResourcesAndGroups] = raml.resources.asScala.toList.map(toResourcesAndGroups)
 
     lazy val resources = output.map(_.resource)
 
@@ -54,7 +53,8 @@ object ApiSpecificationRamlParser {
 
     def resourceGroups: List[ResourceGroup] = ResourceGroup.generateFrom(resources, groupMap)
 
-    def types: List[TypeDeclaration] = (raml.types.asScala.toList ++ raml.uses.asScala.flatMap(_.types.asScala)).map(ApiSpecificationRamlParser.toTypeDeclaration)
+    def types: List[TypeDeclaration] = (raml.types.asScala.toList ++ raml.uses.asScala.flatMap(_.types.asScala))
+      .map(toTypeDeclaration)
 
     def isFieldOptionalityKnown: Boolean = !raml.hasAnnotation("(fieldOptionalityUnknown)")
 
@@ -95,9 +95,9 @@ object ApiSpecificationRamlParser {
   private def toTypeDeclaration(td: RamlTypeDeclaration): TypeDeclaration = {
     val examples =
       if(td.example != null)
-        List(ApiSpecificationRamlParser.toExampleSpec(td.example))
+        List(toExampleSpec(td.example))
       else
-        td.examples.asScala.toList.map(ApiSpecificationRamlParser.toExampleSpec)
+        td.examples.asScala.toList.map(toExampleSpec)
 
     val enumValues = td match {
       case t: RamlStringTypeDeclaration => t.enumValues().asScala.toList
@@ -159,7 +159,7 @@ object ApiSpecificationRamlParser {
       resourcePath = ramlResource.resourcePath,
       methods = methodsForResource(ramlResource),
       relativeUri = ramlResource.relativeUri.value,
-      uriParameters = ramlResource.uriParameters.asScala.toList.map(ApiSpecificationRamlParser.toTypeDeclaration),
+      uriParameters = ramlResource.uriParameters.asScala.toList.map(toTypeDeclaration),
       displayName = ramlResource.displayName.value,
       children = children
     )
@@ -179,13 +179,13 @@ object ApiSpecificationRamlParser {
         r <- correctOrder.get(right.method)
       } yield l < r).getOrElse(false)
     }
-    .map(ApiSpecificationRamlParser.toMethod)
+    .map(toMethod)
   }
 
   private def toMethod(ramlMethod: RamlMethod): Method = {
-    val queryParameters = ramlMethod.queryParameters.asScala.toList.map(ApiSpecificationRamlParser.toTypeDeclaration)
-    val headers = ramlMethod.headers.asScala.toList.map(ApiSpecificationRamlParser.toTypeDeclaration)
-    val body = ramlMethod.body.asScala.toList.map(ApiSpecificationRamlParser.toTypeDeclaration)
+    val queryParameters = ramlMethod.queryParameters.asScala.toList.map(toTypeDeclaration)
+    val headers = ramlMethod.headers.asScala.toList.map(toTypeDeclaration)
+    val body = ramlMethod.body.asScala.toList.map(toTypeDeclaration)
 
     def fetchAuthorisation: Option[SecurityScheme] = {
       if (ramlMethod.securedBy().asScala.nonEmpty) {
@@ -202,8 +202,8 @@ object ApiSpecificationRamlParser {
       ramlMethod.responses().asScala.toList.map( r => {
         Response(
           code = SafeValueAsString(r.code()),
-          body = r.body.asScala.toList.map(ApiSpecificationRamlParser.toTypeDeclaration),
-          headers = r.headers().asScala.toList.map(ApiSpecificationRamlParser.toTypeDeclaration),
+          body = r.body.asScala.toList.map(toTypeDeclaration),
+          headers = r.headers().asScala.toList.map(toTypeDeclaration),
           description = SafeValue(r.description())
         )
       })
