@@ -193,6 +193,9 @@ class ApiSpecificationRamlParserSpec extends UnitSpec {
         properties.description shouldBe Some("my-description")
         properties.example shouldBe Some("my-example")
       }
+
+      // TODO: Test schema parsed is same as file content
+      // https://github.com/hmrc/api-documentation-frontend/pull/122/files
     }
   }
 }

@@ -26,9 +26,12 @@ import org.raml.v2.api.model.v10.methods.{Method => RamlMethod}
 
 import uk.gov.hmrc.apidefinition.models.apispecification._
 import play.api.libs.json.Json
+import uk.gov.hmrc.apidocumentation.services.SchemaService
 
 object ApiSpecificationRamlParser {
   import uk.gov.hmrc.apidefinition.raml.RamlSyntax._
+
+  val schemaService = new SchemaService()
 
   def toApiSpecification(raml: RAML.RAML) : ApiSpecification = {
 
@@ -123,20 +126,19 @@ object ApiSpecificationRamlParser {
     def isSchema(text: String) : Boolean = text.trim.startsWith("{")
 
     if(isSchema(`type`)){
-      implicit val reads = uk.gov.hmrc.apidefinition.models.apispecification.JsonSchema.reads
+      // implicit val reads = uk.gov.hmrc.apidefinition.models.apispecification.JsonSchema.reads
       implicit val writes = Json.writes[JsonSchema]
 
-      val jsonSchema : JsonSchema= Json.parse(`type`).as[JsonSchema]
-      val inlinedJsonSchema : JsonSchema = inlineJsonSchemaReferences(jsonSchema)
-      
+      // TODO - get a base path from somewhere?
+      // val basePath = "/Users/adampridmore/work/dev/api-definition/" 
+      val basePath = "test/resources/raml/V2" 
+
+      val inlinedJsonSchema : JsonSchema = schemaService.parseSchema(`type`, basePath)
+
       Json.stringify(Json.toJson(inlinedJsonSchema))
     } else {
       `type`
     }
-  }
-
-  def inlineJsonSchemaReferences(jsonSchema: JsonSchema) : JsonSchema = {
-    jsonSchema
   }
 
   private def toResourcesAndGroups(ramlResource: RamlResource): ResourcesAndGroups = {
