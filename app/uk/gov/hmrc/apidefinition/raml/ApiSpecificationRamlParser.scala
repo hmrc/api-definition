@@ -26,8 +26,6 @@ import org.raml.v2.api.model.v10.methods.{Method => RamlMethod}
 
 import uk.gov.hmrc.apidefinition.models.apispecification._
 import play.api.libs.json.Json
-import scala.collection.immutable.ListMap
-import play.api.libs.json.Reads
 
 object ApiSpecificationRamlParser {
   import uk.gov.hmrc.apidefinition.raml.RamlSyntax._
@@ -120,28 +118,25 @@ object ApiSpecificationRamlParser {
     )    
   }
   
-  private def toType(`type`: String, td: RamlTypeDeclaration) : String ={
+  private def toType(`type`: String, td: RamlTypeDeclaration) : String = {
 
-    // implicit val formatterListMap = Json.format[ListMap[String, JsonSchema]]
-    // implicit val formatterJsonSchema = Json.format[JsonSchema]
+    def isSchema(text: String) : Boolean = text.trim.startsWith("{")
 
-    implicit val reads = uk.gov.hmrc.apidefinition.models.apispecification.JsonSchema.reads
+    if(isSchema(`type`)){
+      implicit val reads = uk.gov.hmrc.apidefinition.models.apispecification.JsonSchema.reads
+      implicit val writes = Json.writes[JsonSchema]
 
-    if (`type`.trim.startsWith("{")){
-
-      val jsonSchema = Json.parse(`type`).as[JsonSchema]
+      val jsonSchema : JsonSchema= Json.parse(`type`).as[JsonSchema]
+      val inlinedJsonSchema : JsonSchema = inlineJsonSchemaReferences(jsonSchema)
       
-      // // println("***** I'm here! - " + `type` + td.defaultValue(), td.description(), td.displayName(), td.example())
-
-      println(jsonSchema)
-
-      // TODO Make compile & work
-      Json.toJson(jsonSchema)
-  
-      `type` // TODO: pass through SchemaService      
+      Json.stringify(Json.toJson(inlinedJsonSchema))
     } else {
       `type`
     }
+  }
+
+  def inlineJsonSchemaReferences(jsonSchema: JsonSchema) : JsonSchema = {
+    jsonSchema
   }
 
   private def toResourcesAndGroups(ramlResource: RamlResource): ResourcesAndGroups = {
