@@ -26,10 +26,12 @@ class GroupedResourcesSpec extends UnitSpec {
   val schemaService = new SchemaService()
   val apiSpecificationRamlParser = new ApiSpecificationRamlParser(schemaService)
 
+  val basePath = "test/resources/raml/V2"
+
   "Load grouped resources" in {
     val raml = loadRaml("V2/grouped-methods-1.raml")
 
-    val apiSpec = apiSpecificationRamlParser.toApiSpecification(raml)
+    val apiSpec = apiSpecificationRamlParser.toApiSpecification(basePath, raml)
     apiSpec.resourceGroups.size shouldBe 3
 
     val groups = Table(
@@ -51,7 +53,7 @@ class GroupedResourcesSpec extends UnitSpec {
   "Load grouped resources with nested group annotations" in {
     val raml = loadRaml("V2/grouped-methods-2.raml")
 
-    val apiSpec = apiSpecificationRamlParser.toApiSpecification(raml)
+    val apiSpec = apiSpecificationRamlParser.toApiSpecification(basePath, raml)
     apiSpec.resourceGroups.size shouldBe 2
 
     val groups = Table(

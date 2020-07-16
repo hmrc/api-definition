@@ -25,17 +25,24 @@ import play.api.libs.json.Json
 import play.api.libs.json.JsValue
 import uk.gov.hmrc.apidefinition.models.apispecification.JsonSchema
 import uk.gov.hmrc.apidocumentation.services.SchemaService
+import scala.io.Source
 
 class ApiSpecificationRamlParserSpec extends UnitSpec {
+  object TestSchemaService extends SchemaService {
+    override def fetchPlainTextSchema(uri: String): String = {
+      Source.fromFile(uri).mkString
+    }
+  }
+  
+  val basePath = "test/resources/raml/V2"
 
-  val schemaService = new SchemaService()
-  val apiSpecificationRamlParser = new ApiSpecificationRamlParser(schemaService)
+  val apiSpecificationRamlParser = new ApiSpecificationRamlParser(TestSchemaService)
 
   "RAML to apiSpec" should {
     "Simple.raml should parse title and version to our model" in {
       val raml = loadRaml("V2/simple.raml")
 
-      val apiSpec = apiSpecificationRamlParser.toApiSpecification(raml)
+      val apiSpec = apiSpecificationRamlParser.toApiSpecification(basePath, raml)
       apiSpec.title shouldBe "My simple title"
       apiSpec.version shouldBe "My version"
 
@@ -47,7 +54,7 @@ class ApiSpecificationRamlParserSpec extends UnitSpec {
     "With single method" in {
       val raml = loadRaml("V2/single-method.raml")
 
-      val apiSpec = apiSpecificationRamlParser.toApiSpecification(raml)
+      val apiSpec = apiSpecificationRamlParser.toApiSpecification(basePath, raml)
       apiSpec.resourceGroups.size shouldBe 1
 
       val rg = apiSpec.resourceGroups(0)
@@ -78,7 +85,7 @@ class ApiSpecificationRamlParserSpec extends UnitSpec {
     "With multiple endpoints maintain RAML ordering" in {
       val raml = loadRaml("V2/multiple-endpoints.raml")
 
-      val apiSpec = apiSpecificationRamlParser.toApiSpecification(raml)
+      val apiSpec = apiSpecificationRamlParser.toApiSpecification(basePath, raml)
       apiSpec.resourceGroups.size shouldBe 1
 
       val rg = apiSpec.resourceGroups(0)
@@ -91,7 +98,7 @@ class ApiSpecificationRamlParserSpec extends UnitSpec {
     "With multiple methods maintain RAML ordering" in {
       val raml = loadRaml("V2/multiple-methods.raml")
 
-      val apiSpec = apiSpecificationRamlParser.toApiSpecification(raml)
+      val apiSpec = apiSpecificationRamlParser.toApiSpecification(basePath, raml)
 
       val rg = apiSpec.resourceGroups(0)
 
@@ -116,7 +123,7 @@ class ApiSpecificationRamlParserSpec extends UnitSpec {
     "With security schemes in RAML" in {
       val raml = loadRaml("V2/multiple-security-options.raml")
 
-      val apiSpec = apiSpecificationRamlParser.toApiSpecification(raml)
+      val apiSpec = apiSpecificationRamlParser.toApiSpecification(basePath, raml)
 
       val rg = apiSpec.resourceGroups(0)
 
@@ -134,7 +141,7 @@ class ApiSpecificationRamlParserSpec extends UnitSpec {
     "With global type with enums" in {
       val raml = loadRaml("V2/typed-enums.raml")
 
-      val apiSpec = apiSpecificationRamlParser.toApiSpecification(raml)
+      val apiSpec = apiSpecificationRamlParser.toApiSpecification(basePath, raml)
       apiSpec.resourceGroups.size shouldBe 1
 
       val rg = apiSpec.resourceGroups(0)
@@ -155,7 +162,7 @@ class ApiSpecificationRamlParserSpec extends UnitSpec {
       "Load basic inline json schema" in {
         val raml = loadRaml("V2/with-inline-json-schema.raml")
 
-        val apiSpec = apiSpecificationRamlParser.toApiSpecification(raml)
+        val apiSpec = apiSpecificationRamlParser.toApiSpecification(basePath, raml)
         apiSpec.resourceGroups.size shouldBe 1
 
         val body = apiSpec.resourceGroups(0).resources(0).methods(0).body(0)
@@ -168,7 +175,7 @@ class ApiSpecificationRamlParserSpec extends UnitSpec {
       "Load basic !include json schema" in {
         val raml = loadRaml("V2/with-included-json-schema.raml")
 
-        val apiSpec = apiSpecificationRamlParser.toApiSpecification(raml)
+        val apiSpec = apiSpecificationRamlParser.toApiSpecification(basePath, raml)
         apiSpec.resourceGroups.size shouldBe 1
 
         val body = apiSpec.resourceGroups(0).resources(0).methods(0).body(0)
@@ -180,10 +187,10 @@ class ApiSpecificationRamlParserSpec extends UnitSpec {
       }
 
       // TODO: WIP
-      "Load basic !include json schema with reference" ignore {
+      "Load basic !include json schema with reference" in {
         val raml = loadRaml("V2/with-json-schema-with-references.raml")
 
-        val apiSpec = apiSpecificationRamlParser.toApiSpecification(raml)
+        val apiSpec = apiSpecificationRamlParser.toApiSpecification(basePath, raml)
         apiSpec.resourceGroups.size shouldBe 1
 
         val body = apiSpec.resourceGroups(0).resources(0).methods(0).body(0)

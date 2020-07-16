@@ -28,6 +28,7 @@ import scala.io.Source
 import uk.gov.hmrc.apidefinition.models.apispecification.JsonSchema
 import uk.gov.hmrc.apidefinition.models.apispecification.JsonSchema.JsonSchemaWithReference
 import javax.inject.{Singleton, Inject}
+import play.api.libs.json.Reads
 
 // object SchemaService {
 //   type Schemas = Map[String, JsonSchema]
@@ -74,9 +75,15 @@ class SchemaService {
   // }
 
   def parseSchema(schema: String, basePath: String): JsonSchema = {
+
     val jsonSchema = Json.parse(schema).as[JsonSchema]
     jsonSchema match {
-      case JsonSchemaWithReference() => resolveRefs(jsonSchema, basePath, jsonSchema)
+      case JsonSchemaWithReference() => {
+        val newJsonSchema = resolveRefs(jsonSchema, basePath, jsonSchema)
+        println("****b v2 JsonSchema " + newJsonSchema)
+        newJsonSchema
+      }
+
       case s                         => s
     }
   }

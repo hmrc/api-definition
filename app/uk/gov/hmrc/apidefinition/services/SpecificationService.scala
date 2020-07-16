@@ -31,10 +31,12 @@ class SpecificationService @Inject() (config: AppConfig, ramlLoader: RamlLoader,
   def fetchSpecification(serviceName: String, version: String): Future[JsValue] = {
     
     import uk.gov.hmrc.apidefinition.models.apispecification.ApiSpecificationFormatters._
-
-    val rootRamlUrl = config.serviceBaseUrl + routes.DocumentationController.fetchApiDocumentationResource(serviceName,version, "application.raml").url
     
+    // TODO ebridge: Don't like the way we construct these two URLs
+    val rootRamlUrl = config.serviceBaseUrl + routes.DocumentationController.fetchApiDocumentationResource(serviceName,version, "application.raml").url
+    val basePath =  s"${rootRamlUrl.take(rootRamlUrl.lastIndexOf('/'))}/schemas"
+
     Future.fromTry(ramlLoader.load(rootRamlUrl))
-        .map(raml => Json.toJson(apiSpecificationRamlParser.toApiSpecification(raml)))
+        .map(raml => Json.toJson(apiSpecificationRamlParser.toApiSpecification(basePath, raml)))
   }
 }

@@ -32,7 +32,7 @@ import uk.gov.hmrc.apidocumentation.services.SchemaService
 
 @Singleton
 class ApiSpecificationRamlParser @Inject()(schemaService : SchemaService){
-def toApiSpecification(raml: RAML.RAML) : ApiSpecification = {
+def toApiSpecification(basePath: String, raml: RAML.RAML) : ApiSpecification = {
 
     def title: String = SafeValueAsString(raml.title)
 
@@ -45,7 +45,7 @@ def toApiSpecification(raml: RAML.RAML) : ApiSpecification = {
         SafeValueAsString(item.title), SafeValueAsString(item.content)
       ))
 
-    def output: List[ResourcesAndGroups] = raml.resources.asScala.toList.map(toResourcesAndGroups)
+    def output: List[ResourcesAndGroups] = raml.resources.asScala.toList.map(toResourcesAndGroups(basePath))
 
     lazy val resources = output.map(_.resource)
 
@@ -54,7 +54,7 @@ def toApiSpecification(raml: RAML.RAML) : ApiSpecification = {
     def resourceGroups: List[ResourceGroup] = ResourceGroup.generateFrom(resources, groupMap)
 
     def types: List[TypeDeclaration] = (raml.types.asScala.toList ++ raml.uses.asScala.flatMap(_.types.asScala))
-      .map(toTypeDeclaration)
+      .map(toTypeDeclaration(basePath))
 
     def isFieldOptionalityKnown: Boolean = !raml.hasAnnotation("(fieldOptionalityUnknown)")
 
@@ -92,7 +92,7 @@ def toApiSpecification(raml: RAML.RAML) : ApiSpecification = {
     ExampleSpec(description, documentation, code, value)
   }
 
-  private def toTypeDeclaration(td: RamlTypeDeclaration): TypeDeclaration = {
+  private def toTypeDeclaration(basePath: String)(td: RamlTypeDeclaration): TypeDeclaration = {
     val examples =
       if(td.example != null)
         List(toExampleSpec(td.example))
@@ -112,7 +112,7 @@ def toApiSpecification(raml: RAML.RAML) : ApiSpecification = {
     TypeDeclaration(
       td.name,
       SafeValueAsString(td.displayName),
-      toType(td.`type`, td),
+      toType(td.`type`, basePath),
       td.required,
       SafeValue(td.description),
       examples,
@@ -121,18 +121,12 @@ def toApiSpecification(raml: RAML.RAML) : ApiSpecification = {
     )    
   }
   
-  private def toType(`type`: String, td: RamlTypeDeclaration) : String = {
+  private def toType(`type`: String, basePath: String) : String = {
 
     def isSchema(text: String) : Boolean = text.trim.startsWith("{")
 
     if(isSchema(`type`)){
-      // implicit val reads = uk.gov.hmrc.apidefinition.models.apispecification.JsonSchema.reads
-      implicit val writes = Json.writes[JsonSchema]
-
-      // TODO - get a base path from somewhere?
-      // val basePath = "/Users/adampridmore/work/dev/api-definition/" 
-      val basePath = "test/resources/raml/V2" 
-
+      implicit val writes = Json.writes[JsonSchema]  
       val inlinedJsonSchema : JsonSchema = schemaService.parseSchema(`type`, basePath)
 
       Json.stringify(Json.toJson(inlinedJsonSchema))
@@ -141,8 +135,8 @@ def toApiSpecification(raml: RAML.RAML) : ApiSpecification = {
     }
   }
 
-  private def toResourcesAndGroups(ramlResource: RamlResource): ResourcesAndGroups = {
-    val childNodes: List[ResourcesAndGroups] = ramlResource.resources().asScala.toList.map(toResourcesAndGroups)
+  private def toResourcesAndGroups(basePath: String)(ramlResource: RamlResource): ResourcesAndGroups = {
+    val childNodes: List[ResourcesAndGroups] = ramlResource.resources().asScala.toList.map(toResourcesAndGroups(basePath))
 
     val children = childNodes.map(_.resource)
 
@@ -157,9 +151,9 @@ def toApiSpecification(raml: RAML.RAML) : ApiSpecification = {
 
     val resource = Resource(
       resourcePath = ramlResource.resourcePath,
-      methods = methodsForResource(ramlResource),
+      methods = methodsForResource(basePath)(ramlResource),
       relativeUri = ramlResource.relativeUri.value,
-      uriParameters = ramlResource.uriParameters.asScala.toList.map(toTypeDeclaration),
+      uriParameters = ramlResource.uriParameters.asScala.toList.map(toTypeDeclaration(basePath)),
       displayName = ramlResource.displayName.value,
       children = children
     )
@@ -170,7 +164,7 @@ def toApiSpecification(raml: RAML.RAML) : ApiSpecification = {
     ResourcesAndGroups(resource, ResourcesAndGroups.flatten(thisMap, childMaps))
   }
 
-  private def methodsForResource(resource: RamlResource): List[Method] = {
+  private def methodsForResource(basePath: String)(resource: RamlResource): List[Method] = {
     val correctOrder = Map("get" -> 0, "post" -> 1, "put" -> 2, "delete" -> 3, "head" -> 4, "patch" -> 5, "options" -> 6)
 
     resource.methods.asScala.toList.sortWith { (left, right) =>
@@ -179,13 +173,13 @@ def toApiSpecification(raml: RAML.RAML) : ApiSpecification = {
         r <- correctOrder.get(right.method)
       } yield l < r).getOrElse(false)
     }
-    .map(toMethod)
+    .map(toMethod(basePath))
   }
 
-  private def toMethod(ramlMethod: RamlMethod): Method = {
-    val queryParameters = ramlMethod.queryParameters.asScala.toList.map(toTypeDeclaration)
-    val headers = ramlMethod.headers.asScala.toList.map(toTypeDeclaration)
-    val body = ramlMethod.body.asScala.toList.map(toTypeDeclaration)
+  private def toMethod(basePath: String)(ramlMethod: RamlMethod): Method = {
+    val queryParameters = ramlMethod.queryParameters.asScala.toList.map(toTypeDeclaration(basePath))
+    val headers = ramlMethod.headers.asScala.toList.map(toTypeDeclaration(basePath))
+    val body = ramlMethod.body.asScala.toList.map(toTypeDeclaration(basePath))
 
     def fetchAuthorisation: Option[SecurityScheme] = {
       if (ramlMethod.securedBy().asScala.nonEmpty) {
@@ -202,8 +196,8 @@ def toApiSpecification(raml: RAML.RAML) : ApiSpecification = {
       ramlMethod.responses().asScala.toList.map( r => {
         Response(
           code = SafeValueAsString(r.code()),
-          body = r.body.asScala.toList.map(toTypeDeclaration),
-          headers = r.headers().asScala.toList.map(toTypeDeclaration),
+          body = r.body.asScala.toList.map(toTypeDeclaration(basePath)),
+          headers = r.headers().asScala.toList.map(toTypeDeclaration(basePath)),
           description = SafeValue(r.description())
         )
       })
