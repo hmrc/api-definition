@@ -14,44 +14,26 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.apidocumentation.services
+package uk.gov.hmrc.apidefinition.services
 
 import java.net.URI
 
-// import org.raml.v2.api.model.v10.methods.Method
 import play.api.libs.json.Json
-//import uk.gov.hmrc.ramltools.Implicits._
 
-// import scala.collection.JavaConverters._
 import scala.collection.immutable.ListMap
 import scala.io.Source
 import uk.gov.hmrc.apidefinition.models.apispecification.JsonSchema
 import uk.gov.hmrc.apidefinition.models.apispecification.JsonSchema.JsonSchemaWithReference
-import javax.inject.{Singleton, Inject}
-import play.api.libs.json.Reads
-
-// object SchemaService {
-//   type Schemas = Map[String, JsonSchema]
-// }
+import javax.inject.Singleton
 
 @Singleton
 class SchemaService {
-  // import SchemaService.Schemas
-
-  // def loadSchemas(basePath: String, raml: RAML): Schemas = {
-  //   val schemas = for {
-  //     resource  <- raml.flattenedResources
-  //     method    <- resource.methods.asScala
-  //     schema    <- payloadSchemas(method)
-  //   } yield {
-  //     schema -> parseSchema(schema, basePath)
-  //   }
-
-  //   schemas.toMap
-  // }
 
   protected def fetchPlainTextSchema(uri: String): String = {
-    Source.fromURL(uri).mkString // TODO ebridge: Shouldn't this use a future? Blocking! :o
+    val source = Source.fromURL(uri)
+    val text = source.mkString // TODO ebridge: Shouldn't this use a future? Blocking! :o
+    source.close()
+    text
   }
 
   private def fetchSchema(basePath: String, schemaPath: String): JsonSchema = {
@@ -67,25 +49,26 @@ class SchemaService {
     parseSchema(fetchPlainTextSchema(schemaLocation), newBasePath)
   }
 
-  // private def payloadSchemas(method: Method): Seq[String] = {
-  //   val requestTypes = method.body.asScala.map(_.`type`)
-  //   val responseTypes = method.responses.asScala.flatMap(_.body.asScala).map(_.`type`)
-
-  //   (requestTypes ++ responseTypes).filter(_.trim.startsWith("{"))
-  // }
-
   def parseSchema(schema: String, basePath: String): JsonSchema = {
 
     val jsonSchema = Json.parse(schema).as[JsonSchema]
     jsonSchema match {
       case JsonSchemaWithReference() => {
-        val newJsonSchema = resolveRefs(jsonSchema, basePath, jsonSchema)
-        println("****b v2 JsonSchema " + newJsonSchema)
-        newJsonSchema
+        resolveRefs(jsonSchema, basePath, jsonSchema)
       }
 
-      case s                         => s
+      case s => s
     }
+  }
+
+  def toJsonString(jsonSchema: JsonSchema): String = {
+    // TODO: This should live with the other formatters
+    implicit val writes = Json.writes[JsonSchema]
+
+    val x = Json.toJson(jsonSchema)
+    // TODO: Use
+    //  Json.stringify()
+    Json.prettyPrint(x)
   }
 
   private def resolveRefs(schema: JsonSchema, basePath: String, enclosingSchema: JsonSchema): JsonSchema = {

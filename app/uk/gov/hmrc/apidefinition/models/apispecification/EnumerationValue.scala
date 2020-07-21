@@ -21,9 +21,8 @@ import play.api.libs.json._
 case class EnumerationValue(value: String)
 
 object EnumerationValue {
-
   implicit val format: Format[EnumerationValue] = new Format[EnumerationValue] {
-    override def writes(o: EnumerationValue): JsValue = Json.writes[EnumerationValue].writes(o)
+    override def writes(o: EnumerationValue): JsValue = JsString(o.value)
 
     override def reads(json: JsValue): JsResult[EnumerationValue] = json match {
       case JsNumber(value)  => JsSuccess(EnumerationValue(value.toString))

@@ -20,7 +20,7 @@ import RamlSpecHelper.loadRaml
 import uk.gov.hmrc.play.test.UnitSpec
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import uk.gov.hmrc.apidefinition.raml.ApiSpecificationRamlParser
-import uk.gov.hmrc.apidocumentation.services.SchemaService
+import uk.gov.hmrc.apidefinition.services.SchemaService
 
 class GroupedResourcesSpec extends UnitSpec {
   val schemaService = new SchemaService()

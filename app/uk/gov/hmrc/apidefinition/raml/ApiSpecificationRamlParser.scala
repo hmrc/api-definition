@@ -23,12 +23,11 @@ import org.raml.v2.api.model.v10.datamodel.{ExampleSpec => RamlExampleSpec}
 import org.raml.v2.api.model.v10.datamodel.{TypeDeclaration => RamlTypeDeclaration}
 import org.raml.v2.api.model.v10.datamodel.{StringTypeDeclaration => RamlStringTypeDeclaration}
 import org.raml.v2.api.model.v10.methods.{Method => RamlMethod}
-import play.api.libs.json.Json
 import javax.inject.{Singleton, Inject}
 
 import uk.gov.hmrc.apidefinition.raml.RamlSyntax._
 import uk.gov.hmrc.apidefinition.models.apispecification._
-import uk.gov.hmrc.apidocumentation.services.SchemaService
+import uk.gov.hmrc.apidefinition.services.SchemaService
 
 @Singleton
 class ApiSpecificationRamlParser @Inject()(schemaService : SchemaService){
@@ -94,10 +93,11 @@ def toApiSpecification(basePath: String, raml: RAML.RAML) : ApiSpecification = {
 
   private def toTypeDeclaration(basePath: String)(td: RamlTypeDeclaration): TypeDeclaration = {
     val examples =
-      if(td.example != null)
+      if(td.example != null) {
         List(toExampleSpec(td.example))
-      else
+      } else {
         td.examples.asScala.toList.map(toExampleSpec)
+      }
 
     val enumValues = td match {
       case t: RamlStringTypeDeclaration => t.enumValues().asScala.toList
@@ -118,7 +118,7 @@ def toApiSpecification(basePath: String, raml: RAML.RAML) : ApiSpecification = {
       examples,
       enumValues,
       patterns
-    )    
+    )
   }
   
   private def toType(`type`: String, basePath: String) : String = {
@@ -126,10 +126,9 @@ def toApiSpecification(basePath: String, raml: RAML.RAML) : ApiSpecification = {
     def isSchema(text: String) : Boolean = text.trim.startsWith("{")
 
     if(isSchema(`type`)){
-      implicit val writes = Json.writes[JsonSchema]  
+      // TODO: This looks a bit odd - should we move to schema service?
       val inlinedJsonSchema : JsonSchema = schemaService.parseSchema(`type`, basePath)
-
-      Json.stringify(Json.toJson(inlinedJsonSchema))
+      schemaService.toJsonString(inlinedJsonSchema)
     } else {
       `type`
     }
