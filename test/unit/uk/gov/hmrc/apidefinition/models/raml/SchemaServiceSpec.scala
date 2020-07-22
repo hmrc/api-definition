@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package unit.uk.gov.hmrc.apidefinition.services
+package unit.uk.gov.hmrc.apidefinition.models.raml
 
 import org.scalatest.{Matchers, WordSpec}
 import play.api.libs.json.Json
@@ -25,6 +25,7 @@ import scala.io.Source
 import scala.util.Success
 import uk.gov.hmrc.apidefinition.raml.RAML.RAML
 import uk.gov.hmrc.apidefinition.services.SchemaService
+import play.api.libs.json.JsValue
 
 class TestSchemaService extends SchemaService {
   override def fetchPlainTextSchema(uri: String): String = {
@@ -33,10 +34,12 @@ class TestSchemaService extends SchemaService {
 }
 
 class SchemaServiceSpec extends WordSpec with Matchers {
+  import SchemaTestHelper._
 
   def loader = new TestSchemaService()
 
   "The SchemaLoader" should {
+
 
     // TODO: Make these tests for with schema (RAML?) passed in
 
@@ -121,7 +124,7 @@ class SchemaServiceSpec extends WordSpec with Matchers {
                                  |  "definitions" : { },
                                  |  "enum" : [ ],
                                  |  "oneOf" : [ ]
-                                 |}""".stripMargin
+                                 |}""".stripMargin.replace("\n","").replace(" ","")
     }
     "populated" in {
       val jsonSchema = JsonSchema(

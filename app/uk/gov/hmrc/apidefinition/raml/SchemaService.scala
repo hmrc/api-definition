@@ -30,10 +30,17 @@ import javax.inject.Singleton
 class SchemaService {
 
   protected def fetchPlainTextSchema(uri: String): String = {
-    val source = Source.fromURL(uri)
-    val text = source.mkString // TODO ebridge: Shouldn't this use a future? Blocking! :o
-    source.close()
-    text
+    var source: Source = null
+    try {
+      source = Source.fromURL(uri)
+      source.mkString
+    }
+    finally {
+      if(source != null) {
+        source.close()
+        source = null
+      }
+    }
   }
 
   private def fetchSchema(basePath: String, schemaPath: String): JsonSchema = {
@@ -62,13 +69,9 @@ class SchemaService {
   }
 
   def toJsonString(jsonSchema: JsonSchema): String = {
-    // TODO: This should live with the other formatters
-    implicit val writes = Json.writes[JsonSchema]
+    import uk.gov.hmrc.apidefinition.models.apispecification.ApiSpecificationFormatters._
 
-    val x = Json.toJson(jsonSchema)
-    // TODO: Use
-    //  Json.stringify()
-    Json.prettyPrint(x)
+    Json.stringify(Json.toJson(jsonSchema))
   }
 
   private def resolveRefs(schema: JsonSchema, basePath: String, enclosingSchema: JsonSchema): JsonSchema = {

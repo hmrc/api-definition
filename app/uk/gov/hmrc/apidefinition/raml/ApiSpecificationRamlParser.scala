@@ -87,11 +87,6 @@ def toApiSpecification(basePath: String, raml: RAML.RAML) : ApiSpecification = {
       example.structuredValue.property("value")
       .orElse(SafeValue(example))
     }
-
-    println("TD : "+example.name())
-    println("Co : "+code)
-    println("1:   "+example.structuredValue.property("value", "code"))
-    println("3:   "+example.value)
     ExampleSpec(description, documentation, code, value)
   }
 
@@ -113,7 +108,6 @@ def toApiSpecification(basePath: String, raml: RAML.RAML) : ApiSpecification = {
       case _                            => None
     }
 
-    println(s"Doing ${td.displayName().value()}")
     TypeDeclaration(
       td.name,
       SafeValueAsString(td.displayName),
@@ -132,6 +126,7 @@ def toApiSpecification(basePath: String, raml: RAML.RAML) : ApiSpecification = {
 
     if(isSchema(`type`)){
       // TODO: This looks a bit odd - should we move to schema service?
+      // No - we don't want to parse all the Spec model looking to replace schemas.
       val inlinedJsonSchema : JsonSchema = schemaService.parseSchema(`type`, basePath)
       schemaService.toJsonString(inlinedJsonSchema)
     } else {
@@ -199,7 +194,7 @@ def toApiSpecification(basePath: String, raml: RAML.RAML) : ApiSpecification = {
     def responses: List[Response] = {
       ramlMethod.responses().asScala.toList.map( r => {
         Response(
-          code = { val c = SafeValueAsString(r.code()); println("Now following for "+c); c },
+          code = SafeValueAsString(r.code()),
           body = r.body.asScala.toList.map(toTypeDeclaration(basePath)),
           headers = r.headers().asScala.toList.map(toTypeDeclaration(basePath)),
           description = SafeValue(r.description())

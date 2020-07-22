@@ -20,26 +20,10 @@ import uk.gov.hmrc.play.test.UnitSpec
 import RamlSpecHelper.loadRaml
 import uk.gov.hmrc.apidefinition.models.apispecification.SecurityScheme
 import uk.gov.hmrc.apidefinition.models.apispecification.DocumentationItem
-import uk.gov.hmrc.apidefinition.raml.ApiSpecificationRamlParser
 import play.api.libs.json.Json
-import play.api.libs.json.JsValue
-import uk.gov.hmrc.apidefinition.models.apispecification.JsonSchema
-import uk.gov.hmrc.apidefinition.services.SchemaService
-import scala.io.Source
 
 class ApiSpecificationRamlParserSpec extends UnitSpec {
-  object TestSchemaService extends SchemaService {
-    override def fetchPlainTextSchema(uri: String): String = {
-      val source = Source.fromFile(uri)
-      val text = source.mkString
-      source.close()
-      text
-    }
-  }
-
-  val basePath = "test/resources/raml/V2"
-
-  val apiSpecificationRamlParser = new ApiSpecificationRamlParser(TestSchemaService)
+  import unit.uk.gov.hmrc.apidefinition.models.raml.SchemaTestHelper._
 
   "RAML to apiSpec" should {
     "Simple.raml should parse title and version to our model" in {
@@ -170,9 +154,46 @@ class ApiSpecificationRamlParserSpec extends UnitSpec {
 
         val body = apiSpec.resourceGroups(0).resources(0).methods(0).body(0)
 
-        val jsonSchema = Json.parse(body.`type`).as[JsonSchema]
-
-        jsonSchema.description shouldBe Some("Schema details")
+        Json.parse(body.`type`) shouldBe Json.parse("""
+        {
+          "description":"Schema details",
+          "type":"object",
+          "properties":{
+              "id":{
+                "type":"integer",
+                "properties":{},
+                "patternProperties":{},
+                "required":[],
+                "definitions":{},
+                "enum":[],
+                "oneOf":[]
+              },
+              "name":{
+                "type":"string",
+                "properties":{},
+                "patternProperties":{},
+                "required":[],
+                "definitions":{},
+                "enum":[],
+                "oneOf":[]
+              },
+              "ownerName":{
+                "type":"string",
+                "properties":{},
+                "patternProperties":{},
+                "required":[],
+                "definitions":{},
+                "enum":[],
+                "oneOf":[]
+              }
+          },
+          "patternProperties":{},
+          "required":[ "id", "name" ],
+          "definitions":{},
+          "enum":[],
+          "oneOf":[]
+        }"""
+        )
       }
 
       "Load basic !include json schema" in {
@@ -183,13 +204,46 @@ class ApiSpecificationRamlParserSpec extends UnitSpec {
 
         val body = apiSpec.resourceGroups(0).resources(0).methods(0).body(0)
 
-        val json: JsValue = Json.parse(body.`type`)
-        val jsonSchema = json.validate[JsonSchema].asOpt.get
-
-        jsonSchema.description shouldBe Some("External schema details")
+       Json.parse(body.`type`) shouldBe Json.parse("""{
+   "description":"External schema details",
+   "type":"object",
+   "properties":{
+      "id":{
+         "type":"integer",
+         "properties":{},
+         "patternProperties":{},
+         "required":[],
+         "definitions":{},
+         "enum":[],
+         "oneOf":[]
+      },
+      "name":{
+         "type":"string",
+         "properties":{},
+         "patternProperties":{},
+         "required":[],
+         "definitions":{},
+         "enum":[],
+         "oneOf":[]
+      },
+      "ownerName":{
+         "type":"string",
+         "properties":{},
+         "patternProperties":{},
+         "required":[],
+         "definitions":{},
+         "enum":[],
+         "oneOf":[]
+      }
+   },
+   "patternProperties":{},
+   "required":["id","name"],
+   "definitions":{},
+   "enum":[],
+   "oneOf":[]
+}""")
       }
 
-      // TODO: WIP
       "Load basic !include json schema with reference" in {
         val raml = loadRaml("V2/with-json-schema-with-references.raml")
 
@@ -198,16 +252,30 @@ class ApiSpecificationRamlParserSpec extends UnitSpec {
 
         val body = apiSpec.resourceGroups(0).resources(0).methods(0).body(0)
 
-        // TODO : This test should be split and moved to the SchemaServiceSpec
-        val json: JsValue = Json.parse(body.`type`)
-        val jsonSchema = json.validate[JsonSchema].asOpt.get
-
-        jsonSchema.description shouldBe Some("reference schema details")
-
-        val properties = jsonSchema.properties("my-id")
-
-        properties.description shouldBe Some("my-description")
-        properties.example shouldBe Some("my-example")
+        Json.parse(body.`type`) shouldBe Json.parse("""
+          {
+            "description":"reference schema details",
+            "type":"object",
+            "properties":{
+                "my-id":{
+                  "description":"my-description",
+                  "type":"string",
+                  "example":"my-example",
+                  "properties":{},
+                  "patternProperties":{},
+                  "required":[],
+                  "definitions":{},
+                  "enum":[],
+                  "oneOf":[]
+                }
+            },
+            "patternProperties":{},
+            "required":["id","name"],
+            "definitions":{},
+            "enum":[],
+            "oneOf":[]
+          }"""
+        )
       }
 
       "Parsing error responses" in {
@@ -217,42 +285,14 @@ class ApiSpecificationRamlParserSpec extends UnitSpec {
         apiSpec.resourceGroups.size shouldBe 1
 
         val responses = apiSpec.resourceGroups(0).resources(0).methods(0).responses
+
         responses.filter(r => r.code == "400").map( err => {
           err.description shouldBe Some("The user is not authorized to access the given GMR")
           val example = err.body.head.examples(0)
           example.code shouldBe Some("")
           example.documentation shouldBe Some("unmatchedRecipient")
-
         })
       }
-
-      "Something to do with enums?" in {
-        val raml = loadRaml("V2/with-json-schema-with-enums.raml")
-
-        val apiSpec = apiSpecificationRamlParser.toApiSpecification(basePath, raml)
-        apiSpec.resourceGroups.size shouldBe 1
-
-        val body = apiSpec.resourceGroups(0).resources(0).methods(0).body(0)
-
-       // TODO : This test should be split and moved to the SchemaServiceSpec
-        val json: JsValue = Json.parse(body.`type`)
-        val jsonSchema = json.validate[JsonSchema].asOpt.get
-
-        jsonSchema.description shouldBe Some("my enums field")
-
-        jsonSchema.oneOf.size shouldBe 1
-        jsonSchema.oneOf(0).`enum`.size shouldBe 2
-
-        jsonSchema.oneOf(0).`enum`(0).value shouldBe "enum-a"
-        jsonSchema.oneOf(0).`enum`(1).value shouldBe "enum-b"
-
-        val jsonSchemaAsText = TestSchemaService.toJsonString(jsonSchema)
-
-        println("**** jsonSchemaAsText : " + jsonSchemaAsText)
-      }
-
-      // TODO: Test schema parsed is same as file content
-      // https://github.com/hmrc/api-documentation-frontend/pull/122/files
     }
   }
 }

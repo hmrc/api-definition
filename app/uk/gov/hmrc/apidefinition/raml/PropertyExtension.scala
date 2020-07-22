@@ -39,11 +39,7 @@ final class PropertyExtension(val context: RamlTypeInstance) extends AnyVal {
   }
 
   private def scalarValue(property: RamlTypeInstanceProperty): String = {
-    println("PN: "+property.name())
-    println("PV: "+property.value)
-
     if (!property.isArray && property.value.isScalar) {
-      println(s"PVV: [${property.value.value.toString}]")
       property.value.value.toString
      }
      else ""

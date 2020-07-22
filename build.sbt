@@ -125,7 +125,6 @@ def onPackageName(rootPackage: String): String => Boolean = {
 }
 
 // Coverage configuration
-// TODO: ebridge - Review code coverage - it was 91
-coverageMinimum := 84
+coverageMinimum := 91
 coverageFailOnMinimum := true
 coverageExcludedPackages := "<empty>;com.kenshoo.play.metrics.*;prod.*;testOnlyDoNotUseInAppConf.*;app.*;uk.gov.hmrc.BuildInfo"

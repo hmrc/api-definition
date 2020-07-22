@@ -29,7 +29,6 @@ class ApiSpecificationFormattersSpec extends UnitSpec {
       val es = ExampleSpec(None,None,Some(""), None)
       val jsonText: String = Json.prettyPrint(Json.toJson(es))
       jsonText.contains(""""code" : """") shouldBe true
-      println(jsonText)
     }
     "handle the reading of json" in {
       val jsonText = """

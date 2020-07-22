@@ -5,8 +5,8 @@ version: 1.0
 
 /my/endpoint:
     post:
-      description: 
-      displayName: 
+      description:
+      displayName:
       body:
         application/json:
           type: |
@@ -14,7 +14,7 @@ version: 1.0
               "type": "object",
               "description": "reference schema details",
               "properties": {
-                "my-id": { "$ref": "reference-schema.json#/definitions/my-id" }
+                "my-id": { "$ref": "schemas/reference-schema.json#/definitions/my-id" }
               },
               "required": [ "id", "name" ]
             }

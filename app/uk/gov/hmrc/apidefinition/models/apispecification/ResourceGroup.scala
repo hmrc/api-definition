@@ -18,7 +18,7 @@ package uk.gov.hmrc.apidefinition.models.apispecification
 
 case class ResourceGroup(name: Option[String] = None, description: Option[String] = None, resources: List[Resource] = Nil) {
   def +(resource: Resource) = {
-    // TODO: ebridge not efficient
+    // NOTE : Appending to end of list is not efficient but the list is small and we need to retain order (otherwise we need two reverses)
     ResourceGroup(name, description, resources :+ resource)
   }
 }
@@ -30,7 +30,7 @@ object ResourceGroup {
       resources match {
         case Nil => acc
         case head :: tail =>
-          // TODO: ebridge - not efficient to right concat
+          // NOTE : Appending to end of list is not efficient but the list is small and we need to retain order
           flatten(tail, flatten(head.children, head :: acc))
       }
     }

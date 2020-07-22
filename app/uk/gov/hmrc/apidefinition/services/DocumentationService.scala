@@ -48,7 +48,7 @@ class DocumentationService @Inject()(apiDefinitionRepository: APIDefinitionRepos
 
   def fetchApiDocumentationResource(serviceName: String, version: String, resource: String)(implicit hc: HeaderCarrier): Future[Result] = {
     def createProxySafeContentType(contentType: String): (String, String) = ((PROXY_SAFE_CONTENT_TYPE, contentType))
-      
+
     // TODO: ebridge - remove when routed via api-platform-microservice
     if(resource == "packed(application.raml)") {
       specificationService.fetchSpecification(serviceName, version)
@@ -99,13 +99,12 @@ class DocumentationService @Inject()(apiDefinitionRepository: APIDefinitionRepos
     /*
     ** Start here
      */
-    //TODO fetchByServiceName() - Add specific method & index to get just the base uri by service name as this is called a lot.
     for {
       api <- getApiDefinitionOrThrow
       _ <- getApiVersionOrThrow(api)
 
       serviceBaseUrl = api.serviceBaseUrl
-      response <- fetchResourceFromMicroservice(serviceBaseUrl)  // TODO - solve get....)
+      response <- fetchResourceFromMicroservice(serviceBaseUrl)
     } yield response
   }
 

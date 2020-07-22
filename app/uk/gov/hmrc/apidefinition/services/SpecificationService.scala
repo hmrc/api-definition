@@ -29,13 +29,13 @@ import uk.gov.hmrc.apidefinition.controllers.routes
 @Singleton
 class SpecificationService @Inject() (config: AppConfig, ramlLoader: RamlLoader, apiSpecificationRamlParser : ApiSpecificationRamlParser)(implicit ec: ExecutionContext) {
   def fetchSpecification(serviceName: String, version: String): Future[JsValue] = {
-    
+
     import uk.gov.hmrc.apidefinition.models.apispecification.ApiSpecificationFormatters._
-    
-    // TODO ebridge: Don't like the way we construct these two URLs
+
     val rootRamlUrl = config.serviceBaseUrl + routes.DocumentationController.fetchApiDocumentationResource(serviceName,version, "application.raml").url
     val basePath =  s"${rootRamlUrl.take(rootRamlUrl.lastIndexOf('/'))}/schemas"
 
+    // TODO : Mark as blocking
     Future.fromTry(ramlLoader.load(rootRamlUrl))
         .map(raml => Json.toJson(apiSpecificationRamlParser.toApiSpecification(basePath, raml)))
   }
