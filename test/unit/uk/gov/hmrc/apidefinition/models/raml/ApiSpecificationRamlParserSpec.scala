@@ -36,7 +36,7 @@ class ApiSpecificationRamlParserSpec extends UnitSpec {
       text
     }
   }
-  
+
   val basePath = "test/resources/raml/V2"
 
   val apiSpecificationRamlParser = new ApiSpecificationRamlParser(TestSchemaService)
@@ -205,9 +205,25 @@ class ApiSpecificationRamlParserSpec extends UnitSpec {
         jsonSchema.description shouldBe Some("reference schema details")
 
         val properties = jsonSchema.properties("my-id")
-        
+
         properties.description shouldBe Some("my-description")
         properties.example shouldBe Some("my-example")
+      }
+
+      "Parsing error responses" in {
+        val raml = loadRaml("V2/applicationWithErrorExample.raml")
+
+        val apiSpec = apiSpecificationRamlParser.toApiSpecification(basePath, raml)
+        apiSpec.resourceGroups.size shouldBe 1
+
+        val responses = apiSpec.resourceGroups(0).resources(0).methods(0).responses
+        responses.filter(r => r.code == "400").map( err => {
+          err.description shouldBe Some("The user is not authorized to access the given GMR")
+          val example = err.body.head.examples(0)
+          example.code shouldBe Some("")
+          example.documentation shouldBe Some("unmatchedRecipient")
+
+        })
       }
 
       "Something to do with enums?" in {
