@@ -19,39 +19,29 @@ package unit.uk.gov.hmrc.apidefinition.models.raml
 import org.scalatest.{Matchers, WordSpec}
 import play.api.libs.json.Json
 import uk.gov.hmrc.apidefinition.models.apispecification.{EnumerationValue, JsonSchema}
-import uk.gov.hmrc.apidefinition.utils.FileRamlLoader
 
 import scala.io.Source
-import scala.util.Success
-import uk.gov.hmrc.apidefinition.raml.RAML.RAML
-import uk.gov.hmrc.apidefinition.services.SchemaService
-import play.api.libs.json.JsValue
-
-class TestSchemaService extends SchemaService {
-  override def fetchPlainTextSchema(uri: String): String = {
-    Source.fromFile(uri).mkString
-  }
-}
 
 class SchemaServiceSpec extends WordSpec with Matchers {
   import SchemaTestHelper._
 
-  def loader = new TestSchemaService()
+  def loader = TestSchemaService
+  import uk.gov.hmrc.apidefinition.models.apispecification.ApiSpecificationFormatters._
 
   "The SchemaLoader" should {
-
 
     // TODO: Make these tests for with schema (RAML?) passed in
 
     // "load a schema that has no refs" in {
-    //   val raml = loadRaml("test/resources/schemaloader/input/norefs.raml")
-    //   val expectedPlainText = loadPlainText("test/resources/schemaloader/input/schemas/norefs-schema.json")
-    //   val expectedSchema = loadSchema("test/resources/schemaloader/expected/expected-norefs-schema.json")
+    //   // val expectedPlainText = loader.fetchPlainTextSchema("test/resources/schemaloader/input/schemas/schemas/norefs-schema.json")
+    //   // val expectedSchema = loader.parseSchema("test/resources/schemaloader/expected/expected-norefs-schema.json")
 
-    //   val actual = loader.loadSchemas("test/resources/schemaloader/input/schemas", raml)
+    //   val jsonSchema: JsonSchema = TestSchemaService.parseSchema("schemaloader/input/schemas/norefs-schema.json")
+    //   val jsonSchemaText = Json.prettyPrint(Json.toJson(jsonSchema))
 
-    //   actual should have size 1
-    //   actual shouldBe Map(expectedPlainText -> expectedSchema)
+    //   val expectedSchemaText = Json.prettyPrint(Json.parse(loadResourceTextFile("schemaloader/expected/expected-norefs-schema.json")))
+
+    //   jsonSchemaText shouldBe expectedSchemaText
     // }
 
     // "load a schema that has internal refs" in {
@@ -100,9 +90,7 @@ class SchemaServiceSpec extends WordSpec with Matchers {
   }
 
   "parse json to JsonSchema" in {
-    val basePath = "test/resources/raml/V2"
-    val json = loadPlainText(basePath + "/reference-schema.json")
-    val jsonSchema = loader.parseSchema(json, basePath)
+    val jsonSchema = loader.parseSchema("schemas/reference-schema.json")
 
     jsonSchema.definitions.size shouldBe 1
     jsonSchema.definitions.head._1 shouldBe "my-id"
@@ -133,7 +121,7 @@ class SchemaServiceSpec extends WordSpec with Matchers {
         `type` = Some("my-type"),
         example = Some("my-example"),
         title = Some("my-title"),
-        //        properties =
+        // properties = ListMap(),
         //        patternProperties =
         //        items =
         //required =
@@ -162,18 +150,19 @@ class SchemaServiceSpec extends WordSpec with Matchers {
     }
   }
 
-  private def loadSchema(file: String): JsonSchema = {
-    Json.parse(Source.fromFile(file).mkString).as[JsonSchema]
+  "Parse enums in schema" in {
+    val jsonSchema = TestSchemaService.parseSchema("schemas/schema-with-enums.json" )
+
+    jsonSchema.description shouldBe Some("my enums field")
+
+    jsonSchema.oneOf.size shouldBe 1
+    jsonSchema.oneOf(0).`enum`.size shouldBe 2
+
+    jsonSchema.oneOf(0).`enum`(0).value shouldBe "enum-a"
+    jsonSchema.oneOf(0).`enum`(1).value shouldBe "enum-b"
   }
 
-  private def loadPlainText(file: String): String = {
-    Source.fromFile(file).mkString
-  }
-
-  private def loadRaml(path: String): RAML = {
-    new FileRamlLoader().load(path) match {
-      case Success(raml) => raml
-      case _ => throw new IllegalStateException("Could not load RAML")
-    }
+  private def loadResourceTextFile(uri: String): String = {
+    Source.fromFile(s"test/resources/${uri}").mkString
   }
 }
