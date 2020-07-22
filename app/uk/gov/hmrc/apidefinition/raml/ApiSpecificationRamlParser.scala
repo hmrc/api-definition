@@ -88,6 +88,10 @@ def toApiSpecification(basePath: String, raml: RAML.RAML) : ApiSpecification = {
       .orElse(SafeValue(example))
     }
 
+    println("TD : "+example.name())
+    println("Co : "+code)
+    println("1:   "+example.structuredValue.property("value", "code"))
+    println("3:   "+example.value)
     ExampleSpec(description, documentation, code, value)
   }
 
@@ -109,6 +113,7 @@ def toApiSpecification(basePath: String, raml: RAML.RAML) : ApiSpecification = {
       case _                            => None
     }
 
+    println(s"Doing ${td.displayName().value()}")
     TypeDeclaration(
       td.name,
       SafeValueAsString(td.displayName),
@@ -120,7 +125,7 @@ def toApiSpecification(basePath: String, raml: RAML.RAML) : ApiSpecification = {
       patterns
     )
   }
-  
+
   private def toType(`type`: String, basePath: String) : String = {
 
     def isSchema(text: String) : Boolean = text.trim.startsWith("{")
@@ -194,7 +199,7 @@ def toApiSpecification(basePath: String, raml: RAML.RAML) : ApiSpecification = {
     def responses: List[Response] = {
       ramlMethod.responses().asScala.toList.map( r => {
         Response(
-          code = SafeValueAsString(r.code()),
+          code = { val c = SafeValueAsString(r.code()); println("Now following for "+c); c },
           body = r.body.asScala.toList.map(toTypeDeclaration(basePath)),
           headers = r.headers().asScala.toList.map(toTypeDeclaration(basePath)),
           description = SafeValue(r.description())

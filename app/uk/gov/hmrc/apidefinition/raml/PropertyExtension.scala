@@ -29,16 +29,23 @@ final class PropertyExtension(val context: RamlTypeInstance) extends AnyVal {
       }
       case head +: tail => {
         properties.find(_.name == head) match {
-          case Some(nestedProperty) => 
+          case Some(nestedProperty) =>
             new PropertyExtension(nestedProperty.value).property(tail: _*)
           case _ => None
         }
       }
     })
-    .filter(_.nonEmpty)
+    // .filter(_.nonEmpty)
   }
 
   private def scalarValue(property: RamlTypeInstanceProperty): String = {
-    if (!property.isArray && property.value.isScalar) property.value.value.toString else ""
+    println("PN: "+property.name())
+    println("PV: "+property.value)
+
+    if (!property.isArray && property.value.isScalar) {
+      println(s"PVV: [${property.value.value.toString}]")
+      property.value.value.toString
+     }
+     else ""
   }
 }
