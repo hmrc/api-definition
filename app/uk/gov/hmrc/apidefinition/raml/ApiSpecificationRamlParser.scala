@@ -103,8 +103,8 @@ def toApiSpecification(basePath: String, raml: RAML.RAML) : ApiSpecification = {
       case _                            => List()
     }
 
-    val patterns = td match {
-      case t: RamlStringTypeDeclaration => Some(t.pattern())
+    val patterns: Option[String] = td match {
+      case t: RamlStringTypeDeclaration => SafeValue(t.pattern())
       case _                            => None
     }
 
