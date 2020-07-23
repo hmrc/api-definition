@@ -125,8 +125,6 @@ def toApiSpecification(basePath: String, raml: RAML.RAML) : ApiSpecification = {
     def isSchema(text: String) : Boolean = text.trim.startsWith("{")
 
     if(isSchema(`type`)){
-      // TODO: This looks a bit odd - should we move to schema service?
-      // No - we don't want to parse all the Spec model looking to replace schemas.
       val inlinedJsonSchema : JsonSchema = schemaService.parseSchema(`type`, basePath)
       schemaService.toJsonString(inlinedJsonSchema)
     } else {
