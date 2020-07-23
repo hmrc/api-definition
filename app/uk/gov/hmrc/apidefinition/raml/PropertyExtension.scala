@@ -35,7 +35,6 @@ final class PropertyExtension(val context: RamlTypeInstance) extends AnyVal {
         }
       }
     })
-    // .filter(_.nonEmpty)
   }
 
   private def scalarValue(property: RamlTypeInstanceProperty): String = {
