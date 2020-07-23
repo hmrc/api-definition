@@ -38,6 +38,7 @@ object DocumentationService {
 @Singleton
 class DocumentationService @Inject()(apiDefinitionRepository: APIDefinitionRepository,
                                      apiMicroserviceConnector: ApiMicroserviceConnector,
+                                     specificationService : SpecificationService,
                                      config: AppConfig)
                                     (implicit val ec: ExecutionContext,
                                      val actorSystem: ActorSystem,
@@ -45,31 +46,35 @@ class DocumentationService @Inject()(apiDefinitionRepository: APIDefinitionRepos
 
   import DocumentationService._
 
-
   def fetchApiDocumentationResource(serviceName: String, version: String, resource: String)(implicit hc: HeaderCarrier): Future[Result] = {
     def createProxySafeContentType(contentType: String): (String, String) = ((PROXY_SAFE_CONTENT_TYPE, contentType))
 
-    for {
-      streamedResponse <- fetchResource(serviceName, version, resource)
-    } yield streamedResponse.status match {
-      case OK =>
-        val contentType = streamedResponse.contentType
+    // TODO: ebridge - remove when routed via api-platform-microservice
+    if(resource == "packed(application.raml)") {
+      specificationService.fetchSpecification(serviceName, version)
+        .map(json => Ok(json))
+    } else {
+      for {
+        streamedResponse <- fetchResource(serviceName, version, resource)
+      } yield streamedResponse.status match {
+        case OK =>
+          val contentType = streamedResponse.contentType
 
-        streamedResponse.headers.get("Content-Length") match {
-          case Some(Seq(length)) => Ok.sendEntity(HttpEntity.Streamed(streamedResponse.bodyAsSource, Some(length.toLong), Some(contentType)))
-            .withHeaders(createProxySafeContentType(contentType))
+          streamedResponse.headers.get("Content-Length") match {
+            case Some(Seq(length)) => Ok.sendEntity(HttpEntity.Streamed(streamedResponse.bodyAsSource, Some(length.toLong), Some(contentType)))
+              .withHeaders(createProxySafeContentType(contentType))
 
-          case _ => Ok.chunked(streamedResponse.bodyAsSource).as(contentType)
-            .withHeaders(createProxySafeContentType(contentType))
-        }
-      case NOT_FOUND => throw newNotFoundException(serviceName, version, resource)
-      case status => throw newInternalServerException(serviceName, version, resource, status)
+            case _ => Ok.chunked(streamedResponse.bodyAsSource).as(contentType)
+              .withHeaders(createProxySafeContentType(contentType))
+          }
+        case NOT_FOUND => throw newNotFoundException(serviceName, version, resource)
+        case status => throw newInternalServerException(serviceName, version, resource, status)
+      }
     }
   }
 
   //noinspection ScalaStyle
-  private def fetchResource(serviceName: String, version: String, resource: String
-                           )(implicit hc: HeaderCarrier): Future[WSResponse] = {
+  private def fetchResource(serviceName: String, version: String, resource: String): Future[WSResponse] = {
 
     def fetchResourceFromMicroservice(serviceBaseUrl: String): Future[WSResponse] =
       apiMicroserviceConnector.fetchApiDocumentationResourceByUrl(serviceBaseUrl, version, resource)
@@ -77,7 +82,7 @@ class DocumentationService @Inject()(apiDefinitionRepository: APIDefinitionRepos
     def getApiDefinitionOrThrow: Future[APIDefinition] = {
       import cats.implicits._
 
-      val failure = Future.failed[APIDefinition](new NotFoundException(s"$serviceName not found"))
+      lazy val failure = Future.failed[APIDefinition](new NotFoundException(s"$serviceName not found"))
 
       apiDefinitionRepository.fetchByServiceName(serviceName).flatMap( _.fold(failure)(_.pure[Future]) )
     }
@@ -94,13 +99,12 @@ class DocumentationService @Inject()(apiDefinitionRepository: APIDefinitionRepos
     /*
     ** Start here
      */
-    //TODO fetchByServiceName() - Add specific method & index to get just the base uri by service name as this is called a lot.
     for {
       api <- getApiDefinitionOrThrow
       _ <- getApiVersionOrThrow(api)
 
       serviceBaseUrl = api.serviceBaseUrl
-      response <- fetchResourceFromMicroservice(serviceBaseUrl)  // TODO - solve get....)
+      response <- fetchResourceFromMicroservice(serviceBaseUrl)
     } yield response
   }
 

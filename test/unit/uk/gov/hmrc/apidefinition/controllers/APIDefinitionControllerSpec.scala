@@ -567,7 +567,7 @@ class APIDefinitionControllerSpec extends UnitSpec
           Some(true))),
         requiresTrust = None)
 
-      when(mockAPIDefinitionService.fetchByServiceName(isEq(serviceName))(any[HeaderCarrier]))
+      when(mockAPIDefinitionService.fetchByServiceName(isEq(serviceName)))
         .thenReturn(successful(Some(apiDefinition)))
 
       private val result = await(underTest.fetch(serviceName)(request))
@@ -577,7 +577,7 @@ class APIDefinitionControllerSpec extends UnitSpec
     }
 
     "fail with a 404 (not found) when no API exists for the given serviceName" in new Setup {
-      when(mockAPIDefinitionService.fetchByServiceName(isEq(serviceName))(any[HeaderCarrier]))
+      when(mockAPIDefinitionService.fetchByServiceName(isEq(serviceName)))
         .thenReturn(successful(None))
 
       private val result = await(underTest.fetch(serviceName)(request))
@@ -586,7 +586,7 @@ class APIDefinitionControllerSpec extends UnitSpec
     }
 
     "fail with a 500 (internal server error) when the service throws an exception" in new Setup {
-      when(mockAPIDefinitionService.fetchByServiceName(isEq(serviceName))(any[HeaderCarrier]))
+      when(mockAPIDefinitionService.fetchByServiceName(isEq(serviceName)))
         .thenReturn(failed(new RuntimeException("Something went wrong")))
 
       private val result = await(underTest.fetch(serviceName)(request))

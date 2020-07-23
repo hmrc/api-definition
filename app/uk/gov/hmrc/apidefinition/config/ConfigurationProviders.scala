@@ -17,8 +17,6 @@
 package uk.gov.hmrc.apidefinition.config
 
 
-import java.util.concurrent.TimeUnit.{DAYS, SECONDS}
-
 import javax.inject.{Inject, Provider, Singleton}
 import play.api.inject.{Binding, Module}
 import play.api.{Configuration, Environment, Logger, Mode}
@@ -27,13 +25,18 @@ import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
 import scala.collection.JavaConverters._
-import scala.concurrent.duration.{Duration, FiniteDuration}
+import uk.gov.hmrc.ramltools.loaders.RamlLoader
+import uk.gov.hmrc.apidefinition.raml.DocumentationRamlLoader
+import uk.gov.hmrc.ramltools.loaders.UrlRewriter
+import uk.gov.hmrc.apidefinition.raml.DocumentationUrlRewriter
 
 class ConfigurationModule extends Module {
 
   override def bindings(environment: Environment, configuration: Configuration): Seq[Binding[_]] = {
     Seq(
-      bind[NotificationService].toProvider[NotificationServiceConfigProvider]
+      bind[NotificationService].toProvider[NotificationServiceConfigProvider],
+      bind[RamlLoader].to[DocumentationRamlLoader],
+      bind[UrlRewriter].to[DocumentationUrlRewriter]
     )
   }
 }

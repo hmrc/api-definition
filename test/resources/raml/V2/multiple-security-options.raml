@@ -1,0 +1,31 @@
+#%RAML 1.0
+---
+title: Multiple methods
+version: 1.0
+
+uses:
+  sec: https://developer.service.hmrc.gov.uk/api-documentation/assets/common/modules/securitySchemes.raml
+  headers: https://developer.service.hmrc.gov.uk/api-documentation/assets/common/modules/headers.raml
+  annotations: https://developer.service.hmrc.gov.uk/api-documentation/assets/common/modules/annotations.raml
+  types: https://developer.service.hmrc.gov.uk/api-documentation/assets/common/modules/types.raml
+
+
+/endpoint1:
+    get:
+      description: 1
+      displayName: 1
+
+/endpoint2:
+    get:
+      (annotations.scope): "all:test-me"
+      securedBy: [ sec.oauth_2_0: { scopes: [ "all:test-me" ] } ]
+
+      description: 2
+      displayName: 2
+
+/endpoint3:
+    post:
+      securedBy: [ sec.x-application ]
+
+      description: 3
+      displayName: 3
