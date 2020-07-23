@@ -34,5 +34,4 @@ object ApiSpecificationFormatters {
 
   implicit val apiSpecificationJF = Json.format[ApiSpecification]
 
-  implicit val jsonSchemaJF = Json.writes[JsonSchema]
 }

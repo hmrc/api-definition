@@ -105,14 +105,7 @@ class SchemaServiceSpec extends WordSpec with Matchers {
       val jsonSchema = JsonSchema()
       val jsonSchemaText = loader.toJsonString(jsonSchema)
 
-      jsonSchemaText shouldBe """|{
-                                 |  "properties" : { },
-                                 |  "patternProperties" : { },
-                                 |  "required" : [ ],
-                                 |  "definitions" : { },
-                                 |  "enum" : [ ],
-                                 |  "oneOf" : [ ]
-                                 |}""".stripMargin.replace("\n","").replace(" ","")
+      jsonSchemaText shouldBe "{}"
     }
     "populated" in {
       val jsonSchema = JsonSchema(
@@ -140,12 +133,7 @@ class SchemaServiceSpec extends WordSpec with Matchers {
                                  |  "type" : "my-type",
                                  |  "example" : "my-example",
                                  |  "title" : "my-title",
-                                 |  "properties" : { },
-                                 |  "patternProperties" : { },
-                                 |  "required" : [ ],
-                                 |  "definitions" : { },
-                                 |  "enum" : [ "my-enum-a" ],
-                                 |  "oneOf" : [ ]
+                                 |  "enum" : [ "my-enum-a" ]
                                  |}""".stripMargin)
     }
   }

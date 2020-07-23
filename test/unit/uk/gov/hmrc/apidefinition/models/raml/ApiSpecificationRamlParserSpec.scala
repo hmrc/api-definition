@@ -160,38 +160,16 @@ class ApiSpecificationRamlParserSpec extends UnitSpec {
           "type":"object",
           "properties":{
               "id":{
-                "type":"integer",
-                "properties":{},
-                "patternProperties":{},
-                "required":[],
-                "definitions":{},
-                "enum":[],
-                "oneOf":[]
+                "type":"integer"
               },
               "name":{
-                "type":"string",
-                "properties":{},
-                "patternProperties":{},
-                "required":[],
-                "definitions":{},
-                "enum":[],
-                "oneOf":[]
+                "type":"string"
               },
               "ownerName":{
-                "type":"string",
-                "properties":{},
-                "patternProperties":{},
-                "required":[],
-                "definitions":{},
-                "enum":[],
-                "oneOf":[]
+                "type":"string"
               }
           },
-          "patternProperties":{},
-          "required":[ "id", "name" ],
-          "definitions":{},
-          "enum":[],
-          "oneOf":[]
+          "required":[ "id", "name" ]
         }"""
         )
       }
@@ -204,44 +182,24 @@ class ApiSpecificationRamlParserSpec extends UnitSpec {
 
         val body = apiSpec.resourceGroups(0).resources(0).methods(0).body(0)
 
+        println(Json.prettyPrint(Json.parse(body.`type`)))
+
        Json.parse(body.`type`) shouldBe Json.parse("""{
-   "description":"External schema details",
-   "type":"object",
-   "properties":{
-      "id":{
-         "type":"integer",
-         "properties":{},
-         "patternProperties":{},
-         "required":[],
-         "definitions":{},
-         "enum":[],
-         "oneOf":[]
-      },
-      "name":{
-         "type":"string",
-         "properties":{},
-         "patternProperties":{},
-         "required":[],
-         "definitions":{},
-         "enum":[],
-         "oneOf":[]
-      },
-      "ownerName":{
-         "type":"string",
-         "properties":{},
-         "patternProperties":{},
-         "required":[],
-         "definitions":{},
-         "enum":[],
-         "oneOf":[]
-      }
-   },
-   "patternProperties":{},
-   "required":["id","name"],
-   "definitions":{},
-   "enum":[],
-   "oneOf":[]
-}""")
+          "description":"External schema details",
+          "type":"object",
+          "properties":{
+              "id":{
+                "type":"integer"
+              },
+              "name":{
+                "type":"string"
+              },
+              "ownerName":{
+                "type":"string"
+              }
+          },
+          "required":["id","name"]
+        }""")
       }
 
       "Load basic !include json schema with reference" in {
@@ -260,20 +218,10 @@ class ApiSpecificationRamlParserSpec extends UnitSpec {
                 "my-id":{
                   "description":"my-description",
                   "type":"string",
-                  "example":"my-example",
-                  "properties":{},
-                  "patternProperties":{},
-                  "required":[],
-                  "definitions":{},
-                  "enum":[],
-                  "oneOf":[]
+                  "example":"my-example"
                 }
             },
-            "patternProperties":{},
-            "required":["id","name"],
-            "definitions":{},
-            "enum":[],
-            "oneOf":[]
+            "required":["id","name"]
           }"""
         )
       }

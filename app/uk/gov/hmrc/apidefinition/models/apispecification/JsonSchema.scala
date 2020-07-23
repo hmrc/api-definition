@@ -114,4 +114,46 @@ object JsonSchema {
       ( __ \ "oneOf" ).lazyReadNullable[Seq[JsonSchema]](Reads.seq[JsonSchema]).map(_.toSeq.flatten) and
       ( __ \ "pattern" ).readNullable[String]
     )(JsonSchema.apply _)
+
+  implicit def listMapWrites[V](implicit formatV: Writes[V]): Writes[ListMap[String, V]] =
+    new Writes[ListMap[String,V]] {
+
+      def writes(o: ListMap[String,V]): JsValue = {
+        JsObject(o.map {
+            case (k,v) => (k, formatV.writes(v) )
+        }.toSeq)
+      }
+    }
+
+  def writeNoEmptyLists[V](implicit formatSeq: Writes[Seq[V]]): Writes[Seq[V]] =
+     new Writes[Seq[V]]() {
+      def writes(o: Seq[V]) = {
+        if(o.isEmpty)
+          JsNull
+        else
+          formatSeq.writes(o)
+      }
+    }
+
+    // .contramap[Option[String]](os => os.filter(_.isEmpty))
+
+  def notIfEmpty[A](seq: Seq[A]): Option[Seq[A]] = if(seq.isEmpty) None else Some(seq)
+  def notIfEmpty(xs: ListMap[String, JsonSchema]) = if(xs.isEmpty) None else Some(xs)
+
+  implicit val jsonSchemaW: OWrites[JsonSchema] = (
+    ( __ \ "description" ).writeNullable[String] and
+    ( __ \ "id" ).writeNullable[String] and
+    ( __ \ "type" ).writeNullable[String] and
+    ( __ \ "example" ).writeNullable[String] and
+    ( __ \ "title" ).writeNullable[String] and
+    ( __ \ "properties" ).lazyWriteNullable[ListMap[String,JsonSchema]](listMapWrites[JsonSchema]).contramap[ListMap[String,JsonSchema]](notIfEmpty) and
+    ( __ \ "patternProperties" ).lazyWriteNullable[ListMap[String,JsonSchema]](listMapWrites[JsonSchema]).contramap[ListMap[String,JsonSchema]](notIfEmpty) and
+    ( __ \ "items" ).lazyWriteNullable[JsonSchema](jsonSchemaW) and
+    ( __ \ "required" ).writeNullable[Seq[String]].contramap[Seq[String]](seq => if(seq.isEmpty) None else Some(seq) ) and
+    ( __ \ "definitions" ).lazyWriteNullable[ListMap[String,JsonSchema]](listMapWrites[JsonSchema]).contramap[ListMap[String,JsonSchema]](notIfEmpty) and
+    ( __ \ """$ref""" ).writeNullable[String] and
+    ( __ \ "enum" ).writeNullable[Seq[EnumerationValue]].contramap[Seq[EnumerationValue]](notIfEmpty[EnumerationValue]) and
+    ( __ \ "oneOf" ).lazyWriteNullable[Seq[JsonSchema]](Writes.seq[JsonSchema]).contramap[Seq[JsonSchema]](notIfEmpty[JsonSchema]) and
+    ( __ \ "pattern" ).writeNullable[String]
+  )(unlift(JsonSchema.unapply))
 }
