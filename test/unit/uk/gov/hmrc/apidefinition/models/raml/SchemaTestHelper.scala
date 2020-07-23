@@ -33,6 +33,12 @@ object SchemaTestHelper {
     def parseSchema(uri: String): JsonSchema = {
       parseSchema(fetchPlainTextSchema(s"${SchemaTestHelper.basePath}/${uri}"), basePath)
     }
+
+    def parseSchemaInFolder(uri: String, basePathExtension: String): JsonSchema = {
+      val altBasePath = if(basePathExtension.isEmpty) SchemaTestHelper.basePath else s"${SchemaTestHelper.basePath}/${basePathExtension}"
+
+      parseSchema(fetchPlainTextSchema(s"${altBasePath}/${uri}"), altBasePath)
+    }
   }
 
   val basePath = "test/resources"

@@ -21,72 +21,52 @@ import play.api.libs.json.Json
 import uk.gov.hmrc.apidefinition.models.apispecification.{EnumerationValue, JsonSchema}
 
 import scala.io.Source
+import play.api.libs.json.JsValue
 
 class SchemaServiceSpec extends WordSpec with Matchers {
   import SchemaTestHelper._
 
   def loader = TestSchemaService
-  import uk.gov.hmrc.apidefinition.models.apispecification.ApiSpecificationFormatters._
+
+  private def expectation(fileName: String): JsValue = {
+    Json.parse(loadResourceTextFile(s"schemaloader/expected/expected-${fileName}-schema.json"))
+  }
+  private def actualSchema(fileName: String): JsonSchema = {
+    TestSchemaService.parseSchemaInFolder(s"${fileName}-schema.json", "schemaloader/input/schemas")
+  }
+
+  def compareJson(expected: JsValue, actual: JsonSchema) = {
+    val actualText = Json.prettyPrint(Json.toJson(actual))
+    val expectedText = Json.prettyPrint(expected)
+
+    actualText shouldBe expectedText
+  }
+
+  def compareActualVsExpectedJson(fileName: String) = {
+    compareJson(expectation(fileName), actualSchema(fileName))
+  }
 
   "The SchemaLoader" should {
 
-    // TODO: Make these tests for with schema (RAML?) passed in
+    "load a schema that has no refs" in {
+      compareActualVsExpectedJson("norefs")
+    }
 
-    // "load a schema that has no refs" in {
-    //   // val expectedPlainText = loader.fetchPlainTextSchema("test/resources/schemaloader/input/schemas/schemas/norefs-schema.json")
-    //   // val expectedSchema = loader.parseSchema("test/resources/schemaloader/expected/expected-norefs-schema.json")
+    "load a schema that has internal refs" in {
+      compareActualVsExpectedJson("internalrefs")
+    }
 
-    //   val jsonSchema: JsonSchema = TestSchemaService.parseSchema("schemaloader/input/schemas/norefs-schema.json")
-    //   val jsonSchemaText = Json.prettyPrint(Json.toJson(jsonSchema))
+    "load a schema that has nested internal refs" in {
+      compareActualVsExpectedJson("nestedinternalrefs")
+    }
 
-    //   val expectedSchemaText = Json.prettyPrint(Json.parse(loadResourceTextFile("schemaloader/expected/expected-norefs-schema.json")))
+    "load a schema that has external refs" in {
+      compareActualVsExpectedJson("externalrefs")
+    }
 
-    //   jsonSchemaText shouldBe expectedSchemaText
-    // }
-
-    // "load a schema that has internal refs" in {
-    //   val raml = loadRaml("test/resources/schemaloader/input/internalrefs.raml")
-    //   val expectedPlainText = loadPlainText("test/resources/schemaloader/input/schemas/internalrefs-schema.json")
-    //   val expectedSchema = loadSchema("test/resources/schemaloader/expected/expected-internalrefs-schema.json")
-
-    //   val actual = loader.loadSchemas("test/resources/schemaloader/input/schemas", raml)
-
-    //   actual should have size 1
-    //   actual shouldBe Map(expectedPlainText -> expectedSchema)
-    // }
-
-    // "load a schema that has nested internal refs" in {
-    //   val raml = loadRaml("test/resources/schemaloader/input/nestedinternalrefs.raml")
-    //   val expectedPlainText = loadPlainText("test/resources/schemaloader/input/schemas/nestedinternalrefs-schema.json")
-    //   val expectedSchema = loadSchema("test/resources/schemaloader/expected/expected-nestedinternalrefs-schema.json")
-
-    //   val actual = loader.loadSchemas("test/resources/schemaloader/input/schemas", raml)
-
-    //   actual should have size 1
-    //   actual shouldBe Map(expectedPlainText -> expectedSchema)
-    // }
-
-    // "load a schema that has external refs" in {
-    //   val raml = loadRaml("test/resources/schemaloader/input/externalrefs.raml")
-    //   val expectedPlainText = loadPlainText("test/resources/schemaloader/input/schemas/externalrefs-schema.json")
-    //   val expectedSchema = loadSchema("test/resources/schemaloader/expected/expected-externalrefs-schema.json")
-
-    //   val actual = loader.loadSchemas("test/resources/schemaloader/input/schemas", raml)
-
-    //   actual should have size 1
-    //   actual shouldBe Map(expectedPlainText -> expectedSchema)
-    // }
-
-    // "load a schema that has a chain of external refs" in {
-    //   val raml = loadRaml("test/resources/schemaloader/input/complexrefs.raml")
-    //   val expectedPlainText = loadPlainText("test/resources/schemaloader/input/complexrefs.raml")
-    //   val expectedSchema = loadSchema("test/resources/schemaloader/expected/expected-complexrefs-schema.json")
-
-    //   val actual = loader.loadSchemas("test/resources/schemaloader/input/schemas", raml)
-
-    //   actual should have size 1
-    //   actual shouldBe Map(expectedPlainText -> expectedSchema)
-    // }
+    "load a schema that has a chain of external refs" in {
+      compareActualVsExpectedJson("complexrefs")
+    }
   }
 
   "parse json to JsonSchema" in {

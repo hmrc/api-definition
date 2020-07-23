@@ -69,8 +69,6 @@ class SchemaService {
   }
 
   def toJsonString(jsonSchema: JsonSchema): String = {
-    import uk.gov.hmrc.apidefinition.models.apispecification.ApiSpecificationFormatters._
-
     Json.stringify(Json.toJson(jsonSchema))
   }
 

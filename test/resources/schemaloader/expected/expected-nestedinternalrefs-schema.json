@@ -1,0 +1,32 @@
+{
+    "type": "object",
+    "properties": {
+        "name": {
+            "description": "Business name",
+            "type": "string"
+        },
+        "description": {
+            "description": "Description of the activities of the business",
+            "type": "string"
+        },
+        "doublenesteddescription": {
+            "description": "Description of the activities of the business",
+            "type": "string"
+        }
+    },
+    "definitions": {
+        "description": {
+            "description": "Description of the activities of the business",
+            "type": "string"
+        },
+        "nesteddescription": {
+            "description": "Description of the activities of the business",
+            "type": "string"
+        },
+      "evenmorenesteddescription": {
+        "description": "Description of the activities of the business",
+        "type": "string"
+      }
+    }
+}
+
