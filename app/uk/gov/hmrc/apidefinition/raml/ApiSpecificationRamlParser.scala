@@ -28,10 +28,11 @@ import javax.inject.{Singleton, Inject}
 import uk.gov.hmrc.apidefinition.raml.RamlSyntax._
 import uk.gov.hmrc.apidefinition.models.apispecification._
 import uk.gov.hmrc.apidefinition.services.SchemaService
+import akka.http.scaladsl.model.headers.LinkParams.`type`
 
 @Singleton
 class ApiSpecificationRamlParser @Inject()(schemaService : SchemaService){
-def toApiSpecification(basePath: String, raml: RAML.RAML) : ApiSpecification = {
+  def toApiSpecification(basePath: String, raml: RAML.RAML) : ApiSpecification = {
 
     def title: String = SafeValueAsString(raml.title)
 
@@ -44,11 +45,9 @@ def toApiSpecification(basePath: String, raml: RAML.RAML) : ApiSpecification = {
         SafeValueAsString(item.title), SafeValueAsString(item.content)
       ))
 
-    def output: List[ResourcesAndGroups] = raml.resources.asScala.toList.map(toResourcesAndGroups(basePath))
+    lazy val resources = output(globalTypes).map(_.resource)
 
-    lazy val resources = output.map(_.resource)
-
-    lazy val groupMap = ResourcesAndGroups.flatten(output.map(_.groupMap))
+    lazy val groupMap = ResourcesAndGroups.flatten(output(globalTypes).map(_.groupMap))
 
     def resourceGroups: List[ResourceGroup] = ResourceGroup.generateFrom(resources, groupMap)
 
@@ -57,15 +56,20 @@ def toApiSpecification(basePath: String, raml: RAML.RAML) : ApiSpecification = {
 
     def isFieldOptionalityKnown: Boolean = !raml.hasAnnotation("(fieldOptionalityUnknown)")
 
+    lazy val globalTypes = types
+
+    def output(typesToSearch: List[TypeDeclaration]): List[ResourcesAndGroups] = raml.resources.asScala.toList.map(toResourcesAndGroups(basePath, typesToSearch))
+
     ApiSpecification(
       title,
       version,
       deprecationMessage,
       documentationItems,
       resourceGroups,
-      types,
+      globalTypes,
       isFieldOptionalityKnown
     )
+
   }
 
   private def toExampleSpec(example : RamlExampleSpec) : ExampleSpec = {
@@ -90,34 +94,55 @@ def toApiSpecification(basePath: String, raml: RAML.RAML) : ApiSpecification = {
     ExampleSpec(description, documentation, code, value)
   }
 
-  private def toTypeDeclaration(basePath: String)(td: RamlTypeDeclaration): TypeDeclaration = {
-    val examples =
-      if(td.example != null) {
-        List(toExampleSpec(td.example))
-      } else {
-        td.examples.asScala.toList.map(toExampleSpec)
-      }
+  private def fromTypeDeclaration(basePath: String)(td: RamlTypeDeclaration): TypeDeclaration = td match {
+    case t: RamlStringTypeDeclaration =>
+      TypeDeclaration(
+        name = td.name(),
+        displayName = SafeValueAsString(t.displayName),
+        `type` = toType(t.`type`, basePath),
+        required =  t.required(),
+        description =  SafeValue(t.description()).map(_.toString()),
+        examples = fromExamples(t),
+        enumValues = t.enumValues().asScala.toList,
+        pattern = SafeValue(t.pattern)
+      )
 
-    val enumValues = td match {
-      case t: RamlStringTypeDeclaration => t.enumValues().asScala.toList
-      case _                            => List()
+    case t: RamlTypeDeclaration =>
+      TypeDeclaration(
+        name = td.name(),
+        displayName = SafeValueAsString(t.displayName),
+        `type` = toType(t.`type`, basePath),
+        required =  t.required(),
+        description =  SafeValue(t.description()).map(_.toString()),
+        examples = fromExamples(t),
+        enumValues = List(),
+        pattern = None
+      )
+  }
+
+  private def fromExamples(r: RamlTypeDeclaration): List[ExampleSpec] = {
+    if(r.example != null) {
+      List(toExampleSpec(r.example))
+    } else {
+      r.examples.asScala.toList.map(toExampleSpec)
     }
+  }
 
-    val patterns: Option[String] = td match {
-      case t: RamlStringTypeDeclaration => SafeValue(t.pattern())
-      case _                            => None
-    }
+  private def toTypeDeclaration(basePath: String, globalTypes: List[TypeDeclaration] = List())(td: RamlTypeDeclaration): TypeDeclaration = {
+    def findType(typeName: String) =
+      globalTypes.find(_.name == typeName)
 
-    TypeDeclaration(
-      td.name,
-      SafeValueAsString(td.displayName),
-      toType(td.`type`, basePath),
-      td.required,
-      SafeValue(td.description),
-      examples,
-      enumValues,
-      patterns
-    )
+    val thisType = fromTypeDeclaration(basePath)(td)
+
+    val finalisedTypeDeclaration =
+      findType(td.`type`).fold(thisType)(parent =>
+        thisType.copy(
+          `type` = parent.`type` ,
+          pattern = thisType.pattern.orElse(parent.pattern),
+          examples = if(thisType.examples.isEmpty) parent.examples else thisType.examples)
+        )
+
+    finalisedTypeDeclaration
   }
 
   private def toType(`type`: String, basePath: String) : String = {
@@ -132,8 +157,8 @@ def toApiSpecification(basePath: String, raml: RAML.RAML) : ApiSpecification = {
     }
   }
 
-  private def toResourcesAndGroups(basePath: String)(ramlResource: RamlResource): ResourcesAndGroups = {
-    val childNodes: List[ResourcesAndGroups] = ramlResource.resources().asScala.toList.map(toResourcesAndGroups(basePath))
+  private def toResourcesAndGroups(basePath: String, globalTypes: List[TypeDeclaration])(ramlResource: RamlResource): ResourcesAndGroups = {
+    val childNodes: List[ResourcesAndGroups] = ramlResource.resources().asScala.toList.map(toResourcesAndGroups(basePath, globalTypes))
 
     val children = childNodes.map(_.resource)
 
@@ -150,7 +175,7 @@ def toApiSpecification(basePath: String, raml: RAML.RAML) : ApiSpecification = {
       resourcePath = ramlResource.resourcePath,
       methods = methodsForResource(basePath)(ramlResource),
       relativeUri = ramlResource.relativeUri.value,
-      uriParameters = ramlResource.uriParameters.asScala.toList.map(toTypeDeclaration(basePath)),
+      uriParameters = ramlResource.uriParameters.asScala.toList.map(toTypeDeclaration(basePath, globalTypes)),
       displayName = ramlResource.displayName.value,
       children = children
     )
