@@ -137,7 +137,6 @@ class ApiSpecificationRamlParser @Inject()(schemaService : SchemaService){
     val finalisedTypeDeclaration =
       findType(td.`type`).fold(thisType)(parent =>
         thisType.copy(
-          `type` = parent.`type` ,
           pattern = thisType.pattern.orElse(parent.pattern),
           examples = if(thisType.examples.isEmpty) parent.examples else thisType.examples)
         )
