@@ -27,6 +27,7 @@ import uk.gov.hmrc.play.json.Union
 object JsonFormatters {
 
   implicit val formatAPICategory = EnumJson.enumFormat(APICategory)
+  implicit val formatAPICategoryDetails = Json.format[APICategoryDetails]
   implicit val formatAPIStatus = EnumJson.enumFormat(APIStatus)
   implicit val formatAPIAccessType = EnumJson.enumFormat(APIAccessType)
   implicit val formatAuthType = EnumJson.enumFormat(AuthType)
