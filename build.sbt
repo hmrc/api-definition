@@ -16,7 +16,8 @@ lazy val compile = Seq(
   "uk.gov.hmrc" %% "play-json-union-formatter" % "1.11.0",
   "org.typelevel" %% "cats-core" % "1.1.0",
   "uk.gov.hmrc" %% "raml-tools" % "1.18.0",
-  "org.raml" % "raml-parser-2" % "1.0.13"
+  "org.raml" % "raml-parser-2" % "1.0.13",
+  "com.beachape" %% "enumeratum-play-json" % "1.6.0"
 )
 
 lazy val test = Seq(

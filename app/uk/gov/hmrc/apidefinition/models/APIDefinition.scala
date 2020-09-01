@@ -18,7 +18,7 @@ package uk.gov.hmrc.apidefinition.models
 
 import org.joda.time.DateTime
 import play.api.libs.json.{JsObject, Json, Reads}
-import uk.gov.hmrc.apidefinition.models.APICategory.APICategory
+import enumeratum.{Enum, EnumEntry, PlayJsonEnum}
 import uk.gov.hmrc.apidefinition.models.APIStatus.APIStatus
 import uk.gov.hmrc.apidefinition.models.AuthType.AuthType
 import uk.gov.hmrc.apidefinition.models.HttpMethod.HttpMethod
@@ -91,46 +91,65 @@ object PrivateAPIAccess {
   implicit val format2 = Json.format[PrivateAPIAccess]
 }
 
-object APICategory extends Enumeration {
-  type APICategory = Value
+sealed trait APICategory extends EnumEntry
 
-  val EXAMPLE, AGENTS, BUSINESS_RATES, CHARITIES, CONSTRUCTION_INDUSTRY_SCHEME, CORPORATION_TAX, CUSTOMS, ESTATES, HELP_TO_SAVE, INCOME_TAX_MTD,
-    LIFETIME_ISA, MARRIAGE_ALLOWANCE, NATIONAL_INSURANCE, PAYE, PENSIONS, PRIVATE_GOVERNMENT,
-    RELIEF_AT_SOURCE, SELF_ASSESSMENT, STAMP_DUTY, TRUSTS, VAT, VAT_MTD, OTHER = Value
+object APICategory extends Enum[APICategory] with PlayJsonEnum[APICategory]  {
+   val values: scala.collection.immutable.IndexedSeq[APICategory] = findValues
 
-  def toAPICategoryDetails(category: APICategory): APICategoryDetails = {
+  case object EXAMPLE extends APICategory
+  case object AGENTS extends APICategory
+  case object BUSINESS_RATES extends APICategory
+  case object CHARITIES extends APICategory
+  case object CONSTRUCTION_INDUSTRY_SCHEME extends APICategory
+  case object CORPORATION_TAX extends APICategory
+  case object CUSTOMS extends APICategory
+  case object ESTATES extends APICategory
+  case object HELP_TO_SAVE extends APICategory
+  case object INCOME_TAX_MTD extends APICategory
+  case object LIFETIME_ISA extends APICategory
+  case object MARRIAGE_ALLOWANCE extends APICategory
+  case object NATIONAL_INSURANCE extends APICategory
+  case object PAYE extends APICategory
+  case object PENSIONS extends APICategory
+  case object PRIVATE_GOVERNMENT extends APICategory
+  case object RELIEF_AT_SOURCE extends APICategory
+  case object SELF_ASSESSMENT extends APICategory
+  case object STAMP_DUTY extends APICategory
+  case object TRUSTS extends APICategory
+  case object VAT extends APICategory
+  case object VAT_MTD extends APICategory
+  case object OTHER extends APICategory
+
+   def toAPICategoryDetails(category: APICategory): APICategoryDetails = {
     category match {
       case EXAMPLE => APICategoryDetails(EXAMPLE, "Example")
       case AGENTS => APICategoryDetails(AGENTS, "Agents")
-      case BUSINESS_RATES => APICategoryDetails(BUSINESS_RATES, "Business Rates") 
-      case CHARITIES => APICategoryDetails(CHARITIES, "Charities") 
-      case CONSTRUCTION_INDUSTRY_SCHEME => APICategoryDetails(CONSTRUCTION_INDUSTRY_SCHEME, "Construction Industry Scheme") 
-      case CORPORATION_TAX => APICategoryDetails(CORPORATION_TAX, "Corporation Tax") 
-      case CUSTOMS => APICategoryDetails(CUSTOMS, "Customs") 
-      case ESTATES => APICategoryDetails(ESTATES, "Estates") 
-      case HELP_TO_SAVE => APICategoryDetails(HELP_TO_SAVE,"Help to Save") 
+      case BUSINESS_RATES => APICategoryDetails(BUSINESS_RATES, "Business Rates")
+      case CHARITIES => APICategoryDetails(CHARITIES, "Charities")
+      case CONSTRUCTION_INDUSTRY_SCHEME => APICategoryDetails(CONSTRUCTION_INDUSTRY_SCHEME, "Construction Industry Scheme")
+      case CORPORATION_TAX => APICategoryDetails(CORPORATION_TAX, "Corporation Tax")
+      case CUSTOMS => APICategoryDetails(CUSTOMS, "Customs")
+      case ESTATES => APICategoryDetails(ESTATES, "Estates")
+      case HELP_TO_SAVE => APICategoryDetails(HELP_TO_SAVE,"Help to Save")
       case INCOME_TAX_MTD => APICategoryDetails(INCOME_TAX_MTD, "Income Tax (Making Tax Digital)")
-      case LIFETIME_ISA => APICategoryDetails(LIFETIME_ISA, "Lifetime ISA") 
-      case MARRIAGE_ALLOWANCE => APICategoryDetails(MARRIAGE_ALLOWANCE, "Marriage Allowance") 
-      case NATIONAL_INSURANCE => APICategoryDetails(NATIONAL_INSURANCE, "National Insurance") 
-      case PAYE => APICategoryDetails(PAYE, "PAYE") 
-      case PENSIONS => APICategoryDetails(PENSIONS, "Pensions") 
+      case LIFETIME_ISA => APICategoryDetails(LIFETIME_ISA, "Lifetime ISA")
+      case MARRIAGE_ALLOWANCE => APICategoryDetails(MARRIAGE_ALLOWANCE, "Marriage Allowance")
+      case NATIONAL_INSURANCE => APICategoryDetails(NATIONAL_INSURANCE, "National Insurance")
+      case PAYE => APICategoryDetails(PAYE, "PAYE")
+      case PENSIONS => APICategoryDetails(PENSIONS, "Pensions")
       case PRIVATE_GOVERNMENT => APICategoryDetails(PRIVATE_GOVERNMENT, "Private Government")
-      case RELIEF_AT_SOURCE => APICategoryDetails(RELIEF_AT_SOURCE, "Relief at Source") 
-      case SELF_ASSESSMENT => APICategoryDetails(SELF_ASSESSMENT, "Self Assessment") 
-      case STAMP_DUTY => APICategoryDetails(STAMP_DUTY, "Stamp Duty") 
-      case TRUSTS => APICategoryDetails(TRUSTS, "Trusts") 
-      case VAT => APICategoryDetails(VAT, "VAT") 
-      case VAT_MTD => APICategoryDetails(VAT_MTD, "VAT (Making Tax Digital)") 
+      case RELIEF_AT_SOURCE => APICategoryDetails(RELIEF_AT_SOURCE, "Relief at Source")
+      case SELF_ASSESSMENT => APICategoryDetails(SELF_ASSESSMENT, "Self Assessment")
+      case STAMP_DUTY => APICategoryDetails(STAMP_DUTY, "Stamp Duty")
+      case TRUSTS => APICategoryDetails(TRUSTS, "Trusts")
+      case VAT => APICategoryDetails(VAT, "VAT")
+      case VAT_MTD => APICategoryDetails(VAT_MTD, "VAT (Making Tax Digital)")
       case OTHER =>  APICategoryDetails(OTHER, "Other")
     }
   }
-
-  val details = APICategory.values.map(toAPICategoryDetails)
 }
 
-case class APICategoryDetails(val category: APICategory, val details: String)
-
+case class APICategoryDetails(category: APICategory, name: String)
 
 object APIStatus extends Enumeration {
   type APIStatus = Value

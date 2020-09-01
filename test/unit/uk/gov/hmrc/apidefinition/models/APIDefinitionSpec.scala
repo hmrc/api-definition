@@ -21,6 +21,7 @@ import uk.gov.hmrc.apidefinition.models.APICategory._
 import uk.gov.hmrc.apidefinition.models.{APIDefinition, PrivateAPIAccess, PublicAPIAccess}
 import uk.gov.hmrc.apidefinition.models.JsonFormatters._
 import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.apidefinition.models.APICategory
 
 class APIDefinitionSpec extends UnitSpec {
 
@@ -122,6 +123,22 @@ class APIDefinitionSpec extends UnitSpec {
     "fail to read from JSON when the API categories are defined with incorrect values" in {
       intercept[RuntimeException] {
         anApiDefinition(categories = Some("[\"NOT_A_VALID_CATEGORY\"]"))
+      }
+    }
+  }
+
+  "APICategory" should {
+    "return details for a given category" in {
+      val details = APICategory.toAPICategoryDetails(BUSINESS_RATES)
+
+      details.category shouldBe BUSINESS_RATES
+      details.name shouldBe "Business Rates"
+    }
+
+    "return appropriate APICategoryDetails objects for each APICategory" in {
+      APICategory.values.foreach { category =>
+        val details = APICategory.toAPICategoryDetails(category)
+        details.category shouldBe category
       }
     }
   }
