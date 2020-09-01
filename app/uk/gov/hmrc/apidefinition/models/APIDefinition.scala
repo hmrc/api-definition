@@ -147,6 +147,8 @@ object APICategory extends Enum[APICategory] with PlayJsonEnum[APICategory]  {
       case OTHER =>  APICategoryDetails(OTHER, "Other")
     }
   }
+
+  def allAPICategoryDetails = APICategory.values.map(toAPICategoryDetails)
 }
 
 case class APICategoryDetails(category: APICategory, name: String)

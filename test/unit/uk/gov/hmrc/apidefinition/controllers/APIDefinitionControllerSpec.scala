@@ -870,6 +870,19 @@ class APIDefinitionControllerSpec extends UnitSpec
     }
   }
 
+  "fetchAllAPICategories" should {
+    "return details of all current API Categories" in new Setup {
+        val result: Result = await(underTest.fetchAllAPICategories()(request))
+
+        status(result) shouldBe OK
+        val body: String = bodyOf(result)
+
+        APICategory.values.foreach { category =>
+          body.contains(s""""category":"${category.entryName}"""")
+        }
+    }
+  }
+
   "publishAllToAws" should {
     "succeed with status 204 when all APIs are republished" in new Setup {
       given(mockAPIDefinitionService.publishAllToAws()(any[HeaderCarrier])).willReturn(successful(()))

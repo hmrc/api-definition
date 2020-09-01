@@ -32,6 +32,7 @@ import uk.gov.hmrc.http.{HeaderCarrier, UnauthorizedException}
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
 import scala.concurrent.{ExecutionContext, Future}
+import _root_.uk.gov.hmrc.apidefinition.models.APICategory
 
 @Singleton
 class APIDefinitionController @Inject()(apiDefinitionValidator: ApiDefinitionValidator,
@@ -109,6 +110,10 @@ class APIDefinitionController @Inject()(apiDefinitionValidator: ApiDefinitionVal
 
   def publishAllToAws(): Action[AnyContent] = Action.async { implicit request =>
     apiDefinitionService.publishAllToAws().map { _ => NoContent } recover recovery
+  }
+
+  def fetchAllAPICategories: Action[AnyContent] = Action.async {
+    Future.successful(Ok(Json.toJson(APICategory.allAPICategoryDetails)))
   }
 
   private def extractQueryOptions(request: Request[AnyContent]) = {
