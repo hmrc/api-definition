@@ -24,7 +24,7 @@ import play.api.mvc._
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.models.ErrorCode._
 import uk.gov.hmrc.apidefinition.models.JsonFormatters._
-import uk.gov.hmrc.apidefinition.models.{APIDefinition, ErrorCode}
+import uk.gov.hmrc.apidefinition.models.{APIDefinition, ErrorCode, APICategory}
 import uk.gov.hmrc.apidefinition.services.APIDefinitionService
 import uk.gov.hmrc.apidefinition.utils.APIDefinitionMapper
 import uk.gov.hmrc.apidefinition.validators.ApiDefinitionValidator
@@ -32,7 +32,6 @@ import uk.gov.hmrc.http.{HeaderCarrier, UnauthorizedException}
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
 import scala.concurrent.{ExecutionContext, Future}
-import _root_.uk.gov.hmrc.apidefinition.models.APICategory
 
 @Singleton
 class APIDefinitionController @Inject()(apiDefinitionValidator: ApiDefinitionValidator,
