@@ -24,7 +24,7 @@ import play.api.mvc._
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.models.ErrorCode._
 import uk.gov.hmrc.apidefinition.models.JsonFormatters._
-import uk.gov.hmrc.apidefinition.models.{APIDefinition, ErrorCode}
+import uk.gov.hmrc.apidefinition.models.{APIDefinition, ErrorCode, APICategory}
 import uk.gov.hmrc.apidefinition.services.APIDefinitionService
 import uk.gov.hmrc.apidefinition.utils.APIDefinitionMapper
 import uk.gov.hmrc.apidefinition.validators.ApiDefinitionValidator
@@ -109,6 +109,10 @@ class APIDefinitionController @Inject()(apiDefinitionValidator: ApiDefinitionVal
 
   def publishAllToAws(): Action[AnyContent] = Action.async { implicit request =>
     apiDefinitionService.publishAllToAws().map { _ => NoContent } recover recovery
+  }
+
+  def fetchAllAPICategories: Action[AnyContent] = Action.async {
+    Future.successful(Ok(Json.toJson(APICategory.allAPICategoryDetails)))
   }
 
   private def extractQueryOptions(request: Request[AnyContent]) = {
