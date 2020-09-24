@@ -32,11 +32,16 @@ class SpecificationController @Inject()(specificationService: SpecificationServi
                                        (implicit val ec: ExecutionContext)
                                         extends BackendController(cc) {
 
-  
-
-  def fetchSpecification(serviceName: String, version: String): Action[AnyContent] = Action.async {
+  def fetchApiSpecification(serviceName: String, version: String): Action[AnyContent] = Action.async {
     _ => {
-      specificationService.fetchSpecification(serviceName, version)
+      specificationService.fetchApiSpecification(serviceName, version)
+        .map(json => Ok(Json.prettyPrint(json)))
+    }
+  }
+
+  def fetchPreviewApiSpecification(rootRamlUrl: String): Action[AnyContent] = Action.async {
+    _ => {
+      specificationService.fetchPreviewApiSpecification(rootRamlUrl)
         .map(json => Ok(Json.prettyPrint(json)))
     }
   }

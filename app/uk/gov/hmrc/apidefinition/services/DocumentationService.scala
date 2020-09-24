@@ -51,7 +51,7 @@ class DocumentationService @Inject()(apiDefinitionRepository: APIDefinitionRepos
 
     // TODO: ebridge - remove when routed via api-platform-microservice
     if(resource == "packed(application.raml)") {
-      specificationService.fetchSpecification(serviceName, version)
+      specificationService.fetchApiSpecification(serviceName, version)
         .map(json => Ok(json))
     } else {
       for {

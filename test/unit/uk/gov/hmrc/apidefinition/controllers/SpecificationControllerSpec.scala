@@ -48,19 +48,35 @@ class SpecificationControllerSpec extends UnitSpec
     val underTest = new SpecificationController(mockSpecificationService, mockAppConfig, stubControllerComponents())
   }
 
-  "fetchSpecification action should return json specification" in new Setup {
+  "fetchApiSpecification action should return json specification" in new Setup {
     val serviceName = "my-service-name"
     val version = "1.0"
     val specificationJson = Json.toJson("some" -> "stuff")
 
-    when(mockSpecificationService.fetchSpecification(any(), any())).thenReturn(Future.successful(specificationJson))
+    when(mockSpecificationService.fetchApiSpecification(any(), any())).thenReturn(Future.successful(specificationJson))
 
-    val result : Result = await(underTest.fetchSpecification(serviceName, version)(request))
+    val result : Result = await(underTest.fetchApiSpecification(serviceName, version)(request))
 
     result.header.status should be(OK)
 
     jsonBodyOf(result) shouldEqual Json.toJson("some" -> "stuff")
 
-    verify(mockSpecificationService).fetchSpecification(eqTo(serviceName), eqTo(version))
+    verify(mockSpecificationService).fetchApiSpecification(eqTo(serviceName), eqTo(version))
   }
+
+  "fetchPreviewApiSpecification action should return json specification" in new Setup {
+    val specificationJson = Json.toJson("some" -> "stuff")
+    val rootRamlUrl = "http://localhost:8080/fake-url"
+
+    when(mockSpecificationService.fetchPreviewApiSpecification(any())).thenReturn(Future.successful(specificationJson))
+
+    val result : Result = await(underTest.fetchPreviewApiSpecification(rootRamlUrl)(request))
+
+    result.header.status should be(OK)
+
+    jsonBodyOf(result) shouldEqual Json.toJson("some" -> "stuff")
+
+    verify(mockSpecificationService).fetchPreviewApiSpecification(eqTo(rootRamlUrl))
+  }
+
 }

@@ -54,7 +54,7 @@ class SpecificationServiceSpec extends UnitSpec with ScalaFutures with MockitoSu
 
       val specificationService: SpecificationService = new SpecificationService(config, ramlLoader, parser)
 
-      val js = await(specificationService.fetchSpecification("api-not-real", "1.0"))
+      val js = await(specificationService.fetchApiSpecification("api-not-real", "1.0"))
 
       Json.stringify(js).contains(""""title":"My simple title"""") shouldBe true
     }
