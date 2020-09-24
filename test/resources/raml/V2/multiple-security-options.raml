@@ -29,3 +29,11 @@ uses:
 
       description: 3
       displayName: 3
+
+/endpoint4:
+    post:
+      securedBy: [ sec.x-application ]
+      (annotations.scope): "all:test-me-too"
+
+      description: 4
+      displayName: 4

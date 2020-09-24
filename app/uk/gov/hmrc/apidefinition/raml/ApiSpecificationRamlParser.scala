@@ -206,7 +206,7 @@ class ApiSpecificationRamlParser @Inject()(schemaService : SchemaService){
       if (ramlMethod.securedBy().asScala.nonEmpty) {
         ramlMethod.securedBy.get(0).securityScheme.`type` match {
           case "OAuth 2.0" => Some(SecurityScheme("user", ramlMethod.annotation("(scope)")))
-          case _ => Some(SecurityScheme("application", None))
+          case _           => Some(SecurityScheme("application", ramlMethod.annotation("(scope)")))
         }
       } else {
         None
