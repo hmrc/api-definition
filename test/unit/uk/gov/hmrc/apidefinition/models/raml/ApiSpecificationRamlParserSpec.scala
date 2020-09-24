@@ -117,11 +117,13 @@ class ApiSpecificationRamlParserSpec extends UnitSpec {
       val m0 = rg.resources(0).methods(0)
       val m1 = rg.resources(1).methods(0)
       val m2 = rg.resources(2).methods(0)
+      val m3 = rg.resources(3).methods(0)
 
       m0.securedBy shouldBe None
 
       m1.securedBy shouldBe Some(SecurityScheme("user", Some("all:test-me")))
       m2.securedBy shouldBe Some(SecurityScheme("application", None))
+      m3.securedBy shouldBe Some(SecurityScheme("application", Some("all:test-me-too")))
     }
 
 
