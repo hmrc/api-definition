@@ -46,7 +46,7 @@ class DocumentationService @Inject()(apiDefinitionRepository: APIDefinitionRepos
 
   import DocumentationService._
 
-  def fetchApiDocumentationResource(serviceName: String, version: String, resource: String)(implicit hc: HeaderCarrier): Future[Result] = {
+  def fetchApiDocumentationResource(serviceName: String, version: String, resource: String): Future[Result] = {
     def createProxySafeContentType(contentType: String): (String, String) = ((PROXY_SAFE_CONTENT_TYPE, contentType))
 
     // TODO: ebridge - remove when routed via api-platform-microservice
