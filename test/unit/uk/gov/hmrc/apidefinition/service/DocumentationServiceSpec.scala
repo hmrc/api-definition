@@ -143,7 +143,7 @@ class DocumentationServiceSpec extends UnitSpec with ScalaFutures with MockitoSu
       theApiDefinitionWillBeReturned()
       theApiMicroserviceWillReturnTheResource(streamedResource)
 
-      val result: Result = await(underTest.fetchApiDocumentationResource(serviceName, "1.0", "resource")(hc))
+      val result: Result = await(underTest.fetchApiDocumentationResource(serviceName, "1.0", "resource"))
 
       result.header.status should be(Status.OK)
       verify(mockApiMicroserviceConnector).fetchApiDocumentationResourceByUrl(any(), meq("1.0"), meq("resource"))
@@ -153,7 +153,7 @@ class DocumentationServiceSpec extends UnitSpec with ScalaFutures with MockitoSu
       theApiDefinitionWillBeReturned()
       theApiMicroserviceWillReturnTheResource(streamedResource)
 
-      val result: Result = await(underTest.fetchApiDocumentationResource(serviceName, "1.0", "resource")(hc))
+      val result: Result = await(underTest.fetchApiDocumentationResource(serviceName, "1.0", "resource"))
 
       result.header.status should be(Status.OK)
       result.body.contentType should be(Some("application/text"))
@@ -163,7 +163,7 @@ class DocumentationServiceSpec extends UnitSpec with ScalaFutures with MockitoSu
       theApiDefinitionWillBeReturned()
       theApiMicroserviceWillReturnTheResource(streamedResource)
 
-      val result: Result = await(underTest.fetchApiDocumentationResource(serviceName, "1.0", "resource")(hc))
+      val result: Result = await(underTest.fetchApiDocumentationResource(serviceName, "1.0", "resource"))
 
       result.header.status should be(Status.OK)
       result.header.headers.get(PROXY_SAFE_CONTENT_TYPE) should be(Some("application/text"))
@@ -173,7 +173,7 @@ class DocumentationServiceSpec extends UnitSpec with ScalaFutures with MockitoSu
       theApiDefinitionWillBeReturned()
       theApiMicroserviceWillReturnTheResource(chunkedResource)
 
-      val result: Result = await(underTest.fetchApiDocumentationResource(serviceName, "1.0", "resource")(hc))
+      val result: Result = await(underTest.fetchApiDocumentationResource(serviceName, "1.0", "resource"))
 
       result.header.status should be(Status.OK)
       result.body.contentType should be(Some("application/octet-stream"))
@@ -185,7 +185,7 @@ class DocumentationServiceSpec extends UnitSpec with ScalaFutures with MockitoSu
       theApiMicroserviceWillReturnTheResource(notFoundResponse)
 
       intercept[NotFoundException] {
-        await(underTest.fetchApiDocumentationResource(serviceName, "1.0", "resourceNotThere")(hc))
+        await(underTest.fetchApiDocumentationResource(serviceName, "1.0", "resourceNotThere"))
       }
     }
 
@@ -194,7 +194,7 @@ class DocumentationServiceSpec extends UnitSpec with ScalaFutures with MockitoSu
       theApiMicroserviceWillReturnTheResource(internalServerErrorResponse)
 
       intercept[InternalServerException] {
-        await(underTest.fetchApiDocumentationResource(serviceName, "1.0", "resourceNotThere")(hc))
+        await(underTest.fetchApiDocumentationResource(serviceName, "1.0", "resourceNotThere"))
       }
     }
 
@@ -202,7 +202,7 @@ class DocumentationServiceSpec extends UnitSpec with ScalaFutures with MockitoSu
       noApiDefinitionWillBeReturned()
 
       intercept[NotFoundException] {
-        await(underTest.fetchApiDocumentationResource(serviceName, "1.0", "resource")(hc))
+        await(underTest.fetchApiDocumentationResource(serviceName, "1.0", "resource"))
       }
     }
   }
