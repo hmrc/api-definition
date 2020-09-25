@@ -56,17 +56,17 @@ class DocumentationControllerSpec extends UnitSpec with ScalaFutures with Mockit
     val underTest = new DocumentationController(documentationService, stubControllerComponents())
 
     def theDocumentationServiceWillReturnTheResource: OngoingStubbing[Future[Result]] = {
-      when(documentationService.fetchApiDocumentationResource(anyString, anyString, anyString)(any[HeaderCarrier]))
+      when(documentationService.fetchApiDocumentationResource(anyString, anyString, anyString))
         .thenReturn(Future.successful(Results.Ok(body).withHeaders(CONTENT_TYPE -> contentType)))
     }
 
     def theDocumentationServiceWillFailToReturnTheResource: OngoingStubbing[Future[Result]] = {
-      when(documentationService.fetchApiDocumentationResource(anyString, anyString, anyString)(any[HeaderCarrier]))
+      when(documentationService.fetchApiDocumentationResource(anyString, anyString, anyString))
         .thenReturn(Future.failed(new RuntimeException("Some message")))
     }
 
     def theDocumentationServiceWillReturnNotFound: OngoingStubbing[Future[Result]] = {
-      when(documentationService.fetchApiDocumentationResource(anyString, anyString, anyString)(any[HeaderCarrier]))
+      when(documentationService.fetchApiDocumentationResource(anyString, anyString, anyString))
         .thenReturn(Future.failed(new NotFoundException("some message")))
     }
   }
@@ -92,7 +92,7 @@ class DocumentationControllerSpec extends UnitSpec with ScalaFutures with Mockit
 
       await(underTest.fetchApiDocumentationResource(serviceName, version, resourceName)(request))
 
-      verify(documentationService).fetchApiDocumentationResource(eqTo(serviceName), eqTo(version), eqTo(resourceName))(any[HeaderCarrier])
+      verify(documentationService).fetchApiDocumentationResource(eqTo(serviceName), eqTo(version), eqTo(resourceName))
     }
 
     "return the resource with a Content-type header when the content type is known" in new Setup {
