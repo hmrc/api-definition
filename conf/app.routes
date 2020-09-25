@@ -5,7 +5,7 @@ GET         /api-definition/:serviceName                                        
 GET         /api-definition/:serviceName/extended                                uk.gov.hmrc.apidefinition.controllers.APIDefinitionController.fetchExtended(serviceName)
 GET         /api-definition/:serviceName/:version/documentation/*resource        uk.gov.hmrc.apidefinition.controllers.DocumentationController.fetchApiDocumentationResource(serviceName, version, resource)
 
-GET         /api-definition/:serviceName/:version/specification                  uk.gov.hmrc.apidefinition.controllers.SpecificationController.fetchSpecification(serviceName, version)
+GET         /api-definition/:serviceName/:version/specification                  uk.gov.hmrc.apidefinition.controllers.SpecificationController.fetchApiSpecification(serviceName, version)
 
 POST        /api-definition                                                      uk.gov.hmrc.apidefinition.controllers.APIDefinitionController.createOrUpdate()
 POST        /api-definition/validate                                             uk.gov.hmrc.apidefinition.controllers.APIDefinitionController.validate
@@ -16,3 +16,5 @@ POST        /api-definition/republish-all-aws                                   
 DELETE      /api-definition/:serviceName                                         uk.gov.hmrc.apidefinition.controllers.APIDefinitionController.delete(serviceName)
 
 GET         /api-categories                                                      uk.gov.hmrc.apidefinition.controllers.APIDefinitionController.fetchAllAPICategories
+
+GET         /preview                                                             uk.gov.hmrc.apidefinition.controllers.SpecificationController.fetchPreviewApiSpecification(ramlUrl)

@@ -33,7 +33,7 @@ class DocumentationController @Inject()(service: DocumentationService, cc: Contr
                                         extends BackendController(cc) {
 
   def fetchApiDocumentationResource(serviceName: String, version: String, resource: String): Action[AnyContent] = Action.async {
-    implicit request => {
+    _ => {
       Logger.info(s"API Documentation received request for resource: $serviceName, $version, $resource")
       service.fetchApiDocumentationResource(serviceName, version, resource)
     } recover recovery
