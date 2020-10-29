@@ -84,7 +84,6 @@ class APIDefinitionControllerSpec extends UnitSpec
     when(mockAPIDefinitionService.fetchAllPrivateAPIs()).thenReturn(successful(apiDefinitions))
     when(mockAPIDefinitionService.fetchAll).thenReturn(successful(apiDefinitions))
     when(mockAPIDefinitionService.fetchAllAPIsForApplication(any(), any())).thenReturn(successful(apiDefinitions))
-    when(mockAPIDefinitionService.fetchAllAPIsForCollaborator(any(), any())(any[HeaderCarrier])).thenReturn(apiDefinitions)
 
     def getHeader(result: Result, headerName: String) = result.header.headers.get(headerName)
 
@@ -511,52 +510,6 @@ class APIDefinitionControllerSpec extends UnitSpec
         lastPublishedAt = None
       ))
     }
-
-    "succeed with a 200 (ok) when an API exists for the given serviceName and user has access" in new Setup {
-
-      private val extendedApiDefinition = extDefinition(serviceName, Some(userEmail))
-
-      when(mockAPIDefinitionService.fetchExtendedByServiceName(isEq(serviceName), isEq(Some(userEmail)))(any[HeaderCarrier]))
-        .thenReturn(successful(extendedApiDefinition))
-
-      private val result = await(underTest.fetchExtended(serviceName)(FakeRequest("GET", s"?email=$userEmail")))
-
-      status(result) shouldBe OK
-      jsonBodyOf(result).asOpt[ExtendedAPIDefinition] shouldBe extendedApiDefinition
-    }
-
-    "succeed with a 200 (ok) when an API exists for the given serviceName and no logged in user" in new Setup {
-
-      private val extendedApiDefinition = extDefinition(serviceName, None)
-
-      when(mockAPIDefinitionService.fetchExtendedByServiceName(isEq(serviceName), isEq(None))(any[HeaderCarrier]))
-        .thenReturn(successful(extendedApiDefinition))
-
-      private val result = await(underTest.fetchExtended(serviceName)(FakeRequest("GET", "")))
-
-      status(result) shouldBe OK
-      jsonBodyOf(result).asOpt[ExtendedAPIDefinition] shouldBe extendedApiDefinition
-    }
-
-    "fail with a 404 (not found) when no public API exists for the given serviceName" in new Setup {
-
-      when(mockAPIDefinitionService.fetchExtendedByServiceName(isEq(serviceName), isEq(None))(any[HeaderCarrier]))
-        .thenReturn(successful(None))
-
-      private val result = await(underTest.fetchExtended(serviceName)(request))
-
-      status(result) shouldBe NOT_FOUND
-    }
-
-    "fail with a 500 (internal server error) when the service throws an exception" in new Setup {
-
-      when(mockAPIDefinitionService.fetchExtendedByServiceName(isEq(serviceName), isEq(None))(any[HeaderCarrier]))
-        .thenReturn(failed(new RuntimeException("Something went wrong")))
-
-      private val result = await(underTest.fetchExtended(serviceName)(request))
-
-      status(result) shouldBe INTERNAL_SERVER_ERROR
-    }
   }
 
   "fetch" should {
@@ -687,17 +640,6 @@ class APIDefinitionControllerSpec extends UnitSpec
       getHeader(result, HeaderNames.CACHE_CONTROL) shouldBe None
     }
 
-    "fail with a 500 (internal server error) when the email is defined and the service throws an exception" in new QueryDispatcherSetup {
-
-      when(mockAPIDefinitionService.fetchAllAPIsForCollaborator(isEq(userEmail), any[Boolean])(any[HeaderCarrier]))
-        .thenReturn(failed(new RuntimeException("Something went wrong")))
-
-      private val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?email=$userEmail")))
-
-      status(result) shouldBe INTERNAL_SERVER_ERROR
-      getHeader(result, HeaderNames.CACHE_CONTROL) shouldBe None
-    }
-
     "return the API when the context is defined and an API exists for the context" in new QueryDispatcherSetup {
       private val context = "my-context"
 
@@ -741,15 +683,6 @@ class APIDefinitionControllerSpec extends UnitSpec
           verifyApiDefinitionsReturnedOkWithNoCacheControl(result)
 
           verify(mockAPIDefinitionService).fetchAllAPIsForApplication("APP_ID", alsoIncludePrivateTrials)
-        }
-
-        "return all the APIs (without private trials) available for the collaborator when the email is defined" in new QueryDispatcherSetup {
-
-          private val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?email=$userEmail")))
-
-          verifyApiDefinitionsReturnedOkWithNoCacheControl(result)
-
-          verify(mockAPIDefinitionService).fetchAllAPIsForCollaborator(isEq(userEmail), isEq(alsoIncludePrivateTrials))(any[HeaderCarrier])
         }
       }
 
@@ -797,15 +730,6 @@ class APIDefinitionControllerSpec extends UnitSpec
           verifyApiDefinitionsReturnedOkWithNoCacheControl(result)
 
           verify(mockAPIDefinitionService).fetchAllAPIsForApplication("APP_ID", alsoIncludePrivateTrials)
-        }
-
-        "return all the APIs available for the collaborator (including private trials) when the email is defined" in new QueryDispatcherSetup {
-
-          private val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?email=$userEmail&$alsoIncludePrivateTrialsQueryParameter")))
-
-          verifyApiDefinitionsReturnedOkWithNoCacheControl(result)
-
-          verify(mockAPIDefinitionService).fetchAllAPIsForCollaborator(isEq(userEmail), isEq(alsoIncludePrivateTrials))(any[HeaderCarrier])
         }
       }
     }

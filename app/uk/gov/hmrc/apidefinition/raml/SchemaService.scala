@@ -25,6 +25,7 @@ import scala.io.Source
 import uk.gov.hmrc.apidefinition.models.apispecification.JsonSchema
 import uk.gov.hmrc.apidefinition.models.apispecification.JsonSchema.JsonSchemaWithReference
 import javax.inject.Singleton
+import play.api.Logger
 
 @Singleton
 class SchemaService {
@@ -57,7 +58,8 @@ class SchemaService {
   }
 
   def parseSchema(schema: String, basePath: String): JsonSchema = {
-
+    
+    Logger.info(s"SCHEMA :[$schema]")
     val jsonSchema = Json.parse(schema).as[JsonSchema]
     jsonSchema match {
       case JsonSchemaWithReference() => {
