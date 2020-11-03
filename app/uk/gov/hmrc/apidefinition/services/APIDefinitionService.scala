@@ -20,7 +20,6 @@ import javax.inject.{Inject, Singleton}
 import org.joda.time.{DateTime, DateTimeZone}
 import play.api.Logger
 import uk.gov.hmrc.apidefinition.config.AppConfig
-import uk.gov.hmrc.apidefinition.connector.ThirdPartyApplicationConnector
 import uk.gov.hmrc.apidefinition.models.APIStatus.APIStatus
 import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
@@ -31,7 +30,6 @@ import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class APIDefinitionService @Inject()(awsApiPublisher: AwsApiPublisher,
-                                     thirdPartyApplicationConnector: ThirdPartyApplicationConnector,
                                      apiDefinitionRepository: APIDefinitionRepository,
                                      notificationService: NotificationService,
                                      playApplicationContext: AppConfig)
@@ -82,69 +80,6 @@ class APIDefinitionService @Inject()(awsApiPublisher: AwsApiPublisher,
   def fetchByServiceName(serviceName: String): Future[Option[APIDefinition]] = {
     apiDefinitionRepository.fetchByServiceName(serviceName)
   }
-
-  def fetchExtendedByServiceName(serviceName: String, email: Option[String])
-                                (implicit hc: HeaderCarrier): Future[Option[ExtendedAPIDefinition]] = {
-
-    def appIsWhitelisted(userApplication: Seq[String], whitelist: Seq[String]) = {
-      userApplication.intersect(whitelist).nonEmpty
-    }
-
-    def availability(version: APIVersion, userApplicationIds: Seq[String], forSandbox: Boolean = false): Option[APIAvailability] = {
-      if (forSandbox == playApplicationContext.isSandbox) {
-        version.access match {
-          case Some(PrivateAPIAccess(whitelist, isTrial)) => Some(APIAvailability(version.endpointsEnabled.getOrElse(false),
-            PrivateAPIAccess(whitelist, isTrial),
-            email.isDefined,
-            authorised = appIsWhitelisted(userApplicationIds, whitelist)))
-
-          case _ => Some(APIAvailability(version.endpointsEnabled.getOrElse(false),
-            PublicAPIAccess(),
-            email.isDefined,
-            authorised = true))
-        }
-      } else None
-    }
-
-    val maybeApiDefinitionF = apiDefinitionRepository.fetchByServiceName(serviceName)
-    val applicationIdsF = fetchApplicationIdsByEmail(email)
-
-    for {
-      api <- maybeApiDefinitionF
-      userApplicationIds <- applicationIdsF
-    } yield api.map { a =>
-      val versions = a.versions.foldLeft(Seq[ExtendedAPIVersion]()) {
-        case (acc, version) => acc :+
-          ExtendedAPIVersion(
-            version = version.version,
-            status = version.status,
-            endpoints = version.endpoints,
-            productionAvailability = availability(version, userApplicationIds),
-            sandboxAvailability = availability(version, userApplicationIds, forSandbox = true))
-      }
-
-      ExtendedAPIDefinition(a.serviceName,
-        a.serviceBaseUrl,
-        a.name,
-        a.description,
-        a.context,
-        a.requiresTrust.getOrElse(false),
-        a.isTestSupport.getOrElse(false),
-        versions,
-        a.lastPublishedAt)
-    }
-  }
-
-  private def fetchApplicationIdsByEmail(email: Option[String])(implicit hc: HeaderCarrier): Future[Seq[String]] = {
-    email match {
-      case None => Future(Seq.empty)
-      case Some(e) =>
-        for {
-          application <- thirdPartyApplicationConnector.fetchApplicationsByEmail(e)
-        } yield application.map(_.id.toString)
-    }
-  }
-
   def fetchByName(name: String): Future[Option[APIDefinition]] = {
     apiDefinitionRepository.fetchByName(name)
   }
@@ -160,22 +95,11 @@ class APIDefinitionService @Inject()(awsApiPublisher: AwsApiPublisher,
   def delete(serviceName: String)(implicit hc: HeaderCarrier): Future[Unit] = {
     apiDefinitionRepository.fetchByServiceName(serviceName) flatMap {
       case None => successful(())
-      case Some(definition) => hasSubscribers(definition) flatMap {
-        case true => failed(new UnauthorizedException("API has subscribers"))
-        case false =>
-          for {
-            _ <- awsApiPublisher.delete(definition)
-            _ <- apiDefinitionRepository.delete(definition.serviceName)
-          } yield ()
-      }
-    }
-  }
-
-  private def hasSubscribers(apiDefinition: APIDefinition)(implicit hc: HeaderCarrier): Future[Boolean] = {
-    sequence {
-      apiDefinition.versions.map(v => thirdPartyApplicationConnector.fetchSubscribers(apiDefinition.context, v.version))
-    } map {
-      _.exists(subscribers => subscribers.nonEmpty)
+      case Some(definition) =>
+        for {
+          _ <- awsApiPublisher.delete(definition)
+          _ <- apiDefinitionRepository.delete(definition.serviceName)
+        } yield ()
     }
   }
 
@@ -206,17 +130,6 @@ class APIDefinitionService @Inject()(awsApiPublisher: AwsApiPublisher,
 
   def fetchAllAPIsForApplication(applicationId: String, alsoIncludePrivateTrials: Boolean): Future[Seq[APIDefinition]] = {
     apiDefinitionRepository.fetchAll().map(filterAPIsForApplications(alsoIncludePrivateTrials, applicationId))
-  }
-
-  def fetchAllAPIsForCollaborator(email: String, alsoIncludePrivateTrials: Boolean)(implicit hc: HeaderCarrier): Future[Seq[APIDefinition]] = {
-
-    val applicationIdsF = fetchApplicationIdsByEmail(Some(email))
-    val apiDefinitionsF = apiDefinitionRepository.fetchAll()
-
-    for {
-      userApplicationIds <- applicationIdsF
-      allApis <- apiDefinitionsF
-    } yield filterAPIsForApplications(alsoIncludePrivateTrials, userApplicationIds: _*)(allApis)
   }
 
   private def filterAPIsForApplications(alsoIncludePrivateTrials: Boolean, applicationIds: String*): Seq[APIDefinition] => Seq[APIDefinition] = {

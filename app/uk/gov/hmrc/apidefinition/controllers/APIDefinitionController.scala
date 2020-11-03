@@ -62,13 +62,6 @@ class APIDefinitionController @Inject()(apiDefinitionValidator: ApiDefinitionVal
     } recover recovery
   }
 
-  def fetchExtended(serviceName: String): Action[AnyContent] = Action.async { implicit request =>
-    apiDefinitionService.fetchExtendedByServiceName(serviceName, request.queryString.get("email").flatMap(_.headOption)) map {
-      case Some(extendedApiDefinition) => Ok(Json.toJson(extendedApiDefinition))
-      case _ => NotFound(error(API_DEFINITION_NOT_FOUND, "No API Definition was found"))
-    } recover recovery
-  }
-
   def fetch(serviceName: String): Action[AnyContent] = Action.async { _ =>
     apiDefinitionService.fetchByServiceName(serviceName) map {
       case Some(apiDefinition) => Ok(Json.toJson(apiDefinition))
@@ -100,7 +93,6 @@ class APIDefinitionController @Inject()(apiDefinitionValidator: ApiDefinitionVal
       case Nil | ("options", _) :: Nil => fetchAllPublicAPIs(options.alsoIncludePrivateTrials)
       case ("context", context) :: Nil => fetchByContext(context)
       case ("applicationId", applicationId) :: _ => fetchAllForApplication(applicationId, options.alsoIncludePrivateTrials)
-      case ("email", email) :: _ => fetchAllForCollaborator(email, options.alsoIncludePrivateTrials)
       case ("type", typeValue) :: Nil => fetchDefinitionsByType(typeValue, options.alsoIncludePrivateTrials)
       case ("options", _) :: ("type", typeValue) :: Nil => fetchDefinitionsByType(typeValue, options.alsoIncludePrivateTrials)
       case _ => Future.successful(BadRequest("Invalid query parameter or parameters"))
@@ -149,12 +141,6 @@ class APIDefinitionController @Inject()(apiDefinitionValidator: ApiDefinitionVal
   private def fetchAllForApplication(applicationId: String, alsoIncludePrivateTrials: Boolean) = {
     apiDefinitionService
       .fetchAllAPIsForApplication(applicationId, alsoIncludePrivateTrials)
-      .map(apiDefinitionToResult) recover recovery
-  }
-
-  private def fetchAllForCollaborator(email: String, alsoIncludePrivateTrials: Boolean)(implicit hc: HeaderCarrier) = {
-    apiDefinitionService
-      .fetchAllAPIsForCollaborator(email, alsoIncludePrivateTrials)
       .map(apiDefinitionToResult) recover recovery
   }
 
