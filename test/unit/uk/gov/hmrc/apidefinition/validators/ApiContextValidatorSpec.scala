@@ -77,6 +77,8 @@ class ApiContextValidatorSpec extends UnitSpec with MockitoSugar {
 
     def thereAreNoOverlappingAPIContexts: OngoingStubbing[Future[Seq[APIDefinition]]] = fetchByTopLevelContextWillReturn(Seq.empty)
 
+    def contextMustNotBeChangedErrorMessage(errorContext: String): String = s"Field 'context' must not be changed $errorContext"
+
     val mockAPIDefinitionService: APIDefinitionService = mock[APIDefinitionService]
     val mockAPIDefinitionRepository: APIDefinitionRepository = mock[APIDefinitionRepository]
 
@@ -113,7 +115,7 @@ class ApiContextValidatorSpec extends UnitSpec with MockitoSugar {
       verifyValidationPassed(result, context)
     }
 
-    "fail validation for new version of existing API with legacy context" in new Setup {
+    "pass validation for new version of existing API with legacy context" in new Setup {
       lazy val context: String = "money"
       lazy val serviceName: String = "money-service"
       lazy val apiDefinition: APIDefinition = testAPIDefinition(serviceName, context, Seq("1.0", "2.0"))
@@ -125,43 +127,25 @@ class ApiContextValidatorSpec extends UnitSpec with MockitoSugar {
 
       val result: validatorUnderTest.HMRCValidated[String] = await(validatorUnderTest.validate(errorContext, apiDefinitionWithNewVersion)(context))
 
-      verifyValidationFailed(result,
-        Seq(s"Field 'context' must start with one of 'accounts', 'agents', 'customs', 'individuals', 'misc', 'mobile', 'obligations', 'organisations', 'payments', 'test' $errorContext",
-          s"Field 'context' must have at least two segments $errorContext"))
+      verifyValidationPassed(result, context)
     }
 
-    "fail validation when new version of existing API context is superset of existing" in new Setup {
-      lazy val existingContext: String = "individuals/foo"
-      lazy val newContext: String = s"$existingContext/bar"
-      lazy val differentExistingAPI: APIDefinition = testAPIDefinition("existing-service", existingContext)
-      lazy val existingAPI: APIDefinition = testAPIDefinition("new-service", newContext)
-      lazy val newVersionOfExistingAPI: APIDefinition = testAPIDefinition("new-service", newContext, Seq("1.0", "2.0", "3.0"))
+    "fail if new version of existing API has different context" in new Setup {
+      lazy val oldContext: String = "money"
+      lazy val newContext = "new-money"
+      lazy val serviceName: String = "money-service"
+      lazy val apiDefinition: APIDefinition = testAPIDefinition(serviceName, oldContext, Seq("1.0", "2.0"))
+      lazy val apiDefinitionWithNewVersion: APIDefinition = testAPIDefinition(serviceName, newContext, Seq("1.0", "2.0", "3.0"))
 
-      fetchByTopLevelContextWillReturn(Seq(differentExistingAPI))
-      fetchByContextWillReturn(newContext, Some(existingAPI))
-      fetchByServiceNameWillReturn("new-service", Some(existingAPI))
+      thereAreNoOverlappingAPIContexts
+      fetchByContextWillReturn(newContext, None)
+      fetchByServiceNameWillReturn(serviceName, Some(apiDefinition))
 
-      val result: validatorUnderTest.HMRCValidated[String] = await(validatorUnderTest.validate(errorContext, newVersionOfExistingAPI)(newContext))
+      val result: validatorUnderTest.HMRCValidated[String] = await(validatorUnderTest.validate(errorContext, apiDefinitionWithNewVersion)(newContext))
 
-      verifyValidationFailed(result, Seq(s"Field 'context' overlaps with '$existingContext' $errorContext"))
+      val Invalid(errors) = result
+      errors.head == contextMustNotBeChangedErrorMessage(errorContext) || errors.tail.contains(contextMustNotBeChangedErrorMessage(errorContext)) shouldBe true
     }
-
-    "fail validation when new version of existing API context is subset of existing" in new Setup {
-      lazy val newContext: String =  "individuals/foo"
-      lazy val existingContext: String = s"$newContext/bar"
-      lazy val differentExistingAPI: APIDefinition = testAPIDefinition("existing-service", existingContext)
-      lazy val existingAPI: APIDefinition = testAPIDefinition("new-service", newContext)
-      lazy val newVersionOfExistingAPI: APIDefinition = testAPIDefinition("new-service", newContext, Seq("1.0", "2.0", "3.0"))
-
-      fetchByTopLevelContextWillReturn(Seq(differentExistingAPI))
-      fetchByContextWillReturn(newContext, Some(existingAPI))
-      fetchByServiceNameWillReturn("new-service", Some(existingAPI))
-
-      val result: validatorUnderTest.HMRCValidated[String] = await(validatorUnderTest.validate(errorContext, newVersionOfExistingAPI)(newContext))
-
-      verifyValidationFailed(result, Seq(s"Field 'context' overlaps with '$existingContext' $errorContext"))
-    }
-
 
     "fail if context is empty" in new Setup {
       lazy val context: String = ""
