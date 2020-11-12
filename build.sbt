@@ -11,9 +11,9 @@ lazy val appDependencies: Seq[ModuleID] = compile ++ test ++ tmpMacWorkaround
 
 lazy val compile = Seq(
   ws,
-  "uk.gov.hmrc" %% "bootstrap-play-26" % "1.13.0",
+  "uk.gov.hmrc" %% "bootstrap-play-26" % "2.1.0",
   "uk.gov.hmrc" %% "simple-reactivemongo" % "7.30.0-play-26",
-  "uk.gov.hmrc" %% "play-json-union-formatter" % "1.11.0",
+  "uk.gov.hmrc" %% "play-json-union-formatter" % "1.12.0-play-26",
   "org.typelevel" %% "cats-core" % "1.1.0",
   "uk.gov.hmrc" %% "raml-tools" % "1.18.0",
   "org.raml" % "raml-parser-2" % "1.0.13",
