@@ -36,7 +36,8 @@ class ApiContextValidator @Inject()(apiDefinitionService: APIDefinitionService,
                                    (implicit override val ec: ExecutionContext) extends Validator[String] {
 
 
-  private val ValidTopLevelContexts: Set[String] = Set("agents", "customs", "individuals", "mobile", "obligations", "organisations", "test", "payments", "misc", "accounts")
+  private val ValidTopLevelContexts: Set[String] =
+    Set("agents", "customs", "individuals", "mobile", "obligations", "organisations", "test", "payments", "misc", "accounts")
   private val contextRegex: Regex = """^[a-zA-Z0-9_\-\/]+$""".r
 
   def validate(errorContext: String, apiDefinition: APIDefinition)(implicit context: String): Future[HMRCValidated[String]] = {
@@ -64,7 +65,6 @@ class ApiContextValidator @Inject()(apiDefinitionService: APIDefinitionService,
       contextNotChangedValidated <- validateContextNotChanged(errorContext, apiDefinition)
       newAPITopLevelContextValidated <- existingAPIDefinitionFuture.flatMap(existingAPIDefinition => existingAPIDefinition match {
         case None => validationsForNewAPI(errorContext)
-        case Some(found: APIDefinition) if(found.versions.size < apiDefinition.versions.size)  => validationsForNewAPI(errorContext)
         case Some(_) => successful(context.validNel)
       })
     } yield (contextUniqueValidated, contextNotChangedValidated, newAPITopLevelContextValidated).mapN((_, _, _) => context)
