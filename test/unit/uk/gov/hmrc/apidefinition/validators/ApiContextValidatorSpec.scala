@@ -21,6 +21,7 @@ import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito.{verifyZeroInteractions, when}
 import org.mockito.stubbing.OngoingStubbing
 import org.scalatest.mockito.MockitoSugar
+import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.services.APIDefinitionService
@@ -81,12 +82,24 @@ class ApiContextValidatorSpec extends UnitSpec with MockitoSugar {
 
     val mockAPIDefinitionService: APIDefinitionService = mock[APIDefinitionService]
     val mockAPIDefinitionRepository: APIDefinitionRepository = mock[APIDefinitionRepository]
+    val mockAppConfig: AppConfig = mock[AppConfig]
+    when(mockAppConfig.skipContextValidationAllowlist).thenReturn(List())
 
-    val validatorUnderTest: ApiContextValidator = new ApiContextValidator(mockAPIDefinitionService, mockAPIDefinitionRepository)
+    val validatorUnderTest: ApiContextValidator = new ApiContextValidator(mockAPIDefinitionService, mockAPIDefinitionRepository, mockAppConfig)
   }
 
   "ApiContextValidator" should {
     lazy val errorContext: String = "for API"
+
+    "skip context validation for APIs in the skip context validation allowlist" in new Setup {
+      val context: String = "/totally//inv@lid/context!!"
+      lazy val apiDefinition: APIDefinition = testAPIDefinition(context = context)
+      when(mockAppConfig.skipContextValidationAllowlist).thenReturn(List(context))
+
+      val result: validatorUnderTest.HMRCValidated[String] = await(validatorUnderTest.validate(errorContext, apiDefinition)(context))
+
+      verifyValidationPassed(result, context)
+    }
 
     "pass validation for new API with legitimate context" in new Setup {
       lazy val context: String = "individuals/money"
