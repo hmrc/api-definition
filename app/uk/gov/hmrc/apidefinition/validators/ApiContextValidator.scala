@@ -22,6 +22,7 @@ import cats.Monoid._
 import cats.data.Validated.Invalid
 import cats.implicits._
 import javax.inject.{Inject, Singleton}
+import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.models.APIDefinition
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.services.APIDefinitionService
@@ -32,7 +33,8 @@ import scala.util.matching.Regex
 
 @Singleton
 class ApiContextValidator @Inject()(apiDefinitionService: APIDefinitionService,
-                                    apiDefinitionRepository: APIDefinitionRepository)
+                                    apiDefinitionRepository: APIDefinitionRepository,
+                                    appConfig: AppConfig)
                                    (implicit override val ec: ExecutionContext) extends Validator[String] {
 
 
@@ -41,10 +43,14 @@ class ApiContextValidator @Inject()(apiDefinitionService: APIDefinitionService,
   private val contextRegex: Regex = """^[a-zA-Z0-9_\-\/]+$""".r
 
   def validate(errorContext: String, apiDefinition: APIDefinition)(implicit context: String): Future[HMRCValidated[String]] = {
-    val validated = validateThat(_.nonEmpty, _ => s"Field 'context' should not be empty $errorContext").andThen(validateContext(errorContext)(_))
-    validated match {
-      case Invalid(_) => successful(validated)
-      case _ => validateAgainstDatabase(errorContext, apiDefinition)
+    if (appConfig.skipContextValidationAllowlist.contains(apiDefinition.serviceName)) {
+      successful(context.validNel)
+    } else {
+      val validated = validateThat(_.nonEmpty, _ => s"Field 'context' should not be empty $errorContext").andThen(validateContext(errorContext)(_))
+      validated match {
+        case Invalid(_) => successful(validated)
+        case _ => validateAgainstDatabase(errorContext, apiDefinition)
+      }
     }
   }
 

@@ -58,15 +58,15 @@ class APIDefinitionControllerSpec extends UnitSpec
 
     val mockAPIDefinitionService: APIDefinitionService = mock[APIDefinitionService]
     val mockApiDefinitionRepository: APIDefinitionRepository = mock[APIDefinitionRepository]
+    val mockAppContext: AppConfig = mock[AppConfig]
+    when(mockAppContext.fetchByContextTtlInSeconds).thenReturn("1234")
+    when(mockAppContext.skipContextValidationAllowlist).thenReturn(List())
 
-    val apiContextValidator: ApiContextValidator = new ApiContextValidator(mockAPIDefinitionService, mockApiDefinitionRepository)
+    val apiContextValidator: ApiContextValidator = new ApiContextValidator(mockAPIDefinitionService, mockApiDefinitionRepository, mockAppContext)
     val queryParameterValidator: QueryParameterValidator = new QueryParameterValidator()
     val apiEndpointValidator: ApiEndpointValidator = new ApiEndpointValidator(queryParameterValidator)
     val apiVersionValidator: ApiVersionValidator = new ApiVersionValidator(apiEndpointValidator)
     val apiDefinitionValidator: ApiDefinitionValidator = new ApiDefinitionValidator(mockAPIDefinitionService, apiContextValidator, apiVersionValidator)
-
-    val mockAppContext: AppConfig = mock[AppConfig]
-    when(mockAppContext.fetchByContextTtlInSeconds).thenReturn("1234")
 
     val apiDefinitionMapper: APIDefinitionMapper = fakeApplication.injector.instanceOf[APIDefinitionMapper]
 
