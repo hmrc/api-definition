@@ -93,8 +93,9 @@ class ApiContextValidatorSpec extends UnitSpec with MockitoSugar {
 
     "skip context validation for APIs in the skip context validation allowlist" in new Setup {
       val context: String = "/totally//inv@lid/context!!"
-      lazy val apiDefinition: APIDefinition = testAPIDefinition(context = context)
-      when(mockAppConfig.skipContextValidationAllowlist).thenReturn(List(context))
+      val allowedApi = "some-important-api"
+      lazy val apiDefinition: APIDefinition = testAPIDefinition(serviceName = allowedApi, context = context)
+      when(mockAppConfig.skipContextValidationAllowlist).thenReturn(List(allowedApi))
 
       val result: validatorUnderTest.HMRCValidated[String] = await(validatorUnderTest.validate(errorContext, apiDefinition)(context))
 

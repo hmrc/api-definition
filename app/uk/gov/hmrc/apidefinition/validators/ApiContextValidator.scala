@@ -43,7 +43,7 @@ class ApiContextValidator @Inject()(apiDefinitionService: APIDefinitionService,
   private val contextRegex: Regex = """^[a-zA-Z0-9_\-\/]+$""".r
 
   def validate(errorContext: String, apiDefinition: APIDefinition)(implicit context: String): Future[HMRCValidated[String]] = {
-    if (appConfig.skipContextValidationAllowlist.contains(context)) {
+    if (appConfig.skipContextValidationAllowlist.contains(apiDefinition.serviceName)) {
       successful(context.validNel)
     } else {
       val validated = validateThat(_.nonEmpty, _ => s"Field 'context' should not be empty $errorContext").andThen(validateContext(errorContext)(_))
