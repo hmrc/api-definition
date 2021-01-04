@@ -175,5 +175,5 @@ object ResourceThrottlingTier extends Enumeration {
 
 object SubscriptionThrottlingTier extends Enumeration {
   type ThrottlingTier = Value
-  val BRONZE_SUBSCRIPTION, SILVER_SUBSCRIPTION, GOLD_SUBSCRIPTION, PLATINUM_SUBSCRIPTION = Value
+  val BRONZE_SUBSCRIPTION, SILVER_SUBSCRIPTION, GOLD_SUBSCRIPTION, PLATINUM_SUBSCRIPTION, RHODIUM_SUBSCRIPTION = Value
 }
