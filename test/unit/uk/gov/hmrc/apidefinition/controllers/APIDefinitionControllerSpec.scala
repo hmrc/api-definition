@@ -459,21 +459,6 @@ class APIDefinitionControllerSpec extends UnitSpec
     }
   }
 
-  "fetchExtended" should {
-
-    // def extDefinition(service: String, email: Option[String]): Option[ExtendedAPIDefinition] = {
-    //   Some(ExtendedAPIDefinition(service, "http://calendar", "Calendar API", "My Calendar API", "calendar",
-    //     requiresTrust = false, isTestSupport = false,
-    //     Seq(
-    //       ExtendedAPIVersion("1.0", APIStatus.BETA,
-    //         Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
-    //         Some(APIAvailability(endpointsEnabled = true, PublicAPIAccess(), email.isDefined, authorised = true)), None)
-    //     ),
-    //     lastPublishedAt = None
-    //   ))
-    // }
-  }
-
   "fetch" should {
     "succeed with a 200 (ok) when a public API exists for the given serviceName" in new Setup {
       val apiDefinition = APIDefinition(serviceName, "http://calendar", "Calendar API", "My Calendar API", "calendar",
