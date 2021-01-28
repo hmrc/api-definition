@@ -18,12 +18,20 @@ package unit.uk.gov.hmrc.apidefinition.models
 
 import play.api.libs.json.Json
 import uk.gov.hmrc.apidefinition.models.APICategory._
-import uk.gov.hmrc.apidefinition.models.{APIDefinition, PrivateAPIAccess, PublicAPIAccess}
+import uk.gov.hmrc.apidefinition.models.{APIAccess, APIDefinition, PrivateAPIAccess, PublicAPIAccess}
 import uk.gov.hmrc.apidefinition.models.JsonFormatters._
 import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.apidefinition.models.APICategory
 
 class APIDefinitionSpec extends UnitSpec {
+
+  "APIAccess" should {
+    "marshall from json for private access without whitelistedApplicationIds" in {
+      val jsonText = """{"type": "PRIVATE"}"""
+
+      (Json.parse(jsonText)).as[APIAccess]
+    }
+  }
 
   "APIDefinition" should {
     def anApiDefinition(accessType: String = "PUBLIC",
@@ -102,10 +110,10 @@ class APIDefinitionSpec extends UnitSpec {
       apiDefinition.versions.head.access shouldBe Some(PrivateAPIAccess(Seq("an-application-id")))
     }
 
-    "fail to read from JSON when the API access type is PRIVATE and there is no whitelist" in {
-      intercept[RuntimeException] {
-        anApiDefinition(accessType = "PRIVATE", whitelistedApplicationIds = None)
-      }
+    "no longer fail to read from JSON when the API access type is PRIVATE and there is no whitelist" in {
+      val apiDefinition = anApiDefinition(accessType = "PRIVATE", whitelistedApplicationIds = None)
+
+      apiDefinition.versions.head.access shouldBe Some(PrivateAPIAccess(List.empty))
     }
 
     "read from JSON when the API categories are defined but empty" in {

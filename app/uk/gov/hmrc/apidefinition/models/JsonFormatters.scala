@@ -53,7 +53,7 @@ object JsonFormatters {
         (JsPath \ "isTrial").readNullable[Boolean] tupled) map {
     case (PUBLIC, None | Some(Seq()), _) => PublicAPIAccess()
     case (PRIVATE, Some(whitelistedApplicationIds: Seq[String]), isTrial) => PrivateAPIAccess(whitelistedApplicationIds, isTrial)
-    case (PRIVATE, None, _) => throw new RuntimeException("API Access 'PRIVATE' should define 'whitelistedApplicationIds'")
+    case (PRIVATE, None, isTrial) => PrivateAPIAccess(Seq.empty, isTrial)
     case unknownApiAccess => throw new RuntimeException(s"Unknown API Access $unknownApiAccess")
   }
 
