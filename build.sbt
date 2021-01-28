@@ -29,7 +29,7 @@ lazy val test = Seq(
   "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.2" % "test",
   "org.mockito" % "mockito-core" % "2.13.0" % "test",
   "com.typesafe.play" %% "play-test" % PlayVersion.current % "test",
-  "com.github.tomakehurst" % "wiremock" % "2.21.0" % "test",
+  "com.github.tomakehurst" % "wiremock" % "1.58" % "test",
   "de.leanovate.play-mockws" %% "play-mockws" % "2.6.6" % "test"
 )
 

@@ -457,59 +457,21 @@ class APIDefinitionControllerSpec extends UnitSpec
       status(result) shouldBe UNPROCESSABLE_ENTITY
       (jsonBodyOf(result) \ "message").as[String] shouldBe "Json cannot be converted to API Definition"
     }
-
-    "fail with a 422 (Unprocessable entity) when access type 'PRIVATE' does not define whitelistedApplicationIds" in new ValidatorSetup {
-
-      private val apiDefinitionJson =
-        """{
-          |  "serviceName": "calendar",
-          |  "name": "Calendar API",
-          |  "description": "My Calendar API",
-          |  "serviceBaseUrl": "http://calendar",
-          |  "context": "calendar",
-          |  "requiresTrust": true,
-          |  "versions": [
-          |  {
-          |    "access" : {
-          |      "type" : "PRIVATE"
-          |    },
-          |    "version" : "1.0",
-          |    "status" : "STABLE",
-          |    "endpoints": [
-          |    {
-          |      "uriPattern": "/today",
-          |      "endpointName":"Get Today's Date",
-          |      "method": "GET",
-          |      "authType": "NONE",
-          |      "throttlingTier": "UNLIMITED"
-          |    }
-          |    ]
-          |  }
-          |  ]
-          |}""".stripMargin.replaceAll("\n", " ")
-
-      verifyZeroInteractions(mockAPIDefinitionService)
-
-      private val result = await(underTest.createOrUpdate()(request.withBody(Json.parse(apiDefinitionJson))))
-
-      status(result) shouldBe UNPROCESSABLE_ENTITY
-      (jsonBodyOf(result) \ "message").as[String] shouldBe "API Access 'PRIVATE' should define 'whitelistedApplicationIds'"
-    }
   }
 
   "fetchExtended" should {
 
-    def extDefinition(service: String, email: Option[String]): Option[ExtendedAPIDefinition] = {
-      Some(ExtendedAPIDefinition(service, "http://calendar", "Calendar API", "My Calendar API", "calendar",
-        requiresTrust = false, isTestSupport = false,
-        Seq(
-          ExtendedAPIVersion("1.0", APIStatus.BETA,
-            Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
-            Some(APIAvailability(endpointsEnabled = true, PublicAPIAccess(), email.isDefined, authorised = true)), None)
-        ),
-        lastPublishedAt = None
-      ))
-    }
+    // def extDefinition(service: String, email: Option[String]): Option[ExtendedAPIDefinition] = {
+    //   Some(ExtendedAPIDefinition(service, "http://calendar", "Calendar API", "My Calendar API", "calendar",
+    //     requiresTrust = false, isTestSupport = false,
+    //     Seq(
+    //       ExtendedAPIVersion("1.0", APIStatus.BETA,
+    //         Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
+    //         Some(APIAvailability(endpointsEnabled = true, PublicAPIAccess(), email.isDefined, authorised = true)), None)
+    //     ),
+    //     lastPublishedAt = None
+    //   ))
+    // }
   }
 
   "fetch" should {
