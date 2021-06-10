@@ -29,6 +29,16 @@ import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
 import scala.concurrent.{ExecutionContext, Future}
+import uk.gov.hmrc.http.UpstreamErrorResponse
+import uk.gov.hmrc.http.HttpReads.Implicits._
+import scala.concurrent.Future.{failed, successful}
+
+object AWSAPIPublisherConnector {
+  // Deliberately upper case RequestId !
+  case class RequestId(RequestId: String)
+  
+  implicit val requestIdReads = Json.reads[RequestId]
+}
 
 class AWSAPIPublisherConnector @Inject()(http: HttpClient,
                                          environment: Environment,
@@ -36,6 +46,7 @@ class AWSAPIPublisherConnector @Inject()(http: HttpClient,
                                          val runModeConfiguration: Configuration,
                                          servicesConfig: ServicesConfig)
                                         (implicit val ec: ExecutionContext)  {
+  import AWSAPIPublisherConnector._
 
   protected def mode: Mode = environment.mode
 
@@ -46,8 +57,9 @@ class AWSAPIPublisherConnector @Inject()(http: HttpClient,
 
   def createOrUpdateAPI(apiName: String, awsSwaggerDetails: AWSSwaggerDetails)(hc: HeaderCarrier): Future[String] = {
     implicit val headersWithoutAuthorization: HeaderCarrier = hc.copy(authorization = None)
-    http.PUTString(s"$serviceBaseUrl/$apiName", Json.toJson(awsSwaggerDetails).toString(), headers) map { result =>
-      (result.json \ "RequestId").as[String]
+    http.PUT[AWSSwaggerDetails, Either[UpstreamErrorResponse, RequestId]](s"$serviceBaseUrl/$apiName", awsSwaggerDetails, headers) flatMap {
+      case Right(RequestId(value)) => successful(value)
+      case Left(err) => failed(err)
     }
   }
 
@@ -56,8 +68,9 @@ class AWSAPIPublisherConnector @Inject()(http: HttpClient,
       .copy(authorization = None)
       .withExtraHeaders(apiKeyHeaderName -> awsApiKey)
 
-    http.DELETE(s"$serviceBaseUrl/$apiName") map { result =>
-      (result.json \ "RequestId").as[String]
+    http.DELETE[Either[UpstreamErrorResponse, RequestId]](s"$serviceBaseUrl/$apiName") flatMap {
+      case Right(RequestId(value)) => successful(value)
+      case Left(err) => failed(err)
     }
   }
 }
