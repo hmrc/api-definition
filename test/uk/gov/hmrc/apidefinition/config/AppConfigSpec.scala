@@ -16,17 +16,18 @@
 
 package uk.gov.hmrc.apidefinition.config
 
-import org.mockito.Mockito._
-import org.scalatest.mockito.MockitoSugar
 import org.scalatest.{BeforeAndAfterEach, Matchers}
 import play.api.{Configuration, Environment}
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
-import uk.gov.hmrc.play.test.UnitSpec
-import org.scalatestplus.play.guice.GuiceOneAppPerTest
+import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 
-class AppConfigSpec extends UnitSpec
-  with Matchers  with MockitoSugar
-  with BeforeAndAfterEach with GuiceOneAppPerTest {
+import org.scalatestplus.play.guice.GuiceOneAppPerTest
+import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
+
+class AppConfigSpec extends AsyncHmrcSpec
+  with Matchers
+  with BeforeAndAfterEach 
+  with GuiceOneAppPerTest {
 
   trait Setup {
     val mockConfig =  mock[Configuration]

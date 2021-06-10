@@ -18,9 +18,9 @@ package uk.gov.hmrc.apidefinition.utils
 
 import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.utils.AWSPayloadHelper._
-import uk.gov.hmrc.play.test.UnitSpec
 
-class AWSPayloadHelperSpec extends UnitSpec {
+class AWSPayloadHelperSpec extends AsyncHmrcSpec
+ {
 
   val endpoint: Endpoint = Endpoint(
     uriPattern = "",

@@ -20,12 +20,6 @@ import java.util
 
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
-import org.mockito.ArgumentMatchers.{any, anyString, eq => meq}
-import org.mockito.Mockito.{verify, when}
-import org.mockito.invocation.InvocationOnMock
-import org.mockito.stubbing.{Answer, OngoingStubbing}
-import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.mockito.MockitoSugar
 import play.api.http.Status
 import play.api.libs.ws.WSResponse
 import play.api.libs.ws.ahc.cache.{CacheableHttpResponseBodyPart, CacheableHttpResponseHeaders, CacheableHttpResponseStatus, CacheableResponse}
@@ -39,15 +33,18 @@ import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.services.DocumentationService
 import uk.gov.hmrc.http.{HeaderCarrier, InternalServerException, NotFoundException}
-import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
+
 import uk.gov.hmrc.apidefinition.utils.Utils
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.Future._
 import scala.util.Random
 import uk.gov.hmrc.apidefinition.services.SpecificationService
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import akka.stream.Materializer
 
-class DocumentationServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar with Utils {
+class DocumentationServiceSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite with Utils {
   import DocumentationService.PROXY_SAFE_CONTENT_TYPE
 
   val serviceName = "hello-world"
@@ -97,7 +94,8 @@ class DocumentationServiceSpec extends UnitSpec with ScalaFutures with MockitoSu
   private val chunkedResource: AhcWSResponse = createResponse(Status.OK, Map.empty, sampleFileSource)
   private val notFoundResponse: AhcWSResponse = createResponse(Status.NOT_FOUND, Map.empty, sampleFileSource)
   private val internalServerErrorResponse: AhcWSResponse = createResponse(Status.INTERNAL_SERVER_ERROR, Map.empty, sampleFileSource)
-
+  
+  implicit val materializer: Materializer = app.materializer
   trait Setup {
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
@@ -115,25 +113,21 @@ class DocumentationServiceSpec extends UnitSpec with ScalaFutures with MockitoSu
 
     def generateRandomVersion: String = s"${Random.nextInt().abs}.${Random.nextInt().abs}"
 
-    def theServiceIsRunningInSandboxMode(): OngoingStubbing[Boolean] = when(mockServiceConfig.isSandbox).thenReturn(true)
+    def theServiceIsRunningInSandboxMode() = when(mockServiceConfig.isSandbox).thenReturn(true)
 
-    def theApiDefinitionWillBeReturned(): OngoingStubbing[Future[Option[APIDefinition]]] = {
-      when(mockAPIDefinitionRepository.fetchByServiceName(any()))
-        .thenReturn(Future.successful(Some(apiDefinition)))
+    def theApiDefinitionWillBeReturned() = {
+      when(mockAPIDefinitionRepository.fetchByServiceName(*))
+        .thenReturn(successful(Some(apiDefinition)))
     }
 
-    def noApiDefinitionWillBeReturned(): OngoingStubbing[Future[Option[APIDefinition]]] = {
-      when(mockAPIDefinitionRepository.fetchByServiceName(any()))
-        .thenReturn(Future.successful(None))
+    def noApiDefinitionWillBeReturned() = {
+      when(mockAPIDefinitionRepository.fetchByServiceName(*))
+        .thenReturn(successful(None))
     }
 
-    def theApiMicroserviceWillReturnTheResource(response: WSResponse): OngoingStubbing[Future[WSResponse]] = {
-      when(mockApiMicroserviceConnector.fetchApiDocumentationResourceByUrl(anyString, anyString, anyString))
-        .thenReturn(Future.successful(response))
-    }
-
-    def answer[T](f: InvocationOnMock => T): Answer[T] = {
-      invocation: InvocationOnMock => f(invocation)
+    def theApiMicroserviceWillReturnTheResource(response: WSResponse) = {
+      when(mockApiMicroserviceConnector.fetchApiDocumentationResourceByUrl(*, *, *))
+        .thenReturn(successful(response))
     }
   }
 
@@ -146,7 +140,7 @@ class DocumentationServiceSpec extends UnitSpec with ScalaFutures with MockitoSu
       val result: Result = await(underTest.fetchApiDocumentationResource(serviceName, "1.0", "resource"))
 
       result.header.status should be(Status.OK)
-      verify(mockApiMicroserviceConnector).fetchApiDocumentationResourceByUrl(any(), meq("1.0"), meq("resource"))
+      verify(mockApiMicroserviceConnector).fetchApiDocumentationResourceByUrl(*, eqTo("1.0"), eqTo("resource"))
     }
 
     "return the resource with given Content-Type when header is present" in new Setup {

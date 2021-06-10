@@ -17,22 +17,16 @@
 package uk.gov.hmrc.apidefinition.validators
 
 import cats.data.Validated.{Invalid, Valid}
-import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.{verifyZeroInteractions, when}
-import org.mockito.stubbing.OngoingStubbing
-import org.scalatest.mockito.MockitoSugar
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.services.APIDefinitionService
-import uk.gov.hmrc.apidefinition.validators.ApiContextValidator
-import uk.gov.hmrc.play.test.UnitSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 import scala.concurrent.Future.successful
+import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 
-class ApiContextValidatorSpec extends UnitSpec with MockitoSugar {
+class ApiContextValidatorSpec extends AsyncHmrcSpec {
 
   trait Setup {
     def testAPIDefinition(serviceName: String = "money-service", context: String = "money", versions: Seq[String] = Seq("1.0")) =
@@ -73,10 +67,10 @@ class ApiContextValidatorSpec extends UnitSpec with MockitoSugar {
       errors.toList should contain allElementsOf expectedErrors
     }
 
-    def fetchByTopLevelContextWillReturn(apiDefinitions: Seq[APIDefinition]): OngoingStubbing[Future[Seq[APIDefinition]]] =
-      when(mockAPIDefinitionRepository.fetchAllByTopLevelContext(any[String])).thenReturn(Future.successful(apiDefinitions))
+    def fetchByTopLevelContextWillReturn(apiDefinitions: Seq[APIDefinition]) =
+      when(mockAPIDefinitionRepository.fetchAllByTopLevelContext(any[String])).thenReturn(successful(apiDefinitions))
 
-    def thereAreNoOverlappingAPIContexts: OngoingStubbing[Future[Seq[APIDefinition]]] = fetchByTopLevelContextWillReturn(Seq.empty)
+    def thereAreNoOverlappingAPIContexts = fetchByTopLevelContextWillReturn(Seq.empty)
 
     def contextMustNotBeChangedErrorMessage(errorContext: String): String = s"Field 'context' must not be changed $errorContext"
 

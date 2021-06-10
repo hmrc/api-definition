@@ -16,11 +16,6 @@
 
 package uk.gov.hmrc.apidefinition.validators
 
-import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
-import org.mockito.ArgumentMatchers.any
-import org.mockito.Mockito.{never, verify, when}
-import org.scalatest.mockito.MockitoSugar
 import play.api.mvc.Results.{NoContent, UnprocessableEntity}
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.models.APICategory.OTHER
@@ -28,14 +23,17 @@ import uk.gov.hmrc.apidefinition.models.ErrorCode.INVALID_REQUEST_PAYLOAD
 import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.services.APIDefinitionService
-import uk.gov.hmrc.apidefinition.validators._
-import uk.gov.hmrc.play.test.UnitSpec
+import play.api.test.Helpers._
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 import scala.concurrent.Future.successful
+import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import akka.stream.Materializer
 
-class ApiDefinitionValidatorSpec extends UnitSpec with MockitoSugar {
+class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite {
+  
+  implicit val mat = app.materializer
 
   trait Setup {
     val mockAPIDefinitionService: APIDefinitionService = mock[APIDefinitionService]
@@ -52,22 +50,20 @@ class ApiDefinitionValidatorSpec extends UnitSpec with MockitoSugar {
     when(mockAPIDefinitionService.fetchByName(any[String])).thenReturn(successful(None))
     when(mockAPIDefinitionService.fetchByServiceBaseUrl(any[String])).thenReturn(successful(None))
     when(mockApiDefinitionRepository.fetchByServiceName(any[String])).thenReturn(successful(None))
-    when(mockApiDefinitionRepository.fetchAllByTopLevelContext(any[String])).thenReturn(Future.successful(Seq.empty))
+    when(mockApiDefinitionRepository.fetchAllByTopLevelContext(any[String])).thenReturn(successful(Seq.empty))
     
     def assertValidationSuccess(apiDefinition: => APIDefinition): Unit = {
-      val result = await(apiDefinitionValidator.validate(apiDefinition)(_ => Future.successful(NoContent)))
+      val result = await(apiDefinitionValidator.validate(apiDefinition)(_ => successful(NoContent)))
       result.header.status shouldBe NoContent.header.status
       result.body.isKnownEmpty shouldBe true
     }
 
     def assertValidationFailure(apiDefinition: => APIDefinition, failureMessages: Seq[String]): Unit = {
-      implicit val sys: ActorSystem = ActorSystem("ApiDefinitionValidatorTest")
-      implicit val mat: ActorMaterializer = ActorMaterializer()
 
-      val result = await(apiDefinitionValidator.validate(apiDefinition)(_ => Future.successful(NoContent)))
-      result.header.status shouldBe UnprocessableEntity.header.status
+      val result = apiDefinitionValidator.validate(apiDefinition)(_ => successful(NoContent))
+      status(result) shouldBe UnprocessableEntity.header.status
 
-      val validationErrors = jsonBodyOf(result).as[ValidationErrors]
+      val validationErrors = contentAsJson(result).as[ValidationErrors]
       validationErrors.code shouldBe INVALID_REQUEST_PAYLOAD
       validationErrors.messages shouldBe failureMessages
     }
@@ -84,7 +80,7 @@ class ApiDefinitionValidatorSpec extends UnitSpec with MockitoSugar {
       lazy val apiDefinition: APIDefinition = calendarApi.copy(serviceBaseUrl = "")
 
       assertValidationFailure(apiDefinition, List("Field 'serviceBaseUrl' should not be empty for API 'Calendar API'"))
-      verify(mockAPIDefinitionService, never()).fetchByServiceBaseUrl(any[String])
+      verify(mockAPIDefinitionService, never).fetchByServiceBaseUrl(any[String])
     }
 
     "fail validation if an empty serviceName is provided" in new Setup {
@@ -109,7 +105,7 @@ class ApiDefinitionValidatorSpec extends UnitSpec with MockitoSugar {
       lazy val apiDefinition: APIDefinition = calendarApi.copy(name = "")
 
       assertValidationFailure(apiDefinition, List("Field 'name' should not be empty for API with service name 'calendar'"))
-      verify(mockAPIDefinitionService, never()).fetchByName(any[String])
+      verify(mockAPIDefinitionService, never).fetchByName(any[String])
     }
 
     "fail validation if an empty description is provided" in new Setup {

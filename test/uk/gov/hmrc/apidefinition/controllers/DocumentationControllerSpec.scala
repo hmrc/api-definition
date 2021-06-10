@@ -18,30 +18,24 @@ package uk.gov.hmrc.apidefinition.controllers
 
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Sink, Source}
-import akka.util.ByteString
-import org.mockito.ArgumentMatchers.{any, anyString, eq => eqTo}
-import org.mockito.Mockito._
-import org.mockito.stubbing.OngoingStubbing
-import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.mockito.MockitoSugar
 import play.api.http.HeaderNames.CONTENT_TYPE
-import play.api.http.Status._
 import play.api.libs.json.{JsValue, Json}
-import play.api.mvc.{AnyContentAsEmpty, Result, Results}
 import play.api.test.{FakeRequest, StubControllerComponentsFactory}
-import uk.gov.hmrc.apidefinition.controllers.DocumentationController
 import uk.gov.hmrc.apidefinition.services.DocumentationService
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
-import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
-
+import play.api.test.Helpers._
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
-import uk.gov.hmrc.apidefinition.controllers.SpecificationController
+import scala.concurrent.Future.{failed, successful}
+import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
+import play.api.mvc.AnyContentAsEmpty
+import play.api.mvc.Results._
+import play.api.http.HeaderNames
+import akka.util.ByteString
 
-class DocumentationControllerSpec extends UnitSpec with ScalaFutures with MockitoSugar with WithFakeApplication with StubControllerComponentsFactory {
+class DocumentationControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFactory {
 
   trait Setup {
-    implicit val mat: Materializer = fakeApplication.materializer
+    // implicit val mat: Materializer = materializer
     val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
     val documentationService: DocumentationService = mock[DocumentationService]
     val hc: HeaderCarrier = HeaderCarrier()
@@ -49,25 +43,26 @@ class DocumentationControllerSpec extends UnitSpec with ScalaFutures with Mockit
     val version: String = "1.0"
     val resourceName: String = "application.raml"
     // scalastyle:off magic.number
-    val body: Array[Byte] = Array[Byte](0x1, 0x2, 0x3)
+    // val body: Array[Byte] = Array[Byte](0x1, 0x2, 0x3)
+    val body = "blah blah"
     // scalastyle:on magic.number
     val contentType: String = "application/text"
 
     val underTest = new DocumentationController(documentationService, stubControllerComponents())
 
-    def theDocumentationServiceWillReturnTheResource: OngoingStubbing[Future[Result]] = {
-      when(documentationService.fetchApiDocumentationResource(anyString, anyString, anyString))
-        .thenReturn(Future.successful(Results.Ok(body).withHeaders(CONTENT_TYPE -> contentType)))
+    def theDocumentationServiceWillReturnTheResource = {
+      when(documentationService.fetchApiDocumentationResource(*, *, *))
+        .thenReturn(successful(Ok(body).withHeaders(CONTENT_TYPE -> contentType)))
     }
 
-    def theDocumentationServiceWillFailToReturnTheResource: OngoingStubbing[Future[Result]] = {
-      when(documentationService.fetchApiDocumentationResource(anyString, anyString, anyString))
-        .thenReturn(Future.failed(new RuntimeException("Some message")))
+    def theDocumentationServiceWillFailToReturnTheResource = {
+      when(documentationService.fetchApiDocumentationResource(*, *, *))
+        .thenReturn(failed(new RuntimeException("Some message")))
     }
 
-    def theDocumentationServiceWillReturnNotFound: OngoingStubbing[Future[Result]] = {
-      when(documentationService.fetchApiDocumentationResource(anyString, anyString, anyString))
-        .thenReturn(Future.failed(new NotFoundException("some message")))
+    def theDocumentationServiceWillReturnNotFound = {
+      when(documentationService.fetchApiDocumentationResource(*, *, *))
+        .thenReturn(failed(new NotFoundException("some message")))
     }
   }
 
@@ -98,30 +93,29 @@ class DocumentationControllerSpec extends UnitSpec with ScalaFutures with Mockit
     "return the resource with a Content-type header when the content type is known" in new Setup {
       theDocumentationServiceWillReturnTheResource
 
-      val result: Result = await(underTest.fetchApiDocumentationResource(serviceName, version, resourceName)(request))
+      private val result = underTest.fetchApiDocumentationResource(serviceName, version, resourceName)(request)
 
       status(result) shouldBe OK
 
-      val resultData: Array[Byte] = sourceToArray(result.body.dataStream)
-      resultData.toList shouldBe body.toList
+      contentAsString(result) shouldBe body
 
-      result.header.headers(CONTENT_TYPE) shouldBe contentType
+      header(HeaderNames.CONTENT_TYPE, result) shouldBe Some(contentType)
     }
 
     "return the resource with no Content-type header when the content type is unknown" in new Setup {
       theDocumentationServiceWillReturnTheResource
 
-      val result: Result = await(underTest.fetchApiDocumentationResource(serviceName, version, resourceName)(request))
+      private val result = underTest.fetchApiDocumentationResource(serviceName, version, resourceName)(request)
 
       status(result) shouldBe OK
 
-      sourceToArray(result.body.dataStream).toList shouldBe body
+      contentAsString(result) shouldBe body
     }
 
     "return internal server error when the service fails to return the resource" in new Setup {
       theDocumentationServiceWillFailToReturnTheResource
 
-      val result: Result = await(underTest.fetchApiDocumentationResource(serviceName, version, resourceName)(request))
+      private val result = underTest.fetchApiDocumentationResource(serviceName, version, resourceName)(request)
 
       status(result) shouldBe INTERNAL_SERVER_ERROR
     }
@@ -129,7 +123,7 @@ class DocumentationControllerSpec extends UnitSpec with ScalaFutures with Mockit
     "return not found when the service is unable to find the api or version" in new Setup {
       theDocumentationServiceWillReturnNotFound
 
-      val result: Result = await(underTest.fetchApiDocumentationResource(serviceName, version, resourceName)(request))
+      private val result = underTest.fetchApiDocumentationResource(serviceName, version, resourceName)(request)
 
       status(result) shouldBe NOT_FOUND
     }

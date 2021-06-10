@@ -17,27 +17,21 @@
 package uk.gov.hmrc.apidefinition.controllers
 
 import akka.stream.Materializer
-import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.mockito.MockitoSugar
 import play.api.test.{FakeRequest, StubControllerComponentsFactory, StubPlayBodyParsersFactory}
 import uk.gov.hmrc.apidefinition.config.AppConfig
-import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
-
-import org.mockito.ArgumentMatchers.{any, anyString, eq => eqTo}
-import org.mockito.Mockito.{verify, verifyZeroInteractions, when}
 import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.apidefinition.services.SpecificationService
 import play.api.mvc.AnyContentAsEmpty
-import play.api.mvc.Result
-import play.api.http.Status._
 import play.api.libs.json.Json
-import scala.concurrent.Future
+import scala.concurrent.Future.successful
+import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
+import play.api.test.Helpers._
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 
-class SpecificationControllerSpec extends UnitSpec
-  with WithFakeApplication with ScalaFutures with MockitoSugar with StubControllerComponentsFactory with StubPlayBodyParsersFactory {
+class SpecificationControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite with StubControllerComponentsFactory with StubPlayBodyParsersFactory {
 
   trait Setup {
-    implicit lazy val materializer: Materializer = fakeApplication.materializer
+    implicit lazy val materializer: Materializer = app.materializer
 
     implicit lazy val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
 
@@ -52,13 +46,13 @@ class SpecificationControllerSpec extends UnitSpec
     val version = "1.0"
     val specificationJson = Json.toJson("some" -> "stuff")
 
-    when(mockSpecificationService.fetchApiSpecification(any(), any())).thenReturn(Future.successful(specificationJson))
+    when(mockSpecificationService.fetchApiSpecification(*, *)).thenReturn(successful(specificationJson))
 
-    val result : Result = await(underTest.fetchApiSpecification(serviceName, version)(request))
+    private val result = underTest.fetchApiSpecification(serviceName, version)(request)
 
-    result.header.status should be(OK)
+    status(result) should be(OK)
 
-    jsonBodyOf(result) shouldEqual Json.toJson("some" -> "stuff")
+    contentAsJson(result) shouldEqual Json.toJson("some" -> "stuff")
 
     verify(mockSpecificationService).fetchApiSpecification(eqTo(serviceName), eqTo(version))
   }
@@ -67,13 +61,13 @@ class SpecificationControllerSpec extends UnitSpec
     val specificationJson = Json.toJson("some" -> "stuff")
     val rootRamlUrl = "http://localhost:8080/fake-url"
 
-    when(mockSpecificationService.fetchPreviewApiSpecification(any())).thenReturn(Future.successful(specificationJson))
+    when(mockSpecificationService.fetchPreviewApiSpecification(*)).thenReturn(successful(specificationJson))
 
-    val result : Result = await(underTest.fetchPreviewApiSpecification(rootRamlUrl)(request))
+    private val result = underTest.fetchPreviewApiSpecification(rootRamlUrl)(request)
 
-    result.header.status should be(OK)
+    status(result) should be(OK)
 
-    jsonBodyOf(result) shouldEqual Json.toJson("some" -> "stuff")
+    contentAsJson(result) shouldEqual Json.toJson("some" -> "stuff")
 
     verify(mockSpecificationService).fetchPreviewApiSpecification(eqTo(rootRamlUrl))
   }

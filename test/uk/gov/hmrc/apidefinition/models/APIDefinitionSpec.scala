@@ -18,12 +18,12 @@ package uk.gov.hmrc.apidefinition.models
 
 import play.api.libs.json.Json
 import uk.gov.hmrc.apidefinition.models.APICategory._
-import uk.gov.hmrc.apidefinition.models.{APIAccess, APIDefinition, PrivateAPIAccess, PublicAPIAccess}
 import uk.gov.hmrc.apidefinition.models.JsonFormatters._
-import uk.gov.hmrc.play.test.UnitSpec
-import uk.gov.hmrc.apidefinition.models.APICategory
+import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 
-class APIDefinitionSpec extends UnitSpec {
+
+class APIDefinitionSpec extends AsyncHmrcSpec
+ {
 
   "APIAccess" should {
     "marshall from json for private access without whitelistedApplicationIds" in {

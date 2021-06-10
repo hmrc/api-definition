@@ -16,13 +16,11 @@
 
 package uk.gov.hmrc.apidefinition.models
 
-import org.mockito.Mockito._
-import org.scalatest.mockito.MockitoSugar
 import uk.gov.hmrc.apidefinition.models.AWSAPIDefinition.awsApiGatewayName
-import uk.gov.hmrc.apidefinition.models._
-import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 
-class AWSAPIDefinitionSpec extends UnitSpec with MockitoSugar {
+
+class AWSAPIDefinitionSpec extends AsyncHmrcSpec {
 
 
   "awsApiGatewayName" should {

@@ -26,14 +26,15 @@ import reactivemongo.api.indexes.IndexType.Ascending
 import reactivemongo.core.errors.DatabaseException
 import uk.gov.hmrc.apidefinition.models.JsonFormatters._
 import uk.gov.hmrc.apidefinition.models._
-import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport}
-import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
+
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class APIDefinitionRepositorySpec extends UnitSpec
+class APIDefinitionRepositorySpec extends AsyncHmrcSpec
+
   with MongoSpecSupport with BeforeAndAfterEach
   with BeforeAndAfterAll with Eventually {
 

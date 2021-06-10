@@ -19,20 +19,18 @@ package uk.gov.hmrc.apidefinition.service
 import java.util.UUID
 
 import org.mockito.ArgumentCaptor
-import org.mockito.ArgumentMatchers.{any, matches}
-import org.mockito.Mockito.when
-import org.scalatest.mockito.MockitoSugar
 import play.api.http.Status.{INTERNAL_SERVER_ERROR, NOT_FOUND, OK}
 import uk.gov.hmrc.apidefinition.models.APIStatus
 import uk.gov.hmrc.apidefinition.services.{EmailNotificationService, SendEmailRequest}
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
-import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
+
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.Future._
 
-class NotificationServiceSpec extends UnitSpec with MockitoSugar {
+class NotificationServiceSpec extends AsyncHmrcSpec {
 
   trait EmailNotificationSetup {
     def httpCallIsSuccessful(): ArgumentCaptor[SendEmailRequest] = {
@@ -41,7 +39,7 @@ class NotificationServiceSpec extends UnitSpec with MockitoSugar {
       when(mockHTTPClient.POST[SendEmailRequest, HttpResponse](
         matches(emailServiceURL),
         sendEmailRequestCaptor.capture(),
-        any[Seq[(String, String)]])(any(), any(), any(), any())).thenReturn(Future.successful(HttpResponse(OK)))
+        any[Seq[(String, String)]])(*, *, *, *)).thenReturn(successful(HttpResponse(OK,"")))
 
       sendEmailRequestCaptor
     }
@@ -50,13 +48,13 @@ class NotificationServiceSpec extends UnitSpec with MockitoSugar {
       when(mockHTTPClient.POST[SendEmailRequest, HttpResponse](
         matches(emailServiceURL),
         any[SendEmailRequest],
-        any[Seq[(String, String)]])(any(), any(), any(), any())).thenReturn(Future.successful(HttpResponse(NOT_FOUND)))
+        any[Seq[(String, String)]])(*, *, *, *)).thenReturn(successful(HttpResponse(NOT_FOUND,"")))
 
     def callToEmailServiceFails(): Unit = {
       when(mockHTTPClient.POST[SendEmailRequest, HttpResponse](
         matches(emailServiceURL),
         any[SendEmailRequest],
-        any[Seq[(String, String)]])(any(), any(), any(), any())).thenReturn(Future.successful(HttpResponse(INTERNAL_SERVER_ERROR)))
+        any[Seq[(String, String)]])(*, *, *, *)).thenReturn(successful(HttpResponse(INTERNAL_SERVER_ERROR,"")))
     }
 
     implicit val hc: HeaderCarrier = HeaderCarrier()

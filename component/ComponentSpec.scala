@@ -24,14 +24,16 @@ import play.api.{Application, Mode}
 import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport}
-import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
+
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-trait ComponentSpec extends UnitSpec with MongoSpecSupport with BeforeAndAfterAll with GuiceOneServerPerSuite {
+trait ComponentSpec extends AsyncHmrcSpec
+ with MongoSpecSupport with BeforeAndAfterAll with GuiceOneServerPerSuite {
   override def fakeApplication(): Application = new GuiceApplicationBuilder()
     .in(Mode.Test)
-    .configure("Test.mongodb.uri" -> mongoUri)
+    .configure("mongodb.uri" -> mongoUri)
     .build()
 
   override protected def beforeAll(): Unit = {

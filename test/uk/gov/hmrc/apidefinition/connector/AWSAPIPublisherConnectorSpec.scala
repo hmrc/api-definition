@@ -24,23 +24,23 @@ import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration._
 import org.scalatest.BeforeAndAfterAll
-import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.mockito.MockitoSugar
 import play.api.http.ContentTypes.JSON
 import play.api.http.HeaderNames.{AUTHORIZATION, CONTENT_TYPE}
 import play.api.http.Status.{INTERNAL_SERVER_ERROR, OK}
 import play.api.{Configuration, Environment}
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.models.{AWSAPIInfo, AWSHttpVerbDetails, AWSResponse, AWSSwaggerDetails}
-import uk.gov.hmrc.http.logging.Authorization
-import uk.gov.hmrc.http.{HeaderCarrier, Upstream5xxResponse}
+import uk.gov.hmrc.http.Authorization
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
-import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import uk.gov.hmrc.http.UpstreamErrorResponse
 
-class AWSAPIPublisherConnectorSpec extends UnitSpec with WithFakeApplication with MockitoSugar with ScalaFutures with BeforeAndAfterAll {
+class AWSAPIPublisherConnectorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite with BeforeAndAfterAll {
 
   private val stubPort = sys.env.getOrElse("WIREMOCK", "22223").toInt
   private val stubHost = "localhost"
@@ -65,10 +65,10 @@ class AWSAPIPublisherConnectorSpec extends UnitSpec with WithFakeApplication wit
     WireMock.reset()
     implicit val hc: HeaderCarrier = HeaderCarrier(authorization = Some(Authorization("foo")))
 
-    val http: HttpClient = fakeApplication.injector.instanceOf[HttpClient]
-    val environment: Environment = fakeApplication.injector.instanceOf[Environment]
-    val runModeConfiguration: Configuration = fakeApplication.injector.instanceOf[Configuration]
-    val appContext: AppConfig = fakeApplication.injector.instanceOf[AppConfig]
+    val http: HttpClient = app.injector.instanceOf[HttpClient]
+    val environment: Environment = app.injector.instanceOf[Environment]
+    val runModeConfiguration: Configuration = app.injector.instanceOf[Configuration]
+    val appContext: AppConfig = app.injector.instanceOf[AppConfig]
     val servicesConfig = mock[ServicesConfig]
 
     val underTest: AWSAPIPublisherConnector = new AWSAPIPublisherConnector(http, environment, appContext, runModeConfiguration, servicesConfig) {
@@ -110,9 +110,9 @@ class AWSAPIPublisherConnectorSpec extends UnitSpec with WithFakeApplication wit
           aResponse()
             .withStatus(INTERNAL_SERVER_ERROR)))
 
-      intercept[Upstream5xxResponse] {
+      intercept[UpstreamErrorResponse] {
         await(underTest.createOrUpdateAPI(apiName, swagger)(hc))
-      }
+      }.statusCode shouldBe INTERNAL_SERVER_ERROR
     }
   }
 
@@ -139,9 +139,9 @@ class AWSAPIPublisherConnectorSpec extends UnitSpec with WithFakeApplication wit
           aResponse()
             .withStatus(INTERNAL_SERVER_ERROR)))
 
-      intercept[Upstream5xxResponse] {
+      intercept[UpstreamErrorResponse] {
         await(underTest.deleteAPI(apiName)(hc))
-      }
+      }.statusCode shouldBe INTERNAL_SERVER_ERROR
     }
   }
 }

@@ -32,6 +32,7 @@ lazy val microservice = (project in file("."))
   .settings(
     Test / testOptions := Seq(Tests.Argument(TestFrameworks.ScalaTest, "-oDT")),
     Test / unmanagedSourceDirectories += baseDirectory.value / "test",
+    Test / unmanagedSourceDirectories += baseDirectory.value / "testcommon",
     Test / unmanagedResourceDirectories += baseDirectory.value / "test" / "resources",
     addTestReportOption(Test, "test-reports")
   )

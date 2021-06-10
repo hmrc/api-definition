@@ -18,9 +18,8 @@ package uk.gov.hmrc.apidefinition.utils
 
 import java.nio.file.Paths
 
-import akka.actor.ActorSystem
 import akka.stream.scaladsl.{FileIO, Sink, Source}
-import akka.stream.{ActorMaterializer, IOResult}
+import akka.stream.{Materializer, IOResult}
 import akka.util.ByteString
 import play.api.libs.ws.WSResponse
 
@@ -29,8 +28,7 @@ import scala.concurrent.{Await, Future}
 
 trait Utils {
 
-  implicit val system = ActorSystem("System")
-  implicit val mat = ActorMaterializer()
+  implicit val materializer: Materializer
 
   private val defaultTimeout: FiniteDuration = 5 seconds
 

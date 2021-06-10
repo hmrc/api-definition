@@ -20,15 +20,14 @@ import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import mockws.{MockWS, MockWSHelpers}
 import org.scalatest.BeforeAndAfterAll
-import org.scalatest.mockito.MockitoSugar
 import play.api.http.HttpEntity
 import play.api.http.Status._
 import play.api.mvc.{ResponseHeader, Result, Results}
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.apidefinition.utils.Utils
+import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 
-class ApiMicroserviceConnectorSpec extends UnitSpec with MockitoSugar with Utils with MockWSHelpers with BeforeAndAfterAll{
+class ApiMicroserviceConnectorSpec extends AsyncHmrcSpec with Utils with MockWSHelpers with BeforeAndAfterAll{
 
   override def afterAll(): Unit = {
     shutdownHelpers()

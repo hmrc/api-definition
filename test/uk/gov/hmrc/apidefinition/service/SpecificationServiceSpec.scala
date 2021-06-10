@@ -17,14 +17,10 @@
 package uk.gov.hmrc.apidefinition.service
 
 import uk.gov.hmrc.apidefinition.config.AppConfig
-import uk.gov.hmrc.play.test.UnitSpec
-import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.mockito.MockitoSugar
+
 import uk.gov.hmrc.apidefinition.utils.Utils
 import uk.gov.hmrc.apidefinition.services.SpecificationService
 import scala.concurrent.ExecutionContext.Implicits.global
-import org.mockito.Mockito.when
-import org.mockito.ArgumentMatchers.{any}
 import uk.gov.hmrc.apidefinition.raml.ApiSpecificationRamlParser
 import uk.gov.hmrc.apidefinition.raml.RAML
 import uk.gov.hmrc.apidefinition.models.apispecification.RamlSpecHelper
@@ -33,9 +29,14 @@ import scala.util.Success
 import scala.util.Try
 import uk.gov.hmrc.apidefinition.services.SchemaService
 import play.api.libs.json.Json
+import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import akka.stream.Materializer
 
 
-class SpecificationServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar with Utils {
+class SpecificationServiceSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite with Utils {
+
+  implicit val materializer: Materializer = app.materializer
 
   val raml: Try[RAML.RAML] = Success(RamlSpecHelper.loadRaml("V2/simple.raml"))
 

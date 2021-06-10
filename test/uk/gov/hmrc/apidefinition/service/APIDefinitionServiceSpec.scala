@@ -20,10 +20,7 @@ import java.util.UUID.randomUUID
 
 import org.joda.time.DateTimeUtils._
 import org.joda.time.format.ISODateTimeFormat
-import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterAll
-import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.mockito.MockitoSugar
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.models
 import uk.gov.hmrc.apidefinition.models.APIStatus.APIStatus
@@ -31,15 +28,15 @@ import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.services.{APIDefinitionService, AwsApiPublisher, NotificationService}
 import uk.gov.hmrc.http.HeaderNames._
-import uk.gov.hmrc.http.{HeaderCarrier, UnauthorizedException}
-import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.http.{HeaderCarrier}
+import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
+
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
 
-class APIDefinitionServiceSpec extends UnitSpec
-  with ScalaFutures with MockitoSugar with BeforeAndAfterAll {
+class APIDefinitionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll {
 
   private val context = "calendar"
   private val serviceName = "calendar-service"
@@ -57,18 +54,6 @@ class APIDefinitionServiceSpec extends UnitSpec
 
   private def anAPIDefinition(context: String, versions: APIVersion*) =
     APIDefinition("service", "http://service", "name", "description", context, versions, None, None, None)
-
-  private def extAPIDefinition(context: String, versions: Seq[ExtendedAPIVersion]) =
-    ExtendedAPIDefinition(
-      "service",
-      "http://service",
-      "name",
-      "description",
-      context,
-      requiresTrust = false,
-      isTestSupport = false,
-      versions,
-      lastPublishedAt = None)
 
   trait Setup {
 
@@ -135,7 +120,7 @@ class APIDefinitionServiceSpec extends UnitSpec
   "createOrUpdate" should {
 
     "create or update the API Definition in all AWS and the repository" in new Setup {
-      when(mockAPIDefinitionRepository.fetchByContext(apiDefinition.context)).thenReturn(Future.successful(Some(apiDefinition)))
+      when(mockAPIDefinitionRepository.fetchByContext(apiDefinition.context)).thenReturn(successful(Some(apiDefinition)))
       when(mockAwsApiPublisher.publish(apiDefinition)).thenReturn(unitSuccess)
       when(mockAPIDefinitionRepository.save(apiDefinitionWithSavingTime)).thenReturn(successful(apiDefinitionWithSavingTime))
 
@@ -147,7 +132,7 @@ class APIDefinitionServiceSpec extends UnitSpec
     }
 
     "propagate unexpected errors that happen when trying to publish an API to AWS" in new Setup {
-      when(mockAPIDefinitionRepository.fetchByContext(apiDefinition.context)).thenReturn(Future.successful(Some(apiDefinition)))
+      when(mockAPIDefinitionRepository.fetchByContext(apiDefinition.context)).thenReturn(successful(Some(apiDefinition)))
       when(mockAwsApiPublisher.publish(apiDefinition)).thenReturn(failed(new RuntimeException("Something went wrong")))
 
       val thrown = intercept[RuntimeException] {
@@ -159,7 +144,7 @@ class APIDefinitionServiceSpec extends UnitSpec
     }
 
     "propagate unexpected errors that happen when trying to save the definition" in new Setup {
-      when(mockAPIDefinitionRepository.fetchByContext(apiDefinition.context)).thenReturn(Future.successful(Some(apiDefinition)))
+      when(mockAPIDefinitionRepository.fetchByContext(apiDefinition.context)).thenReturn(successful(Some(apiDefinition)))
       when(mockAwsApiPublisher.publish(apiDefinition)).thenReturn(unitSuccess)
       when(mockAPIDefinitionRepository.save(apiDefinitionWithSavingTime)).thenReturn(failed(new RuntimeException("Something went wrong")))
 
@@ -180,7 +165,7 @@ class APIDefinitionServiceSpec extends UnitSpec
       val updatedAPIDefinition: APIDefinition = anAPIDefinition(apiContext, aVersion(apiVersion, updatedStatus, Some(PublicAPIAccess())))
       val updatedAPIDefinitionWithSavingTime: APIDefinition = updatedAPIDefinition.copy(lastPublishedAt = Some(fixedSavingTime))
 
-      when(mockAPIDefinitionRepository.fetchByContext(apiContext)).thenReturn(Future.successful(Some(existingAPIDefinition)))
+      when(mockAPIDefinitionRepository.fetchByContext(apiContext)).thenReturn(successful(Some(existingAPIDefinition)))
       when(mockNotificationService.notifyOfStatusChange(existingAPIDefinition.name, apiVersion, existingStatus, updatedStatus)).thenReturn(unitSuccess)
       when(mockAwsApiPublisher.publish(updatedAPIDefinition)).thenReturn(unitSuccess)
       when(mockAPIDefinitionRepository.save(updatedAPIDefinitionWithSavingTime)).thenReturn(successful(updatedAPIDefinitionWithSavingTime))
@@ -349,20 +334,16 @@ class APIDefinitionServiceSpec extends UnitSpec
     "fail when AWS delete fails" in new Setup {
       when(mockAwsApiPublisher.delete(apiDefinition)).thenReturn(failed(new RuntimeException()))
 
-      val future = underTest.delete(apiDefinition.serviceName)
-
-      whenReady(future.failed) { ex =>
-        ex shouldBe a[RuntimeException]
+      intercept[RuntimeException] {
+        await(underTest.delete(apiDefinition.serviceName))
       }
     }
 
     "fail when repository delete fails" in new Setup {
       when(mockAPIDefinitionRepository.delete(apiDefinition.serviceName)).thenReturn(failed(new RuntimeException()))
 
-      val future = underTest.delete(apiDefinition.serviceName)
-
-      whenReady(future.failed) { ex =>
-        ex shouldBe a[RuntimeException]
+      intercept[RuntimeException] {
+        await(underTest.delete(apiDefinition.serviceName))
       }
     }
   }

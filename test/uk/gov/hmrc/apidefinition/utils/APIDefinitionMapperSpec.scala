@@ -18,12 +18,10 @@ package uk.gov.hmrc.apidefinition.utils
 
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.models.APIStatus.APIStatus
-import org.scalatest.mockito.MockitoSugar
-import org.mockito.Mockito.when
 import uk.gov.hmrc.apidefinition.models._
-import uk.gov.hmrc.play.test.UnitSpec
 
-class APIDefinitionMapperSpec extends UnitSpec with MockitoSugar {
+
+class APIDefinitionMapperSpec extends AsyncHmrcSpec {
 
   private def version(version: String, status: APIStatus, endpointsEnabled: Option[Boolean] = None) = {
     APIVersion(version, status, None,

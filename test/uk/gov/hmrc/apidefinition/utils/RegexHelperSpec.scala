@@ -16,10 +16,10 @@
 
 package uk.gov.hmrc.apidefinition.utils
 
-import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.apidefinition.utils.RegexHelper.extractPathParameters
 
-class RegexHelperSpec extends UnitSpec {
+class RegexHelperSpec extends AsyncHmrcSpec
+ {
 
   "extractPathParameters()" should {
 

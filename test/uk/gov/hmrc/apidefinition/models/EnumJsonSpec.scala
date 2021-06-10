@@ -17,10 +17,11 @@
 package uk.gov.hmrc.apidefinition.models
 
 import play.api.libs.json.Json
-import uk.gov.hmrc.apidefinition.models.EnumJson
-import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 
-class EnumJsonSpec extends UnitSpec {
+
+class EnumJsonSpec extends AsyncHmrcSpec
+ {
 
   object Color extends Enumeration{
     type Color = Value

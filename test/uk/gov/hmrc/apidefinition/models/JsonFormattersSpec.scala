@@ -19,10 +19,11 @@ package uk.gov.hmrc.apidefinition.models
 import uk.gov.hmrc.apidefinition.models.JsonFormatters.{apiAccessWrites, dateTimeReads}
 import org.joda.time.{DateTime, DateTimeZone}
 import play.api.libs.json.{JsError, JsNumber, Json}
-import uk.gov.hmrc.apidefinition.models.PrivateAPIAccess
-import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 
-class JsonFormattersSpec extends UnitSpec {
+
+class JsonFormattersSpec extends AsyncHmrcSpec
+ {
 
   "JsonFormatters" should {
 

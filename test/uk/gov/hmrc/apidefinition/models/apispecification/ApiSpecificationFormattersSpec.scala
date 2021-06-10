@@ -17,10 +17,11 @@
 package uk.gov.hmrc.apidefinition.models.apispecification
 
 import play.api.libs.json._
-import uk.gov.hmrc.play.test.UnitSpec
-import uk.gov.hmrc.apidefinition.models.apispecification.ExampleSpec
 
-class ApiSpecificationFormattersSpec extends UnitSpec {
+import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
+
+class ApiSpecificationFormattersSpec extends AsyncHmrcSpec
+ {
 
   import uk.gov.hmrc.apidefinition.models.apispecification.ApiSpecificationFormatters._
 
