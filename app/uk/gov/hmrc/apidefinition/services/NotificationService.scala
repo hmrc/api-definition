@@ -25,6 +25,7 @@ import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
+import uk.gov.hmrc.http.HttpReads.Implicits._
 
 trait NotificationService {
   val environmentName: String
