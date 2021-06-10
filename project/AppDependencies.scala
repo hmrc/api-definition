@@ -20,7 +20,7 @@ object AppDependencies {
     "org.scalatestplus.play"    %% "scalatestplus-play"           % "3.1.3",
     "org.mockito"               %% "mockito-scala-scalatest"      % "1.7.1",
     "com.typesafe.play"         %% "play-test"                    % PlayVersion.current,
-    "com.github.tomakehurst"    %  "wiremock"                     % "1.58",
+    "com.github.tomakehurst"    %  "wiremock-jre8-standalone"     % "2.27.1",
     "de.leanovate.play-mockws"  %% "play-mockws"                  % "2.6.6"
   ).map (m => m % "test, component")
 }
