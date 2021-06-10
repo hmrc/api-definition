@@ -20,7 +20,6 @@ import uk.gov.hmrc.apidefinition.config.AppConfig
 
 import uk.gov.hmrc.apidefinition.utils.Utils
 import uk.gov.hmrc.apidefinition.services.SpecificationService
-import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.apidefinition.raml.ApiSpecificationRamlParser
 import uk.gov.hmrc.apidefinition.raml.RAML
 import uk.gov.hmrc.apidefinition.models.apispecification.RamlSpecHelper

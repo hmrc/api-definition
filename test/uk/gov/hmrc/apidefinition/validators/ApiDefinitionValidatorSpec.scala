@@ -29,7 +29,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.successful
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import akka.stream.Materializer
 
 class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite {
   

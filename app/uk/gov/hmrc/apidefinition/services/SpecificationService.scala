@@ -21,13 +21,13 @@ import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.ramltools.loaders.RamlLoader
 import play.api.libs.json.Json
 import uk.gov.hmrc.apidefinition.raml.ApiSpecificationRamlParser
-import scala.concurrent.{Future, ExecutionContext, blocking}
+import scala.concurrent.{Future, blocking}
 import play.api.libs.json.JsValue
 import uk.gov.hmrc.apidefinition.controllers.routes
 import uk.gov.hmrc.apidefinition.models.apispecification.ApiSpecificationFormatters._
 
 @Singleton
-class SpecificationService @Inject() (config: AppConfig, ramlLoader: RamlLoader, apiSpecificationRamlParser : ApiSpecificationRamlParser)(implicit ec: ExecutionContext) {
+class SpecificationService @Inject() (config: AppConfig, ramlLoader: RamlLoader, apiSpecificationRamlParser : ApiSpecificationRamlParser) {
   def fetchApiSpecification(serviceName: String, version: String): Future[JsValue] = {
     val rootRamlUrl = config.serviceBaseUrl + routes.DocumentationController.fetchApiDocumentationResource(serviceName,version, "application.raml").url
     fetchApiSpecificationAtUrl(rootRamlUrl)

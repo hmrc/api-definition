@@ -17,8 +17,8 @@
 package uk.gov.hmrc.apidefinition.controllers
 
 import play.api.libs.json.Json
-import play.api.mvc.{AnyContentAsEmpty, Result}
-import play.api.test.{FakeRequest, StubControllerComponentsFactory, StubPlayBodyParsersFactory}
+import play.api.mvc.Result
+import play.api.test.FakeRequest
 import play.mvc.Http.HeaderNames
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.models.APICategory.OTHER
@@ -29,12 +29,14 @@ import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.services.APIDefinitionService
 import uk.gov.hmrc.apidefinition.utils.APIDefinitionMapper
 import uk.gov.hmrc.apidefinition.validators._
-import uk.gov.hmrc.http.{BadRequestException, HeaderCarrier, UnauthorizedException}
 import play.api.test.Helpers._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
+import play.api.test.StubControllerComponentsFactory
+import uk.gov.hmrc.http.UnauthorizedException
+import uk.gov.hmrc.http.BadRequestException
 
 class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFactory {
 
