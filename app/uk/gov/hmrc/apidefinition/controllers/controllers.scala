@@ -23,6 +23,7 @@ import play.api.mvc.{Request, Result}
 import uk.gov.hmrc.apidefinition.models.{ErrorCode, ErrorResponse, FieldErrorDescription}
 
 import scala.concurrent.Future
+import scala.concurrent.Future.successful
 
 package object controllers {
 
@@ -41,9 +42,9 @@ package object controllers {
    */
   def handleRequest[T](request: Request[JsValue])(f: T => Future[Result])(implicit tjs: Reads[T]): Future[Result] = {
     val either: Either[Result, JsResult[T]] = validate(request)
-    either.fold(Future.successful, {
+    either.fold(successful, {
       result => result.fold(
-        errors => Future.successful(UnprocessableEntity(validationResult(errors))),
+        errors => successful(UnprocessableEntity(validationResult(errors))),
         entity => f(entity)
       )
     })

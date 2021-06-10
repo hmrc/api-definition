@@ -22,9 +22,10 @@ import play.mvc.Http.Status.NOT_FOUND
 import uk.gov.hmrc.apidefinition.models.APIStatus.APIStatus
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
-
+import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
+import uk.gov.hmrc.http.HttpReads.Implicits._
 
 trait NotificationService {
   val environmentName: String
@@ -60,7 +61,7 @@ class EmailNotificationService(httpClient: HttpClient,
           "currentStatus" -> existingAPIStatus.toString,
           "newStatus" -> newAPIStatus.toString,
           "environmentName" -> environmentName)
-       )).flatMap(_ => Future.successful(Unit))
+       )).flatMap(_ => successful(Unit))
   }
 
   private def sendEmail(payload: SendEmailRequest)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[HttpResponse] = {

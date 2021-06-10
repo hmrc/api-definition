@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.apidefinition.services
 
-import akka.actor.ActorSystem
 import akka.stream.Materializer
 import javax.inject.{Inject, Singleton}
 import play.api.http.HttpEntity
@@ -28,8 +27,7 @@ import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.connector.ApiMicroserviceConnector
 import uk.gov.hmrc.apidefinition.models.{APIDefinition, APIVersion}
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
-import uk.gov.hmrc.http.{HeaderCarrier, InternalServerException, NotFoundException}
-
+import uk.gov.hmrc.http.{InternalServerException, NotFoundException}
 import scala.concurrent.{ExecutionContext, Future}
 
 object DocumentationService {
@@ -41,7 +39,6 @@ class DocumentationService @Inject()(apiDefinitionRepository: APIDefinitionRepos
                                      specificationService : SpecificationService,
                                      config: AppConfig)
                                     (implicit val ec: ExecutionContext,
-                                     val actorSystem: ActorSystem,
                                      val mat: Materializer) {
 
   import DocumentationService._

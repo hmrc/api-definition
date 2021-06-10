@@ -28,23 +28,24 @@ import uk.gov.hmrc.apidefinition.models.{APIDefinition, ErrorCode, APICategory}
 import uk.gov.hmrc.apidefinition.services.APIDefinitionService
 import uk.gov.hmrc.apidefinition.utils.APIDefinitionMapper
 import uk.gov.hmrc.apidefinition.validators.ApiDefinitionValidator
-import uk.gov.hmrc.http.{HeaderCarrier, UnauthorizedException}
+import uk.gov.hmrc.http.UnauthorizedException
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
-
+import scala.concurrent.Future
+import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.control.NonFatal
 
 @Singleton
 class APIDefinitionController @Inject()(apiDefinitionValidator: ApiDefinitionValidator,
                                         apiDefinitionService: APIDefinitionService,
                                         apiDefinitionMapper: APIDefinitionMapper,
                                         appContext: AppConfig,
-                                        playBodyParsers: PlayBodyParsers,
                                         cc: ControllerComponents)
                                        (implicit val ec: ExecutionContext) extends BackendController(cc) {
 
   val fetchByContextTtlInSeconds: String = appContext.fetchByContextTtlInSeconds
 
-  def createOrUpdate(): Action[JsValue] = Action.async(playBodyParsers.json) { implicit request =>
+  def createOrUpdate(): Action[JsValue] = Action.async(parse.json) { implicit request =>
     handleRequest[APIDefinition](request) { requestBody =>
       apiDefinitionValidator.validate(requestBody) { validatedDefinition =>
         Logger.info(s"Create/Update API definition request: $validatedDefinition")
@@ -70,15 +71,15 @@ class APIDefinitionController @Inject()(apiDefinitionValidator: ApiDefinitionVal
   }
 
   private def recovery: PartialFunction[Throwable, Result] = {
-    case e =>
+    case NonFatal(e) =>
       Logger.error(s"An unexpected error occurred: ${e.getMessage}", e)
       InternalServerError(error(ErrorCode.INTERNAL_SERVER_ERROR, e.getMessage))
   }
 
-  def validate: Action[JsValue] = Action.async(playBodyParsers.json) { implicit request =>
+  def validate: Action[JsValue] = Action.async(parse.json) { implicit request =>
     handleRequest[APIDefinition](request) { requestBody =>
       apiDefinitionValidator.validate(requestBody) { validatedDefinition =>
-        Future.successful(Accepted(Json.toJson(validatedDefinition)))
+        successful(Accepted(Json.toJson(validatedDefinition)))
       }
     }
   }
@@ -95,7 +96,7 @@ class APIDefinitionController @Inject()(apiDefinitionValidator: ApiDefinitionVal
       case ("applicationId", applicationId) :: _ => fetchAllForApplication(applicationId, options.alsoIncludePrivateTrials)
       case ("type", typeValue) :: Nil => fetchDefinitionsByType(typeValue, options.alsoIncludePrivateTrials)
       case ("options", _) :: ("type", typeValue) :: Nil => fetchDefinitionsByType(typeValue, options.alsoIncludePrivateTrials)
-      case _ => Future.successful(BadRequest("Invalid query parameter or parameters"))
+      case _ => successful(BadRequest("Invalid query parameter or parameters"))
     }
   }
 
@@ -104,7 +105,7 @@ class APIDefinitionController @Inject()(apiDefinitionValidator: ApiDefinitionVal
   }
 
   def fetchAllAPICategories: Action[AnyContent] = Action.async {
-    Future.successful(Ok(Json.toJson(APICategory.allAPICategoryDetails)))
+    successful(Ok(Json.toJson(APICategory.allAPICategoryDetails)))
   }
 
   private def extractQueryOptions(request: Request[AnyContent]) = {
