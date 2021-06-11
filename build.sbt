@@ -18,6 +18,7 @@ lazy val microservice = (project in file("."))
   .settings(playSettings: _*)
   .settings(scalaSettings: _*)
   .settings(publishingSettings: _*)
+  .settings(ScoverageSettings())
   .settings(defaultSettings(): _*)
   .settings(
     name := appName,
@@ -56,8 +57,3 @@ lazy val microservice = (project in file("."))
 def onPackageName(rootPackage: String): String => Boolean = {
   testName => testName startsWith rootPackage
 }
-
-// Coverage configuration
-coverageMinimum := 90
-coverageFailOnMinimum := true
-coverageExcludedPackages := "<empty>;com.kenshoo.play.metrics.*;prod.*;testOnlyDoNotUseInAppConf.*;app.*;uk.gov.hmrc.BuildInfo;uk.gov.hmrc.apidefinition.config.*"
