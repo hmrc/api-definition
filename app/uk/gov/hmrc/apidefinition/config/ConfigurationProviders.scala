@@ -19,16 +19,16 @@ package uk.gov.hmrc.apidefinition.config
 
 import javax.inject.{Inject, Provider, Singleton}
 import play.api.inject.{Binding, Module}
-import play.api.{Configuration, Environment, Logger, Mode}
+import play.api.{Configuration, Environment, Mode}
 import uk.gov.hmrc.apidefinition.services.{EmailNotificationService, LoggingNotificationService, NotificationService}
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
-import scala.collection.JavaConverters._
 import uk.gov.hmrc.ramltools.loaders.RamlLoader
 import uk.gov.hmrc.apidefinition.raml.DocumentationRamlLoader
 import uk.gov.hmrc.ramltools.loaders.UrlRewriter
 import uk.gov.hmrc.apidefinition.raml.DocumentationUrlRewriter
+import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
 
 class ConfigurationModule extends Module {
 
@@ -45,7 +45,7 @@ class ConfigurationModule extends Module {
 class NotificationServiceConfigProvider @Inject()(val runModeConfiguration: Configuration,
                                                   environment: Environment,
                                                   httpClient: HttpClient,
-                                                  servicesConfig: ServicesConfig) extends Provider[NotificationService]{
+                                                  servicesConfig: ServicesConfig) extends Provider[NotificationService] with ApplicationLogger {
 
   private val LoggerNotificationType = "LOG"
   private val EmailNotificationType = "EMAIL"
@@ -63,25 +63,25 @@ class NotificationServiceConfigProvider @Inject()(val runModeConfiguration: Conf
 
   private def configureNotificationsService(configuration: Configuration): NotificationService = {
     def defaultNotificationService(environmentName: String): NotificationService = {
-      Logger.warn("Using Default Notification Service")
+      logger.warn("Using Default Notification Service")
       new LoggingNotificationService(environmentName)
     }
 
     def configureEmailNotificationService(environmentName: String, optionalEmailConfiguration: Option[Configuration]): NotificationService = {
       if(optionalEmailConfiguration.isEmpty) {
-        Logger.warn(s"No Email configuration provided")
+        logger.warn(s"No Email configuration provided")
         defaultNotificationService(environmentName)
       } else {
         val emailConfiguration = optionalEmailConfiguration.get
         (emailConfiguration.getOptional[String]("serviceURL"),
           emailConfiguration.getOptional[String]("templateId"),
-          emailConfiguration.getStringList("addresses")) match {
+          emailConfiguration.get[Seq[String]]("addresses")) match {
 
-          case (Some(emailServiceURL), Some(emailTemplateId), Some(emailAddresses)) =>
-            Logger.info(s"Email notifications will be sent to $emailAddresses using template [$emailTemplateId] for [$environmentName] environment")
-            new EmailNotificationService(httpClient, emailServiceURL, emailTemplateId, environmentName, emailAddresses.asScala.toSet)
+          case (Some(emailServiceURL), Some(emailTemplateId), emailAddresses) =>
+            logger.info(s"Email notifications will be sent to $emailAddresses using template [$emailTemplateId] for [$environmentName] environment")
+            new EmailNotificationService(httpClient, emailServiceURL, emailTemplateId, environmentName, emailAddresses.toSet)
           case _ =>
-            Logger.warn(s"Failed to create EmailNotificationService")
+            logger.warn(s"Failed to create EmailNotificationService")
             defaultNotificationService(environmentName)
         }
       }
@@ -90,13 +90,13 @@ class NotificationServiceConfigProvider @Inject()(val runModeConfiguration: Conf
     val environmentName = configuration.getOptional[String]("environmentName").getOrElse(UnknownEnvironmentName)
     configuration.getAndValidate("type", Set(LoggerNotificationType, EmailNotificationType)) match {
       case LoggerNotificationType =>
-        Logger.info("Using Logging Notification Service")
+        logger.info("Using Logging Notification Service")
         new LoggingNotificationService(environmentName)
       case EmailNotificationType =>
-        Logger.info("Using Email Notification Service")
+        logger.info("Using Email Notification Service")
         configureEmailNotificationService(environmentName, configuration.getOptional[Configuration]("email"))
       case _ =>
-        Logger.warn("Notification type not recognised")
+        logger.warn("Notification type not recognised")
         defaultNotificationService(environmentName)
     }
   }

@@ -17,12 +17,12 @@
 package uk.gov.hmrc.apidefinition.controllers
 
 import javax.inject.{Inject, Singleton}
-import play.api.Logger
 import play.api.mvc.{Action, AnyContent, ControllerComponents, Result}
 import uk.gov.hmrc.apidefinition.models.ErrorCode
 import uk.gov.hmrc.apidefinition.services.DocumentationService
 import uk.gov.hmrc.http.NotFoundException
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
+import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
 
 import scala.concurrent.ExecutionContext
 import scala.util.control.NonFatal
@@ -30,21 +30,21 @@ import scala.util.control.NonFatal
 @Singleton
 class DocumentationController @Inject()(service: DocumentationService, cc: ControllerComponents)
                                        (implicit val ec: ExecutionContext)
-                                        extends BackendController(cc) {
+                                        extends BackendController(cc) with ApplicationLogger {
 
   def fetchApiDocumentationResource(serviceName: String, version: String, resource: String): Action[AnyContent] = Action.async {
     _ => {
-      Logger.info(s"API Documentation received request for resource: $serviceName, $version, $resource")
+      logger.info(s"API Documentation received request for resource: $serviceName, $version, $resource")
       service.fetchApiDocumentationResource(serviceName, version, resource)
     } recover recovery
   }
 
   private def recovery: PartialFunction[Throwable, Result] = {
     case e: NotFoundException =>
-      Logger.info(s"Unable to fetch resource: ${e.getMessage}", e)
+      logger.info(s"Unable to fetch resource: ${e.getMessage}", e)
       NotFound(error(ErrorCode.API_DEFINITION_NOT_FOUND, e.getMessage))
     case NonFatal(e) =>
-      Logger.error(s"An unexpected error occurred: ${e.getMessage}", e)
+      logger.error(s"An unexpected error occurred: ${e.getMessage}", e)
       InternalServerError(error(ErrorCode.INTERNAL_SERVER_ERROR, e.getMessage))
   }
 }

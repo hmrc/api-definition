@@ -23,7 +23,7 @@ import play.api.http.Status.{INTERNAL_SERVER_ERROR, NOT_FOUND, OK}
 import uk.gov.hmrc.apidefinition.models.APIStatus
 import uk.gov.hmrc.apidefinition.services.{EmailNotificationService, SendEmailRequest}
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
-import uk.gov.hmrc.play.bootstrap.http.HttpClient
+import uk.gov.hmrc.http.HttpClient
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 
 

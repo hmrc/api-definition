@@ -22,7 +22,7 @@ import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import play.api.http.Status
 import play.api.libs.ws.WSResponse
-import play.api.libs.ws.ahc.cache.{CacheableHttpResponseBodyPart, CacheableHttpResponseHeaders, CacheableHttpResponseStatus, CacheableResponse}
+import play.api.libs.ws.ahc.cache.{CacheableHttpResponseBodyPart, CacheableHttpResponseStatus, CacheableResponse}
 import play.api.libs.ws.ahc.{AhcWSResponse, StandaloneAhcWSResponse}
 import play.api.mvc.Result
 import play.shaded.ahc.io.netty.handler.codec.http.DefaultHttpHeaders
@@ -43,6 +43,8 @@ import scala.util.Random
 import uk.gov.hmrc.apidefinition.services.SpecificationService
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import akka.stream.Materializer
+import play.shaded.ahc.org.asynchttpclient.AsyncHttpClientConfig
+import play.shaded.ahc.org.asynchttpclient.DefaultAsyncHttpClientConfig
 
 class DocumentationServiceSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite with Utils {
   import DocumentationService.PROXY_SAFE_CONTENT_TYPE
@@ -81,12 +83,12 @@ class DocumentationServiceSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wi
     val status = new CacheableHttpResponseStatus(uri, statusCode , "", "")
     val defaultHeaders = new DefaultHttpHeaders()
     headers foreach { case (k, v) => defaultHeaders.add(k, v) }
-    val responseHeaders = CacheableHttpResponseHeaders(trailingHeaders = false, headers = defaultHeaders)
+    //val responseHeaders = CacheableHttpResponseHeaders(trailingHeaders = false, headers = defaultHeaders)
     val bodyParts = util.Collections.emptyList[CacheableHttpResponseBodyPart]
-
+    val ahcConfig: AsyncHttpClientConfig = null // DefaultAsyncHttpClientConfig.Builder.build()
     
     //TODO work out how to add source bytestream to bodyparts & copy headers
-    AhcWSResponse(new StandaloneAhcWSResponse(CacheableResponse(status = status, headers = responseHeaders, bodyParts = bodyParts)))
+    AhcWSResponse(new StandaloneAhcWSResponse(CacheableResponse(status = status, headers = defaultHeaders, bodyParts = bodyParts, ahcConfig = ahcConfig)))
   }
 
   private val streamedResource: AhcWSResponse =

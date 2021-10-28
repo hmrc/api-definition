@@ -17,7 +17,6 @@
 package uk.gov.hmrc.apidefinition.repository
 
 import javax.inject.{Inject, Singleton}
-import play.api.Logger
 import play.api.libs.json.{JsObject, Json}
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.Cursor.FailOnError
@@ -59,46 +58,46 @@ class APIDefinitionRepository @Inject()(mongo: ReactiveMongoComponent)(implicit 
   }
 
   def fetchByServiceName(serviceName: String): Future[Option[APIDefinition]] = {
-    Logger.info(s"Fetching API $serviceName in mongo")
+    logger.info(s"Fetching API $serviceName in mongo")
     collection.find[JsObject, JsObject](selector = serviceNameSelector(serviceName), empty).one[APIDefinition].map { api =>
-      Logger.info(s"Retrieved API with service name '$serviceName' in mongo: $api")
+      logger.info(s"Retrieved API with service name '$serviceName' in mongo: $api")
       api
     } recover {
       case e =>
-        Logger.error(s"An error occurred while retrieving API with service name '$serviceName' in mongo", e)
+        logger.error(s"An error occurred while retrieving API with service name '$serviceName' in mongo", e)
         throw e
     }
   }
 
   def fetchByServiceBaseUrl(serviceBaseUrl: String): Future[Option[APIDefinition]] = {
     collection.find[JsObject, JsObject](selector = Json.obj("serviceBaseUrl" -> serviceBaseUrl), empty).one[APIDefinition].map { api =>
-      Logger.debug(s"Retrieved API with service base url '$serviceBaseUrl' in mongo: $api")
+      logger.debug(s"Retrieved API with service base url '$serviceBaseUrl' in mongo: $api")
       api
     } recover {
       case e =>
-        Logger.error(s"An error occurred while retrieving API with service base url '$serviceBaseUrl' in mongo", e)
+        logger.error(s"An error occurred while retrieving API with service base url '$serviceBaseUrl' in mongo", e)
         throw e
     }
   }
 
   def fetchByName(name: String): Future[Option[APIDefinition]] = {
     collection.find[JsObject, JsObject](selector = Json.obj("name" -> name), empty).one[APIDefinition].map { api =>
-      Logger.debug(s"Retrieved API with name '$name' in mongo: $api")
+      logger.debug(s"Retrieved API with name '$name' in mongo: $api")
       api
     } recover {
       case e =>
-        Logger.error(s"An error occurred while retrieving API with name '$name' in mongo", e)
+        logger.error(s"An error occurred while retrieving API with name '$name' in mongo", e)
         throw e
     }
   }
 
   def fetchByContext(context: String): Future[Option[APIDefinition]] = {
     collection.find[JsObject, JsObject](selector = Json.obj("context" -> context), empty).one[APIDefinition].map { api =>
-      Logger.debug(s"Retrieved API with context '$context' in mongo: $api")
+      logger.debug(s"Retrieved API with context '$context' in mongo: $api")
       api
     } recover {
       case e =>
-        Logger.error(s"An error occurred while retrieving API with context '$context' in mongo", e)
+        logger.error(s"An error occurred while retrieving API with context '$context' in mongo", e)
         throw e
     }
   }
@@ -119,6 +118,6 @@ class APIDefinitionRepository @Inject()(mongo: ReactiveMongoComponent)(implicit 
 
   def delete(serviceName: String): Future[Unit] = {
     collection.delete().one(serviceNameSelector(serviceName))
-      .map(_ => Logger.info(s"API with service name '$serviceName' has been deleted successfully"))
+      .map(_ => logger.info(s"API with service name '$serviceName' has been deleted successfully"))
   }
 }

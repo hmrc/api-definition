@@ -18,13 +18,13 @@ package uk.gov.hmrc.apidefinition.services
 
 import com.google.inject.Singleton
 import javax.inject.Inject
-import play.api.Logger
 import uk.gov.hmrc.apidefinition.connector.AWSAPIPublisherConnector
 import uk.gov.hmrc.apidefinition.models.AWSAPIDefinition.awsApiGatewayName
 import uk.gov.hmrc.apidefinition.models.{APIDefinition, APIStatus, APIVersion}
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.utils.AWSPayloadHelper.buildAWSSwaggerDetails
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
 
 import scala.concurrent.Future.sequence
 import scala.concurrent.{ExecutionContext, Future}
@@ -33,7 +33,7 @@ import scala.util.matching.Regex
 
 @Singleton
 class AwsApiPublisher @Inject()(val awsAPIPublisherConnector: AWSAPIPublisherConnector, val apiDefinitionRepository: APIDefinitionRepository)
-                               (implicit val ec: ExecutionContext) {
+                               (implicit val ec: ExecutionContext) extends ApplicationLogger {
 
   val hostRegex: Regex = "https?://(.+)".r
 
@@ -53,10 +53,10 @@ class AwsApiPublisher @Inject()(val awsAPIPublisherConnector: AWSAPIPublisherCon
         }
       }
     } map { _ =>
-      Logger.info(s"Successfully published API '${apiDefinition.serviceName}' to AWS API Gateway")
+      logger.info(s"Successfully published API '${apiDefinition.serviceName}' to AWS API Gateway")
     } recover {
       case NonFatal(e) =>
-        Logger.error(s"Failed to publish API '${apiDefinition.serviceName}' to AWS API Gateway", e)
+        logger.error(s"Failed to publish API '${apiDefinition.serviceName}' to AWS API Gateway", e)
     }
   }
 
@@ -68,7 +68,7 @@ class AwsApiPublisher @Inject()(val awsAPIPublisherConnector: AWSAPIPublisherCon
     val hostRegex(host) = serviceBaseUrl
     val swagger = buildAWSSwaggerDetails(apiDefinitionName, apiVersion, context, host)
     awsAPIPublisherConnector.createOrUpdateAPI(apiName, swagger)(hc)
-      .map(awsRequestId => Logger.info(s"Successfully published API [$apiName] Version [${apiVersion.version}] under AWS Request Id [$awsRequestId]"))
+      .map(awsRequestId => logger.info(s"Successfully published API [$apiName] Version [${apiVersion.version}] under AWS Request Id [$awsRequestId]"))
   }
 
   def delete(apiDefinition: APIDefinition)(implicit hc: HeaderCarrier): Future[Unit] = {
@@ -77,15 +77,15 @@ class AwsApiPublisher @Inject()(val awsAPIPublisherConnector: AWSAPIPublisherCon
         deleteAPIVersion(awsApiGatewayName(apiVersion.version, apiDefinition))
       }
     } map {_ =>
-      Logger.info(s"Successfully deleted all versions for API '${apiDefinition.serviceName}' from AWS API Gateway")
+      logger.info(s"Successfully deleted all versions for API '${apiDefinition.serviceName}' from AWS API Gateway")
     } recover {
-      case NonFatal(e) => Logger.error(s"Failed to delete API '${apiDefinition.serviceName}' from AWS API Gateway", e)
+      case NonFatal(e) => logger.error(s"Failed to delete API '${apiDefinition.serviceName}' from AWS API Gateway", e)
     }
   }
 
   private def deleteAPIVersion(apiName: String)(implicit hc: HeaderCarrier): Future[Unit] = {
     awsAPIPublisherConnector.deleteAPI(apiName)(hc) map { requestId =>
-      Logger.info(s"Successfully deleted API '$apiName' from AWS API Gateway with request ID $requestId")
+      logger.info(s"Successfully deleted API '$apiName' from AWS API Gateway with request ID $requestId")
     }
   }
 }

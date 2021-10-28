@@ -16,16 +16,16 @@
 
 package uk.gov.hmrc.apidefinition.services
 
-import play.api.Logger
 import play.api.libs.json.{Json, OFormat}
 import play.mvc.Http.Status.NOT_FOUND
 import uk.gov.hmrc.apidefinition.models.APIStatus.APIStatus
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
-import uk.gov.hmrc.play.bootstrap.http.HttpClient
+import uk.gov.hmrc.http.HttpClient
 import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 import uk.gov.hmrc.http.HttpReads.Implicits._
+import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
 
 trait NotificationService {
   val environmentName: String
@@ -33,12 +33,12 @@ trait NotificationService {
                           (implicit ec: ExecutionContext, headerCarrier: HeaderCarrier): Future[Unit]
 }
 
-class LoggingNotificationService(override val environmentName: String) extends NotificationService {
+class LoggingNotificationService(override val environmentName: String) extends NotificationService with ApplicationLogger {
 
   def notifyOfStatusChange(apiName: String, apiVersion: String, existingAPIStatus: APIStatus, newAPIStatus: APIStatus)
                           (implicit ec: ExecutionContext, headerCarrier: HeaderCarrier): Future[Unit] = {
     Future {
-      Logger.info(s"API [$apiName] Version [$apiVersion] Status has changed from [$existingAPIStatus] to [$newAPIStatus] in [$environmentName] environment")
+      logger.info(s"API [$apiName] Version [$apiVersion] Status has changed from [$existingAPIStatus] to [$newAPIStatus] in [$environmentName] environment")
     }
   }
 }
@@ -47,7 +47,7 @@ class EmailNotificationService(httpClient: HttpClient,
                                val emailServiceURL: String,
                                val emailTemplateId: String,
                                override val environmentName: String,
-                               val emailAddresses: Set[String]) extends NotificationService {
+                               val emailAddresses: Set[String]) extends NotificationService with ApplicationLogger {
 
   override def notifyOfStatusChange(apiName: String, apiVersion: String, existingAPIStatus: APIStatus, newAPIStatus: APIStatus)
                                    (implicit ec: ExecutionContext, headerCarrier: HeaderCarrier): Future[Unit] = {
@@ -75,7 +75,7 @@ class EmailNotificationService(httpClient: HttpClient,
 
     httpClient.POST[SendEmailRequest, HttpResponse](emailServiceURL, payload)
       .map { response =>
-        Logger.info(s"Sent '${payload.templateId}' to: ${payload.to.mkString(",")} with response: ${response.status}")
+        logger.info(s"Sent '${payload.templateId}' to: ${payload.to.mkString(",")} with response: ${response.status}")
         response.status match {
           case status if status >= 200 && status <= 299 => response
           case NOT_FOUND => throw new RuntimeException(s"Unable to send email. Downstream endpoint not found: $emailServiceURL")
