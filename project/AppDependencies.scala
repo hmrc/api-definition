@@ -8,9 +8,8 @@ object AppDependencies {
     "uk.gov.hmrc"               %% "bootstrap-backend-play-28"    % "5.16.0",
     "uk.gov.hmrc"               %% "simple-reactivemongo"         % "8.0.0-play-28",
     "uk.gov.hmrc"               %% "play-json-union-formatter"    % "1.15.0-play-28",
-    "uk.gov.hmrc"               %% "raml-tools"                   % "1.19.0",
+    "uk.gov.hmrc"               %% "raml-tools"                   % "1.20.0",
     "org.typelevel"             %% "cats-core"                    % "2.6.1",
-    "org.raml"                  %  "raml-parser-2"                % "1.0.51",
     "com.beachape"              %% "enumeratum-play-json"         % "1.7.0"
   )
 

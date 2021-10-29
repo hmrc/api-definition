@@ -24,7 +24,7 @@ import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 import uk.gov.hmrc.apidefinition.services.{EmailNotificationService, LoggingNotificationService, NotificationService}
 import org.scalatest.BeforeAndAfterEach
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
-import uk.gov.hmrc.play.bootstrap.http.HttpClient
+import uk.gov.hmrc.http.HttpClient
 
 class ConfigurationProvidersSpec extends AsyncHmrcSpec with BeforeAndAfterEach {
 

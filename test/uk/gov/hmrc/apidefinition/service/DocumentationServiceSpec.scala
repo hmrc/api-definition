@@ -78,24 +78,25 @@ class DocumentationServiceSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wi
 
   private val sampleFileSource: Source[ByteString, _] = createSourceFrom("hello")
 
-  def createResponse(statusCode: Int,  headers: Map[String, String], fileSource: Source[ByteString, _]): AhcWSResponse = {
+  def createResponse(statusCode: Int,  headers: Map[String, String], fileSource: Source[ByteString, _]): WSResponse = {
     val uri: Uri = Uri.create(serviceUrl)
     val status = new CacheableHttpResponseStatus(uri, statusCode , "", "")
     val defaultHeaders = new DefaultHttpHeaders()
     headers foreach { case (k, v) => defaultHeaders.add(k, v) }
     //val responseHeaders = CacheableHttpResponseHeaders(trailingHeaders = false, headers = defaultHeaders)
     val bodyParts = util.Collections.emptyList[CacheableHttpResponseBodyPart]
-    val ahcConfig: AsyncHttpClientConfig = null // DefaultAsyncHttpClientConfig.Builder.build()
     
+    val cf: AsyncHttpClientConfig = new DefaultAsyncHttpClientConfig.Builder().build()
+
     //TODO work out how to add source bytestream to bodyparts & copy headers
-    AhcWSResponse(new StandaloneAhcWSResponse(CacheableResponse(status = status, headers = defaultHeaders, bodyParts = bodyParts, ahcConfig = ahcConfig)))
+    AhcWSResponse(new StandaloneAhcWSResponse(CacheableResponse(status = status, headers = defaultHeaders, bodyParts = bodyParts, ahcConfig = cf)))
   }
 
-  private val streamedResource: AhcWSResponse =
+  private val streamedResource: WSResponse =
     createResponse(Status.OK, Map("Content-Type" -> "application/text", "Content-Length" -> "hello".length.toString), sampleFileSource)
-  private val chunkedResource: AhcWSResponse = createResponse(Status.OK, Map.empty, sampleFileSource)
-  private val notFoundResponse: AhcWSResponse = createResponse(Status.NOT_FOUND, Map.empty, sampleFileSource)
-  private val internalServerErrorResponse: AhcWSResponse = createResponse(Status.INTERNAL_SERVER_ERROR, Map.empty, sampleFileSource)
+  private val chunkedResource: WSResponse = createResponse(Status.OK, Map.empty, sampleFileSource)
+  private val notFoundResponse: WSResponse = createResponse(Status.NOT_FOUND, Map.empty, sampleFileSource)
+  private val internalServerErrorResponse: WSResponse = createResponse(Status.INTERNAL_SERVER_ERROR, Map.empty, sampleFileSource)
   
   implicit val materializer: Materializer = app.materializer
   trait Setup {

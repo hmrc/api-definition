@@ -28,7 +28,7 @@ import uk.gov.hmrc.apidefinition.services.APIDefinitionService
 import uk.gov.hmrc.apidefinition.utils.APIDefinitionMapper
 import uk.gov.hmrc.apidefinition.validators.ApiDefinitionValidator
 import uk.gov.hmrc.http.UnauthorizedException
-import uk.gov.hmrc.play.bootstrap.controller.BackendController
+import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
 import scala.concurrent.Future
 import scala.concurrent.Future.successful
