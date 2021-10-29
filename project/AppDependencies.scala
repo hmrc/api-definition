@@ -21,5 +21,5 @@ object AppDependencies {
     "com.typesafe.play"         %% "play-test"                    % PlayVersion.current,
     "com.github.tomakehurst"    %  "wiremock-jre8-standalone"     % "2.31.0",
     "de.leanovate.play-mockws"  %% "play-mockws"                  % "2.8.1"
-  ).map (m => m % "test, component")
+  ).map (_ % "test, component")
 }
