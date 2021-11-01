@@ -16,11 +16,12 @@
 
 package uk.gov.hmrc.apidefinition.models.raml
 
-import org.scalatest.{WordSpec, Matchers}
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import uk.gov.hmrc.apidefinition.raml.{SafeValueAsString, SafeValue}
+import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.matchers.should.Matchers
 
-class RamlAccessorsSpec extends WordSpec with Matchers {
+class RamlAccessorsSpec extends AnyWordSpec with Matchers {
 
   "SafeValue" should {
     "allow access to java nullable string" in {

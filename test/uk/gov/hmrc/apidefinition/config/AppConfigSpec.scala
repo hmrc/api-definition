@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.apidefinition.config
 
-import org.scalatest.{BeforeAndAfterEach, Matchers}
+import org.scalatest.BeforeAndAfterEach
 import play.api.{Configuration, Environment}
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
@@ -25,7 +25,6 @@ import org.scalatestplus.play.guice.GuiceOneAppPerTest
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 
 class AppConfigSpec extends AsyncHmrcSpec
-  with Matchers
   with BeforeAndAfterEach 
   with GuiceOneAppPerTest {
 

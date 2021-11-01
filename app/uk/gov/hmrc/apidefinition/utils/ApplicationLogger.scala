@@ -16,15 +16,8 @@
 
 package uk.gov.hmrc.apidefinition.utils
 
-import org.mockito.{MockitoSugar, ArgumentMatchersSugar}
-import org.scalatest.OptionValues
-import org.scalatestplus.play.WsScalaTestClient
-import play.api.test.{DefaultAwaitTimeout, FutureAwaits}
-import org.scalatest.wordspec.AnyWordSpec
-import org.scalatest.matchers.should.Matchers
+import play.api.Logger
 
-abstract class HmrcSpec extends AnyWordSpec with Matchers with OptionValues with WsScalaTestClient with MockitoSugar with ArgumentMatchersSugar
-
-abstract class AsyncHmrcSpec
-  extends HmrcSpec with DefaultAwaitTimeout with FutureAwaits {
+trait ApplicationLogger {
+  protected val logger: Logger = Logger("application")
 }

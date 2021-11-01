@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.apidefinition.config
 
-import java.util
 import java.util.UUID
 
 import play.api.{Configuration, Environment}
@@ -25,9 +24,7 @@ import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 import uk.gov.hmrc.apidefinition.services.{EmailNotificationService, LoggingNotificationService, NotificationService}
 import org.scalatest.BeforeAndAfterEach
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
-import uk.gov.hmrc.play.bootstrap.http.HttpClient
-
-import scala.collection.JavaConverters._
+import uk.gov.hmrc.http.HttpClient
 
 class ConfigurationProvidersSpec extends AsyncHmrcSpec with BeforeAndAfterEach {
 
@@ -76,7 +73,7 @@ class ConfigurationProvidersSpec extends AsyncHmrcSpec with BeforeAndAfterEach {
       when(emailConfiguration.getOptional[String](eqTo("serviceURL"))(*)).thenReturn(Some(emailServiceURL))
       when(emailConfiguration.getOptional[String](eqTo("templateId"))(*)).thenReturn(Some(emailTemplateId))
 
-      when(emailConfiguration.getStringList("addresses")).thenReturn(Some(new util.ArrayList(emailAddresses.asJavaCollection)))
+      when(emailConfiguration.get[Seq[String]]("addresses")).thenReturn(emailAddresses.toSeq)
 
       when(mockRunModeConfiguration.getOptional[Configuration](eqTo("notifications"))(*)).thenReturn(Some(notificationsConfiguration))
     }
@@ -101,7 +98,7 @@ class ConfigurationProvidersSpec extends AsyncHmrcSpec with BeforeAndAfterEach {
 
       when(emailConfiguration.getOptional[String](eqTo("serviceURL"))(*)).thenReturn(None)
       when(emailConfiguration.getOptional[String](eqTo("templateId"))(*)).thenReturn(None)
-      when(emailConfiguration.getStringList("addresses")).thenReturn(None)
+      when(emailConfiguration.get[Seq[String]]("addresses")).thenReturn(null)
 
       when(mockRunModeConfiguration.getOptional[Configuration](eqTo("notifications"))(*)).thenReturn(Some(notificationsConfiguration))
     }
@@ -126,7 +123,7 @@ class ConfigurationProvidersSpec extends AsyncHmrcSpec with BeforeAndAfterEach {
 
       when(emailConfiguration.getOptional[String](eqTo("serviceURL"))(*)).thenReturn(Some(emailServiceURL))
       when(emailConfiguration.getOptional[String](eqTo("templateId"))(*)).thenReturn(Some(emailTemplateId))
-      when(emailConfiguration.getStringList("addresses")).thenReturn(Some(new util.ArrayList(emailAddresses.asJavaCollection)))
+      when(emailConfiguration.get[Seq[String]]("addresses")).thenReturn(emailAddresses.toSeq)
 
       when(mockRunModeConfiguration.getOptional[Configuration](eqTo("notifications"))(*)).thenReturn(Some(notificationsConfiguration))
     }

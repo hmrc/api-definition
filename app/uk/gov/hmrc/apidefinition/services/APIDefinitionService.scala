@@ -18,11 +18,11 @@ package uk.gov.hmrc.apidefinition.services
 
 import javax.inject.{Inject, Singleton}
 import org.joda.time.{DateTime, DateTimeZone}
-import play.api.Logger
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.models.APIStatus.APIStatus
 import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
+import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
 
 import scala.concurrent.Future.{failed, successful}
 import scala.concurrent.{ExecutionContext, Future}
@@ -33,7 +33,7 @@ class APIDefinitionService @Inject()(awsApiPublisher: AwsApiPublisher,
                                      apiDefinitionRepository: APIDefinitionRepository,
                                      notificationService: NotificationService,
                                      playApplicationContext: AppConfig)
-                                    (implicit val ec: ExecutionContext) {
+                                    (implicit val ec: ExecutionContext) extends ApplicationLogger {
 
   def createOrUpdate(apiDefinition: APIDefinition)(implicit hc: HeaderCarrier): Future[Unit] = {
 
@@ -42,14 +42,14 @@ class APIDefinitionService @Inject()(awsApiPublisher: AwsApiPublisher,
         _ <- awsApiPublisher.publish(apiDefinition)
       } yield ()) recoverWith {
         case e: PublishingException =>
-          Logger.error(s"Failed to create or update API [${apiDefinition.name}]", e)
+          logger.error(s"Failed to create or update API [${apiDefinition.name}]", e)
           failed(new RuntimeException(s"Could not publish API: [${apiDefinition.name}]"))
       }
     }
 
     def recoverSave: PartialFunction[Throwable, Future[Nothing]] = {
       case e: Throwable =>
-        Logger.error(s"""API Definition for "${apiDefinition.name}" was published but not saved due to error: ${e.getMessage}""", e)
+        logger.error(s"""API Definition for "${apiDefinition.name}" was published but not saved due to error: ${e.getMessage}""", e)
         failed(e)
     }
 

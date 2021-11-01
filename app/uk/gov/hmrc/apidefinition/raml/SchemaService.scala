@@ -24,11 +24,11 @@ import scala.collection.immutable.ListMap
 import scala.io.Source
 import uk.gov.hmrc.apidefinition.models.apispecification.JsonSchema
 import uk.gov.hmrc.apidefinition.models.apispecification.JsonSchema.JsonSchemaWithReference
+import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
 import javax.inject.Singleton
-import play.api.Logger
 
 @Singleton
-class SchemaService {
+class SchemaService extends ApplicationLogger {
 
   protected def fetchPlainTextSchema(uri: String): String = {
     var source: Source = null
@@ -59,7 +59,7 @@ class SchemaService {
 
   def parseSchema(schema: String, basePath: String): JsonSchema = {
     
-    Logger.info(s"SCHEMA :[$schema]")
+    logger.info(s"SCHEMA :[$schema]")
     val jsonSchema = Json.parse(schema).as[JsonSchema]
     jsonSchema match {
       case JsonSchemaWithReference() => {

@@ -17,7 +17,6 @@
 package uk.gov.hmrc.apidefinition.controllers
 
 import javax.inject.{Inject, Singleton}
-import play.api._
 import play.api.http.HeaderNames
 import play.api.libs.json._
 import play.api.mvc._
@@ -29,7 +28,8 @@ import uk.gov.hmrc.apidefinition.services.APIDefinitionService
 import uk.gov.hmrc.apidefinition.utils.APIDefinitionMapper
 import uk.gov.hmrc.apidefinition.validators.ApiDefinitionValidator
 import uk.gov.hmrc.http.UnauthorizedException
-import uk.gov.hmrc.play.bootstrap.controller.BackendController
+import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
+import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
 import scala.concurrent.Future
 import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
@@ -41,16 +41,16 @@ class APIDefinitionController @Inject()(apiDefinitionValidator: ApiDefinitionVal
                                         apiDefinitionMapper: APIDefinitionMapper,
                                         appContext: AppConfig,
                                         cc: ControllerComponents)
-                                       (implicit val ec: ExecutionContext) extends BackendController(cc) {
+                                       (implicit val ec: ExecutionContext) extends BackendController(cc) with ApplicationLogger {
 
   val fetchByContextTtlInSeconds: String = appContext.fetchByContextTtlInSeconds
 
   def createOrUpdate(): Action[JsValue] = Action.async(parse.json) { implicit request =>
     handleRequest[APIDefinition](request) { requestBody =>
       apiDefinitionValidator.validate(requestBody) { validatedDefinition =>
-        Logger.info(s"Create/Update API definition request: $validatedDefinition")
+        logger.info(s"Create/Update API definition request: $validatedDefinition")
         apiDefinitionService.createOrUpdate(apiDefinitionMapper.mapLegacyStatuses(validatedDefinition)).map { _ =>
-          Logger.info("API definition successfully created/updated")
+          logger.info("API definition successfully created/updated")
           NoContent
         } recover recovery
       }
@@ -72,7 +72,7 @@ class APIDefinitionController @Inject()(apiDefinitionValidator: ApiDefinitionVal
 
   private def recovery: PartialFunction[Throwable, Result] = {
     case NonFatal(e) =>
-      Logger.error(s"An unexpected error occurred: ${e.getMessage}", e)
+      logger.error(s"An unexpected error occurred: ${e.getMessage}", e)
       InternalServerError(error(ErrorCode.INTERNAL_SERVER_ERROR, e.getMessage))
   }
 
