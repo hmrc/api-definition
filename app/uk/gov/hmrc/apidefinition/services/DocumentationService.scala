@@ -46,27 +46,21 @@ class DocumentationService @Inject()(apiDefinitionRepository: APIDefinitionRepos
   def fetchApiDocumentationResource(serviceName: String, version: String, resource: String): Future[Result] = {
     def createProxySafeContentType(contentType: String): (String, String) = ((PROXY_SAFE_CONTENT_TYPE, contentType))
 
-    // TODO: ebridge - remove when routed via api-platform-microservice
-    if(resource == "packed(application.raml)") {
-      specificationService.fetchApiSpecification(serviceName, version)
-        .map(json => Ok(json))
-    } else {
-      for {
-        streamedResponse <- fetchResource(serviceName, version, resource)
-      } yield streamedResponse.status match {
-        case OK =>
-          val contentType = streamedResponse.contentType
+    for {
+      streamedResponse <- fetchResource(serviceName, version, resource)
+    } yield streamedResponse.status match {
+      case OK =>
+        val contentType = streamedResponse.contentType
 
-          streamedResponse.headers.get("Content-Length") match {
-            case Some(Seq(length)) => Ok.sendEntity(HttpEntity.Streamed(streamedResponse.bodyAsSource, Some(length.toLong), Some(contentType)))
-              .withHeaders(createProxySafeContentType(contentType))
+        streamedResponse.headers.get("Content-Length") match {
+          case Some(Seq(length)) => Ok.sendEntity(HttpEntity.Streamed(streamedResponse.bodyAsSource, Some(length.toLong), Some(contentType)))
+            .withHeaders(createProxySafeContentType(contentType))
 
-            case _ => Ok.chunked(streamedResponse.bodyAsSource).as(contentType)
-              .withHeaders(createProxySafeContentType(contentType))
-          }
-        case NOT_FOUND => throw newNotFoundException(serviceName, version, resource)
-        case status => throw newInternalServerException(serviceName, version, resource, status)
-      }
+          case _ => Ok.chunked(streamedResponse.bodyAsSource).as(contentType)
+            .withHeaders(createProxySafeContentType(contentType))
+        }
+      case NOT_FOUND => throw newNotFoundException(serviceName, version, resource)
+      case status => throw newInternalServerException(serviceName, version, resource, status)
     }
   }
 

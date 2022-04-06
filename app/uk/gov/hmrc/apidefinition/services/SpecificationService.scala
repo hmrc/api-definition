@@ -29,7 +29,7 @@ import uk.gov.hmrc.apidefinition.models.apispecification.ApiSpecificationFormatt
 @Singleton
 class SpecificationService @Inject() (config: AppConfig, ramlLoader: RamlLoader, apiSpecificationRamlParser : ApiSpecificationRamlParser) {
   def fetchApiSpecification(serviceName: String, version: String): Future[JsValue] = {
-    val rootRamlUrl = config.serviceBaseUrl + routes.DocumentationController.fetchApiDocumentationResource(serviceName,version, "application.raml").url
+    val rootRamlUrl = config.serviceBaseUrl + routes.DocumentationController.fetchApiDocumentationResource(serviceName, version, "application.raml").url
     fetchApiSpecificationAtUrl(rootRamlUrl)
   }
 
