@@ -26,23 +26,30 @@ import play.api.mvc.AnyContent
 import play.api.libs.json.Json
 import uk.gov.hmrc.apidefinition.services.SpecificationService
 import uk.gov.hmrc.apidefinition.config.AppConfig
+import play.api.libs.json.JsValue
+import scala.concurrent.Future
 
 @Singleton
 class SpecificationController @Inject()(specificationService: SpecificationService, config: AppConfig, cc: ControllerComponents)
                                        (implicit val ec: ExecutionContext)
                                         extends BackendController(cc) {
 
+  private def formatSpecificationResponse(in: Future[Option[JsValue]]) = {
+    in.map {
+      case None => NotFound("RAML not found in this environment")
+      case Some(json) => Ok(Json.prettyPrint(json))
+    }
+  }
+  
   def fetchApiSpecification(serviceName: String, version: String): Action[AnyContent] = Action.async {
     _ => {
-      specificationService.fetchApiSpecification(serviceName, version)
-        .map(json => Ok(Json.prettyPrint(json)))
+      formatSpecificationResponse(specificationService.fetchApiSpecification(serviceName, version))
     }
   }
 
   def fetchPreviewApiSpecification(rootRamlUrl: String): Action[AnyContent] = Action.async {
     _ => {
-      specificationService.fetchPreviewApiSpecification(rootRamlUrl)
-        .map(json => Ok(Json.prettyPrint(json)))
+      formatSpecificationResponse(specificationService.fetchPreviewApiSpecification(rootRamlUrl))
     }
   }
 }
