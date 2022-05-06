@@ -31,32 +31,42 @@ import play.api.libs.json.Json
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import akka.stream.Materializer
-
+import scala.concurrent.ExecutionContext.Implicits.global
+import uk.gov.hmrc.ramltools.domain.RamlNotFoundException
+import scala.util.Failure
 
 class SpecificationServiceSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite with Utils {
 
   implicit val materializer: Materializer = app.materializer
 
   val raml: Try[RAML.RAML] = Success(RamlSpecHelper.loadRaml("V2/simple.raml"))
+  
+  trait Setup {
+    val ramlLoader = mock[RamlLoader]
+    
+    val config: AppConfig = mock[AppConfig]
+    when(config.serviceBaseUrl).thenReturn("")
+    
+    val parser: ApiSpecificationRamlParser = new ApiSpecificationRamlParser(new SchemaService)
 
-  val ramlLoader = mock[RamlLoader]
-  when(ramlLoader.load(any[String])).thenReturn(raml)
-
-  val config: AppConfig = mock[AppConfig]
-  when(config.serviceBaseUrl).thenReturn("")
-
-  val expected = Json.parse("""{"title":"My simple title","version":"My version","documentationItems":[{"title":"Overview","content":"Some overview"},{"title":"Versioning","content":"Some versioning"}],"resourceGroups":[],"types":[],"isFieldOptionalityKnown":true}""")
-
-  val parser: ApiSpecificationRamlParser = new ApiSpecificationRamlParser(new SchemaService)
-
+    val specificationService: SpecificationService = new SpecificationService(config, ramlLoader, parser)
+  }
+  
   "SpecificationService" should {
-    "fetch and parse raml" in {
+    "fetch and parse raml" in new Setup {
+      when(ramlLoader.load(any[String])).thenReturn(raml)
 
-      val specificationService: SpecificationService = new SpecificationService(config, ramlLoader, parser)
+      val ojs = await(specificationService.fetchApiSpecification("api-not-real", "1.0"))
 
-      val js = await(specificationService.fetchApiSpecification("api-not-real", "1.0"))
+      Json.stringify(ojs.value).contains(""""title":"My simple title"""") shouldBe true
+    }
 
-      Json.stringify(js).contains(""""title":"My simple title"""") shouldBe true
+    "fetch and handle no raml found" in new Setup {
+      when(ramlLoader.load(any[String])).thenReturn(Failure(new RamlNotFoundException("")))
+  
+      val ojs = await(specificationService.fetchApiSpecification("api-not-real", "1.0"))
+
+      ojs shouldBe None
     }
   }
 }

@@ -46,7 +46,7 @@ class SpecificationControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite
     val version = "1.0"
     val specificationJson = Json.toJson("some" -> "stuff")
 
-    when(mockSpecificationService.fetchApiSpecification(*, *)).thenReturn(successful(specificationJson))
+    when(mockSpecificationService.fetchApiSpecification(*, *)).thenReturn(successful(Some(specificationJson)))
 
     private val result = underTest.fetchApiSpecification(serviceName, version)(request)
 
@@ -61,7 +61,7 @@ class SpecificationControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite
     val specificationJson = Json.toJson("some" -> "stuff")
     val rootRamlUrl = "http://localhost:8080/fake-url"
 
-    when(mockSpecificationService.fetchPreviewApiSpecification(*)).thenReturn(successful(specificationJson))
+    when(mockSpecificationService.fetchPreviewApiSpecification(*)).thenReturn(successful(Some(specificationJson)))
 
     private val result = underTest.fetchPreviewApiSpecification(rootRamlUrl)(request)
 
