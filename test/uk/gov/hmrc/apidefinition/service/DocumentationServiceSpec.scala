@@ -202,5 +202,15 @@ class DocumentationServiceSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wi
         await(underTest.fetchApiDocumentationResource(serviceName, "1.0", "resource"))
       }
     }
+
+    "return the resource fetched from microservice when requesting a common resource" in new Setup {
+      theApiDefinitionWillBeReturned()
+      theApiMicroserviceWillReturnTheResource(streamedResource)
+
+      val result: Result = await(underTest.fetchApiDocumentationResource(serviceName, "common", "resource"))
+
+      result.header.status should be(Status.OK)
+      verify(mockApiMicroserviceConnector).fetchApiDocumentationResourceByUrl(*, eqTo("common"), eqTo("resource"))
+    }
   }
 }
