@@ -16,17 +16,14 @@
 
 package uk.gov.hmrc.apidefinition.service
 
-import java.util.UUID
-
 import org.mockito.ArgumentCaptor
 import play.api.http.Status.{INTERNAL_SERVER_ERROR, NOT_FOUND, OK}
 import uk.gov.hmrc.apidefinition.models.APIStatus
 import uk.gov.hmrc.apidefinition.services.{EmailNotificationService, SendEmailRequest}
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
-import uk.gov.hmrc.http.HttpClient
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
+import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpResponse}
 
-
+import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future._
 
@@ -39,7 +36,7 @@ class NotificationServiceSpec extends AsyncHmrcSpec {
       when(mockHTTPClient.POST[SendEmailRequest, HttpResponse](
         matches(emailServiceURL),
         sendEmailRequestCaptor.capture(),
-        any[Seq[(String, String)]])(*, *, *, *)).thenReturn(successful(HttpResponse(OK,"")))
+        any[Seq[(String, String)]])(*, *, *, *)).thenReturn(successful(HttpResponse(OK, "")))
 
       sendEmailRequestCaptor
     }
@@ -48,13 +45,13 @@ class NotificationServiceSpec extends AsyncHmrcSpec {
       when(mockHTTPClient.POST[SendEmailRequest, HttpResponse](
         matches(emailServiceURL),
         any[SendEmailRequest],
-        any[Seq[(String, String)]])(*, *, *, *)).thenReturn(successful(HttpResponse(NOT_FOUND,"")))
+        any[Seq[(String, String)]])(*, *, *, *)).thenReturn(successful(HttpResponse(NOT_FOUND, "")))
 
-    def callToEmailServiceFails(): Unit = {
+    def callToEmailServiceFails(body: String): Unit = {
       when(mockHTTPClient.POST[SendEmailRequest, HttpResponse](
         matches(emailServiceURL),
         any[SendEmailRequest],
-        any[Seq[(String, String)]])(*, *, *, *)).thenReturn(successful(HttpResponse(INTERNAL_SERVER_ERROR,"")))
+        any[Seq[(String, String)]])(*, *, *, *)).thenReturn(successful(HttpResponse(INTERNAL_SERVER_ERROR, body)))
     }
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
@@ -94,17 +91,28 @@ class NotificationServiceSpec extends AsyncHmrcSpec {
     "throw RuntimeException if email service is not available" in new EmailNotificationSetup {
       emailServiceIsUnavailable()
 
-      intercept[RuntimeException] {
+      val err: RuntimeException = intercept[RuntimeException] {
         await(underTest.notifyOfStatusChange(apiName, apiVersion, APIStatus.ALPHA, APIStatus.BETA))
       }
+      err.getMessage shouldBe s"Unable to send email. Downstream endpoint not found: $emailServiceURL"
     }
 
     "throw RuntimeException if call to email service fails" in new EmailNotificationSetup {
-      callToEmailServiceFails()
+      callToEmailServiceFails("""{"message":"Internal Error Occurred"}""")
 
-      intercept[RuntimeException] {
+      val err: RuntimeException = intercept[RuntimeException] {
         await(underTest.notifyOfStatusChange(apiName, apiVersion, APIStatus.ALPHA, APIStatus.BETA))
       }
+      err.getMessage shouldBe "Internal Error Occurred"
+    }
+
+    "throw RuntimeException if call to email service fails other message" in new EmailNotificationSetup {
+      callToEmailServiceFails("This is some other error message")
+
+      val err: RuntimeException = intercept[RuntimeException] {
+        await(underTest.notifyOfStatusChange(apiName, apiVersion, APIStatus.ALPHA, APIStatus.BETA))
+      }
+      err.getMessage shouldBe s"Unable send email. Unexpected error for url=$emailServiceURL status=500 response=This is some other error message"
     }
   }
 }
