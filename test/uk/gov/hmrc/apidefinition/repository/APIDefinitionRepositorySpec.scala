@@ -18,6 +18,8 @@ package uk.gov.hmrc.apidefinition.repository
 
 import com.mongodb.MongoWriteException
 import org.joda.time.{DateTime, DateTimeZone}
+import org.mongodb.scala.model.Indexes.ascending
+import org.mongodb.scala.model.{IndexModel, IndexOptions}
 import org.scalatest.concurrent.Eventually
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
@@ -112,6 +114,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
       .configure(
         "mongodb.uri" -> s"mongodb://127.0.0.1:27017/test-${this.getClass.getSimpleName}"
       )
+
   private def collectionSize: Long = {
     await(repository.collection.countDocuments().head())
   }
@@ -341,24 +344,16 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
       collectionSize shouldBe 2
     }
 
-    //    "have all expected indexes" in {
-    //
-    //      import scala.concurrent.duration._
-    //
-    //      val indexVersion = Some(2)
-    //      val expectedIndexes = List(
-    //        IndexModel(key = Seq("context" -> Ascending), name = Some("contextIndex"), unique = true, background = true, version = indexVersion),
-    //        IndexModel(key = Seq("serviceName" -> Ascending), name = Some("serviceNameIndex"), unique = true, background = true, version = indexVersion),
-    //        IndexModel(key = Seq("serviceBaseUrl" -> Ascending), name = Some("serviceBaseUrlIndex"), unique = true, background = true, version = indexVersion),
-    //        IndexModel(key = Seq("name" -> Ascending), name = Some("nameIndex"), unique = true, background = true, version = indexVersion),
-    //        IndexModel(key = Seq("_id" -> Ascending), name = Some("_id_"), version = indexVersion)
-    //      )
-    //
-    //      eventually(timeout(3.seconds), interval(100.milliseconds)) {
-    //        indexes.toSet shouldBe expectedIndexes.toSet
-    //      }
-    //
-    //    }
+    "have all expected indexes" in {
+      val expectedIndexes = List(
+        IndexModel(ascending("context"), IndexOptions().name("contextIndex").background(true).unique(true)),
+        IndexModel(ascending("name"), IndexOptions().name("nameIndex").background(true).unique(true)),
+        IndexModel(ascending("serviceName"), IndexOptions().name("serviceNameIndex").background(true).unique(true)),
+        IndexModel(ascending("serviceBaseUrl"), IndexOptions().name("serviceBaseUrlIndex").background(true).unique(true)),
+      )
+
+      indexes.toSet.toString shouldBe  expectedIndexes.toSet.toString
+    }
   }
 
 }
