@@ -20,8 +20,8 @@ import org.bson.codecs.configuration.CodecRegistries.{fromCodecs, fromRegistries
 import org.mongodb.scala.MongoClient.DEFAULT_CODEC_REGISTRY
 import org.mongodb.scala.MongoCollection
 import org.mongodb.scala.bson.conversions.Bson
-import org.mongodb.scala.model.Filters.{equal, regex}
 import org.mongodb.scala.model.{FindOneAndReplaceOptions, ReturnDocument}
+import org.mongodb.scala.model.Filters.{equal, regex}
 import play.api.Logging
 import uk.gov.hmrc.apidefinition.models.APIDefinition
 import uk.gov.hmrc.apidefinition.models.JsonFormatters._
@@ -48,7 +48,7 @@ class APIDefinitionRepository @Inject()(mongoComponent: MongoComponent)(implicit
         fromRegistries(
           fromCodecs(
             Codecs.playFormatCodec(domainFormat),
-            Codecs.playFormatCodec(formatAPIDefinition),
+            Codecs.playFormatCodec(formatAPIDefinition)
           ),
           DEFAULT_CODEC_REGISTRY
         )
