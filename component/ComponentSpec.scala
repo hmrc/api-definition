@@ -21,40 +21,25 @@ import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.ws.{WSClient, WSResponse}
 import play.api.{Application, Mode}
-import play.modules.reactivemongo.ReactiveMongoComponent
+import uk.gov.hmrc.apidefinition.models.APIDefinition
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
-import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport}
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
-
+import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
 trait ComponentSpec extends AsyncHmrcSpec
- with MongoSpecSupport with BeforeAndAfterAll with GuiceOneServerPerSuite {
+  with DefaultPlayMongoRepositorySupport[APIDefinition] with BeforeAndAfterAll with GuiceOneServerPerSuite {
+
+  override def repository: APIDefinitionRepository = app.injector.instanceOf[APIDefinitionRepository]
+
   override def fakeApplication(): Application = new GuiceApplicationBuilder()
     .in(Mode.Test)
     .configure("mongodb.uri" -> mongoUri)
     .build()
 
-  override protected def beforeAll(): Unit = {
-    dropDb
-    super.beforeAll()
-  }
-
-  override protected def afterAll(): Unit = {
-    dropDb
-    super.afterAll()
-  }
-
   def get(endpoint: String): WSResponse = {
     val wsClient = app.injector.instanceOf[WSClient]
     await(wsClient.url(s"http://localhost:$port$endpoint").get)
   }
-
-  private def dropDb() = {
-    await (
-      new APIDefinitionRepository(new ReactiveMongoComponent {
-      override def mongoConnector: MongoConnector = mongoConnectorForTest
-    }).drop
-  )}
 }

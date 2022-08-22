@@ -16,17 +16,15 @@
 
 package uk.gov.hmrc.apidefinition.utils
 
-import reactivemongo.api.indexes.Index
-import reactivemongo.api.indexes.IndexType.Ascending
+import org.mongodb.scala.model.Indexes.ascending
+import org.mongodb.scala.model.{IndexModel, IndexOptions}
 
 object IndexHelper {
 
-  def createUniqueBackgroundSingleFieldAscendingIndex(indexFieldKey: String, indexName: Option[String]): Index = {
-    Index(
-      key = Seq(indexFieldKey -> Ascending),
-      name = indexName,
-      unique = true,
-      background = true
+  def createUniqueBackgroundSingleFieldAscendingIndex(indexFieldKey: String, indexName: String): IndexModel = {
+    IndexModel(
+      ascending(indexFieldKey),
+      IndexOptions().name(indexName).background(true).unique(true)
     )
   }
 

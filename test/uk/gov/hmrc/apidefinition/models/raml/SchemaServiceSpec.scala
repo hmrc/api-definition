@@ -16,15 +16,16 @@
 
 package uk.gov.hmrc.apidefinition.models.raml
 
-import play.api.libs.json.Json
+import org.scalatest.Assertion
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpec
+import play.api.libs.json.{JsValue, Json}
 import uk.gov.hmrc.apidefinition.models.apispecification.{EnumerationValue, JsonSchema}
 
 import scala.io.Source
-import play.api.libs.json.JsValue
-import org.scalatest.wordspec.AnyWordSpec
-import org.scalatest.matchers.should.Matchers
 
 class SchemaServiceSpec extends AnyWordSpec with Matchers {
+
   import SchemaTestHelper._
 
   def loader = TestSchemaService
@@ -32,18 +33,19 @@ class SchemaServiceSpec extends AnyWordSpec with Matchers {
   private def expectation(fileName: String): JsValue = {
     Json.parse(loadResourceTextFile(s"schemaloader/expected/expected-${fileName}-schema.json"))
   }
+
   private def actualSchema(fileName: String): JsonSchema = {
     TestSchemaService.parseSchemaInFolder(s"${fileName}-schema.json", "schemaloader/input/schemas")
   }
 
-  def compareJson(expected: JsValue, actual: JsonSchema) = {
+  def compareJson(expected: JsValue, actual: JsonSchema): Assertion = {
     val actualText = Json.prettyPrint(Json.toJson(actual))
     val expectedText = Json.prettyPrint(expected)
 
     actualText shouldBe expectedText
   }
 
-  def compareActualVsExpectedJson(fileName: String) = {
+  def compareActualVsExpectedJson(fileName: String): Assertion = {
     compareJson(expectation(fileName), actualSchema(fileName))
   }
 
@@ -75,7 +77,6 @@ class SchemaServiceSpec extends AnyWordSpec with Matchers {
 
     jsonSchema.definitions.size shouldBe 1
     jsonSchema.definitions.head._1 shouldBe "my-id"
-    // jsonSchema.definitions.head._2.id shouldBe Some("")
     jsonSchema.definitions.head._2.`type` shouldBe Some("string")
     jsonSchema.definitions.head._2.example shouldBe Some("my-example")
     jsonSchema.definitions.head._2.description shouldBe Some("my-description")
@@ -95,40 +96,33 @@ class SchemaServiceSpec extends AnyWordSpec with Matchers {
         `type` = Some("my-type"),
         example = Some("my-example"),
         title = Some("my-title"),
-        // properties = ListMap(),
-        //        patternProperties =
-        //        items =
-        //required =
-        //definitions =
-        //ref =
         `enum` = Seq(EnumerationValue("my-enum-a")),
-        //        oneOf =
-        //pattern =
       )
 
       val jsonSchemaText = Json.parse(loader.toJsonString(jsonSchema))
 
-      jsonSchemaText shouldBe Json.parse( """|{
-                                 |  "description" : "my-description",
-                                 |  "id" : "my-id",
-                                 |  "type" : "my-type",
-                                 |  "example" : "my-example",
-                                 |  "title" : "my-title",
-                                 |  "enum" : [ "my-enum-a" ]
-                                 |}""".stripMargin)
+      jsonSchemaText shouldBe Json.parse(
+        """|{
+           |  "description" : "my-description",
+           |  "id" : "my-id",
+           |  "type" : "my-type",
+           |  "example" : "my-example",
+           |  "title" : "my-title",
+           |  "enum" : [ "my-enum-a" ]
+           |}""".stripMargin)
     }
   }
 
   "Parse enums in schema" in {
-    val jsonSchema = TestSchemaService.parseSchema("schemas/schema-with-enums.json" )
+    val jsonSchema = TestSchemaService.parseSchema("schemas/schema-with-enums.json")
 
     jsonSchema.description shouldBe Some("my enums field")
 
     jsonSchema.oneOf.size shouldBe 1
-    jsonSchema.oneOf(0).`enum`.size shouldBe 2
+    jsonSchema.oneOf.head.`enum`.size shouldBe 2
 
-    jsonSchema.oneOf(0).`enum`(0).value shouldBe "enum-a"
-    jsonSchema.oneOf(0).`enum`(1).value shouldBe "enum-b"
+    jsonSchema.oneOf.head.`enum`.head.value shouldBe "enum-a"
+    jsonSchema.oneOf.head.`enum`(1).value shouldBe "enum-b"
   }
 
   private def loadResourceTextFile(uri: String): String = {

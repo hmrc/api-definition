@@ -23,8 +23,7 @@ lazy val microservice = (project in file("."))
   .settings(
     name := appName,
     majorVersion := 1,
-    targetJvm := "jvm-1.8",
-    scalaVersion := "2.12.12",
+    scalaVersion := "2.12.15",
     scalacOptions += "-Ypartial-unification",
     libraryDependencies ++= AppDependencies(),
     retrieveManaged := true
