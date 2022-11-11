@@ -21,8 +21,7 @@ import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 import RamlSpecHelper.loadRaml
 import play.api.libs.json.Json
 
-class ApiSpecificationRamlParserSpec extends AsyncHmrcSpec
- {
+class ApiSpecificationRamlParserSpec extends AsyncHmrcSpec {
   import uk.gov.hmrc.apidefinition.models.raml.SchemaTestHelper._
 
   "RAML to apiSpec" should {
@@ -66,7 +65,7 @@ class ApiSpecificationRamlParserSpec extends AsyncHmrcSpec
       response.description shouldBe Some("When it works")
       response.body.size shouldBe 1
       response.body(0).name shouldBe "application/json"
-      response.body(0).example.get.value shouldBe Some("""{ "message": "good" }"""+"\n")
+      response.body(0).example.get.value shouldBe Some("""{ "message": "good" }""" + "\n")
     }
 
     "With multiple endpoints maintain RAML ordering" in {
@@ -126,7 +125,6 @@ class ApiSpecificationRamlParserSpec extends AsyncHmrcSpec
       m3.securedBy shouldBe Some(SecurityScheme("application", Some("all:test-me-too")))
     }
 
-
     "With global type with enums" in {
       val raml = loadRaml("V2/typed-enums.raml")
 
@@ -139,12 +137,12 @@ class ApiSpecificationRamlParserSpec extends AsyncHmrcSpec
       val qps = rg.resources(0).methods.head.queryParameters
       val qp1 = qps.head
       qp1.name shouldBe "aParam"
-      qp1.enumValues shouldBe List("1","2")
+      qp1.enumValues shouldBe List("1", "2")
 
       val qp2 = qps.tail.head
 
       qp2.name shouldBe "anotherParam"
-      qp2.enumValues shouldBe List("a","b","c")
+      qp2.enumValues shouldBe List("a", "b", "c")
     }
 
     "schema" when {
@@ -172,8 +170,7 @@ class ApiSpecificationRamlParserSpec extends AsyncHmrcSpec
               }
           },
           "required":[ "id", "name" ]
-        }"""
-        )
+        }""")
       }
 
       "Load basic !include json schema" in {
@@ -186,7 +183,7 @@ class ApiSpecificationRamlParserSpec extends AsyncHmrcSpec
 
         println(Json.prettyPrint(Json.parse(body.`type`)))
 
-       Json.parse(body.`type`) shouldBe Json.parse("""{
+        Json.parse(body.`type`) shouldBe Json.parse("""{
           "description":"External schema details",
           "type":"object",
           "properties":{
@@ -224,8 +221,7 @@ class ApiSpecificationRamlParserSpec extends AsyncHmrcSpec
                 }
             },
             "required":["id","name"]
-          }"""
-        )
+          }""")
       }
 
       "Parsing error responses" in {
@@ -236,7 +232,7 @@ class ApiSpecificationRamlParserSpec extends AsyncHmrcSpec
 
         val responses = apiSpec.resourceGroups(0).resources(0).methods(0).responses
 
-        responses.filter(r => r.code == "400").map( err => {
+        responses.filter(r => r.code == "400").map(err => {
           err.description shouldBe Some("The user is not authorized to access the given GMR")
           val example = err.body.head.examples(0)
           example.code shouldBe Some("")

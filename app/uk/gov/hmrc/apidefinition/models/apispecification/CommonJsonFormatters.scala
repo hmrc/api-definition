@@ -21,7 +21,9 @@ import scala.collection.immutable.ListMap
 import play.api.libs.json.Json.fromJson
 
 trait CommonJsonFormatters {
+
   implicit def listMapReads[V](implicit formatV: Reads[V]): Reads[ListMap[String, V]] = new Reads[ListMap[String, V]] {
+
     def reads(json: JsValue) = json match {
       case JsObject(m) =>
         type Errors = Seq[(JsPath, Seq[JsonValidationError])]
@@ -30,11 +32,11 @@ trait CommonJsonFormatters {
 
         m.foldLeft(Right(ListMap.empty): Either[Errors, ListMap[String, V]]) {
           case (acc, (key, value)) => (acc, fromJson[V](value)(formatV)) match {
-            case (Right(vs), JsSuccess(v, _)) => Right(vs + (key -> v))
-            case (Right(_), JsError(e)) => Left(locate(e, key))
-            case (Left(e), _: JsSuccess[_]) => Left(e)
-            case (Left(e1), JsError(e2)) => Left(e1 ++ locate(e2, key))
-          }
+              case (Right(vs), JsSuccess(v, _)) => Right(vs + (key -> v))
+              case (Right(_), JsError(e))       => Left(locate(e, key))
+              case (Left(e), _: JsSuccess[_])   => Left(e)
+              case (Left(e1), JsError(e2))      => Left(e1 ++ locate(e2, key))
+            }
         }.fold(JsError.apply, res => JsSuccess(res))
 
       case _ => JsError(Seq(JsPath() -> Seq(JsonValidationError("error.expected.jsobject"))))
@@ -42,11 +44,11 @@ trait CommonJsonFormatters {
   }
 
   implicit def listMapWrites[V](implicit formatV: Writes[V]): Writes[ListMap[String, V]] =
-    new Writes[ListMap[String,V]] {
+    new Writes[ListMap[String, V]] {
 
-      def writes(o: ListMap[String,V]): JsValue = {
+      def writes(o: ListMap[String, V]): JsValue = {
         JsObject(o.map {
-            case (k,v) => (k, formatV.writes(v) )
+          case (k, v) => (k, formatV.writes(v))
         }.toSeq)
       }
     }

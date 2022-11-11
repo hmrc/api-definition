@@ -35,9 +35,8 @@ class SchemaService extends ApplicationLogger {
     try {
       source = Source.fromURL(uri)
       source.mkString
-    }
-    finally {
-      if(source != null) {
+    } finally {
+      if (source != null) {
         source.close()
         source = null
       }
@@ -58,7 +57,7 @@ class SchemaService extends ApplicationLogger {
   }
 
   def parseSchema(schema: String, basePath: String): JsonSchema = {
-    
+
     logger.info(s"SCHEMA :[$schema]")
     val jsonSchema = Json.parse(schema).as[JsonSchema]
     jsonSchema match {
@@ -90,12 +89,12 @@ class SchemaService extends ApplicationLogger {
     @scala.annotation.tailrec
     def findSubschema(pathParts: Seq[String], schema: JsonSchema): JsonSchema = {
       pathParts match {
-        case "definitions" +: pathPart +: Nil => {
+        case "definitions" +: pathPart +: Nil                => {
           val resolved = schema.definitions(pathPart)
           resolved match {
-            case JsonSchemaWithReference()  =>
+            case JsonSchemaWithReference() =>
               resolveRefs(resolved, basePath, enclosingSchema)
-            case _       =>
+            case _                         =>
               resolved
           }
         }
@@ -126,12 +125,12 @@ class SchemaService extends ApplicationLogger {
       case Some(ref) =>
         val x = resolve(schema, basePath, enclosingSchema)(ref)
         x
-      case _ =>
-        val properties = resolveRefsInSubschemas(schema.properties, basePath, enclosingSchema)
+      case _         =>
+        val properties        = resolveRefsInSubschemas(schema.properties, basePath, enclosingSchema)
         val patternProperties = resolveRefsInSubschemas(schema.patternProperties, basePath, enclosingSchema)
-        val definitions = resolveRefsInSubschemas(schema.definitions, basePath, enclosingSchema)
-        val items = schema.items.map(resolveRefs(_, basePath, enclosingSchema))
-        val oneOfs = resolveRefsInOneOfs(schema.oneOf, basePath, enclosingSchema)
+        val definitions       = resolveRefsInSubschemas(schema.definitions, basePath, enclosingSchema)
+        val items             = schema.items.map(resolveRefs(_, basePath, enclosingSchema))
+        val oneOfs            = resolveRefsInOneOfs(schema.oneOf, basePath, enclosingSchema)
 
         schema.copy(
           properties = properties,
@@ -139,7 +138,8 @@ class SchemaService extends ApplicationLogger {
           items = items,
           definitions = definitions,
           oneOf = oneOfs,
-          ref = None)
+          ref = None
+        )
     }
   }
 
@@ -151,9 +151,8 @@ class SchemaService extends ApplicationLogger {
     ref.split('#') match {
       case Array(referredSchemaPath, jsonPointer) =>
         (referredSchemaPath, splitJsonPointer(jsonPointer))
-      case Array(referredSchemaPath) =>
+      case Array(referredSchemaPath)              =>
         (referredSchemaPath, Nil)
     }
   }
 }
-

@@ -29,11 +29,13 @@ import scala.concurrent.{ExecutionContext, Future}
 import uk.gov.hmrc.http.HeaderCarrier
 
 @Singleton
-class APIDefinitionService @Inject()(awsApiPublisher: AwsApiPublisher,
-                                     apiDefinitionRepository: APIDefinitionRepository,
-                                     notificationService: NotificationService,
-                                     playApplicationContext: AppConfig)
-                                    (implicit val ec: ExecutionContext) extends ApplicationLogger {
+class APIDefinitionService @Inject() (
+    awsApiPublisher: AwsApiPublisher,
+    apiDefinitionRepository: APIDefinitionRepository,
+    notificationService: NotificationService,
+    playApplicationContext: AppConfig
+  )(implicit val ec: ExecutionContext
+  ) extends ApplicationLogger {
 
   def createOrUpdate(apiDefinition: APIDefinition)(implicit hc: HeaderCarrier): Future[Unit] = {
 
@@ -54,33 +56,35 @@ class APIDefinitionService @Inject()(awsApiPublisher: AwsApiPublisher,
     }
 
     for {
-      _ <- checkAPIDefinitionForStatusChanges(apiDefinition)
-      _ <- publish()
+      _                        <- checkAPIDefinitionForStatusChanges(apiDefinition)
+      _                        <- publish()
       definitionWithPublishTime = apiDefinition.copy(lastPublishedAt = Some(DateTime.now(DateTimeZone.UTC)))
-      _ <- apiDefinitionRepository.save(definitionWithPublishTime) recoverWith recoverSave
+      _                        <- apiDefinitionRepository.save(definitionWithPublishTime) recoverWith recoverSave
     } yield ()
   }
 
   private def checkAPIDefinitionForStatusChanges(apiDefinition: APIDefinition)(implicit hc: HeaderCarrier): Future[Unit] = {
     def findStatusDifferences(existingAPIVersions: Seq[APIVersion], newAPIVersions: Seq[APIVersion]): Seq[(String, APIStatus, APIStatus)] =
-        (existingAPIVersions ++ newAPIVersions)
-          .groupBy(_.version)
-          .filter(v => v._2.size == 2)
-          .filterNot(v => v._2.head.status == v._2.last.status)
-          .map(v => (v._1, v._2.head.status, v._2.last.status))
-          .toSeq
+      (existingAPIVersions ++ newAPIVersions)
+        .groupBy(_.version)
+        .filter(v => v._2.size == 2)
+        .filterNot(v => v._2.head.status == v._2.last.status)
+        .map(v => (v._1, v._2.head.status, v._2.last.status))
+        .toSeq
 
     apiDefinitionRepository.fetchByContext(apiDefinition.context)
       .map(existingAPIDefinitionOption =>
         existingAPIDefinitionOption
           .map(existingAPIDefinition => findStatusDifferences(existingAPIDefinition.versions, apiDefinition.versions))
-          .map(_.foreach(diff => notificationService.notifyOfStatusChange(apiDefinition.name, diff._1, diff._2, diff._3))))
+          .map(_.foreach(diff => notificationService.notifyOfStatusChange(apiDefinition.name, diff._1, diff._2, diff._3)))
+      )
   }
 
   def fetchByServiceName(serviceName: String): Future[Option[APIDefinition]] = {
     apiDefinitionRepository.fetchByServiceName(serviceName)
   }
-  def fetchByName(name: String): Future[Option[APIDefinition]] = {
+
+  def fetchByName(name: String): Future[Option[APIDefinition]]               = {
     apiDefinitionRepository.fetchByName(name)
   }
 
@@ -94,7 +98,7 @@ class APIDefinitionService @Inject()(awsApiPublisher: AwsApiPublisher,
 
   def delete(serviceName: String)(implicit hc: HeaderCarrier): Future[Unit] = {
     apiDefinitionRepository.fetchByServiceName(serviceName) flatMap {
-      case None => successful(())
+      case None             => successful(())
       case Some(definition) =>
         for {
           _ <- awsApiPublisher.delete(definition)
@@ -115,16 +119,16 @@ class APIDefinitionService @Inject()(awsApiPublisher: AwsApiPublisher,
 
     def hasPrivateAccess(apiVersion: APIVersion) = apiVersion.access match {
       case Some(PrivateAPIAccess(_, _)) => true
-      case _ => false
+      case _                            => false
     }
 
     def removePublicVersions(api: APIDefinition) =
       api.copy(versions = api.versions.filter(hasPrivateAccess))
 
     for {
-      apiDefinitions <- apiDefinitionRepository.fetchAll()
+      apiDefinitions     <- apiDefinitionRepository.fetchAll()
       includesPrivateApis = apiDefinitions.filter(d => d.versions.exists(hasPrivateAccess))
-      onlyPrivateApis = includesPrivateApis.map(removePublicVersions)
+      onlyPrivateApis     = includesPrivateApis.map(removePublicVersions)
     } yield onlyPrivateApis
   }
 
@@ -139,11 +143,10 @@ class APIDefinitionService @Inject()(awsApiPublisher: AwsApiPublisher,
   }
 
   private def filterAPIForApplications(alsoIncludePrivateTrials: Boolean, applicationIds: String*): APIDefinition => Option[APIDefinition] = { api =>
-
     val filteredVersions = api.versions.filter(_.access.getOrElse(PublicAPIAccess) match {
       case access: PrivateAPIAccess =>
         access.whitelistedApplicationIds.exists(s => applicationIds.contains(s)) || (access.isTrial.contains(true) && alsoIncludePrivateTrials)
-      case _ => true
+      case _                        => true
     })
 
     if (filteredVersions.isEmpty) None

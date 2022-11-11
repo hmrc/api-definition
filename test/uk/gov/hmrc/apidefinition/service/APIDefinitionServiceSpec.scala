@@ -28,9 +28,8 @@ import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.services.{APIDefinitionService, AwsApiPublisher, NotificationService}
 import uk.gov.hmrc.http.HeaderNames._
-import uk.gov.hmrc.http.{HeaderCarrier}
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
-
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -38,11 +37,11 @@ import scala.concurrent.Future.{failed, successful}
 
 class APIDefinitionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll {
 
-  private val context = "calendar"
-  private val serviceName = "calendar-service"
+  private val context         = "calendar"
+  private val serviceName     = "calendar-service"
   private val fixedSavingTime = ISODateTimeFormat.dateTime().withZoneUTC().parseDateTime("2014-02-09T02:27:15.145Z")
 
-  def unitSuccess: Future[Unit] = successful{ () }
+  def unitSuccess: Future[Unit] = successful { () }
 
   override def beforeAll(): Unit = {
     setCurrentMillisFixed(fixedSavingTime.getMillis)
@@ -59,25 +58,26 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll {
 
     implicit val hc = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
 
-    val mockAwsApiPublisher: AwsApiPublisher = mock[AwsApiPublisher]
+    val mockAwsApiPublisher: AwsApiPublisher                 = mock[AwsApiPublisher]
     val mockAPIDefinitionRepository: APIDefinitionRepository = mock[APIDefinitionRepository]
-    val mockNotificationService: NotificationService = mock[NotificationService]
-    val mockAppContext: AppConfig = mock[AppConfig]
+    val mockNotificationService: NotificationService         = mock[NotificationService]
+    val mockAppContext: AppConfig                            = mock[AppConfig]
 
     val underTest = new APIDefinitionService(
       mockAwsApiPublisher,
       mockAPIDefinitionRepository,
       mockNotificationService,
-      mockAppContext)
+      mockAppContext
+    )
 
     val applicationId = randomUUID()
 
-    val versionWithoutAccessDefined: APIVersion = aVersion(version = "1.0", access = None)
-    val publicVersion = aVersion(version = "2.0", access = Some(PublicAPIAccess()))
-    val privateVersionWithAppWhitelisted: APIVersion = aVersion(version = "3.0", access = Some(PrivateAPIAccess(Seq(applicationId.toString))))
+    val versionWithoutAccessDefined: APIVersion         = aVersion(version = "1.0", access = None)
+    val publicVersion                                   = aVersion(version = "2.0", access = Some(PublicAPIAccess()))
+    val privateVersionWithAppWhitelisted: APIVersion    = aVersion(version = "3.0", access = Some(PrivateAPIAccess(Seq(applicationId.toString))))
     val privateVersionWithoutAppWhitelisted: APIVersion = aVersion(version = "3.1", access = Some(PrivateAPIAccess(Seq("OTHER_APP_ID"))))
-    val privateTrialVersionWithWhitelist = aVersion(version = "4.0", access = Some(PrivateAPIAccess(Seq(applicationId.toString), isTrial = Some(true))))
-    val privateTrialVersionWithoutWhitelist = aVersion(version = "4.1", access = Some(PrivateAPIAccess(Seq.empty, isTrial = Some(true))))
+    val privateTrialVersionWithWhitelist                = aVersion(version = "4.0", access = Some(PrivateAPIAccess(Seq(applicationId.toString), isTrial = Some(true))))
+    val privateTrialVersionWithoutWhitelist             = aVersion(version = "4.1", access = Some(PrivateAPIAccess(Seq.empty, isTrial = Some(true))))
 
     val allVersions = Seq(
       versionWithoutAccessDefined,
@@ -85,18 +85,29 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll {
       privateVersionWithAppWhitelisted,
       privateVersionWithoutAppWhitelisted,
       privateTrialVersionWithWhitelist,
-      privateTrialVersionWithoutWhitelist)
+      privateTrialVersionWithoutWhitelist
+    )
 
-    val versionWithoutAccessDefinedAvailability = APIAvailability(versionWithoutAccessDefined.endpointsEnabled.getOrElse(false),
-      PublicAPIAccess(), loggedIn = false, authorised = true)
-    val publicVersionAvailability = APIAvailability(
-      publicVersion.endpointsEnabled.getOrElse(false), publicVersion.access.get, loggedIn = false, authorised = true)
-    val privateVersionAvailability = APIAvailability(
-      privateVersionWithAppWhitelisted.endpointsEnabled.getOrElse(false), privateVersionWithAppWhitelisted.access.get, loggedIn = false, authorised = false)
+    val versionWithoutAccessDefinedAvailability =
+      APIAvailability(versionWithoutAccessDefined.endpointsEnabled.getOrElse(false), PublicAPIAccess(), loggedIn = false, authorised = true)
+
+    val publicVersionAvailability               = APIAvailability(
+      publicVersion.endpointsEnabled.getOrElse(false),
+      publicVersion.access.get,
+      loggedIn = false,
+      authorised = true
+    )
+
+    val privateVersionAvailability              = APIAvailability(
+      privateVersionWithAppWhitelisted.endpointsEnabled.getOrElse(false),
+      privateVersionWithAppWhitelisted.access.get,
+      loggedIn = false,
+      authorised = false
+    )
 
     val apiDefinitionWithAllVersions = anAPIDefinition(context, allVersions: _*)
-    val apiDefinition = someAPIDefinition
-    val apiDefinitionWithSavingTime = apiDefinition.copy(lastPublishedAt = Some(fixedSavingTime))
+    val apiDefinition                = someAPIDefinition
+    val apiDefinitionWithSavingTime  = apiDefinition.copy(lastPublishedAt = Some(fixedSavingTime))
 
     when(mockAPIDefinitionRepository.fetchByServiceName(apiDefinition.serviceName)).thenReturn(successful(Some(apiDefinition)))
     when(mockAwsApiPublisher.delete(apiDefinition)).thenReturn(successful(()))
@@ -104,7 +115,8 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll {
   }
 
   trait FetchSetup extends Setup {
-    val versions = Seq(
+
+    val versions   = Seq(
       versionWithoutAccessDefined,
       publicVersion,
       privateVersionWithAppWhitelisted,
@@ -157,12 +169,12 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll {
     }
 
     "send notifications when version of API has changed status" in new Setup {
-      val apiVersion = "1.0"
-      val apiContext = "foo"
-      val existingStatus: models.APIStatus.Value = APIStatus.ALPHA
-      val updatedStatus: models.APIStatus.Value = APIStatus.BETA
-      val existingAPIDefinition: APIDefinition = anAPIDefinition(apiContext, aVersion(apiVersion, existingStatus, Some(PublicAPIAccess())))
-      val updatedAPIDefinition: APIDefinition = anAPIDefinition(apiContext, aVersion(apiVersion, updatedStatus, Some(PublicAPIAccess())))
+      val apiVersion                                        = "1.0"
+      val apiContext                                        = "foo"
+      val existingStatus: models.APIStatus.Value            = APIStatus.ALPHA
+      val updatedStatus: models.APIStatus.Value             = APIStatus.BETA
+      val existingAPIDefinition: APIDefinition              = anAPIDefinition(apiContext, aVersion(apiVersion, existingStatus, Some(PublicAPIAccess())))
+      val updatedAPIDefinition: APIDefinition               = anAPIDefinition(apiContext, aVersion(apiVersion, updatedStatus, Some(PublicAPIAccess())))
       val updatedAPIDefinitionWithSavingTime: APIDefinition = updatedAPIDefinition.copy(lastPublishedAt = Some(fixedSavingTime))
 
       when(mockAPIDefinitionRepository.fetchByContext(apiContext)).thenReturn(successful(Some(existingAPIDefinition)))
@@ -213,12 +225,14 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll {
         val alsoIncludePrivateTrials = false
 
         "filter out versions which are private for which the application is not whitelisted" in new Setup {
-          val api = anAPIDefinition(context,
+          val api = anAPIDefinition(
+            context,
             publicVersion,
             versionWithoutAccessDefined,
             privateTrialVersionWithoutWhitelist,
             privateVersionWithAppWhitelisted,
-            privateVersionWithoutAppWhitelisted)
+            privateVersionWithoutAppWhitelisted
+          )
 
           when(mockAPIDefinitionRepository.fetchAll()).thenReturn(successful(Seq(api)))
 
@@ -233,12 +247,14 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll {
         val alsoIncludePrivateTrials = true
 
         "filter out versions which are private for which the application is not whitelisted but include private trials" in new Setup {
-          val api = anAPIDefinition(context,
+          val api = anAPIDefinition(
+            context,
             publicVersion,
             versionWithoutAccessDefined,
             privateTrialVersionWithoutWhitelist,
             privateVersionWithAppWhitelisted,
-            privateVersionWithoutAppWhitelisted)
+            privateVersionWithoutAppWhitelisted
+          )
 
           when(mockAPIDefinitionRepository.fetchAll()).thenReturn(successful(Seq(api)))
 
@@ -278,7 +294,12 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll {
         val result = await(underTest.fetchAllPublicAPIs(alsoIncludePrivateTrials))
 
         result shouldBe Seq(anAPIDefinition(
-          context, versionWithoutAccessDefined, publicVersion, privateTrialVersionWithWhitelist, privateTrialVersionWithoutWhitelist))
+          context,
+          versionWithoutAccessDefined,
+          publicVersion,
+          privateTrialVersionWithWhitelist,
+          privateTrialVersionWithoutWhitelist
+        ))
       }
     }
   }
@@ -305,14 +326,20 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll {
         privateVersionWithAppWhitelisted,
         privateVersionWithoutAppWhitelisted,
         privateTrialVersionWithWhitelist,
-        privateTrialVersionWithoutWhitelist)
+        privateTrialVersionWithoutWhitelist
+      )
 
       when(mockAPIDefinitionRepository.fetchAll()).thenReturn(successful(Seq(api)))
 
       val result = await(underTest.fetchAllPrivateAPIs())
 
       result shouldBe Seq(anAPIDefinition(
-        context, privateVersionWithAppWhitelisted, privateVersionWithoutAppWhitelisted, privateTrialVersionWithWhitelist, privateTrialVersionWithoutWhitelist))
+        context,
+        privateVersionWithAppWhitelisted,
+        privateVersionWithoutAppWhitelisted,
+        privateTrialVersionWithWhitelist,
+        privateTrialVersionWithoutWhitelist
+      ))
     }
   }
 
@@ -381,7 +408,14 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll {
               "Get Today's Date",
               HttpMethod.GET,
               AuthType.NONE,
-              ResourceThrottlingTier.UNLIMITED)))),
-      None, None, None)
+              ResourceThrottlingTier.UNLIMITED
+            )
+          )
+        )
+      ),
+      None,
+      None,
+      None
+    )
 
 }

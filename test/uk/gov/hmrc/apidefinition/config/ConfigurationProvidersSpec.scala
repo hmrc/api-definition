@@ -29,13 +29,11 @@ import uk.gov.hmrc.http.HttpClient
 class ConfigurationProvidersSpec extends AsyncHmrcSpec with BeforeAndAfterEach {
 
   val mockRunModeConfiguration = mock[Configuration]
-  val mockEnvironment = mock[Environment]
+  val mockEnvironment          = mock[Environment]
 
-  trait Setup {
+  trait Setup {}
 
-  }
-
-  override def beforeEach(): Unit ={
+  override def beforeEach(): Unit = {
     super.beforeEach()
     reset(mockEnvironment, mockRunModeConfiguration)
   }
@@ -46,7 +44,7 @@ class ConfigurationProvidersSpec extends AsyncHmrcSpec with BeforeAndAfterEach {
     def notificationConfigReturnsValidLoggingConfiguration(environmentName: String): Unit = {
       val notificationsConfiguration: Configuration = mock[Configuration]
 
-      when(notificationsConfiguration.getAndValidate[String](eqTo("type"),*)(*)).thenReturn("LOG")
+      when(notificationsConfiguration.getAndValidate[String](eqTo("type"), *)(*)).thenReturn("LOG")
       when(notificationsConfiguration.getOptional[String](eqTo("environmentName"))(*)).thenReturn(Some(environmentName))
 
       when(mockRunModeConfiguration.getOptional[Configuration](eqTo("notifications"))(*)).thenReturn(Some(notificationsConfiguration))
@@ -54,19 +52,17 @@ class ConfigurationProvidersSpec extends AsyncHmrcSpec with BeforeAndAfterEach {
 
     def notificationConfigReturnsUnknownNotificationType(): Unit = {
       val notificationsConfiguration: Configuration = mock[Configuration]
-      when(notificationsConfiguration.getAndValidate[String](eqTo("type"),*)(*)).thenReturn("FOO")
+      when(notificationsConfiguration.getAndValidate[String](eqTo("type"), *)(*)).thenReturn("FOO")
       when(notificationsConfiguration.getOptional[String](eqTo("environmentName"))(*)).thenReturn(Some(environmentName))
 
       when(mockRunModeConfiguration.getOptional[Configuration](eqTo("notifications"))(*)).thenReturn(Some(notificationsConfiguration))
     }
 
-    def notificationsConfigReturnsValidEmailConfiguration(emailServiceURL:String,
-                                                          emailTemplateId:String,
-                                                          emailAddresses: List[String] = List.empty): Unit = {
+    def notificationsConfigReturnsValidEmailConfiguration(emailServiceURL: String, emailTemplateId: String, emailAddresses: List[String] = List.empty): Unit = {
       val notificationsConfiguration: Configuration = mock[Configuration]
-      val emailConfiguration: Configuration = mock[Configuration]
+      val emailConfiguration: Configuration         = mock[Configuration]
 
-      when(notificationsConfiguration.getAndValidate[String](eqTo("type"),*)(*)).thenReturn("EMAIL")
+      when(notificationsConfiguration.getAndValidate[String](eqTo("type"), *)(*)).thenReturn("EMAIL")
       when(notificationsConfiguration.getOptional[String](eqTo("environmentName"))(*)).thenReturn(Some(environmentName))
       when(notificationsConfiguration.getOptional[Configuration](eqTo("email"))(*)).thenReturn(Some(emailConfiguration))
 
@@ -81,7 +77,7 @@ class ConfigurationProvidersSpec extends AsyncHmrcSpec with BeforeAndAfterEach {
     def notificationsConfigReturnsMissingEmailConfiguration(): Unit = {
       val notificationsConfiguration: Configuration = mock[Configuration]
 
-      when(notificationsConfiguration.getAndValidate[String](eqTo("type"),*)(*)).thenReturn("EMAIL")
+      when(notificationsConfiguration.getAndValidate[String](eqTo("type"), *)(*)).thenReturn("EMAIL")
       when(notificationsConfiguration.getOptional[String](eqTo("environmentName"))(*)).thenReturn(Some(environmentName))
       when(notificationsConfiguration.getOptional[Configuration](eqTo("email"))(*)).thenReturn(None)
 
@@ -90,9 +86,9 @@ class ConfigurationProvidersSpec extends AsyncHmrcSpec with BeforeAndAfterEach {
 
     def notificationsConfigReturnsInvalidEmailConfiguration(): Unit = {
       val notificationsConfiguration: Configuration = mock[Configuration]
-      val emailConfiguration: Configuration = mock[Configuration]
+      val emailConfiguration: Configuration         = mock[Configuration]
 
-      when(notificationsConfiguration.getAndValidate[String](eqTo("type"),*)(*)).thenReturn("EMAIL")
+      when(notificationsConfiguration.getAndValidate[String](eqTo("type"), *)(*)).thenReturn("EMAIL")
       when(notificationsConfiguration.getOptional[String](eqTo("environmentName"))(*)).thenReturn(Some(environmentName))
       when(notificationsConfiguration.getOptional[Configuration](eqTo("email"))(*)).thenReturn(Some(emailConfiguration))
 
@@ -111,13 +107,11 @@ class ConfigurationProvidersSpec extends AsyncHmrcSpec with BeforeAndAfterEach {
       when(mockRunModeConfiguration.getOptional[Configuration](eqTo("notifications"))(*)).thenReturn(Some(notificationsConfiguration))
     }
 
-    def emailNotificationsConfigReturnsMissingEnvironmentName(emailServiceURL:String,
-                                                              emailTemplateId:String,
-                                                              emailAddresses: List[String] = List.empty): Unit = {
+    def emailNotificationsConfigReturnsMissingEnvironmentName(emailServiceURL: String, emailTemplateId: String, emailAddresses: List[String] = List.empty): Unit = {
       val notificationsConfiguration: Configuration = mock[Configuration]
-      val emailConfiguration: Configuration = mock[Configuration]
+      val emailConfiguration: Configuration         = mock[Configuration]
 
-      when(notificationsConfiguration.getAndValidate[String](eqTo("type"),*)(*)).thenReturn("EMAIL")
+      when(notificationsConfiguration.getAndValidate[String](eqTo("type"), *)(*)).thenReturn("EMAIL")
       when(notificationsConfiguration.getOptional[String](eqTo("environmentName"))(*)).thenReturn(None)
       when(notificationsConfiguration.getOptional[Configuration](eqTo("email"))(*)).thenReturn(Some(emailConfiguration))
 
@@ -128,16 +122,16 @@ class ConfigurationProvidersSpec extends AsyncHmrcSpec with BeforeAndAfterEach {
       when(mockRunModeConfiguration.getOptional[Configuration](eqTo("notifications"))(*)).thenReturn(Some(notificationsConfiguration))
     }
 
-    val mockHttpClient: HttpClient = mock[HttpClient]
+    val mockHttpClient: HttpClient        = mock[HttpClient]
     val mockServiceConfig: ServicesConfig = mock[ServicesConfig]
-    val underTest = new NotificationServiceConfigProvider(mockRunModeConfiguration, mockEnvironment, mockHttpClient, mockServiceConfig)
+    val underTest                         = new NotificationServiceConfigProvider(mockRunModeConfiguration, mockEnvironment, mockHttpClient, mockServiceConfig)
   }
 
   "NotificationServiceConfigProvider" should {
     val emailServiceURL: String = "https://localhost:9876/hmrc/email"
     val emailTemplateId: String = UUID.randomUUID().toString
 
-    "return a LoggingNotificationService when type is specified as LOG" in new NotificationServiceConfigProviderSetup  {
+    "return a LoggingNotificationService when type is specified as LOG" in new NotificationServiceConfigProviderSetup {
       notificationConfigReturnsValidLoggingConfiguration(environmentName)
 
       val returnedNotificationService: NotificationService = underTest.get()
@@ -146,7 +140,7 @@ class ConfigurationProvidersSpec extends AsyncHmrcSpec with BeforeAndAfterEach {
       returnedNotificationService.asInstanceOf[LoggingNotificationService].environmentName shouldBe environmentName
     }
 
-    "return an EmailNotificationService when type is specified as EMAIL" in new NotificationServiceConfigProviderSetup  {
+    "return an EmailNotificationService when type is specified as EMAIL" in new NotificationServiceConfigProviderSetup {
       private val emailAddresses = List("foo@bar.com", "bar@baz.com")
       notificationsConfigReturnsValidEmailConfiguration(emailServiceURL, emailTemplateId, emailAddresses)
 
@@ -180,7 +174,6 @@ class ConfigurationProvidersSpec extends AsyncHmrcSpec with BeforeAndAfterEach {
 
       returnedNotificationService shouldBe a[LoggingNotificationService]
     }
-
 
     "default to LoggingNotificationService if not configuration specified" in new NotificationServiceConfigProviderSetup {
       when(mockRunModeConfiguration.getOptional[Configuration](eqTo("notifications"))(*)).thenReturn(None)

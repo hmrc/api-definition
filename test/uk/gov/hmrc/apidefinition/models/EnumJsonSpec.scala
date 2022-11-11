@@ -19,11 +19,9 @@ package uk.gov.hmrc.apidefinition.models
 import play.api.libs.json.Json
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 
+class EnumJsonSpec extends AsyncHmrcSpec {
 
-class EnumJsonSpec extends AsyncHmrcSpec
- {
-
-  object Color extends Enumeration{
+  object Color extends Enumeration {
     type Color = Value
     val RED, BLUE, GREEN = Value
   }
@@ -32,7 +30,7 @@ class EnumJsonSpec extends AsyncHmrcSpec
 
   "EnumJson" should {
 
-    "parse JSON to an Enumeration" in  {
+    "parse JSON to an Enumeration" in {
       val result = Json.parse("""{"color":"BLUE"}""").\("color").as[Color.Color]
       result shouldBe Color.BLUE
     }

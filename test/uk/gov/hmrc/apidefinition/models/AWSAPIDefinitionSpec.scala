@@ -19,9 +19,7 @@ package uk.gov.hmrc.apidefinition.models
 import uk.gov.hmrc.apidefinition.models.AWSAPIDefinition.awsApiGatewayName
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 
-
 class AWSAPIDefinitionSpec extends AsyncHmrcSpec {
-
 
   "awsApiGatewayName" should {
 

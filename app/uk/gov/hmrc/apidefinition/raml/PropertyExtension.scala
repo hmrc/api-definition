@@ -24,14 +24,14 @@ final class PropertyExtension(val context: RamlTypeInstance) extends AnyVal {
   def property(names: String*): Option[String] = {
     val properties = context.properties.asScala
     (names match {
-      case head +: Nil => {
+      case head +: Nil  => {
         properties.find(_.name == head).map(scalarValue)
       }
       case head +: tail => {
         properties.find(_.name == head) match {
           case Some(nestedProperty) =>
             new PropertyExtension(nestedProperty.value).property(tail: _*)
-          case _ => None
+          case _                    => None
         }
       }
     })
@@ -40,7 +40,6 @@ final class PropertyExtension(val context: RamlTypeInstance) extends AnyVal {
   private def scalarValue(property: RamlTypeInstanceProperty): String = {
     if (!property.isArray && property.value.isScalar) {
       property.value.value.toString
-     }
-     else ""
+    } else ""
   }
 }

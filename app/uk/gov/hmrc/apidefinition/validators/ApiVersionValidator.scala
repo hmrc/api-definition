@@ -23,8 +23,7 @@ import uk.gov.hmrc.apidefinition.models.{APIStatus, APIVersion, Endpoint}
 import scala.concurrent.ExecutionContext
 
 @Singleton
-class ApiVersionValidator @Inject()(apiEndpointValidator: ApiEndpointValidator)
-                                   (implicit override val ec: ExecutionContext) extends Validator[APIVersion] {
+class ApiVersionValidator @Inject() (apiEndpointValidator: ApiEndpointValidator)(implicit override val ec: ExecutionContext) extends Validator[APIVersion] {
 
   def validate(ec: String)(implicit version: APIVersion): HMRCValidated[APIVersion] = {
     val errorContext: String = if (version.version.isEmpty) ec else s"$ec version '${version.version}'"
@@ -33,14 +32,14 @@ class ApiVersionValidator @Inject()(apiEndpointValidator: ApiEndpointValidator)
       validateThat(_.endpoints.nonEmpty, _ => s"Field 'versions.endpoints' must not be empty $errorContext"),
       validateStatus(errorContext),
       validateAll[Endpoint](u => apiEndpointValidator.validate(errorContext)(u))(version.endpoints)
-    ).mapN((_,_,_,_) => version)
+    ).mapN((_, _, _, _) => version)
   }
 
   private def validateStatus(errorContext: String)(implicit version: APIVersion): HMRCValidated[APIVersion] = {
     version.status match {
       case APIStatus.ALPHA | APIStatus.BETA | APIStatus.STABLE =>
         validateThat(_ => version.endpointsEnabled.nonEmpty, _ => s"Field 'versions.endpointsEnabled' is required $errorContext")
-      case _ => version.validNel
+      case _                                                   => version.validNel
     }
   }
 }

@@ -37,16 +37,16 @@ class DocumentationControllerSpec extends AsyncHmrcSpec with StubControllerCompo
   trait Setup {
     // implicit val mat: Materializer = materializer
     val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
-    val documentationService: DocumentationService = mock[DocumentationService]
-    val hc: HeaderCarrier = HeaderCarrier()
-    val serviceName: String = "api-example-microservice"
-    val version: String = "1.0"
-    val resourceName: String = "application.raml"
+    val documentationService: DocumentationService   = mock[DocumentationService]
+    val hc: HeaderCarrier                            = HeaderCarrier()
+    val serviceName: String                          = "api-example-microservice"
+    val version: String                              = "1.0"
+    val resourceName: String                         = "application.raml"
     // scalastyle:off magic.number
     // val body: Array[Byte] = Array[Byte](0x1, 0x2, 0x3)
-    val body = "blah blah"
+    val body                                         = "blah blah"
     // scalastyle:on magic.number
-    val contentType: String = "application/text"
+    val contentType: String                          = "application/text"
 
     val underTest = new DocumentationController(documentationService, stubControllerComponents())
 
@@ -67,10 +67,11 @@ class DocumentationControllerSpec extends AsyncHmrcSpec with StubControllerCompo
   }
 
   trait RegistrationSetup extends Setup {
-    val versions = Seq("1.0", "1.1", "2.0")
-    val versionsJsonString: String = versions.map(v => s""""$v"""").mkString(",")
-    val url = "https://abc.example.com"
-    val registrationRequestBody: String =
+    val versions                                  = Seq("1.0", "1.1", "2.0")
+    val versionsJsonString: String                = versions.map(v => s""""$v"""").mkString(",")
+    val url                                       = "https://abc.example.com"
+
+    val registrationRequestBody: String           =
       s"""{
          |  "serviceName": "$serviceName",
          |  "serviceUrl": "$url",

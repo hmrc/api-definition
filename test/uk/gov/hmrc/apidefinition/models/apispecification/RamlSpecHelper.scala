@@ -22,10 +22,11 @@ import uk.gov.hmrc.ramltools.loaders.ComprehensiveClasspathRamlLoader
 import scala.util.{Failure, Success}
 
 object RamlSpecHelper {
-  def loadRaml(filename: String) : RAML = {
+
+  def loadRaml(filename: String): RAML = {
     new ComprehensiveClasspathRamlLoader().load(s"test/resources/raml/$filename") match {
       case Failure(exception) => throw exception
-      case Success(raml) => raml
+      case Success(raml)      => raml
     }
   }
 }

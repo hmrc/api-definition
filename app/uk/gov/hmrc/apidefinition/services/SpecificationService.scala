@@ -21,7 +21,7 @@ import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.ramltools.loaders.RamlLoader
 import play.api.libs.json.Json
 import uk.gov.hmrc.apidefinition.raml.ApiSpecificationRamlParser
-import scala.concurrent.{Future, blocking}
+import scala.concurrent.{blocking, Future}
 import play.api.libs.json.JsValue
 import uk.gov.hmrc.apidefinition.controllers.routes
 import uk.gov.hmrc.apidefinition.models.apispecification.ApiSpecificationFormatters._
@@ -29,7 +29,8 @@ import uk.gov.hmrc.ramltools.domain.RamlNotFoundException
 import scala.concurrent.ExecutionContext
 
 @Singleton
-class SpecificationService @Inject() (config: AppConfig, ramlLoader: RamlLoader, apiSpecificationRamlParser : ApiSpecificationRamlParser)(implicit ec: ExecutionContext) {
+class SpecificationService @Inject() (config: AppConfig, ramlLoader: RamlLoader, apiSpecificationRamlParser: ApiSpecificationRamlParser)(implicit ec: ExecutionContext) {
+
   def fetchApiSpecification(serviceName: String, version: String): Future[Option[JsValue]] = {
     val rootRamlUrl = config.serviceBaseUrl + routes.DocumentationController.fetchApiDocumentationResource(serviceName, version, "application.raml").url
     fetchApiSpecificationAtUrl(rootRamlUrl)
@@ -41,17 +42,17 @@ class SpecificationService @Inject() (config: AppConfig, ramlLoader: RamlLoader,
   }
 
   private def fetchApiSpecificationAtUrl(rootRamlUrl: String): Future[Option[JsValue]] = {
-    val basePath =  s"${rootRamlUrl.take(rootRamlUrl.lastIndexOf('/'))}/schemas"
+    val basePath = s"${rootRamlUrl.take(rootRamlUrl.lastIndexOf('/'))}/schemas"
 
     Future.fromTry {
       blocking {
         ramlLoader.load(rootRamlUrl)
-        .map(raml => Json.toJson(apiSpecificationRamlParser.toApiSpecification(basePath, raml)))
+          .map(raml => Json.toJson(apiSpecificationRamlParser.toApiSpecification(basePath, raml)))
       }
-      .map(Some(_))
+        .map(Some(_))
     }
-    .recover {
-      case _: RamlNotFoundException => None
-    }
+      .recover {
+        case _: RamlNotFoundException => None
+      }
   }
 }

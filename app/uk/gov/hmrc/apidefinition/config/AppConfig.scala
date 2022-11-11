@@ -16,19 +16,17 @@
 
 package uk.gov.hmrc.apidefinition.config
 
-
 import javax.inject.{Inject, Singleton}
 import net.ceedubs.ficus.Ficus._
 import play.api.{Configuration, Environment, Mode}
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
-
 @Singleton
-class AppConfig @Inject()(val runModeConfiguration: Configuration, environment: Environment, servicesConfig: ServicesConfig) {
+class AppConfig @Inject() (val runModeConfiguration: Configuration, environment: Environment, servicesConfig: ServicesConfig) {
   def mode: Mode = environment.mode
 
   lazy val buildProductionUrlForPrototypedAPIs: Boolean = runModeConfiguration.getOptional[Boolean]("buildProductionUrlForPrototypedAPIs").getOrElse(false)
-  lazy val isSandbox: Boolean = runModeConfiguration.getOptional[Boolean]("isSandbox").getOrElse(false)
+  lazy val isSandbox: Boolean                           = runModeConfiguration.getOptional[Boolean]("isSandbox").getOrElse(false)
 
   lazy val fetchByContextTtlInSeconds: String = runModeConfiguration.underlying.as[String]("fetchByContextTtlInSeconds")
 
@@ -45,10 +43,10 @@ class AppConfig @Inject()(val runModeConfiguration: Configuration, environment: 
     else servicesConfig.baseUrl(serviceName)
   }
 
-   private def buildRamlLoaderRewrites: Map[String, String] = {
+  private def buildRamlLoaderRewrites: Map[String, String] = {
     Map(
       runModeConfiguration.getOptional[String](s"ramlLoaderUrlRewrite.from").getOrElse("") ->
-      runModeConfiguration.getOptional[String](s"ramlLoaderUrlRewrite.to").getOrElse("")
+        runModeConfiguration.getOptional[String](s"ramlLoaderUrlRewrite.to").getOrElse("")
     )
   }
 }

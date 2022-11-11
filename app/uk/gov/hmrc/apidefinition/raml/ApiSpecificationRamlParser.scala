@@ -23,7 +23,7 @@ import org.raml.v2.api.model.v10.datamodel.{ExampleSpec => RamlExampleSpec}
 import org.raml.v2.api.model.v10.datamodel.{TypeDeclaration => RamlTypeDeclaration}
 import org.raml.v2.api.model.v10.datamodel.{StringTypeDeclaration => RamlStringTypeDeclaration}
 import org.raml.v2.api.model.v10.methods.{Method => RamlMethod}
-import javax.inject.{Singleton, Inject}
+import javax.inject.{Inject, Singleton}
 
 import uk.gov.hmrc.apidefinition.raml.RamlSyntax._
 import uk.gov.hmrc.apidefinition.models.apispecification._
@@ -31,8 +31,9 @@ import uk.gov.hmrc.apidefinition.services.SchemaService
 import akka.http.scaladsl.model.headers.LinkParams.`type`
 
 @Singleton
-class ApiSpecificationRamlParser @Inject()(schemaService : SchemaService){
-  def toApiSpecification(basePath: String, raml: RAML.RAML) : ApiSpecification = {
+class ApiSpecificationRamlParser @Inject() (schemaService: SchemaService) {
+
+  def toApiSpecification(basePath: String, raml: RAML.RAML): ApiSpecification = {
 
     def title: String = SafeValueAsString(raml.title)
 
@@ -41,9 +42,12 @@ class ApiSpecificationRamlParser @Inject()(schemaService : SchemaService){
     def deprecationMessage: Option[String] = raml.annotation("(deprecationMessage)")
 
     def documentationItems: List[DocumentationItem] =
-      raml.documentation.asScala.toList.map(item => DocumentationItem(
-        SafeValueAsString(item.title), SafeValueAsString(item.content)
-      ))
+      raml.documentation.asScala.toList.map(item =>
+        DocumentationItem(
+          SafeValueAsString(item.title),
+          SafeValueAsString(item.content)
+        )
+      )
 
     lazy val resources = output(globalTypes).map(_.resource)
 
@@ -72,7 +76,7 @@ class ApiSpecificationRamlParser @Inject()(schemaService : SchemaService){
 
   }
 
-  private def toExampleSpec(example : RamlExampleSpec) : ExampleSpec = {
+  private def toExampleSpec(example: RamlExampleSpec): ExampleSpec = {
 
     val description: Option[String] = {
       example.structuredValue.property("description", "value")
@@ -84,12 +88,12 @@ class ApiSpecificationRamlParser @Inject()(schemaService : SchemaService){
 
     val code: Option[String] = {
       example.structuredValue.property("value", "code")
-      .orElse(example.structuredValue.property("code"))
+        .orElse(example.structuredValue.property("code"))
     }
 
     val value: Option[String] = {
       example.structuredValue.property("value")
-      .orElse(SafeValue(example))
+        .orElse(SafeValue(example))
     }
     ExampleSpec(description, documentation, code, value)
   }
@@ -100,8 +104,8 @@ class ApiSpecificationRamlParser @Inject()(schemaService : SchemaService){
         name = td.name(),
         displayName = SafeValueAsString(t.displayName),
         `type` = toType(t.`type`, basePath),
-        required =  t.required(),
-        description =  SafeValue(t.description()).map(_.toString()),
+        required = t.required(),
+        description = SafeValue(t.description()).map(_.toString()),
         examples = fromExamples(t),
         enumValues = t.enumValues().asScala.toList,
         pattern = SafeValue(t.pattern)
@@ -112,8 +116,8 @@ class ApiSpecificationRamlParser @Inject()(schemaService : SchemaService){
         name = td.name(),
         displayName = SafeValueAsString(t.displayName),
         `type` = toType(t.`type`, basePath),
-        required =  t.required(),
-        description =  SafeValue(t.description()).map(_.toString()),
+        required = t.required(),
+        description = SafeValue(t.description()).map(_.toString()),
         examples = fromExamples(t),
         enumValues = List(),
         pattern = None
@@ -121,7 +125,7 @@ class ApiSpecificationRamlParser @Inject()(schemaService : SchemaService){
   }
 
   private def fromExamples(r: RamlTypeDeclaration): List[ExampleSpec] = {
-    if(r.example != null) {
+    if (r.example != null) {
       List(toExampleSpec(r.example))
     } else {
       r.examples.asScala.toList.map(toExampleSpec)
@@ -138,18 +142,19 @@ class ApiSpecificationRamlParser @Inject()(schemaService : SchemaService){
       findType(td.`type`).fold(thisType)(parent =>
         thisType.copy(
           pattern = thisType.pattern.orElse(parent.pattern),
-          examples = if(thisType.examples.isEmpty) parent.examples else thisType.examples)
+          examples = if (thisType.examples.isEmpty) parent.examples else thisType.examples
         )
+      )
 
     finalisedTypeDeclaration
   }
 
-  private def toType(`type`: String, basePath: String) : String = {
+  private def toType(`type`: String, basePath: String): String = {
 
-    def isSchema(text: String) : Boolean = text.trim.startsWith("{")
+    def isSchema(text: String): Boolean = text.trim.startsWith("{")
 
-    if(isSchema(`type`)){
-      val inlinedJsonSchema : JsonSchema = schemaService.parseSchema(`type`, basePath)
+    if (isSchema(`type`)) {
+      val inlinedJsonSchema: JsonSchema = schemaService.parseSchema(`type`, basePath)
       schemaService.toJsonString(inlinedJsonSchema)
     } else {
       `type`
@@ -162,11 +167,10 @@ class ApiSpecificationRamlParser @Inject()(schemaService : SchemaService){
     val children = childNodes.map(_.resource)
 
     val group = if (ramlResource.hasAnnotation("(group)")) {
-        val groupName = ramlResource.annotation("(group)", "name").getOrElse("")
-        val groupDesc = ramlResource.annotation("(group)", "description").getOrElse("")
-        Some(Group(groupName, groupDesc))
-    }
-    else {
+      val groupName = ramlResource.annotation("(group)", "name").getOrElse("")
+      val groupDesc = ramlResource.annotation("(group)", "description").getOrElse("")
+      Some(Group(groupName, groupDesc))
+    } else {
       None
     }
 
@@ -179,8 +183,8 @@ class ApiSpecificationRamlParser @Inject()(schemaService : SchemaService){
       children = children
     )
 
-    val thisMap: ResourcesAndGroups.GroupMap          = group.fold(ResourcesAndGroups.emptyGroupMap)(g => Map(resource -> g) )
-    val childMaps: List[ResourcesAndGroups.GroupMap]  = childNodes.map(_.groupMap)
+    val thisMap: ResourcesAndGroups.GroupMap         = group.fold(ResourcesAndGroups.emptyGroupMap)(g => Map(resource -> g))
+    val childMaps: List[ResourcesAndGroups.GroupMap] = childNodes.map(_.groupMap)
 
     ResourcesAndGroups(resource, ResourcesAndGroups.flatten(thisMap, childMaps))
   }
@@ -194,13 +198,13 @@ class ApiSpecificationRamlParser @Inject()(schemaService : SchemaService){
         r <- correctOrder.get(right.method)
       } yield l < r).getOrElse(false)
     }
-    .map(toMethod(basePath))
+      .map(toMethod(basePath))
   }
 
   private def toMethod(basePath: String)(ramlMethod: RamlMethod): Method = {
     val queryParameters = ramlMethod.queryParameters.asScala.toList.map(toTypeDeclaration(basePath))
-    val headers = ramlMethod.headers.asScala.toList.map(toTypeDeclaration(basePath))
-    val body = ramlMethod.body.asScala.toList.map(toTypeDeclaration(basePath))
+    val headers         = ramlMethod.headers.asScala.toList.map(toTypeDeclaration(basePath))
+    val body            = ramlMethod.body.asScala.toList.map(toTypeDeclaration(basePath))
 
     def fetchAuthorisation: Option[SecurityScheme] = {
       if (ramlMethod.securedBy().asScala.nonEmpty) {
@@ -214,7 +218,7 @@ class ApiSpecificationRamlParser @Inject()(schemaService : SchemaService){
     }
 
     def responses: List[Response] = {
-      ramlMethod.responses().asScala.toList.map( r => {
+      ramlMethod.responses().asScala.toList.map(r => {
         Response(
           code = SafeValueAsString(r.code()),
           body = r.body.asScala.toList.map(toTypeDeclaration(basePath)),

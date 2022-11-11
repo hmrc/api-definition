@@ -22,17 +22,17 @@ import org.raml.v2.api.model.v10.common.{Annotable => RamlAnnotable}
 import org.raml.v2.api.model.v10.datamodel.{TypeInstance => RamlTypeInstance}
 
 final class AnnotationExtension(val context: RamlAnnotable) extends AnyVal {
-    def hasAnnotation(names: String*): Boolean = getAnnotation(context, names: _*).isDefined
+  def hasAnnotation(names: String*): Boolean = getAnnotation(context, names: _*).isDefined
 
-    def annotation(names: String*): Option[String] = getAnnotation(context, names: _*).filter(_.nonEmpty)
+  def annotation(names: String*): Option[String] = getAnnotation(context, names: _*).filter(_.nonEmpty)
 
-    private def getAnnotation(context: RamlAnnotable, names: String*): Option[String] = {
+  private def getAnnotation(context: RamlAnnotable, names: String*): Option[String] = {
     val matches = context.annotations.asScala.find { ann =>
       Option(ann.name).exists(stripNamespace(_) == names.head)
     }
 
     val out = for {
-      m <- matches
+      m         <- matches
       annotation = m.structuredValue
     } yield propertyForPath(annotation, names.tail.toList)
 
@@ -51,7 +51,7 @@ final class AnnotationExtension(val context: RamlAnnotable) extends AnyVal {
     if (path.isEmpty) Option(annotation)
     else getProperty(annotation, path.head) match {
       case Some(ti: RamlTypeInstance) => propertyForPath(ti, path.tail)
-      case other => other
+      case other                      => other
     }
 
   private def scalarValueOf(annotation: RamlTypeInstance, path: List[AnyRef]): Option[AnyRef] =

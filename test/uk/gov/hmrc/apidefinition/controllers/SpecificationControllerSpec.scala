@@ -36,14 +36,14 @@ class SpecificationControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite
     implicit lazy val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
 
     val mockSpecificationService: SpecificationService = mock[SpecificationService]
-    val mockAppConfig: AppConfig = mock[AppConfig]
-      
+    val mockAppConfig: AppConfig                       = mock[AppConfig]
+
     val underTest = new SpecificationController(mockSpecificationService, mockAppConfig, stubControllerComponents())
   }
 
   "fetchApiSpecification action should return json specification" in new Setup {
-    val serviceName = "my-service-name"
-    val version = "1.0"
+    val serviceName       = "my-service-name"
+    val version           = "1.0"
     val specificationJson = Json.toJson("some" -> "stuff")
 
     when(mockSpecificationService.fetchApiSpecification(*, *)).thenReturn(successful(Some(specificationJson)))
@@ -59,7 +59,7 @@ class SpecificationControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite
 
   "fetchPreviewApiSpecification action should return json specification" in new Setup {
     val specificationJson = Json.toJson("some" -> "stuff")
-    val rootRamlUrl = "http://localhost:8080/fake-url"
+    val rootRamlUrl       = "http://localhost:8080/fake-url"
 
     when(mockSpecificationService.fetchPreviewApiSpecification(*)).thenReturn(successful(Some(specificationJson)))
 

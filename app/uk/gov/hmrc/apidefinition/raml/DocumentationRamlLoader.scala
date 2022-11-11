@@ -20,4 +20,4 @@ import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.ramltools.loaders.{UrlRewriter, UrlRewritingRamlLoader}
 
 @Singleton
-class DocumentationRamlLoader @Inject()(urlRewriter: UrlRewriter) extends UrlRewritingRamlLoader(urlRewriter)
+class DocumentationRamlLoader @Inject() (urlRewriter: UrlRewriter) extends UrlRewritingRamlLoader(urlRewriter)

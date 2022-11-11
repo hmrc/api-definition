@@ -22,10 +22,12 @@ import uk.gov.hmrc.apidefinition.raml.ApiSpecificationRamlParser
 import uk.gov.hmrc.apidefinition.models.apispecification.JsonSchema
 
 object SchemaTestHelper {
+
   object TestSchemaService extends SchemaService {
+
     override def fetchPlainTextSchema(uri: String): String = {
       val source = Source.fromFile(uri)
-      val text = source.mkString
+      val text   = source.mkString
       source.close()
       text
     }
@@ -35,7 +37,7 @@ object SchemaTestHelper {
     }
 
     def parseSchemaInFolder(uri: String, basePathExtension: String): JsonSchema = {
-      val altBasePath = if(basePathExtension.isEmpty) SchemaTestHelper.basePath else s"${SchemaTestHelper.basePath}/${basePathExtension}"
+      val altBasePath = if (basePathExtension.isEmpty) SchemaTestHelper.basePath else s"${SchemaTestHelper.basePath}/${basePathExtension}"
 
       parseSchema(fetchPlainTextSchema(s"${altBasePath}/${uri}"), altBasePath)
     }
@@ -45,4 +47,3 @@ object SchemaTestHelper {
 
   val apiSpecificationRamlParser = new ApiSpecificationRamlParser(TestSchemaService)
 }
-

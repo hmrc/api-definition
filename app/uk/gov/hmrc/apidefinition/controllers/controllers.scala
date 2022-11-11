@@ -27,38 +27,38 @@ import scala.concurrent.Future.successful
 
 package object controllers {
 
-  def validate[T](request:Request[JsValue])(implicit tjs: Reads[T]): Either[Result, JsResult[T]] = {
+  def validate[T](request: Request[JsValue])(implicit tjs: Reads[T]): Either[Result, JsResult[T]] = {
     try {
       Right(request.body.validate[T])
-    }
-    catch {
+    } catch {
       case e: Throwable => Left(UnprocessableEntity(error(ErrorCode.INVALID_REQUEST_PAYLOAD, e.getMessage)))
     }
   }
 
-  /**
-   * If the request body is valid then execute the provided function to return a result.
-   * If the request body is not valid then return the error result as specified below.
-   */
+  /** If the request body is valid then execute the provided function to return a result. If the request body is not valid then return the error result as specified below.
+    */
   def handleRequest[T](request: Request[JsValue])(f: T => Future[Result])(implicit tjs: Reads[T]): Future[Result] = {
     val either: Either[Result, JsResult[T]] = validate(request)
-    either.fold(successful, {
-      result => result.fold(
-        errors => successful(UnprocessableEntity(validationResult(errors))),
-        entity => f(entity)
-      )
-    })
+    either.fold(
+      successful,
+      {
+        result =>
+          result.fold(
+            errors => successful(UnprocessableEntity(validationResult(errors))),
+            entity => f(entity)
+          )
+      }
+    )
   }
 
-  /**
-   * Used to improve the error messages that request.body.validate might return.
-   */
-  def validationResult(errors : Seq[(JsPath, Seq[JsonValidationError])]): JsValue = {
+  /** Used to improve the error messages that request.body.validate might return.
+    */
+  def validationResult(errors: Seq[(JsPath, Seq[JsonValidationError])]): JsValue = {
     val errs: Seq[FieldErrorDescription] = errors flatMap { case (jsPath, seqValidationError) =>
       seqValidationError map {
         validationError =>
           val isMissingPath = validationError.message == "error.path.missing"
-          val message = if (isMissingPath) "element is missing" else validationError.message
+          val message       = if (isMissingPath) "element is missing" else validationError.message
           FieldErrorDescription(jsPath.toString, message)
       }
     }

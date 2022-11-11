@@ -26,53 +26,58 @@ import uk.gov.hmrc.play.json.Union
 
 object JsonFormatters {
 
-  implicit val formatAPICategoryDetails = Json.format[APICategoryDetails]
-  implicit val formatAPIStatus = EnumJson.enumFormat(APIStatus)
-  implicit val formatAPIAccessType = EnumJson.enumFormat(APIAccessType)
-  implicit val formatAuthType = EnumJson.enumFormat(AuthType)
-  implicit val formatHttpMethod = EnumJson.enumFormat(HttpMethod)
+  implicit val formatAPICategoryDetails     = Json.format[APICategoryDetails]
+  implicit val formatAPIStatus              = EnumJson.enumFormat(APIStatus)
+  implicit val formatAPIAccessType          = EnumJson.enumFormat(APIAccessType)
+  implicit val formatAuthType               = EnumJson.enumFormat(AuthType)
+  implicit val formatHttpMethod             = EnumJson.enumFormat(HttpMethod)
   implicit val formatResourceThrottlingTier = EnumJson.enumFormat(ResourceThrottlingTier)
 
   implicit object apiAccessWrites extends Writes[APIAccess] {
+
     private val privApiWrites: OWrites[(APIAccessType, Seq[String], Option[Boolean])] = (
       (JsPath \ "type").write[APIAccessType] and
-      (JsPath \ "whitelistedApplicationIds").write[Seq[String]] and
-      (JsPath \ "isTrial").writeNullable[Boolean]
+        (JsPath \ "whitelistedApplicationIds").write[Seq[String]] and
+        (JsPath \ "isTrial").writeNullable[Boolean]
     ).tupled
 
     override def writes(access: APIAccess) = access match {
-      case _: PublicAPIAccess => Json.obj("type" -> PUBLIC)
+      case _: PublicAPIAccess        => Json.obj("type" -> PUBLIC)
       case privApi: PrivateAPIAccess => privApiWrites.writes((PRIVATE, privApi.whitelistedApplicationIds, privApi.isTrial))
-      case acc => throw new RuntimeException(s"Unknown API Access $acc")
+      case acc                       => throw new RuntimeException(s"Unknown API Access $acc")
     }
   }
 
-  implicit val apiAccessReads: Reads[APIAccess] = (
-    (JsPath \ "type").read[APIAccessType.APIAccessType] and
-      (JsPath \ "whitelistedApplicationIds").readNullable[Seq[String]] and
-        (JsPath \ "isTrial").readNullable[Boolean] tupled) map {
-    case (PUBLIC, None | Some(Seq()), _) => PublicAPIAccess()
-    case (PRIVATE, Some(whitelistedApplicationIds: Seq[String]), isTrial) => PrivateAPIAccess(whitelistedApplicationIds, isTrial)
-    case (PRIVATE, None, isTrial) => PrivateAPIAccess(Seq.empty, isTrial)
-    case unknownApiAccess => throw new RuntimeException(s"Unknown API Access $unknownApiAccess")
-  }
+  implicit val apiAccessReads: Reads[APIAccess] =
+    (
+      (JsPath \ "type").read[APIAccessType.APIAccessType] and
+        (JsPath \ "whitelistedApplicationIds").readNullable[Seq[String]] and
+        (JsPath \ "isTrial").readNullable[Boolean] tupled
+    ) map {
+      case (PUBLIC, None | Some(Seq()), _)                                  => PublicAPIAccess()
+      case (PRIVATE, Some(whitelistedApplicationIds: Seq[String]), isTrial) => PrivateAPIAccess(whitelistedApplicationIds, isTrial)
+      case (PRIVATE, None, isTrial)                                         => PrivateAPIAccess(Seq.empty, isTrial)
+      case unknownApiAccess                                                 => throw new RuntimeException(s"Unknown API Access $unknownApiAccess")
+    }
 
-  implicit val formatParameter = Json.format[Parameter]
-  implicit val formatEndpoint = Json.format[Endpoint]
+  implicit val formatParameter  = Json.format[Parameter]
+  implicit val formatEndpoint   = Json.format[Endpoint]
   implicit val formatAPIVersion = Json.format[APIVersion]
 
   private val dateTimeFormatter = ISODateTimeFormat.dateTime().withZoneUTC()
 
   implicit val dateTimeReads: Reads[DateTime] = new Reads[DateTime] {
+
     override def reads(json: JsValue): JsResult[DateTime] = {
       json match {
         case JsString(s) => JsSuccess(dateTimeFormatter.parseDateTime(s))
-        case _ => JsError(s"Unexpected format for DateTime: $json")
+        case _           => JsError(s"Unexpected format for DateTime: $json")
       }
     }
   }
 
   implicit val dateTimeWrites: Writes[DateTime] = new Writes[DateTime] {
+
     override def writes(dateTime: DateTime): JsValue = {
       JsString(dateTimeFormatter.print(dateTime))
     }
@@ -80,28 +85,30 @@ object JsonFormatters {
 
   implicit val dateTimeFormats = Format(fjs = dateTimeReads, tjs = dateTimeWrites)
 
-  implicit val formatAPIDefinition = Json.format[APIDefinition]
-  implicit val formatAPIAvailability = Json.format[APIAvailability]
-  implicit val formatExtendedAPIVersion = Json.format[ExtendedAPIVersion]
+  implicit val formatAPIDefinition         = Json.format[APIDefinition]
+  implicit val formatAPIAvailability       = Json.format[APIAvailability]
+  implicit val formatExtendedAPIVersion    = Json.format[ExtendedAPIVersion]
   implicit val formatExtendedAPIDefinition = Json.format[ExtendedAPIDefinition]
 
-  implicit val formatAWSParameterType = EnumJson.enumFormat(AWSParameterType)
+  implicit val formatAWSParameterType  = EnumJson.enumFormat(AWSParameterType)
   implicit val formatAWSQueryParameter = Json.format[AWSQueryParameter]
-  implicit val formatAWSPathParameter = Json.format[AWSPathParameter]
-  implicit val formatAWSParameter = Union.from[AWSParameter]("in")
+  implicit val formatAWSPathParameter  = Json.format[AWSPathParameter]
+
+  implicit val formatAWSParameter      = Union.from[AWSParameter]("in")
     .and[AWSQueryParameter](QUERY.toString)
     .and[AWSPathParameter](PATH.toString)
     .format
 
-  implicit val formatAWSResponse = Json.format[AWSResponse]
+  implicit val formatAWSResponse        = Json.format[AWSResponse]
   implicit val formatAWSHttpVerbDetails = Json.format[AWSHttpVerbDetails]
-  implicit val formatAWSAPIInfo = Json.format[AWSAPIInfo]
-  implicit val formatAWSSwaggerDetails = Json.format[AWSSwaggerDetails]
+  implicit val formatAWSAPIInfo         = Json.format[AWSAPIInfo]
+  implicit val formatAWSSwaggerDetails  = Json.format[AWSSwaggerDetails]
 }
 
 object EnumJson {
 
   def enumReads[E <: Enumeration](enum: E): Reads[E#Value] = new Reads[E#Value] {
+
     override def reads(json: JsValue): JsResult[E#Value] = json match {
       case JsString(s) =>
         try {

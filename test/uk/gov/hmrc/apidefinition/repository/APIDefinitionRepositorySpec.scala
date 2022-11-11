@@ -33,9 +33,9 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class APIDefinitionRepositorySpec extends AsyncHmrcSpec
-  with DefaultPlayMongoRepositorySupport[APIDefinition]
-  with GuiceOneAppPerSuite with BeforeAndAfterEach
-  with BeforeAndAfterAll with Eventually {
+    with DefaultPlayMongoRepositorySupport[APIDefinition]
+    with GuiceOneAppPerSuite with BeforeAndAfterEach
+    with BeforeAndAfterAll with Eventually {
 
   override implicit lazy val app: Application = appBuilder.build()
 
@@ -60,7 +60,8 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
     description = "This is the Hello API",
     context = "hello",
     versions = Seq(helloApiVersion),
-    requiresTrust = None)
+    requiresTrust = None
+  )
 
   private val calendarApiDefinition = APIDefinition(
     serviceName = "calendar-service",
@@ -69,7 +70,8 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
     description = "This is the Calendar API",
     context = "calendar",
     versions = Seq(calendarApiVersion),
-    requiresTrust = None)
+    requiresTrust = None
+  )
 
   private val individualIncomeTaxApiVersion = APIVersion(
     version = "1.0",
@@ -85,7 +87,8 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
     description = "This is the Individual Income Tax API",
     context = "individuals/income-tax",
     versions = Seq(individualIncomeTaxApiVersion),
-    requiresTrust = None)
+    requiresTrust = None
+  )
 
   private val individualNIApiVersion = APIVersion(
     version = "1.0",
@@ -101,7 +104,8 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
     description = "This is the Individual National Insurance API",
     context = "individuals/ni",
     versions = Seq(individualNIApiVersion),
-    requiresTrust = None)
+    requiresTrust = None
+  )
 
   override def repository: APIDefinitionRepository = app.injector.instanceOf[APIDefinitionRepository]
 
@@ -277,7 +281,8 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
 
       // Mongo 3.x and 4.x return slightly different error messages for dup keys.
       val mongpV3ErrorMessage = s"""E11000 duplicate key error collection: test-APIDefinitionRepositorySpec.api index: ${fieldName}Index dup key: { : "$duplicateFieldValue" }"""
-      val mongoV4ErrorMessage = s"""E11000 duplicate key error collection: test-APIDefinitionRepositorySpec.api index: ${fieldName}Index dup key: { $fieldName: "$duplicateFieldValue" }"""
+      val mongoV4ErrorMessage =
+        s"""E11000 duplicate key error collection: test-APIDefinitionRepositorySpec.api index: ${fieldName}Index dup key: { $fieldName: "$duplicateFieldValue" }"""
 
       val errors = Seq(mongpV3ErrorMessage, mongoV4ErrorMessage)
 
@@ -349,10 +354,10 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
         IndexModel(ascending("context"), IndexOptions().name("contextIndex").background(true).unique(true)),
         IndexModel(ascending("name"), IndexOptions().name("nameIndex").background(true).unique(true)),
         IndexModel(ascending("serviceName"), IndexOptions().name("serviceNameIndex").background(true).unique(true)),
-        IndexModel(ascending("serviceBaseUrl"), IndexOptions().name("serviceBaseUrlIndex").background(true).unique(true)),
+        IndexModel(ascending("serviceBaseUrl"), IndexOptions().name("serviceBaseUrlIndex").background(true).unique(true))
       )
 
-      indexes.toSet.toString shouldBe  expectedIndexes.toSet.toString
+      indexes.toSet.toString shouldBe expectedIndexes.toSet.toString
     }
   }
 

@@ -23,9 +23,8 @@ import org.scalatest.prop.TableDrivenPropertyChecks._
 import uk.gov.hmrc.apidefinition.raml.ApiSpecificationRamlParser
 import uk.gov.hmrc.apidefinition.services.SchemaService
 
-class GroupedResourcesSpec extends AsyncHmrcSpec
- {
-  val schemaService = new SchemaService()
+class GroupedResourcesSpec extends AsyncHmrcSpec {
+  val schemaService              = new SchemaService()
   val apiSpecificationRamlParser = new ApiSpecificationRamlParser(schemaService)
 
   val basePath = "test/resources/raml/V2"
@@ -37,18 +36,18 @@ class GroupedResourcesSpec extends AsyncHmrcSpec
     apiSpec.resourceGroups.size shouldBe 3
 
     val groups = Table(
-      ("id",  "name",           "description",              "resource count"),
-      (0,     None,             None,                       List("/endpoint1")),
-      (1,     Some("group 1"),  Some("Manage something 1"), List("/endpoint2", "/endpoint3")),
-      (2,     Some("group 2"),  Some("Manage something 2"), List("/endpoint4"))
+      ("id", "name", "description", "resource count"),
+      (0, None, None, List("/endpoint1")),
+      (1, Some("group 1"), Some("Manage something 1"), List("/endpoint2", "/endpoint3")),
+      (2, Some("group 2"), Some("Manage something 2"), List("/endpoint4"))
     )
 
-    forAll(groups) { (id, expectedName, expectedDescription, endpoints ) => 
+    forAll(groups) { (id, expectedName, expectedDescription, endpoints) =>
       val g = apiSpec.resourceGroups(id)
       g.name shouldBe expectedName
       g.description shouldBe expectedDescription
       g.resources.size shouldBe endpoints.size
-      g.resources.map(r=>r.resourcePath) shouldBe endpoints
+      g.resources.map(r => r.resourcePath) shouldBe endpoints
     }
   }
 
@@ -59,14 +58,14 @@ class GroupedResourcesSpec extends AsyncHmrcSpec
     apiSpec.resourceGroups.size shouldBe 2
 
     val groups = Table(
-      ("id",  "resource count"),
-      (0,     List("/endpoint1")),
-      (1,     List("/endpoint1/sub1", "/endpoint1/sub2")),
+      ("id", "resource count"),
+      (0, List("/endpoint1")),
+      (1, List("/endpoint1/sub1", "/endpoint1/sub2"))
     )
 
-    forAll(groups) { (id, endpoints ) => 
+    forAll(groups) { (id, endpoints) =>
       val g = apiSpec.resourceGroups(id)
-      g.resources.map(r=>r.resourcePath) shouldBe endpoints
+      g.resources.map(r => r.resourcePath) shouldBe endpoints
     }
   }
 }
