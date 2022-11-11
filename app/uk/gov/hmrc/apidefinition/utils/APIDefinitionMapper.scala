@@ -21,7 +21,7 @@ import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.models.{APIDefinition, APIStatus, APIVersion}
 
 @Singleton
-class APIDefinitionMapper @Inject()(val appContext: AppConfig) {
+class APIDefinitionMapper @Inject() (val appContext: AppConfig) {
 
   val buildProductionUrlsForPrototypedAPIs = appContext.buildProductionUrlForPrototypedAPIs
 
@@ -31,13 +31,13 @@ class APIDefinitionMapper @Inject()(val appContext: AppConfig) {
       version.status match {
         case APIStatus.PROTOTYPED =>
           version.copy(status = APIStatus.BETA, endpointsEnabled = version.endpointsEnabled.orElse(Some(buildProductionUrlsForPrototypedAPIs)))
-        case APIStatus.PUBLISHED =>
+        case APIStatus.PUBLISHED  =>
           version.copy(status = APIStatus.STABLE, endpointsEnabled = version.endpointsEnabled.orElse(Some(true)))
         case APIStatus.DEPRECATED =>
           version.copy(status = APIStatus.DEPRECATED, endpointsEnabled = version.endpointsEnabled.orElse(Some(true)))
-        case APIStatus.RETIRED =>
+        case APIStatus.RETIRED    =>
           version.copy(status = APIStatus.RETIRED, endpointsEnabled = version.endpointsEnabled.orElse(Some(true)))
-        case _ => version
+        case _                    => version
       }
     }
 

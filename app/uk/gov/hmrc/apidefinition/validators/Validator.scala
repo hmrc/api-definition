@@ -25,9 +25,9 @@ import scala.util.matching.Regex
 
 trait Validator[T] {
 
-  type HMRCValidated[A] = ValidatedNel[String, A]
+  type HMRCValidated[A]     = ValidatedNel[String, A]
   type ShouldEvaluateToTrue = T => Boolean
-  type ConstructError = T => String
+  type ConstructError       = T => String
 
   implicit def ec: ExecutionContext
 
@@ -44,16 +44,16 @@ trait Validator[T] {
   }
 
   implicit protected class RegexString(str: String) {
+
     def matches(r: Regex): Boolean = {
       r.findFirstIn(str).nonEmpty
     }
   }
 
-  def validateFieldNotAlreadyUsed(fetchApi: => Future[Option[APIDefinition]], errorMessage: String)
-                                 (implicit t: T, apiDefinition: APIDefinition): Future[HMRCValidated[T]] = {
+  def validateFieldNotAlreadyUsed(fetchApi: => Future[Option[APIDefinition]], errorMessage: String)(implicit t: T, apiDefinition: APIDefinition): Future[HMRCValidated[T]] = {
     fetchApi.map {
       case Some(found: APIDefinition) => found.serviceName != apiDefinition.serviceName
-      case _ => false
+      case _                          => false
     }.map(alreadyUsed => validateThat(_ => !alreadyUsed, _ => errorMessage))
   }
 

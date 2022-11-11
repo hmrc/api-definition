@@ -24,7 +24,7 @@ object SafeValue {
     Option(nullableString).filter(_.nonEmpty)
   }
 
-  def apply(nullableObj: {def value(): String}): Option[String] = {
+  def apply(nullableObj: { def value(): String }): Option[String] = {
     Option(nullableObj).flatMap(obj => Option(obj.value())).filter(_.nonEmpty)
   }
 }
@@ -33,5 +33,5 @@ object SafeValueAsString {
   // Handle nulls from RAML
   def apply(nullableString: String): String = SafeValue(nullableString).getOrElse("")
 
-  def apply(nullableObj: {def value(): String}): String = SafeValue(nullableObj).getOrElse("")
+  def apply(nullableObj: { def value(): String }): String = SafeValue(nullableObj).getOrElse("")
 }

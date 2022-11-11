@@ -17,8 +17,8 @@
 package uk.gov.hmrc.apidefinition.models.apispecification
 
 case class ExampleSpec(
-  description: Option[String],
-  documentation: Option[String],
-  code: Option[String],
-  value: Option[String]
-)
+    description: Option[String],
+    documentation: Option[String],
+    code: Option[String],
+    value: Option[String]
+  )

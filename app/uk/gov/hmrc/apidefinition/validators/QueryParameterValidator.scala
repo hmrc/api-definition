@@ -23,14 +23,16 @@ import scala.concurrent.ExecutionContext
 import scala.util.matching.Regex
 
 @Singleton
-class QueryParameterValidator @Inject()(implicit override val ec: ExecutionContext) extends Validator[Parameter] {
+class QueryParameterValidator @Inject() (implicit override val ec: ExecutionContext) extends Validator[Parameter] {
 
   private val queryParameterNameRegex: Regex = "^[a-zA-Z0-9_\\-]+$".r
 
   def validate(errorContext: String)(implicit queryParameter: Parameter): HMRCValidated[Parameter] = {
     validateThat(_.name.nonEmpty, _ => s"Field 'queryParameters.name' is required $errorContext").andThen {
-      validateField(_.name.matches(queryParameterNameRegex),
-        q => s"Field 'queryParameters.name' with value '${q.name}' should match regular expression '$queryParameterNameRegex' $errorContext")
+      validateField(
+        _.name.matches(queryParameterNameRegex),
+        q => s"Field 'queryParameters.name' with value '${q.name}' should match regular expression '$queryParameterNameRegex' $errorContext"
+      )
     }
   }
 }

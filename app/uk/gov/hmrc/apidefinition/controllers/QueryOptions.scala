@@ -21,13 +21,13 @@ import uk.gov.hmrc.http.BadRequestException
 case class QueryOptions(alsoIncludePrivateTrials: Boolean)
 
 object QueryOptions {
+
   def apply(options: Option[String]): QueryOptions = {
 
     options match {
-      case None | Some("") => QueryOptions(alsoIncludePrivateTrials = false)
+      case None | Some("")                  => QueryOptions(alsoIncludePrivateTrials = false)
       case Some("alsoIncludePrivateTrials") => QueryOptions(alsoIncludePrivateTrials = true)
-      case Some(value) => throw new BadRequestException(s"Invalid options specified: $value")
+      case Some(value)                      => throw new BadRequestException(s"Invalid options specified: $value")
     }
   }
 }
-

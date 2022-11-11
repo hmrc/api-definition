@@ -29,47 +29,71 @@ import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
 
 trait NotificationService {
   val environmentName: String
-  def notifyOfStatusChange(apiName: String, apiVersion: String, existingAPIStatus: APIStatus, newAPIStatus: APIStatus)
-                          (implicit ec: ExecutionContext, headerCarrier: HeaderCarrier): Future[Unit]
+
+  def notifyOfStatusChange(
+      apiName: String,
+      apiVersion: String,
+      existingAPIStatus: APIStatus,
+      newAPIStatus: APIStatus
+    )(implicit ec: ExecutionContext,
+      headerCarrier: HeaderCarrier
+    ): Future[Unit]
 }
 
 class LoggingNotificationService(override val environmentName: String) extends NotificationService with ApplicationLogger {
 
-  def notifyOfStatusChange(apiName: String, apiVersion: String, existingAPIStatus: APIStatus, newAPIStatus: APIStatus)
-                          (implicit ec: ExecutionContext, headerCarrier: HeaderCarrier): Future[Unit] = {
+  def notifyOfStatusChange(
+      apiName: String,
+      apiVersion: String,
+      existingAPIStatus: APIStatus,
+      newAPIStatus: APIStatus
+    )(implicit ec: ExecutionContext,
+      headerCarrier: HeaderCarrier
+    ): Future[Unit] = {
     Future {
       logger.info(s"API [$apiName] Version [$apiVersion] Status has changed from [$existingAPIStatus] to [$newAPIStatus] in [$environmentName] environment")
     }
   }
 }
 
-class EmailNotificationService(httpClient: HttpClient,
-                               val emailServiceURL: String,
-                               val emailTemplateId: String,
-                               override val environmentName: String,
-                               val emailAddresses: Set[String]) extends NotificationService with ApplicationLogger {
+class EmailNotificationService(
+    httpClient: HttpClient,
+    val emailServiceURL: String,
+    val emailTemplateId: String,
+    override val environmentName: String,
+    val emailAddresses: Set[String]
+  ) extends NotificationService with ApplicationLogger {
 
-  override def notifyOfStatusChange(apiName: String, apiVersion: String, existingAPIStatus: APIStatus, newAPIStatus: APIStatus)
-                                   (implicit ec: ExecutionContext, headerCarrier: HeaderCarrier): Future[Unit] = {
+  override def notifyOfStatusChange(
+      apiName: String,
+      apiVersion: String,
+      existingAPIStatus: APIStatus,
+      newAPIStatus: APIStatus
+    )(implicit ec: ExecutionContext,
+      headerCarrier: HeaderCarrier
+    ): Future[Unit] = {
     sendEmail(
       new SendEmailRequest(
         emailAddresses,
         emailTemplateId,
         Map(
-          "apiName" -> apiName,
-          "apiVersion" -> apiVersion,
-          "currentStatus" -> existingAPIStatus.toString,
-          "newStatus" -> newAPIStatus.toString,
-          "environmentName" -> environmentName)
-       )).flatMap(_ => successful(Unit))
+          "apiName"         -> apiName,
+          "apiVersion"      -> apiVersion,
+          "currentStatus"   -> existingAPIStatus.toString,
+          "newStatus"       -> newAPIStatus.toString,
+          "environmentName" -> environmentName
+        )
+      )
+    ).flatMap(_ => successful(Unit))
   }
 
   private def sendEmail(payload: SendEmailRequest)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[HttpResponse] = {
     def extractError(response: HttpResponse): RuntimeException = {
       Try(response.json \ "message") match {
         case Success(jsValue) => new RuntimeException(jsValue.as[String])
-        case Failure(_) => new RuntimeException(
-          s"Unable send email. Unexpected error for url=$emailServiceURL status=${response.status} response=${response.body}")
+        case Failure(_)       => new RuntimeException(
+            s"Unable send email. Unexpected error for url=$emailServiceURL status=${response.status} response=${response.body}"
+          )
       }
     }
 
@@ -78,16 +102,14 @@ class EmailNotificationService(httpClient: HttpClient,
         logger.info(s"Sent '${payload.templateId}' to: ${payload.to.mkString(",")} with response: ${response.status}")
         response.status match {
           case status if status >= 200 && status <= 299 => response
-          case NOT_FOUND => throw new RuntimeException(s"Unable to send email. Downstream endpoint not found: $emailServiceURL")
-          case _ => throw extractError(response)
+          case NOT_FOUND                                => throw new RuntimeException(s"Unable to send email. Downstream endpoint not found: $emailServiceURL")
+          case _                                        => throw extractError(response)
         }
       }
   }
 }
 
-case class SendEmailRequest(to: Set[String],
-                            templateId: String,
-                            parameters: Map[String, String])
+case class SendEmailRequest(to: Set[String], templateId: String, parameters: Map[String, String])
 
 object SendEmailRequest {
   implicit val sendEmailRequestFormat: OFormat[SendEmailRequest] = Json.format[SendEmailRequest]

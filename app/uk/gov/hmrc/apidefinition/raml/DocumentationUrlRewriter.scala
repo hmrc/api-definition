@@ -21,6 +21,6 @@ import uk.gov.hmrc.ramltools.loaders.UrlRewriter
 import uk.gov.hmrc.apidefinition.config.AppConfig
 
 @Singleton
-class DocumentationUrlRewriter @Inject()(appConfig: AppConfig) extends UrlRewriter {
+class DocumentationUrlRewriter @Inject() (appConfig: AppConfig) extends UrlRewriter {
   lazy val rewrites = appConfig.ramlLoaderRewrites
 }

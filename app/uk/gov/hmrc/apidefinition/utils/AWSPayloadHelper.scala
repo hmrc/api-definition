@@ -27,7 +27,8 @@ object AWSPayloadHelper {
       paths = buildAWSPaths(apiVersion),
       info = AWSAPIInfo(apiName, apiVersion.version),
       basePath = Some(s"/$basePath"),
-      host = Some(host))
+      host = Some(host)
+    )
   }
 
   private def buildAWSPaths(apiVersion: APIVersion): Map[String, Map[String, AWSHttpVerbDetails]] = {
@@ -38,7 +39,8 @@ object AWSPayloadHelper {
         responses = Map("200" -> AWSResponse(description = "OK")),
         `x-auth-type` = awsAuthType(e.authType),
         `x-throttling-tier` = awsThrottlingTier(e.throttlingTier),
-        `x-scope` = e.scope)
+        `x-scope` = e.scope
+      )
     }
 
     def groupEndpointsByResource(endpoints: Seq[Endpoint]): Map[String, Seq[Endpoint]] = {

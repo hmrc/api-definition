@@ -42,9 +42,9 @@ import uk.gov.hmrc.http.UpstreamErrorResponse
 
 class AWSAPIPublisherConnectorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite with BeforeAndAfterAll {
 
-  private val stubPort = sys.env.getOrElse("WIREMOCK", "22223").toInt
-  private val stubHost = "localhost"
-  private val wireMockUrl = s"http://$stubHost:$stubPort"
+  private val stubPort       = sys.env.getOrElse("WIREMOCK", "22223").toInt
+  private val stubHost       = "localhost"
+  private val wireMockUrl    = s"http://$stubHost:$stubPort"
   private val wireMockServer = new WireMockServer(wireMockConfig().port(stubPort))
 
   private val anAWSHttpVerbDetails =
@@ -53,23 +53,26 @@ class AWSAPIPublisherConnectorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuit
       responses = Map("200" -> AWSResponse(description = "OK")),
       `x-auth-type` = "None",
       `x-throttling-tier` = "Unlimited",
-      `x-scope` = None)
-  private val apiName = "calendar--1.0"
-  private val swagger =
+      `x-scope` = None
+    )
+  private val apiName              = "calendar--1.0"
+
+  private val swagger              =
     AWSSwaggerDetails(
       paths = Map("/check-weather" -> Map("get" -> anAWSHttpVerbDetails)),
-      info = AWSAPIInfo("calendar", "1.0"))
+      info = AWSAPIInfo("calendar", "1.0")
+    )
 
   trait Setup {
     SharedMetricRegistries.clear()
     WireMock.reset()
     implicit val hc: HeaderCarrier = HeaderCarrier(authorization = Some(Authorization("foo")))
 
-    val http: HttpClient = app.injector.instanceOf[HttpClient]
-    val environment: Environment = app.injector.instanceOf[Environment]
+    val http: HttpClient                    = app.injector.instanceOf[HttpClient]
+    val environment: Environment            = app.injector.instanceOf[Environment]
     val runModeConfiguration: Configuration = app.injector.instanceOf[Configuration]
-    val appContext: AppConfig = app.injector.instanceOf[AppConfig]
-    val servicesConfig = mock[ServicesConfig]
+    val appContext: AppConfig               = app.injector.instanceOf[AppConfig]
+    val servicesConfig                      = mock[ServicesConfig]
 
     val underTest: AWSAPIPublisherConnector = new AWSAPIPublisherConnector(http, environment, appContext, runModeConfiguration, servicesConfig) {
       override val serviceBaseUrl = s"$wireMockUrl/api"
@@ -93,7 +96,8 @@ class AWSAPIPublisherConnectorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuit
         .willReturn(
           aResponse()
             .withStatus(OK)
-            .withBody(s"""{ "RequestId" : "$expectedRequestId" }""")))
+            .withBody(s"""{ "RequestId" : "$expectedRequestId" }""")
+        ))
 
       val result: String = await(underTest.createOrUpdateAPI(apiName, swagger)(hc))
 
@@ -108,7 +112,8 @@ class AWSAPIPublisherConnectorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuit
       stubFor(put(urlPathEqualTo(s"/api/$apiName"))
         .willReturn(
           aResponse()
-            .withStatus(INTERNAL_SERVER_ERROR)))
+            .withStatus(INTERNAL_SERVER_ERROR)
+        ))
 
       intercept[UpstreamErrorResponse] {
         await(underTest.createOrUpdateAPI(apiName, swagger)(hc))
@@ -123,7 +128,8 @@ class AWSAPIPublisherConnectorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuit
         .willReturn(
           aResponse()
             .withStatus(OK)
-            .withBody(s"""{ "RequestId" : "$expectedRequestId" }""")))
+            .withBody(s"""{ "RequestId" : "$expectedRequestId" }""")
+        ))
 
       val result: String = await(underTest.deleteAPI(apiName)(hc))
 
@@ -137,7 +143,8 @@ class AWSAPIPublisherConnectorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuit
       stubFor(delete(urlPathEqualTo(s"/api/$apiName"))
         .willReturn(
           aResponse()
-            .withStatus(INTERNAL_SERVER_ERROR)))
+            .withStatus(INTERNAL_SERVER_ERROR)
+        ))
 
       intercept[UpstreamErrorResponse] {
         await(underTest.deleteAPI(apiName)(hc))

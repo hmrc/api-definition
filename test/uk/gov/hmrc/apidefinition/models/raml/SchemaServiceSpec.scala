@@ -39,7 +39,7 @@ class SchemaServiceSpec extends AnyWordSpec with Matchers {
   }
 
   def compareJson(expected: JsValue, actual: JsonSchema): Assertion = {
-    val actualText = Json.prettyPrint(Json.toJson(actual))
+    val actualText   = Json.prettyPrint(Json.toJson(actual))
     val expectedText = Json.prettyPrint(expected)
 
     actualText shouldBe expectedText
@@ -84,7 +84,7 @@ class SchemaServiceSpec extends AnyWordSpec with Matchers {
 
   "convert JsonSchema to text when" when {
     "empty" in {
-      val jsonSchema = JsonSchema()
+      val jsonSchema     = JsonSchema()
       val jsonSchemaText = loader.toJsonString(jsonSchema)
 
       jsonSchemaText shouldBe "{}"
@@ -96,7 +96,7 @@ class SchemaServiceSpec extends AnyWordSpec with Matchers {
         `type` = Some("my-type"),
         example = Some("my-example"),
         title = Some("my-title"),
-        `enum` = Seq(EnumerationValue("my-enum-a")),
+        `enum` = Seq(EnumerationValue("my-enum-a"))
       )
 
       val jsonSchemaText = Json.parse(loader.toJsonString(jsonSchema))
@@ -109,7 +109,8 @@ class SchemaServiceSpec extends AnyWordSpec with Matchers {
            |  "example" : "my-example",
            |  "title" : "my-title",
            |  "enum" : [ "my-enum-a" ]
-           |}""".stripMargin)
+           |}""".stripMargin
+      )
     }
   }
 

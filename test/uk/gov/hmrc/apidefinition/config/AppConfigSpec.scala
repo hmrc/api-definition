@@ -25,17 +25,17 @@ import org.scalatestplus.play.guice.GuiceOneAppPerTest
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 
 class AppConfigSpec extends AsyncHmrcSpec
-  with BeforeAndAfterEach 
-  with GuiceOneAppPerTest {
+    with BeforeAndAfterEach
+    with GuiceOneAppPerTest {
 
   trait Setup {
-    val mockConfig =  mock[Configuration]
+    val mockConfig         = mock[Configuration]
     val mockServicesConfig = mock[ServicesConfig]
-    val underTest = new AppConfig(mockConfig, app.injector.instanceOf[Environment], mockServicesConfig)
+    val underTest          = new AppConfig(mockConfig, app.injector.instanceOf[Environment], mockServicesConfig)
 
     def whenTestEnvironmentUndefined = when(mockConfig.getOptional[Boolean]("buildProductionUrlForPrototypedAPIs")).thenReturn(None)
-    def whenTestEnvironmentEnabled = when(mockConfig.getOptional[Boolean]("buildProductionUrlForPrototypedAPIs")).thenReturn(Some(true))
-    def whenTestEnvironmentDisable = when(mockConfig.getOptional[Boolean]("buildProductionUrlForPrototypedAPIs")).thenReturn(Some(false))
+    def whenTestEnvironmentEnabled   = when(mockConfig.getOptional[Boolean]("buildProductionUrlForPrototypedAPIs")).thenReturn(Some(true))
+    def whenTestEnvironmentDisable   = when(mockConfig.getOptional[Boolean]("buildProductionUrlForPrototypedAPIs")).thenReturn(Some(false))
   }
 
   "App Context" should {

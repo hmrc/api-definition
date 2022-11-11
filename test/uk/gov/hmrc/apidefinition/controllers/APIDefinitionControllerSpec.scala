@@ -45,19 +45,19 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
     implicit lazy val request = FakeRequest()
 
     val serviceName = "calendar"
-    val userEmail = "user@email.com"
+    val userEmail   = "user@email.com"
 
-    val mockAPIDefinitionService: APIDefinitionService = mock[APIDefinitionService]
+    val mockAPIDefinitionService: APIDefinitionService       = mock[APIDefinitionService]
     val mockApiDefinitionRepository: APIDefinitionRepository = mock[APIDefinitionRepository]
-    val mockAppContext: AppConfig = mock[AppConfig]
+    val mockAppContext: AppConfig                            = mock[AppConfig]
     when(mockAppContext.fetchByContextTtlInSeconds).thenReturn("1234")
     when(mockAppContext.skipContextValidationAllowlist).thenReturn(List())
 
-    val apiContextValidator: ApiContextValidator = new ApiContextValidator(mockAPIDefinitionService, mockApiDefinitionRepository, mockAppContext)
+    val apiContextValidator: ApiContextValidator         = new ApiContextValidator(mockAPIDefinitionService, mockApiDefinitionRepository, mockAppContext)
     val queryParameterValidator: QueryParameterValidator = new QueryParameterValidator()
-    val apiEndpointValidator: ApiEndpointValidator = new ApiEndpointValidator(queryParameterValidator)
-    val apiVersionValidator: ApiVersionValidator = new ApiVersionValidator(apiEndpointValidator)
-    val apiDefinitionValidator: ApiDefinitionValidator = new ApiDefinitionValidator(mockAPIDefinitionService, apiContextValidator, apiVersionValidator)
+    val apiEndpointValidator: ApiEndpointValidator       = new ApiEndpointValidator(queryParameterValidator)
+    val apiVersionValidator: ApiVersionValidator         = new ApiVersionValidator(apiEndpointValidator)
+    val apiDefinitionValidator: ApiDefinitionValidator   = new ApiDefinitionValidator(mockAPIDefinitionService, apiContextValidator, apiVersionValidator)
 
     val apiDefinitionMapper: APIDefinitionMapper = new APIDefinitionMapper(mockAppContext)
 
@@ -67,8 +67,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
   trait QueryDispatcherSetup extends Setup {
 
     val apiDefinitions: Seq[APIDefinition] =
-      Array.fill(2)(APIDefinition("MyApiDefinitionServiceName1", "MyUrl", "MyName", "My description", "MyContext",
-        Seq.empty, None))
+      Array.fill(2)(APIDefinition("MyApiDefinitionServiceName1", "MyUrl", "MyName", "My description", "MyContext", Seq.empty, None))
 
     when(mockAPIDefinitionService.fetchByContext(*)).thenReturn(successful(Some(apiDefinitions.head)))
     when(mockAPIDefinitionService.fetchAllPublicAPIs(*)).thenReturn(successful(apiDefinitions))
@@ -115,11 +114,14 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
                 APIStatus.STABLE,
                 None,
                 Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
-                Some(true))),
+                Some(true)
+              )
+            ),
           requiresTrust = Some(true),
           None,
           lastPublishedAt = None,
-          Some(Seq(OTHER)))
+          Some(Seq(OTHER))
+        )
 
       thereAreNoOverlappingAPIContexts
       theServiceWillCreateOrUpdateTheAPIDefinition
@@ -147,11 +149,14 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
                 APIStatus.STABLE,
                 None,
                 Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
-                Some(true))),
+                Some(true)
+              )
+            ),
           requiresTrust = Some(true),
           None,
           lastPublishedAt = None,
-          Some(Seq(OTHER)))
+          Some(Seq(OTHER))
+        )
 
       thereAreNoOverlappingAPIContexts
       theServiceWillCreateOrUpdateTheAPIDefinition
@@ -304,10 +309,24 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
           |  ]
           |}""".stripMargin.replaceAll("\n", " ")
 
-      val apiDefinition = APIDefinition("calendar", "http://calendar", "Calendar API", "My Calendar API", "individuals/calendar",
-        versions = Seq(APIVersion("1.0", APIStatus.STABLE, Some(PublicAPIAccess()),
+      val apiDefinition = APIDefinition(
+        "calendar",
+        "http://calendar",
+        "Calendar API",
+        "My Calendar API",
+        "individuals/calendar",
+        versions = Seq(APIVersion(
+          "1.0",
+          APIStatus.STABLE,
+          Some(PublicAPIAccess()),
           Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
-          Some(true))), requiresTrust = Some(true), None, None, Some(Seq(OTHER)))
+          Some(true)
+        )),
+        requiresTrust = Some(true),
+        None,
+        None,
+        Some(Seq(OTHER))
+      )
 
       thereAreNoOverlappingAPIContexts
       theServiceWillCreateOrUpdateTheAPIDefinition
@@ -347,10 +366,19 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
           |  ]
           |}""".stripMargin.replaceAll("\n", " ")
 
-      val apiDefinition = APIDefinition("calendar", "http://calendar", "Calendar API", "My Calendar API", "individuals/calendar",
-        versions = Seq(APIVersion("1.0", APIStatus.STABLE, None,
-          Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
-          Some(true))), requiresTrust = Some(true), None, None, Some(Seq(OTHER)))
+      val apiDefinition = APIDefinition(
+        "calendar",
+        "http://calendar",
+        "Calendar API",
+        "My Calendar API",
+        "individuals/calendar",
+        versions =
+          Seq(APIVersion("1.0", APIStatus.STABLE, None, Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)), Some(true))),
+        requiresTrust = Some(true),
+        None,
+        None,
+        Some(Seq(OTHER))
+      )
 
       thereAreNoOverlappingAPIContexts
       theServiceWillCreateOrUpdateTheAPIDefinition
@@ -394,10 +422,24 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
           |  ]
           |}""".stripMargin.replaceAll("\n", " ")
 
-      val apiDefinition = APIDefinition("calendar", "http://calendar", "Calendar API", "My Calendar API", "individuals/calendar",
-        versions = Seq(APIVersion("1.0", APIStatus.STABLE, Some(PrivateAPIAccess(Seq("app-id-1", "app-id-2"))),
+      val apiDefinition = APIDefinition(
+        "calendar",
+        "http://calendar",
+        "Calendar API",
+        "My Calendar API",
+        "individuals/calendar",
+        versions = Seq(APIVersion(
+          "1.0",
+          APIStatus.STABLE,
+          Some(PrivateAPIAccess(Seq("app-id-1", "app-id-2"))),
           Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
-          Some(true))), requiresTrust = Some(true), None, None, Some(Seq(OTHER)))
+          Some(true)
+        )),
+        requiresTrust = Some(true),
+        None,
+        None,
+        Some(Seq(OTHER))
+      )
 
       thereAreNoOverlappingAPIContexts
       theServiceWillCreateOrUpdateTheAPIDefinition
@@ -450,11 +492,21 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
 
   "fetch" should {
     "succeed with a 200 (ok) when a public API exists for the given serviceName" in new Setup {
-      val apiDefinition = APIDefinition(serviceName, "http://calendar", "Calendar API", "My Calendar API", "calendar",
-        versions = Seq(APIVersion("1.0", APIStatus.BETA, Some(PublicAPIAccess()),
+      val apiDefinition = APIDefinition(
+        serviceName,
+        "http://calendar",
+        "Calendar API",
+        "My Calendar API",
+        "calendar",
+        versions = Seq(APIVersion(
+          "1.0",
+          APIStatus.BETA,
+          Some(PublicAPIAccess()),
           Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
-          Some(true))),
-        requiresTrust = None)
+          Some(true)
+        )),
+        requiresTrust = None
+      )
 
       when(mockAPIDefinitionService.fetchByServiceName(eqTo(serviceName)))
         .thenReturn(successful(Some(apiDefinition)))
@@ -494,7 +546,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
       private val result = underTest.queryDispatcher()(request)
 
       status(result) shouldBe INTERNAL_SERVER_ERROR
-      header(HeaderNames.CACHE_CONTROL,result) shouldBe None
+      header(HeaderNames.CACHE_CONTROL, result) shouldBe None
     }
 
     "return all Private APIs when the type parameter is defined as private" in new QueryDispatcherSetup {
@@ -625,7 +677,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
       "alsoIncludePrivateTrials is specified" should {
 
         val alsoIncludePrivateTrialsQueryParameter = "options=alsoIncludePrivateTrials"
-        val alsoIncludePrivateTrials = true
+        val alsoIncludePrivateTrials               = true
 
         "return all the Public APIs and private trial APIs" in new QueryDispatcherSetup {
 
@@ -689,7 +741,9 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
       private val result = underTest.validate()(request.withBody(Json.parse(calendarApiDefinitionMissingDescription)))
 
       contentAsJson(result) shouldEqual Json.toJson(
-        ErrorResponse(ErrorCode.API_INVALID_JSON, "Json cannot be converted to API Definition",
+        ErrorResponse(
+          ErrorCode.API_INVALID_JSON,
+          "Json cannot be converted to API Definition",
           Some(Seq(
             FieldErrorDescription("/description", "element is missing")
           ))
@@ -732,14 +786,14 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
 
   "fetchAllAPICategories" should {
     "return details of all current API Categories" in new Setup {
-        val result = underTest.fetchAllAPICategories()(request)
+      val result = underTest.fetchAllAPICategories()(request)
 
-        status(result) shouldBe OK
-        val body: String = contentAsString(result)
+      status(result) shouldBe OK
+      val body: String = contentAsString(result)
 
-        APICategory.values.foreach { category =>
-          body.contains(s""""category":"${category.entryName}"""")
-        }
+      APICategory.values.foreach { category =>
+        body.contains(s""""category":"${category.entryName}"""")
+      }
     }
   }
 
@@ -789,7 +843,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
       exception.getMessage shouldBe "Invalid options specified: SomeOtherValue"
     }
   }
-  
+
   private val legacyCalendarApiDefinition =
     """{
       |  "serviceName": "calendar",

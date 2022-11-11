@@ -23,20 +23,21 @@ import org.raml.v2.api.loader.FileResourceLoader
 import uk.gov.hmrc.ramltools.loaders.RamlLoader
 
 class StringRamlLoader extends RamlLoader {
+
   override def load(content: String) = {
     val builder = new RamlModelBuilder()
-    val api = builder.buildApi(content, "")
+    val api     = builder.buildApi(content, "")
     verify(api)
   }
 }
 
 class FileRamlLoader extends RamlLoader {
+
   override def load(filepath: String) = {
-    val file = new File(filepath)
+    val file     = new File(filepath)
     val ramlRoot = file.getParentFile
     val filename = file.getName
-    val builder = new RamlModelBuilder(new FileResourceLoader(ramlRoot))
+    val builder  = new RamlModelBuilder(new FileResourceLoader(ramlRoot))
     verify(builder.buildApi(filename))
   }
 }
-

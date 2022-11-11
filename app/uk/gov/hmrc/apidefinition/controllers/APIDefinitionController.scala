@@ -23,7 +23,7 @@ import play.api.mvc._
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.models.ErrorCode._
 import uk.gov.hmrc.apidefinition.models.JsonFormatters._
-import uk.gov.hmrc.apidefinition.models.{APIDefinition, ErrorCode, APICategory}
+import uk.gov.hmrc.apidefinition.models.{APICategory, APIDefinition, ErrorCode}
 import uk.gov.hmrc.apidefinition.services.APIDefinitionService
 import uk.gov.hmrc.apidefinition.utils.APIDefinitionMapper
 import uk.gov.hmrc.apidefinition.validators.ApiDefinitionValidator
@@ -36,12 +36,14 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
 @Singleton
-class APIDefinitionController @Inject()(apiDefinitionValidator: ApiDefinitionValidator,
-                                        apiDefinitionService: APIDefinitionService,
-                                        apiDefinitionMapper: APIDefinitionMapper,
-                                        appContext: AppConfig,
-                                        cc: ControllerComponents)
-                                       (implicit val ec: ExecutionContext) extends BackendController(cc) with ApplicationLogger {
+class APIDefinitionController @Inject() (
+    apiDefinitionValidator: ApiDefinitionValidator,
+    apiDefinitionService: APIDefinitionService,
+    apiDefinitionMapper: APIDefinitionMapper,
+    appContext: AppConfig,
+    cc: ControllerComponents
+  )(implicit val ec: ExecutionContext
+  ) extends BackendController(cc) with ApplicationLogger {
 
   val fetchByContextTtlInSeconds: String = appContext.fetchByContextTtlInSeconds
 
@@ -66,7 +68,7 @@ class APIDefinitionController @Inject()(apiDefinitionValidator: ApiDefinitionVal
   def fetch(serviceName: String): Action[AnyContent] = Action.async { _ =>
     apiDefinitionService.fetchByServiceName(serviceName) map {
       case Some(apiDefinition) => Ok(Json.toJson(apiDefinition))
-      case _ => NotFound(error(API_DEFINITION_NOT_FOUND, "No API Definition was found"))
+      case _                   => NotFound(error(API_DEFINITION_NOT_FOUND, "No API Definition was found"))
     } recover recovery
   }
 
@@ -85,18 +87,17 @@ class APIDefinitionController @Inject()(apiDefinitionValidator: ApiDefinitionVal
   }
 
   def queryDispatcher(): Action[AnyContent] = Action.async { implicit request =>
-
     val queryParameters: Seq[(String, String)] = request.queryString.toList.map { case (key, values) => (key, values.head) }.sorted
 
     val options = extractQueryOptions(request)
 
     queryParameters match {
-      case Nil | ("options", _) :: Nil => fetchAllPublicAPIs(options.alsoIncludePrivateTrials)
-      case ("context", context) :: Nil => fetchByContext(context)
-      case ("applicationId", applicationId) :: _ => fetchAllForApplication(applicationId, options.alsoIncludePrivateTrials)
-      case ("type", typeValue) :: Nil => fetchDefinitionsByType(typeValue, options.alsoIncludePrivateTrials)
+      case Nil | ("options", _) :: Nil                  => fetchAllPublicAPIs(options.alsoIncludePrivateTrials)
+      case ("context", context) :: Nil                  => fetchByContext(context)
+      case ("applicationId", applicationId) :: _        => fetchAllForApplication(applicationId, options.alsoIncludePrivateTrials)
+      case ("type", typeValue) :: Nil                   => fetchDefinitionsByType(typeValue, options.alsoIncludePrivateTrials)
       case ("options", _) :: ("type", typeValue) :: Nil => fetchDefinitionsByType(typeValue, options.alsoIncludePrivateTrials)
-      case _ => successful(BadRequest("Invalid query parameter or parameters"))
+      case _                                            => successful(BadRequest("Invalid query parameter or parameters"))
     }
   }
 
@@ -134,9 +135,9 @@ class APIDefinitionController @Inject()(apiDefinitionValidator: ApiDefinitionVal
   private def fetchByContext(context: String) = {
     apiDefinitionService
       .fetchByContext(context).map {
-      case Some(api) => Ok(Json.toJson(api)).withHeaders(HeaderNames.CACHE_CONTROL -> s"max-age=$fetchByContextTtlInSeconds")
-      case _ => NotFound(error(API_DEFINITION_NOT_FOUND, "No API Definition was found"))
-    } recover recovery
+        case Some(api) => Ok(Json.toJson(api)).withHeaders(HeaderNames.CACHE_CONTROL -> s"max-age=$fetchByContextTtlInSeconds")
+        case _         => NotFound(error(API_DEFINITION_NOT_FOUND, "No API Definition was found"))
+      } recover recovery
   }
 
   private def fetchAllForApplication(applicationId: String, alsoIncludePrivateTrials: Boolean) = {
@@ -147,10 +148,10 @@ class APIDefinitionController @Inject()(apiDefinitionValidator: ApiDefinitionVal
 
   private def fetchDefinitionsByType(typeParam: String, alsoIncludePrivateTrials: Boolean) = {
     typeParam match {
-      case "public" => fetchAllPublicAPIs(alsoIncludePrivateTrials)
+      case "public"  => fetchAllPublicAPIs(alsoIncludePrivateTrials)
       case "private" => fetchAllPrivateAPIs()
-      case "all" => fetchAll
-      case _ => Future(BadRequest(error(UNSUPPORTED_ACCESS_TYPE, s"$typeParam is not a supported access type")))
+      case "all"     => fetchAll
+      case _         => Future(BadRequest(error(UNSUPPORTED_ACCESS_TYPE, s"$typeParam is not a supported access type")))
     }
   }
 }

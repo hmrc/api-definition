@@ -33,13 +33,16 @@ import scala.concurrent.{ExecutionContext, Future}
 object DocumentationService {
   val PROXY_SAFE_CONTENT_TYPE = "Proxy-Safe-Content-Type"
 }
+
 @Singleton
-class DocumentationService @Inject()(apiDefinitionRepository: APIDefinitionRepository,
-                                     apiMicroserviceConnector: ApiMicroserviceConnector,
-                                     specificationService : SpecificationService,
-                                     config: AppConfig)
-                                    (implicit val ec: ExecutionContext,
-                                     val mat: Materializer) {
+class DocumentationService @Inject() (
+    apiDefinitionRepository: APIDefinitionRepository,
+    apiMicroserviceConnector: ApiMicroserviceConnector,
+    specificationService: SpecificationService,
+    config: AppConfig
+  )(implicit val ec: ExecutionContext,
+    val mat: Materializer
+  ) {
 
   import DocumentationService._
 
@@ -49,22 +52,22 @@ class DocumentationService @Inject()(apiDefinitionRepository: APIDefinitionRepos
     for {
       streamedResponse <- fetchResource(serviceName, version, resource)
     } yield streamedResponse.status match {
-      case OK =>
+      case OK        =>
         val contentType = streamedResponse.contentType
 
         streamedResponse.headers.get("Content-Length") match {
           case Some(Seq(length)) => Ok.sendEntity(HttpEntity.Streamed(streamedResponse.bodyAsSource, Some(length.toLong), Some(contentType)))
-            .withHeaders(createProxySafeContentType(contentType))
+              .withHeaders(createProxySafeContentType(contentType))
 
           case _ => Ok.chunked(streamedResponse.bodyAsSource).as(contentType)
-            .withHeaders(createProxySafeContentType(contentType))
+              .withHeaders(createProxySafeContentType(contentType))
         }
       case NOT_FOUND => throw newNotFoundException(serviceName, version, resource)
-      case status => throw newInternalServerException(serviceName, version, resource, status)
+      case status    => throw newInternalServerException(serviceName, version, resource, status)
     }
   }
 
-  //noinspection ScalaStyle
+  // noinspection ScalaStyle
   private def fetchResource(serviceName: String, version: String, resource: String): Future[WSResponse] = {
 
     def fetchResourceFromMicroservice(serviceBaseUrl: String): Future[WSResponse] =
@@ -75,19 +78,19 @@ class DocumentationService @Inject()(apiDefinitionRepository: APIDefinitionRepos
 
       lazy val failure = Future.failed[APIDefinition](new NotFoundException(s"$serviceName not found"))
 
-      apiDefinitionRepository.fetchByServiceName(serviceName).flatMap( _.fold(failure)(_.pure[Future]) )
+      apiDefinitionRepository.fetchByServiceName(serviceName).flatMap(_.fold(failure)(_.pure[Future]))
     }
 
     def getApiVersionOrThrow(apiDefinition: APIDefinition): Future[Option[APIVersion]] = {
       import cats.implicits._
 
       val failure = Future.failed[Option[APIVersion]](new NotFoundException(s"Version $version of $serviceName not found"))
-      
+
       version match {
         case "common" => None.pure[Future]
-        case v        => 
-            val oVersion = apiDefinition.versions.find(_.version == version)
-            oVersion.fold(failure)(v => Some(v).pure[Future])
+        case v        =>
+          val oVersion = apiDefinition.versions.find(_.version == version)
+          oVersion.fold(failure)(v => Some(v).pure[Future])
       }
     }
 
@@ -96,10 +99,10 @@ class DocumentationService @Inject()(apiDefinitionRepository: APIDefinitionRepos
      */
     for {
       api <- getApiDefinitionOrThrow
-      _ <- getApiVersionOrThrow(api)
+      _   <- getApiVersionOrThrow(api)
 
       serviceBaseUrl = api.serviceBaseUrl
-      response <- fetchResourceFromMicroservice(serviceBaseUrl)
+      response      <- fetchResourceFromMicroservice(serviceBaseUrl)
     } yield response
   }
 
@@ -111,4 +114,3 @@ class DocumentationService @Inject()(apiDefinitionRepository: APIDefinitionRepos
     new NotFoundException(s"$resource not found for $serviceName $version")
   }
 }
-

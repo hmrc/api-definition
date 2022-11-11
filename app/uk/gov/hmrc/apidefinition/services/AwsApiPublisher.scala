@@ -32,8 +32,8 @@ import scala.util.control.NonFatal
 import scala.util.matching.Regex
 
 @Singleton
-class AwsApiPublisher @Inject()(val awsAPIPublisherConnector: AWSAPIPublisherConnector, val apiDefinitionRepository: APIDefinitionRepository)
-                               (implicit val ec: ExecutionContext) extends ApplicationLogger {
+class AwsApiPublisher @Inject() (val awsAPIPublisherConnector: AWSAPIPublisherConnector, val apiDefinitionRepository: APIDefinitionRepository)(implicit val ec: ExecutionContext)
+    extends ApplicationLogger {
 
   val hostRegex: Regex = "https?://(.+)".r
 
@@ -49,7 +49,7 @@ class AwsApiPublisher @Inject()(val awsAPIPublisherConnector: AWSAPIPublisherCon
 
         apiVersion.status match {
           case APIStatus.RETIRED => deleteAPIVersion(apiName)
-          case _ => publishAPIVersion(apiName, apiDefinition.name, apiDefinition.serviceBaseUrl, apiDefinition.context, apiVersion)
+          case _                 => publishAPIVersion(apiName, apiDefinition.name, apiDefinition.serviceBaseUrl, apiDefinition.context, apiVersion)
         }
       }
     } map { _ =>
@@ -60,13 +60,16 @@ class AwsApiPublisher @Inject()(val awsAPIPublisherConnector: AWSAPIPublisherCon
     }
   }
 
-  private def publishAPIVersion(apiName: String,
-                        apiDefinitionName: String,
-                        serviceBaseUrl: String,
-                        context: String,
-                        apiVersion: APIVersion)(implicit hc: HeaderCarrier): Future[Unit] = {
+  private def publishAPIVersion(
+      apiName: String,
+      apiDefinitionName: String,
+      serviceBaseUrl: String,
+      context: String,
+      apiVersion: APIVersion
+    )(implicit hc: HeaderCarrier
+    ): Future[Unit] = {
     val hostRegex(host) = serviceBaseUrl
-    val swagger = buildAWSSwaggerDetails(apiDefinitionName, apiVersion, context, host)
+    val swagger         = buildAWSSwaggerDetails(apiDefinitionName, apiVersion, context, host)
     awsAPIPublisherConnector.createOrUpdateAPI(apiName, swagger)(hc)
       .map(awsRequestId => logger.info(s"Successfully published API [$apiName] Version [${apiVersion.version}] under AWS Request Id [$awsRequestId]"))
   }
@@ -76,7 +79,7 @@ class AwsApiPublisher @Inject()(val awsAPIPublisherConnector: AWSAPIPublisherCon
       apiDefinition.versions.map { apiVersion =>
         deleteAPIVersion(awsApiGatewayName(apiVersion.version, apiDefinition))
       }
-    } map {_ =>
+    } map { _ =>
       logger.info(s"Successfully deleted all versions for API '${apiDefinition.serviceName}' from AWS API Gateway")
     } recover {
       case NonFatal(e) => logger.error(s"Failed to delete API '${apiDefinition.serviceName}' from AWS API Gateway", e)

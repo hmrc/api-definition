@@ -19,8 +19,7 @@ package uk.gov.hmrc.apidefinition.utils
 import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.utils.AWSPayloadHelper._
 
-class AWSPayloadHelperSpec extends AsyncHmrcSpec
- {
+class AWSPayloadHelperSpec extends AsyncHmrcSpec {
 
   val endpoint: Endpoint = Endpoint(
     uriPattern = "",
@@ -29,7 +28,8 @@ class AWSPayloadHelperSpec extends AsyncHmrcSpec
     authType = AuthType.NONE,
     throttlingTier = ResourceThrottlingTier.UNLIMITED,
     scope = None,
-    queryParameters = None)
+    queryParameters = None
+  )
 
   private val queryParameters = Seq(
     Parameter(name = "city"),
@@ -61,21 +61,21 @@ class AWSPayloadHelperSpec extends AsyncHmrcSpec
 
       val constructedSwaggerDetails: AWSSwaggerDetails = buildAWSSwaggerDetails("new-api", apiVersion, "foo/bar", "https://test.mdtp")
 
-      constructedSwaggerDetails.info.title should be ("new-api")
-      constructedSwaggerDetails.info.version should be ("1.0")
-      constructedSwaggerDetails.basePath should be (Some("/foo/bar"))
-      constructedSwaggerDetails.host should be (Some("https://test.mdtp"))
-      constructedSwaggerDetails.paths.size should be (1)
+      constructedSwaggerDetails.info.title should be("new-api")
+      constructedSwaggerDetails.info.version should be("1.0")
+      constructedSwaggerDetails.basePath should be(Some("/foo/bar"))
+      constructedSwaggerDetails.host should be(Some("https://test.mdtp"))
+      constructedSwaggerDetails.paths.size should be(1)
 
       val constructedPath = constructedSwaggerDetails.paths.get("/friend")
-      constructedPath.isDefined should be (true)
+      constructedPath.isDefined should be(true)
 
       val constructedVerb = constructedPath.get("get")
-      constructedVerb.`x-auth-type` should be ("Application User")
-      constructedVerb.`x-scope` should be (Some("read:user"))
-      constructedVerb.`x-throttling-tier` should be ("Unlimited")
-      constructedVerb.responses.size should be (1)
-      constructedVerb.responses.head should be (("200", AWSResponse("OK")))
+      constructedVerb.`x-auth-type` should be("Application User")
+      constructedVerb.`x-scope` should be(Some("read:user"))
+      constructedVerb.`x-throttling-tier` should be("Unlimited")
+      constructedVerb.responses.size should be(1)
+      constructedVerb.responses.head should be(("200", AWSResponse("OK")))
     }
   }
 
@@ -90,7 +90,8 @@ class AWSPayloadHelperSpec extends AsyncHmrcSpec
     "return all path parameters sorted by segment precedence" in {
       val expectedPathParameters = Seq(
         AWSPathParameter(name = "surname"),
-        AWSPathParameter(name = "nickname"))
+        AWSPathParameter(name = "nickname")
+      )
 
       buildAWSPathParameters(endpointWithPathParameters) shouldBe expectedPathParameters
     }
@@ -106,7 +107,8 @@ class AWSPayloadHelperSpec extends AsyncHmrcSpec
       val expectedQueryParameters = Seq(
         AWSQueryParameter(name = "address", required = true),
         AWSQueryParameter(name = "city", required = false),
-        AWSQueryParameter(name = "postcode", required = true))
+        AWSQueryParameter(name = "postcode", required = true)
+      )
 
       buildAWSQueryParameters(endpointWithQueryParameters) shouldBe expectedQueryParameters
     }
@@ -126,7 +128,8 @@ class AWSPayloadHelperSpec extends AsyncHmrcSpec
         AWSPathParameter(name = "nickname"),
         AWSQueryParameter(name = "address", required = true),
         AWSQueryParameter(name = "city", required = false),
-        AWSQueryParameter(name = "postcode", required = true))
+        AWSQueryParameter(name = "postcode", required = true)
+      )
 
       buildAWSParameters(endpointWithManyParams) shouldBe Some(expectedParameters)
     }

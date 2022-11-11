@@ -27,7 +27,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.apidefinition.utils.Utils
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 
-class ApiMicroserviceConnectorSpec extends AsyncHmrcSpec with Utils with MockWSHelpers with BeforeAndAfterAll{
+class ApiMicroserviceConnectorSpec extends AsyncHmrcSpec with Utils with MockWSHelpers with BeforeAndAfterAll {
 
   override def afterAll(): Unit = {
     shutdownHelpers()
@@ -35,22 +35,22 @@ class ApiMicroserviceConnectorSpec extends AsyncHmrcSpec with Utils with MockWSH
 
   val serviceUrl = "http://localhost"
 
-  val serviceName = "hello-world"
-  val version = "1.0"
-  val resourceFoundUrl = s"$serviceUrl/api/conf/$version/resource"
+  val serviceName         = "hello-world"
+  val version             = "1.0"
+  val resourceFoundUrl    = s"$serviceUrl/api/conf/$version/resource"
   val streamedResourceUrl = s"$serviceUrl/api/conf/$version/streamedResource"
   val resourceNotFoundUrl = s"$serviceUrl/api/conf/$version/resourceNotThere"
 
-  val testFileName = "hello"
+  val testFileName                  = "hello"
   val source: Source[ByteString, _] = createSourceFrom(testFileName)
-  val sourceContents = contentsFrom(testFileName)
+  val sourceContents                = contentsFrom(testFileName)
 
   val mockWS = MockWS {
-    case ("GET", `resourceFoundUrl`) => Action(Results.Ok("hello world"))
+    case ("GET", `resourceFoundUrl`)    => Action(Results.Ok("hello world"))
     case ("GET", `streamedResourceUrl`) => Action(Result(
-      header = ResponseHeader(OK, Map("Content-length" -> s"${sourceContents.length()}")),
-      body = HttpEntity.Streamed(source, Some(sourceContents.length()), Some("application/pdf"))
-    ))
+        header = ResponseHeader(OK, Map("Content-length" -> s"${sourceContents.length()}")),
+        body = HttpEntity.Streamed(source, Some(sourceContents.length()), Some("application/pdf"))
+      ))
     case ("GET", `resourceNotFoundUrl`) => Action(Results.NotFound)
   }
 
@@ -58,7 +58,7 @@ class ApiMicroserviceConnectorSpec extends AsyncHmrcSpec with Utils with MockWSH
     import scala.concurrent.ExecutionContext.Implicits.global
 
     implicit val hc = HeaderCarrier()
-    val underTest = new ApiMicroserviceConnector(mockWS)
+    val underTest   = new ApiMicroserviceConnector(mockWS)
   }
 
   "fetchApiDocumentationResourceByUrl" should {

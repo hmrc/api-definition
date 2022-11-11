@@ -22,20 +22,18 @@ object ErrorCode extends Enumeration {
 
   type ErrorCode = Value
 
-  val INVALID_REQUEST_PAYLOAD = Value("INVALID_REQUEST_PAYLOAD")
-  val INTERNAL_SERVER_ERROR = Value("INTERNAL_SERVER_ERROR")
+  val INVALID_REQUEST_PAYLOAD  = Value("INVALID_REQUEST_PAYLOAD")
+  val INTERNAL_SERVER_ERROR    = Value("INTERNAL_SERVER_ERROR")
   val API_DEFINITION_NOT_FOUND = Value("API_DEFINITION_NOT_FOUND")
-  val API_INVALID_JSON = Value("API_INVALID_JSON")
-  val CONTEXT_ALREADY_DEFINED = Value("CONTEXT_ALREADY_DEFINED")
-  val UNSUPPORTED_ACCESS_TYPE = Value("UNSUPPORTED_ACCESS_TYPE")
+  val API_INVALID_JSON         = Value("API_INVALID_JSON")
+  val CONTEXT_ALREADY_DEFINED  = Value("CONTEXT_ALREADY_DEFINED")
+  val UNSUPPORTED_ACCESS_TYPE  = Value("UNSUPPORTED_ACCESS_TYPE")
 }
-
-
 
 case class ValidationErrors(code: ErrorCode.Value, messages: Seq[String])
 
 object ValidationErrors {
-  implicit val format1: Format[ErrorCode.Value] = EnumJson.enumFormat(ErrorCode)
+  implicit val format1: Format[ErrorCode.Value]   = EnumJson.enumFormat(ErrorCode)
   implicit val format2: OFormat[ValidationErrors] = Json.format[ValidationErrors]
 }
 

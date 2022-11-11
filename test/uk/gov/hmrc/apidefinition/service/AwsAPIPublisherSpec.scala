@@ -34,22 +34,28 @@ import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 class AwsAPIPublisherSpec extends AsyncHmrcSpec {
 
   private def anAPIVersion(version: String, status: APIStatus = APIStatus.PROTOTYPED) = APIVersion(
-      version,
-      status,
-      Some(PublicAPIAccess()),
-      Seq(
-        Endpoint(
-          "/today",
-          "Get Today's Date",
-          HttpMethod.GET,
-          AuthType.NONE,
-          ResourceThrottlingTier.UNLIMITED)))
+    version,
+    status,
+    Some(PublicAPIAccess()),
+    Seq(
+      Endpoint(
+        "/today",
+        "Get Today's Date",
+        HttpMethod.GET,
+        AuthType.NONE,
+        ResourceThrottlingTier.UNLIMITED
+      )
+    )
+  )
 
   private val host = UUID.randomUUID().toString
-  private def someAPIDefinition(name: String = UUID.randomUUID().toString,
-                                context: String = UUID.randomUUID().toString,
-                                serviceBaseUrl: String = s"https://$host",
-                                versions: Seq[APIVersion] = Seq(anAPIVersion("2.0"))): APIDefinition = {
+
+  private def someAPIDefinition(
+      name: String = UUID.randomUUID().toString,
+      context: String = UUID.randomUUID().toString,
+      serviceBaseUrl: String = s"https://$host",
+      versions: Seq[APIVersion] = Seq(anAPIVersion("2.0"))
+    ): APIDefinition = {
     APIDefinition(
       UUID.randomUUID().toString,
       serviceBaseUrl,
@@ -57,7 +63,8 @@ class AwsAPIPublisherSpec extends AsyncHmrcSpec {
       UUID.randomUUID().toString,
       context,
       versions,
-      None)
+      None
+    )
   }
 
   private trait Setup {
@@ -72,8 +79,8 @@ class AwsAPIPublisherSpec extends AsyncHmrcSpec {
       val swaggerDetailsCaptor: ArgumentCaptor[AWSSwaggerDetails] = ArgumentCaptor.forClass(classOf[AWSSwaggerDetails])
       when(underTest.awsAPIPublisherConnector.createOrUpdateAPI(*, swaggerDetailsCaptor.capture())(*))
         .thenReturn(successful(UUID.randomUUID().toString))
-      val apiDefinition1: APIDefinition = someAPIDefinition("API 1")
-      val apiDefinition2: APIDefinition = someAPIDefinition("API 2")
+      val apiDefinition1: APIDefinition                           = someAPIDefinition("API 1")
+      val apiDefinition2: APIDefinition                           = someAPIDefinition("API 2")
 
       await(underTest.publishAll(Seq(apiDefinition1, apiDefinition2)))
 
@@ -89,7 +96,7 @@ class AwsAPIPublisherSpec extends AsyncHmrcSpec {
       val swaggerDetailsCaptor: ArgumentCaptor[AWSSwaggerDetails] = ArgumentCaptor.forClass(classOf[AWSSwaggerDetails])
       when(underTest.awsAPIPublisherConnector.createOrUpdateAPI(*, swaggerDetailsCaptor.capture())(*))
         .thenReturn(successful(UUID.randomUUID().toString))
-      val apiDefinition: APIDefinition = someAPIDefinition()
+      val apiDefinition: APIDefinition                            = someAPIDefinition()
 
       await(underTest.publish(apiDefinition))
 
@@ -152,7 +159,7 @@ class AwsAPIPublisherSpec extends AsyncHmrcSpec {
 
       val result: Unit = await(underTest.delete(someAPIDefinition()))
 
-      result shouldBe(())
+      result shouldBe (())
     }
   }
 }

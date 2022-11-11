@@ -21,15 +21,13 @@ import org.joda.time.{DateTime, DateTimeZone}
 import play.api.libs.json.{JsError, JsNumber, Json}
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 
-
-class JsonFormattersSpec extends AsyncHmrcSpec
- {
+class JsonFormattersSpec extends AsyncHmrcSpec {
 
   "JsonFormatters" should {
 
-    "fail to read a DateTime json value if not formatted in ISO 8601" in  {
+    "fail to read a DateTime json value if not formatted in ISO 8601" in {
       val timeInMillis = DateTime.now(DateTimeZone.UTC).getMillis
-      val dateTime = JsNumber(timeInMillis)
+      val dateTime     = JsNumber(timeInMillis)
 
       val expectedErrorMessage = JsError(s"Unexpected format for DateTime: $dateTime")
       Json.fromJson[DateTime](json = dateTime)(fjs = dateTimeReads) shouldBe expectedErrorMessage

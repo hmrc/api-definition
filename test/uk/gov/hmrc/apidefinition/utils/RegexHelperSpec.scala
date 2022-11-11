@@ -18,8 +18,7 @@ package uk.gov.hmrc.apidefinition.utils
 
 import uk.gov.hmrc.apidefinition.utils.RegexHelper.extractPathParameters
 
-class RegexHelperSpec extends AsyncHmrcSpec
- {
+class RegexHelperSpec extends AsyncHmrcSpec {
 
   "extractPathParameters()" should {
 

@@ -19,7 +19,7 @@ package uk.gov.hmrc.apidefinition.utils
 import java.nio.file.Paths
 
 import akka.stream.scaladsl.{FileIO, Sink, Source}
-import akka.stream.{Materializer, IOResult}
+import akka.stream.{IOResult, Materializer}
 import akka.util.ByteString
 import play.api.libs.ws.WSResponse
 
@@ -39,7 +39,7 @@ trait Utils {
 
   def contentsFrom(fileName: String): String = {
     val stream = getClass.getResourceAsStream("/" + fileName)
-    if(stream != null) scala.io.Source.fromInputStream(stream).mkString else fileName
+    if (stream != null) scala.io.Source.fromInputStream(stream).mkString else fileName
 
   }
 

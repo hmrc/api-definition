@@ -30,13 +30,15 @@ import scala.concurrent.Future._
 class NotificationServiceSpec extends AsyncHmrcSpec {
 
   trait EmailNotificationSetup {
+
     def httpCallIsSuccessful(): ArgumentCaptor[SendEmailRequest] = {
       val sendEmailRequestCaptor: ArgumentCaptor[SendEmailRequest] = ArgumentCaptor.forClass(classOf[SendEmailRequest])
 
       when(mockHTTPClient.POST[SendEmailRequest, HttpResponse](
         matches(emailServiceURL),
         sendEmailRequestCaptor.capture(),
-        any[Seq[(String, String)]])(*, *, *, *)).thenReturn(successful(HttpResponse(OK, "")))
+        any[Seq[(String, String)]]
+      )(*, *, *, *)).thenReturn(successful(HttpResponse(OK, "")))
 
       sendEmailRequestCaptor
     }
@@ -45,20 +47,22 @@ class NotificationServiceSpec extends AsyncHmrcSpec {
       when(mockHTTPClient.POST[SendEmailRequest, HttpResponse](
         matches(emailServiceURL),
         any[SendEmailRequest],
-        any[Seq[(String, String)]])(*, *, *, *)).thenReturn(successful(HttpResponse(NOT_FOUND, "")))
+        any[Seq[(String, String)]]
+      )(*, *, *, *)).thenReturn(successful(HttpResponse(NOT_FOUND, "")))
 
     def callToEmailServiceFails(body: String): Unit = {
       when(mockHTTPClient.POST[SendEmailRequest, HttpResponse](
         matches(emailServiceURL),
         any[SendEmailRequest],
-        any[Seq[(String, String)]])(*, *, *, *)).thenReturn(successful(HttpResponse(INTERNAL_SERVER_ERROR, body)))
+        any[Seq[(String, String)]]
+      )(*, *, *, *)).thenReturn(successful(HttpResponse(INTERNAL_SERVER_ERROR, body)))
     }
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val emailServiceURL: String = "https://localhost:9876/hmrc/email"
-    val emailTemplateId: String = UUID.randomUUID().toString
-    val environmentName: String = "Production"
+    val emailServiceURL: String     = "https://localhost:9876/hmrc/email"
+    val emailTemplateId: String     = UUID.randomUUID().toString
+    val environmentName: String     = "Production"
     val emailAddresses: Set[String] = Set("foo@bar.com")
 
     val mockHTTPClient: HttpClient = mock[HttpClient]
@@ -67,12 +71,12 @@ class NotificationServiceSpec extends AsyncHmrcSpec {
   }
 
   "Email Notification Service" should {
-    val apiName = "API"
+    val apiName    = "API"
     val apiVersion = "1.0"
 
     "make appropriate HTTP call email service to send message" in new EmailNotificationSetup {
       private val existingAPIStatus = APIStatus.ALPHA
-      private val newAPIStatus = APIStatus.BETA
+      private val newAPIStatus      = APIStatus.BETA
 
       private val requestCaptor: ArgumentCaptor[SendEmailRequest] = httpCallIsSuccessful()
 

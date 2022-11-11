@@ -25,12 +25,12 @@ class ApiSpecificationFormattersSpec extends AsyncHmrcSpec {
 
   "ApiSpecificationFormatters for ExampleSpec" should {
     "handle Some(empty string)" in {
-      val es = ExampleSpec(None, None, Some(""), None)
+      val es               = ExampleSpec(None, None, Some(""), None)
       val jsonText: String = Json.prettyPrint(Json.toJson(es))
       jsonText.contains(""""code" : """") shouldBe true
     }
     "handle the reading of json" in {
-      val jsonText =
+      val jsonText        =
         """
           |{
           |  "description" : "some text",
@@ -43,18 +43,18 @@ class ApiSpecificationFormattersSpec extends AsyncHmrcSpec {
     }
     "Type Declaration" should {
       "handle writing empty lists" in {
-        val td = TypeDeclaration("Name", "Display Name", "Type", true, None, List(), List(), None)
+        val td               = TypeDeclaration("Name", "Display Name", "Type", true, None, List(), List(), None)
         val jsonText: String = Json.prettyPrint(Json.toJson(td))
         jsonText.contains(""""examples" : """) shouldBe false
         jsonText.contains(""""enumValues" : """) shouldBe false
       }
       "handle writing non-empty lists" in {
-        val td = TypeDeclaration("Name", "Display Name", "Type", true, None, List(), List("Enum"), None)
+        val td               = TypeDeclaration("Name", "Display Name", "Type", true, None, List(), List("Enum"), None)
         val jsonText: String = Json.prettyPrint(Json.toJson(td))
         jsonText.contains(""""enumValues" : [""") shouldBe true
       }
       "handle reading missing lists/values" in {
-        val jsonText =
+        val jsonText            =
           """{
             | "name": "Name",
             | "displayName":"Display Name",
@@ -70,14 +70,14 @@ class ApiSpecificationFormattersSpec extends AsyncHmrcSpec {
     }
     "Response" should {
       "handle writing empty lists" in {
-        val resp = Response("123", List(), List(), None)
+        val resp             = Response("123", List(), List(), None)
         val jsonText: String = Json.prettyPrint(Json.toJson(resp))
         jsonText.contains(""""body" : """) shouldBe false
         jsonText.contains(""""headers" : """) shouldBe false
       }
 
       "handle reading missing lists/values" in {
-        val jsonText =
+        val jsonText           =
           """{
             | "code": "123"
             |}""".stripMargin

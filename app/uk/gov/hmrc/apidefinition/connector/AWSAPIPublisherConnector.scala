@@ -36,30 +36,32 @@ import scala.concurrent.Future.{failed, successful}
 object AWSAPIPublisherConnector {
   // Deliberately upper case RequestId !
   case class RequestId(RequestId: String)
-  
+
   implicit val requestIdReads = Json.reads[RequestId]
 }
 
-class AWSAPIPublisherConnector @Inject()(http: HttpClient,
-                                         environment: Environment,
-                                         appContext: AppConfig,
-                                         val runModeConfiguration: Configuration,
-                                         servicesConfig: ServicesConfig)
-                                        (implicit val ec: ExecutionContext)  {
+class AWSAPIPublisherConnector @Inject() (
+    http: HttpClient,
+    environment: Environment,
+    appContext: AppConfig,
+    val runModeConfiguration: Configuration,
+    servicesConfig: ServicesConfig
+  )(implicit val ec: ExecutionContext
+  ) {
   import AWSAPIPublisherConnector._
 
   protected def mode: Mode = environment.mode
 
-  val serviceBaseUrl: String = s"""${servicesConfig.baseUrl("aws-gateway")}/v1/api"""
-  val awsApiKey: String = runModeConfiguration.get[String]("awsApiKey")
-  val apiKeyHeaderName = "x-api-key"
+  val serviceBaseUrl: String         = s"""${servicesConfig.baseUrl("aws-gateway")}/v1/api"""
+  val awsApiKey: String              = runModeConfiguration.get[String]("awsApiKey")
+  val apiKeyHeaderName               = "x-api-key"
   val headers: Seq[(String, String)] = Seq(CONTENT_TYPE -> JSON, apiKeyHeaderName -> awsApiKey)
 
   def createOrUpdateAPI(apiName: String, awsSwaggerDetails: AWSSwaggerDetails)(hc: HeaderCarrier): Future[String] = {
     implicit val headersWithoutAuthorization: HeaderCarrier = hc.copy(authorization = None)
     http.PUT[AWSSwaggerDetails, Either[UpstreamErrorResponse, RequestId]](s"$serviceBaseUrl/$apiName", awsSwaggerDetails, headers) flatMap {
       case Right(RequestId(value)) => successful(value)
-      case Left(err) => failed(err)
+      case Left(err)               => failed(err)
     }
   }
 
@@ -70,7 +72,7 @@ class AWSAPIPublisherConnector @Inject()(http: HttpClient,
 
     http.DELETE[Either[UpstreamErrorResponse, RequestId]](s"$serviceBaseUrl/$apiName") flatMap {
       case Right(RequestId(value)) => successful(value)
-      case Left(err) => failed(err)
+      case Left(err)               => failed(err)
     }
   }
 }

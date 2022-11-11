@@ -17,6 +17,7 @@
 package uk.gov.hmrc.apidefinition.models.apispecification
 
 case class ResourceGroup(name: Option[String] = None, description: Option[String] = None, resources: List[Resource] = Nil) {
+
   def +(resource: Resource) = {
     // NOTE : Appending to end of list is not efficient but the list is small and we need to retain order (otherwise we need two reverses)
     ResourceGroup(name, description, resources :+ resource)
@@ -24,11 +25,12 @@ case class ResourceGroup(name: Option[String] = None, description: Option[String
 }
 
 object ResourceGroup {
+
   def generateFrom(rootResources: List[Resource], groupMap: ResourcesAndGroups.GroupMap): List[ResourceGroup] = {
 
     def flatten(resources: List[Resource], acc: List[Resource]): List[Resource] = {
       resources match {
-        case Nil => acc
+        case Nil          => acc
         case head :: tail =>
           // NOTE : Appending to end of list is not efficient but the list is small and we need to retain order
           flatten(tail, flatten(head.children, head :: acc))
@@ -45,7 +47,7 @@ object ResourceGroup {
             group(tail, currentGroup + head, groups)
           }
         }
-        case _ => groups :+ currentGroup
+        case _            => groups :+ currentGroup
       }
     }
 

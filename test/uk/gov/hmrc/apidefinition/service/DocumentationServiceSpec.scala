@@ -49,18 +49,39 @@ import play.shaded.ahc.org.asynchttpclient.DefaultAsyncHttpClientConfig
 class DocumentationServiceSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite with Utils {
   import DocumentationService.PROXY_SAFE_CONTENT_TYPE
 
-  val serviceName = "hello-world"
-  val version = "1.0"
-  val serviceUrl = "http://localhost"
+  val serviceName                               = "hello-world"
+  val version                                   = "1.0"
+  val serviceUrl                                = "http://localhost"
+
   val productionV1Availability: APIAvailability = APIAvailability(
-    endpointsEnabled = true, PrivateAPIAccess(Seq.empty), loggedIn = false, authorised = false)
+    endpointsEnabled = true,
+    PrivateAPIAccess(Seq.empty),
+    loggedIn = false,
+    authorised = false
+  )
+
   val productionV2Availability: APIAvailability = APIAvailability(
-    endpointsEnabled = true, PrivateAPIAccess(Seq.empty), loggedIn = false, authorised = false)
-  val sandboxV2Availability: APIAvailability = APIAvailability(
-    endpointsEnabled = true, PublicAPIAccess(),loggedIn = false, authorised = false)
-  val sandboxV3Availability: APIAvailability = APIAvailability(
-    endpointsEnabled = false, PublicAPIAccess(), loggedIn = false, authorised = false)
-  val apiDefinition: APIDefinition = APIDefinition(
+    endpointsEnabled = true,
+    PrivateAPIAccess(Seq.empty),
+    loggedIn = false,
+    authorised = false
+  )
+
+  val sandboxV2Availability: APIAvailability    = APIAvailability(
+    endpointsEnabled = true,
+    PublicAPIAccess(),
+    loggedIn = false,
+    authorised = false
+  )
+
+  val sandboxV3Availability: APIAvailability    = APIAvailability(
+    endpointsEnabled = false,
+    PublicAPIAccess(),
+    loggedIn = false,
+    authorised = false
+  )
+
+  val apiDefinition: APIDefinition              = APIDefinition(
     serviceName = serviceName,
     serviceBaseUrl = serviceUrl,
     name = "Hello World",
@@ -78,34 +99,35 @@ class DocumentationServiceSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wi
 
   private val sampleFileSource: Source[ByteString, _] = createSourceFrom("hello")
 
-  def createResponse(statusCode: Int,  headers: Map[String, String], fileSource: Source[ByteString, _]): WSResponse = {
-    val uri: Uri = Uri.create(serviceUrl)
-    val status = new CacheableHttpResponseStatus(uri, statusCode , "", "")
+  def createResponse(statusCode: Int, headers: Map[String, String], fileSource: Source[ByteString, _]): WSResponse = {
+    val uri: Uri       = Uri.create(serviceUrl)
+    val status         = new CacheableHttpResponseStatus(uri, statusCode, "", "")
     val defaultHeaders = new DefaultHttpHeaders()
     headers foreach { case (k, v) => defaultHeaders.add(k, v) }
-    //val responseHeaders = CacheableHttpResponseHeaders(trailingHeaders = false, headers = defaultHeaders)
-    val bodyParts = util.Collections.emptyList[CacheableHttpResponseBodyPart]
-    
+    // val responseHeaders = CacheableHttpResponseHeaders(trailingHeaders = false, headers = defaultHeaders)
+    val bodyParts      = util.Collections.emptyList[CacheableHttpResponseBodyPart]
+
     val cf: AsyncHttpClientConfig = new DefaultAsyncHttpClientConfig.Builder().build()
 
-    //TODO work out how to add source bytestream to bodyparts & copy headers
+    // TODO work out how to add source bytestream to bodyparts & copy headers
     AhcWSResponse(new StandaloneAhcWSResponse(CacheableResponse(status = status, headers = defaultHeaders, bodyParts = bodyParts, ahcConfig = cf)))
   }
 
-  private val streamedResource: WSResponse =
+  private val streamedResource: WSResponse            =
     createResponse(Status.OK, Map("Content-Type" -> "application/text", "Content-Length" -> "hello".length.toString), sampleFileSource)
-  private val chunkedResource: WSResponse = createResponse(Status.OK, Map.empty, sampleFileSource)
-  private val notFoundResponse: WSResponse = createResponse(Status.NOT_FOUND, Map.empty, sampleFileSource)
+  private val chunkedResource: WSResponse             = createResponse(Status.OK, Map.empty, sampleFileSource)
+  private val notFoundResponse: WSResponse            = createResponse(Status.NOT_FOUND, Map.empty, sampleFileSource)
   private val internalServerErrorResponse: WSResponse = createResponse(Status.INTERNAL_SERVER_ERROR, Map.empty, sampleFileSource)
-  
+
   implicit val materializer: Materializer = app.materializer
+
   trait Setup {
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val mockAPIDefinitionRepository: APIDefinitionRepository = mock[APIDefinitionRepository]
+    val mockAPIDefinitionRepository: APIDefinitionRepository   = mock[APIDefinitionRepository]
     val mockApiMicroserviceConnector: ApiMicroserviceConnector = mock[ApiMicroserviceConnector]
-    val mockServiceConfig: AppConfig = mock[AppConfig]
-    val mockSpecificationService : SpecificationService = mock[SpecificationService]
+    val mockServiceConfig: AppConfig                           = mock[AppConfig]
+    val mockSpecificationService: SpecificationService         = mock[SpecificationService]
 
     val underTest = new DocumentationService(
       mockAPIDefinitionRepository,

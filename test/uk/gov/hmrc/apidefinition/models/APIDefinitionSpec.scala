@@ -21,9 +21,7 @@ import uk.gov.hmrc.apidefinition.models.APICategory._
 import uk.gov.hmrc.apidefinition.models.JsonFormatters._
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 
-
-class APIDefinitionSpec extends AsyncHmrcSpec
- {
+class APIDefinitionSpec extends AsyncHmrcSpec {
 
   "APIAccess" should {
     "marshall from json for private access without whitelistedApplicationIds" in {
@@ -34,10 +32,7 @@ class APIDefinitionSpec extends AsyncHmrcSpec
   }
 
   "APIDefinition" should {
-    def anApiDefinition(accessType: String = "PUBLIC",
-                        whitelistedApplicationIds: Option[String] = None,
-                        isTrial: Option[Boolean] = None,
-                        categories: Option[String] = None) = {
+    def anApiDefinition(accessType: String = "PUBLIC", whitelistedApplicationIds: Option[String] = None, isTrial: Option[Boolean] = None, categories: Option[String] = None) = {
 
       val body =
         s"""{
@@ -92,14 +87,19 @@ class APIDefinitionSpec extends AsyncHmrcSpec
 
     "read from JSON when the API access type is PRIVATE and there is an empty whitelist" in {
       val apiDefinition = anApiDefinition(
-        accessType = "PRIVATE", whitelistedApplicationIds = Some("[]"))
+        accessType = "PRIVATE",
+        whitelistedApplicationIds = Some("[]")
+      )
 
       apiDefinition.versions.head.access shouldBe Some(PrivateAPIAccess(Seq.empty))
     }
 
     "read from JSON when the API access type is PRIVATE and there is an empty whitelist and isTrial is true" in {
       val apiDefinition = anApiDefinition(
-        accessType = "PRIVATE", whitelistedApplicationIds = Some("[]"), isTrial = Some(true))
+        accessType = "PRIVATE",
+        whitelistedApplicationIds = Some("[]"),
+        isTrial = Some(true)
+      )
 
       apiDefinition.versions.head.access shouldBe Some(PrivateAPIAccess(Seq.empty, Some(true)))
     }

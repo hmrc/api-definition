@@ -33,14 +33,15 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class APIDefinitionRepository @Inject()(mongoComponent: MongoComponent)(implicit val ec: ExecutionContext)
-  extends PlayMongoRepository[APIDefinition](
-    collectionName = "api",
-    mongoComponent = mongoComponent,
-    domainFormat = formatAPIDefinition,
-    indexes = Seq("context", "name", "serviceName", "serviceBaseUrl")
-      .map(fieldName => createUniqueBackgroundSingleFieldAscendingIndex(fieldName, s"${fieldName}Index"))
-  ) with Logging {
+class APIDefinitionRepository @Inject() (mongoComponent: MongoComponent)(implicit val ec: ExecutionContext)
+    extends PlayMongoRepository[APIDefinition](
+      collectionName = "api",
+      mongoComponent = mongoComponent,
+      domainFormat = formatAPIDefinition,
+      indexes = Seq("context", "name", "serviceName", "serviceBaseUrl")
+        .map(fieldName => createUniqueBackgroundSingleFieldAscendingIndex(fieldName, s"${fieldName}Index"))
+    ) with Logging {
+
   override lazy val collection: MongoCollection[APIDefinition] =
     CollectionFactory
       .collection(mongoComponent.database, collectionName, domainFormat)
