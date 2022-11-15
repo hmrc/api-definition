@@ -52,7 +52,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll {
   }
 
   private def anAPIDefinition(context: String, versions: APIVersion*) =
-    APIDefinition("service", "http://service", "name", "description", context, versions, None, None, None)
+    APIDefinition("service", "http://service", "name", "description", context, versions.toList, None, None, None)
 
   trait Setup {
 
@@ -74,12 +74,12 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll {
 
     val versionWithoutAccessDefined: APIVersion         = aVersion(version = "1.0", access = None)
     val publicVersion                                   = aVersion(version = "2.0", access = Some(PublicAPIAccess()))
-    val privateVersionWithAppWhitelisted: APIVersion    = aVersion(version = "3.0", access = Some(PrivateAPIAccess(Seq(applicationId.toString))))
-    val privateVersionWithoutAppWhitelisted: APIVersion = aVersion(version = "3.1", access = Some(PrivateAPIAccess(Seq("OTHER_APP_ID"))))
-    val privateTrialVersionWithWhitelist                = aVersion(version = "4.0", access = Some(PrivateAPIAccess(Seq(applicationId.toString), isTrial = Some(true))))
-    val privateTrialVersionWithoutWhitelist             = aVersion(version = "4.1", access = Some(PrivateAPIAccess(Seq.empty, isTrial = Some(true))))
+    val privateVersionWithAppWhitelisted: APIVersion    = aVersion(version = "3.0", access = Some(PrivateAPIAccess(List(applicationId.toString))))
+    val privateVersionWithoutAppWhitelisted: APIVersion = aVersion(version = "3.1", access = Some(PrivateAPIAccess(List("OTHER_APP_ID"))))
+    val privateTrialVersionWithWhitelist                = aVersion(version = "4.0", access = Some(PrivateAPIAccess(List(applicationId.toString), isTrial = Some(true))))
+    val privateTrialVersionWithoutWhitelist             = aVersion(version = "4.1", access = Some(PrivateAPIAccess(Nil, isTrial = Some(true))))
 
-    val allVersions = Seq(
+    val allVersions = List(
       versionWithoutAccessDefined,
       publicVersion,
       privateVersionWithAppWhitelisted,
@@ -388,7 +388,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll {
   }
 
   private def aVersion(version: String, status: APIStatus = APIStatus.BETA, access: Option[APIAccess]) =
-    APIVersion(version, status, access, Seq(Endpoint("/test", "test", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)))
+    APIVersion(version, status, access, List(Endpoint("/test", "test", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)))
 
   private def someAPIDefinition: APIDefinition =
     APIDefinition(
@@ -397,12 +397,12 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll {
       "Calendar API",
       "My Calendar API",
       context,
-      Seq(
+      List(
         APIVersion(
           "1.0",
           APIStatus.BETA,
           Some(PublicAPIAccess()),
-          Seq(
+          List(
             Endpoint(
               "/today",
               "Get Today's Date",

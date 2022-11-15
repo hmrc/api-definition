@@ -37,20 +37,27 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
     with GuiceOneAppPerSuite with BeforeAndAfterEach
     with BeforeAndAfterAll with Eventually {
 
+  private def withSource(source: ApiVersionSource)(apiVersion: APIVersion): APIVersion = {
+    apiVersion.copy(versionSource = source)
+  }
+  
+  private def defnWithSource(source: ApiVersionSource)(apiDefn: APIDefinition): APIDefinition = {
+    apiDefn.copy(versions = apiDefn.versions.map(withSource(source)(_)))
+  }
   override implicit lazy val app: Application = appBuilder.build()
 
   private val helloApiVersion = APIVersion(
     version = "1.0",
     status = APIStatus.PROTOTYPED,
     access = None,
-    endpoints = Seq(Endpoint("/world", "Say Hello to the World!", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
+    endpoints = List(Endpoint("/world", "Say Hello to the World!", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
   )
 
   private val calendarApiVersion = APIVersion(
     version = "2.0",
     status = APIStatus.PUBLISHED,
     access = None,
-    endpoints = Seq(Endpoint("/date", "Check current date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
+    endpoints = List(Endpoint("/date", "Check current date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
   )
 
   private val helloApiDefinition = APIDefinition(
@@ -59,7 +66,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
     name = "Hello",
     description = "This is the Hello API",
     context = "hello",
-    versions = Seq(helloApiVersion),
+    versions = List(helloApiVersion),
     requiresTrust = None
   )
 
@@ -69,7 +76,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
     name = "Calendar",
     description = "This is the Calendar API",
     context = "calendar",
-    versions = Seq(calendarApiVersion),
+    versions = List(calendarApiVersion),
     requiresTrust = None
   )
 
@@ -77,7 +84,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
     version = "1.0",
     status = APIStatus.PUBLISHED,
     access = None,
-    endpoints = Seq(Endpoint("/submit", "Submit Income Tax Return", HttpMethod.POST, AuthType.USER, ResourceThrottlingTier.UNLIMITED))
+    endpoints = List(Endpoint("/submit", "Submit Income Tax Return", HttpMethod.POST, AuthType.USER, ResourceThrottlingTier.UNLIMITED))
   )
 
   private val individualIncomeTaxApiDefinition = APIDefinition(
@@ -86,7 +93,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
     name = "Individual Income Tax",
     description = "This is the Individual Income Tax API",
     context = "individuals/income-tax",
-    versions = Seq(individualIncomeTaxApiVersion),
+    versions = List(individualIncomeTaxApiVersion),
     requiresTrust = None
   )
 
@@ -94,7 +101,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
     version = "1.0",
     status = APIStatus.PUBLISHED,
     access = None,
-    endpoints = Seq(Endpoint("/submit", "Submit National Insurance", HttpMethod.POST, AuthType.USER, ResourceThrottlingTier.UNLIMITED))
+    endpoints = List(Endpoint("/submit", "Submit National Insurance", HttpMethod.POST, AuthType.USER, ResourceThrottlingTier.UNLIMITED))
   )
 
   private val individualNIApiDefinition = APIDefinition(
@@ -103,7 +110,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
     name = "Individual National Insurance",
     description = "This is the Individual National Insurance API",
     context = "individuals/ni",
-    versions = Seq(individualNIApiVersion),
+    versions = List(individualNIApiVersion),
     requiresTrust = None
   )
 
@@ -141,7 +148,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
 
       await(repository.save(helloApiDefinition))
 
-      val updatedAPIDefinition = helloApiDefinition.copy(name = "Ciao", description = "Ciao API", versions = Seq(calendarApiVersion))
+      val updatedAPIDefinition = helloApiDefinition.copy(name = "Ciao", description = "Ciao API", versions = List(calendarApiVersion))
       await(repository.save(updatedAPIDefinition))
 
       val retrieved = await(repository.fetchByServiceName(helloApiDefinition.serviceName)).get
@@ -159,7 +166,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
       await(repository.save(calendarApiDefinition))
 
       val retrieved = await(repository.fetchAll())
-      retrieved shouldBe Seq(helloApiDefinition, calendarApiDefinition)
+      retrieved shouldBe List(helloApiDefinition, calendarApiDefinition)
 
     }
 
@@ -268,7 +275,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
       await(repository.delete(calendarApiDefinition.serviceName))
 
       val retrieved = await(repository.fetchAll())
-      retrieved shouldBe Seq(helloApiDefinition)
+      retrieved shouldBe List(defnWithSource(UNKNOWN)(helloApiDefinition))
     }
 
   }
@@ -284,7 +291,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
       val mongoV4ErrorMessage =
         s"""E11000 duplicate key error collection: test-APIDefinitionRepositorySpec.api index: ${fieldName}Index dup key: { $fieldName: "$duplicateFieldValue" }"""
 
-      val errors = Seq(mongpV3ErrorMessage, mongoV4ErrorMessage)
+      val errors = List(mongpV3ErrorMessage, mongoV4ErrorMessage)
 
       errors.contains(caught.getError.getMessage) shouldBe true
     }

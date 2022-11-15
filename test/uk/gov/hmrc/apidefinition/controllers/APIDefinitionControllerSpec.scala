@@ -67,7 +67,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
   trait QueryDispatcherSetup extends Setup {
 
     val apiDefinitions: Seq[APIDefinition] =
-      Array.fill(2)(APIDefinition("MyApiDefinitionServiceName1", "MyUrl", "MyName", "My description", "MyContext", Seq.empty, None))
+      Array.fill(2)(APIDefinition("MyApiDefinitionServiceName1", "MyUrl", "MyName", "My description", "MyContext", Nil, None))
 
     when(mockAPIDefinitionService.fetchByContext(*)).thenReturn(successful(Some(apiDefinitions.head)))
     when(mockAPIDefinitionService.fetchAllPublicAPIs(*)).thenReturn(successful(apiDefinitions))
@@ -108,19 +108,19 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
           "My Calendar API",
           "individuals/calendar",
           versions =
-            Seq(
+            List(
               APIVersion(
                 "1.0",
                 APIStatus.STABLE,
                 None,
-                Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
+                List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
                 Some(true)
               )
             ),
           requiresTrust = Some(true),
           None,
           lastPublishedAt = None,
-          Some(Seq(OTHER))
+          Some(List(OTHER))
         )
 
       thereAreNoOverlappingAPIContexts
@@ -143,19 +143,19 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
           "My Calendar API",
           "individuals/calendar",
           versions =
-            Seq(
+            List(
               APIVersion(
                 "1.0",
                 APIStatus.STABLE,
                 None,
-                Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
+                List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
                 Some(true)
               )
             ),
           requiresTrust = Some(true),
           None,
           lastPublishedAt = None,
-          Some(Seq(OTHER))
+          Some(List(OTHER))
         )
 
       thereAreNoOverlappingAPIContexts
@@ -315,17 +315,17 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
         "Calendar API",
         "My Calendar API",
         "individuals/calendar",
-        versions = Seq(APIVersion(
+        versions = List(APIVersion(
           "1.0",
           APIStatus.STABLE,
           Some(PublicAPIAccess()),
-          Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
+          List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
           Some(true)
         )),
         requiresTrust = Some(true),
         None,
         None,
-        Some(Seq(OTHER))
+        Some(List(OTHER))
       )
 
       thereAreNoOverlappingAPIContexts
@@ -373,11 +373,11 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
         "My Calendar API",
         "individuals/calendar",
         versions =
-          Seq(APIVersion("1.0", APIStatus.STABLE, None, Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)), Some(true))),
+          List(APIVersion("1.0", APIStatus.STABLE, None, List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)), Some(true))),
         requiresTrust = Some(true),
         None,
         None,
-        Some(Seq(OTHER))
+        Some(List(OTHER))
       )
 
       thereAreNoOverlappingAPIContexts
@@ -428,17 +428,17 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
         "Calendar API",
         "My Calendar API",
         "individuals/calendar",
-        versions = Seq(APIVersion(
+        versions = List(APIVersion(
           "1.0",
           APIStatus.STABLE,
-          Some(PrivateAPIAccess(Seq("app-id-1", "app-id-2"))),
-          Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
+          Some(PrivateAPIAccess(List("app-id-1", "app-id-2"))),
+          List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
           Some(true)
         )),
         requiresTrust = Some(true),
         None,
         None,
-        Some(Seq(OTHER))
+        Some(List(OTHER))
       )
 
       thereAreNoOverlappingAPIContexts
@@ -498,11 +498,11 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
         "Calendar API",
         "My Calendar API",
         "calendar",
-        versions = Seq(APIVersion(
+        versions = List(APIVersion(
           "1.0",
           APIStatus.BETA,
           Some(PublicAPIAccess()),
-          Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
+          List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
           Some(true)
         )),
         requiresTrust = None
@@ -744,7 +744,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
         ErrorResponse(
           ErrorCode.API_INVALID_JSON,
           "Json cannot be converted to API Definition",
-          Some(Seq(
+          Some(List(
             FieldErrorDescription("/description", "element is missing")
           ))
         )

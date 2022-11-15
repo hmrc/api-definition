@@ -91,7 +91,7 @@ class APIDefinitionSpec extends AsyncHmrcSpec {
         whitelistedApplicationIds = Some("[]")
       )
 
-      apiDefinition.versions.head.access shouldBe Some(PrivateAPIAccess(Seq.empty))
+      apiDefinition.versions.head.access shouldBe Some(PrivateAPIAccess(Nil))
     }
 
     "read from JSON when the API access type is PRIVATE and there is an empty whitelist and isTrial is true" in {
@@ -101,13 +101,13 @@ class APIDefinitionSpec extends AsyncHmrcSpec {
         isTrial = Some(true)
       )
 
-      apiDefinition.versions.head.access shouldBe Some(PrivateAPIAccess(Seq.empty, Some(true)))
+      apiDefinition.versions.head.access shouldBe Some(PrivateAPIAccess(Nil, Some(true)))
     }
 
     "read from JSON when the API access type is PRIVATE and there is a non-empty whitelist" in {
       val apiDefinition = anApiDefinition(accessType = "PRIVATE", whitelistedApplicationIds = Some("[\"an-application-id\"]"))
 
-      apiDefinition.versions.head.access shouldBe Some(PrivateAPIAccess(Seq("an-application-id")))
+      apiDefinition.versions.head.access shouldBe Some(PrivateAPIAccess(List("an-application-id")))
     }
 
     "no longer fail to read from JSON when the API access type is PRIVATE and there is no whitelist" in {
@@ -119,7 +119,7 @@ class APIDefinitionSpec extends AsyncHmrcSpec {
     "read from JSON when the API categories are defined but empty" in {
       val apiDefinition = anApiDefinition(categories = Some("[]"))
 
-      apiDefinition.categories shouldBe Some(Seq.empty)
+      apiDefinition.categories shouldBe Some(Nil)
     }
 
     "read from JSON when the API categories are defined with correct values" in {

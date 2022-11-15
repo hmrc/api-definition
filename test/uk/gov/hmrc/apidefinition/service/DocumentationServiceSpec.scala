@@ -55,14 +55,14 @@ class DocumentationServiceSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wi
 
   val productionV1Availability: APIAvailability = APIAvailability(
     endpointsEnabled = true,
-    PrivateAPIAccess(Seq.empty),
+    PrivateAPIAccess(Nil),
     loggedIn = false,
     authorised = false
   )
 
   val productionV2Availability: APIAvailability = APIAvailability(
     endpointsEnabled = true,
-    PrivateAPIAccess(Seq.empty),
+    PrivateAPIAccess(Nil),
     loggedIn = false,
     authorised = false
   )
@@ -89,10 +89,10 @@ class DocumentationServiceSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wi
     context = "hello",
     requiresTrust = Some(false),
     isTestSupport = Some(false),
-    versions = Seq(
-      APIVersion("1.0", APIStatus.STABLE, endpoints = Seq.empty, endpointsEnabled = None),
-      APIVersion("2.0", APIStatus.BETA, endpoints = Seq.empty),
-      APIVersion("3.0", APIStatus.ALPHA, endpoints = Seq.empty)
+    versions = List(
+      APIVersion("1.0", APIStatus.STABLE, endpoints = Nil, endpointsEnabled = None),
+      APIVersion("2.0", APIStatus.BETA, endpoints = Nil),
+      APIVersion("3.0", APIStatus.ALPHA, endpoints = Nil)
     ),
     lastPublishedAt = None
   )

@@ -27,12 +27,12 @@ class APIDefinitionMapperSpec extends AsyncHmrcSpec {
       version,
       status,
       None,
-      Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
+      List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
       endpointsEnabled = endpointsEnabled
     )
   }
 
-  private def definition(versions: Seq[APIVersion]) = {
+  private def definition(versions: List[APIVersion]) = {
     APIDefinition("calendar", "http://calendar", "Calendar API", "My Calendar API", "calendar", versions, None)
   }
 
@@ -46,7 +46,7 @@ class APIDefinitionMapperSpec extends AsyncHmrcSpec {
   "Mapper" should {
 
     "map PROTOTYPED to BETA and set endpointsEnabled=true when production URLs for prototyped APIs is enabled" in {
-      val originalDefinition = definition(Seq(version("1.0", APIStatus.PROTOTYPED)))
+      val originalDefinition = definition(List(version("1.0", APIStatus.PROTOTYPED)))
       val mappedDefinition   = underTest(true).mapLegacyStatuses(originalDefinition)
 
       mappedDefinition.versions.head.status shouldBe APIStatus.BETA
@@ -54,7 +54,7 @@ class APIDefinitionMapperSpec extends AsyncHmrcSpec {
     }
 
     "map PROTOTYPED to BETA and set endpointsEnabled=false when production URLs for prototyped APIs is not enabled" in {
-      val originalDefinition = definition(Seq(version("1.0", APIStatus.PROTOTYPED)))
+      val originalDefinition = definition(List(version("1.0", APIStatus.PROTOTYPED)))
       val mappedDefinition   = underTest().mapLegacyStatuses(originalDefinition)
 
       mappedDefinition.versions.head.status shouldBe APIStatus.BETA
@@ -62,7 +62,7 @@ class APIDefinitionMapperSpec extends AsyncHmrcSpec {
     }
 
     "map PROTOTYPED to BETA and keep value for endpointsEnabled when production URLs for prototyped APIs is enabled" in {
-      val originalDefinition = definition(Seq(version("1.0", APIStatus.PROTOTYPED, Some(false))))
+      val originalDefinition = definition(List(version("1.0", APIStatus.PROTOTYPED, Some(false))))
       val mappedDefinition   = underTest(true).mapLegacyStatuses(originalDefinition)
 
       mappedDefinition.versions.head.status shouldBe APIStatus.BETA
@@ -70,7 +70,7 @@ class APIDefinitionMapperSpec extends AsyncHmrcSpec {
     }
 
     "map PROTOTYPED to BETA and keep value for endpointsEnabled when production URLs for prototyped APIs is not enabled" in {
-      val originalDefinition = definition(Seq(version("1.0", APIStatus.PROTOTYPED, Some(true))))
+      val originalDefinition = definition(List(version("1.0", APIStatus.PROTOTYPED, Some(true))))
       val mappedDefinition   = underTest().mapLegacyStatuses(originalDefinition)
 
       mappedDefinition.versions.head.status shouldBe APIStatus.BETA
@@ -79,7 +79,7 @@ class APIDefinitionMapperSpec extends AsyncHmrcSpec {
 
     // PUBLISHED
     "map PUBLISHED to STABLE and set endpointsEnabled=true when not explicitly set" in {
-      val originalDefinition = definition(Seq(version("1.0", APIStatus.PUBLISHED)))
+      val originalDefinition = definition(List(version("1.0", APIStatus.PUBLISHED)))
       val mappedDefinition   = underTest().mapLegacyStatuses(originalDefinition)
 
       mappedDefinition.versions.head.status shouldBe APIStatus.STABLE
@@ -87,7 +87,7 @@ class APIDefinitionMapperSpec extends AsyncHmrcSpec {
     }
 
     "map PUBLISHED to STABLE and preserve endpointsEnabled=false when explicitly set" in {
-      val originalDefinition = definition(Seq(version("1.0", APIStatus.PUBLISHED, Some(false))))
+      val originalDefinition = definition(List(version("1.0", APIStatus.PUBLISHED, Some(false))))
       val mappedDefinition   = underTest().mapLegacyStatuses(originalDefinition)
 
       mappedDefinition.versions.head.status shouldBe APIStatus.STABLE
@@ -95,7 +95,7 @@ class APIDefinitionMapperSpec extends AsyncHmrcSpec {
     }
 
     "map PUBLISHED to STABLE and preserve endpointsEnabled=true when explicitly set" in {
-      val originalDefinition = definition(Seq(version("1.0", APIStatus.PUBLISHED, Some(false))))
+      val originalDefinition = definition(List(version("1.0", APIStatus.PUBLISHED, Some(false))))
       val mappedDefinition   = underTest().mapLegacyStatuses(originalDefinition)
 
       mappedDefinition.versions.head.status shouldBe APIStatus.STABLE
@@ -104,7 +104,7 @@ class APIDefinitionMapperSpec extends AsyncHmrcSpec {
 
     // DEPRECATED
     "map DEPRECATED to DEPRECATED and set endpointsEnabled=true when not explicitly set" in {
-      val originalDefinition = definition(Seq(version("1.0", APIStatus.DEPRECATED)))
+      val originalDefinition = definition(List(version("1.0", APIStatus.DEPRECATED)))
       val mappedDefinition   = underTest().mapLegacyStatuses(originalDefinition)
 
       mappedDefinition.versions.head.status shouldBe APIStatus.DEPRECATED
@@ -112,7 +112,7 @@ class APIDefinitionMapperSpec extends AsyncHmrcSpec {
     }
 
     "map DEPRECATED to DEPRECATED and set endpointsEnabled=false when explicitly set to false" in {
-      val originalDefinition = definition(Seq(version("1.0", APIStatus.DEPRECATED, Some(false))))
+      val originalDefinition = definition(List(version("1.0", APIStatus.DEPRECATED, Some(false))))
       val mappedDefinition   = underTest().mapLegacyStatuses(originalDefinition)
 
       mappedDefinition.versions.head.status shouldBe APIStatus.DEPRECATED
@@ -120,7 +120,7 @@ class APIDefinitionMapperSpec extends AsyncHmrcSpec {
     }
 
     "map DEPRECATED to DEPRECATED and set endpointsEnabled=true when explicitly set to true" in {
-      val originalDefinition = definition(Seq(version("1.0", APIStatus.DEPRECATED, Some(false))))
+      val originalDefinition = definition(List(version("1.0", APIStatus.DEPRECATED, Some(false))))
       val mappedDefinition   = underTest().mapLegacyStatuses(originalDefinition)
 
       mappedDefinition.versions.head.status shouldBe APIStatus.DEPRECATED
@@ -129,7 +129,7 @@ class APIDefinitionMapperSpec extends AsyncHmrcSpec {
 
     // RETIRED
     "map RETIRED to RETIRED and set endpointsEnabled=true when not explicitly set" in {
-      val originalDefinition = definition(Seq(version("1.0", APIStatus.RETIRED)))
+      val originalDefinition = definition(List(version("1.0", APIStatus.RETIRED)))
       val mappedDefinition   = underTest().mapLegacyStatuses(originalDefinition)
 
       mappedDefinition.versions.head.status shouldBe APIStatus.RETIRED
@@ -137,7 +137,7 @@ class APIDefinitionMapperSpec extends AsyncHmrcSpec {
     }
 
     "map RETIRED to RETIRED and set endpointsEnabled=false when explicitly set to false" in {
-      val originalDefinition = definition(Seq(version("1.0", APIStatus.RETIRED, Some(false))))
+      val originalDefinition = definition(List(version("1.0", APIStatus.RETIRED, Some(false))))
       val mappedDefinition   = underTest().mapLegacyStatuses(originalDefinition)
 
       mappedDefinition.versions.head.status shouldBe APIStatus.RETIRED
@@ -145,7 +145,7 @@ class APIDefinitionMapperSpec extends AsyncHmrcSpec {
     }
 
     "map RETIRED to RETIRED and set endpointsEnabled=true when explicitly set to true" in {
-      val originalDefinition = definition(Seq(version("1.0", APIStatus.RETIRED, Some(false))))
+      val originalDefinition = definition(List(version("1.0", APIStatus.RETIRED, Some(false))))
       val mappedDefinition   = underTest().mapLegacyStatuses(originalDefinition)
 
       mappedDefinition.versions.head.status shouldBe APIStatus.RETIRED

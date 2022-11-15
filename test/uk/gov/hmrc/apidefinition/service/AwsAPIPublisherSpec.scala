@@ -37,7 +37,7 @@ class AwsAPIPublisherSpec extends AsyncHmrcSpec {
     version,
     status,
     Some(PublicAPIAccess()),
-    Seq(
+    List(
       Endpoint(
         "/today",
         "Get Today's Date",
@@ -54,7 +54,7 @@ class AwsAPIPublisherSpec extends AsyncHmrcSpec {
       name: String = UUID.randomUUID().toString,
       context: String = UUID.randomUUID().toString,
       serviceBaseUrl: String = s"https://$host",
-      versions: Seq[APIVersion] = Seq(anAPIVersion("2.0"))
+      versions: List[APIVersion] = List(anAPIVersion("2.0"))
     ): APIDefinition = {
     APIDefinition(
       UUID.randomUUID().toString,
@@ -82,7 +82,7 @@ class AwsAPIPublisherSpec extends AsyncHmrcSpec {
       val apiDefinition1: APIDefinition                           = someAPIDefinition("API 1")
       val apiDefinition2: APIDefinition                           = someAPIDefinition("API 2")
 
-      await(underTest.publishAll(Seq(apiDefinition1, apiDefinition2)))
+      await(underTest.publishAll(List(apiDefinition1, apiDefinition2)))
 
       verify(underTest.awsAPIPublisherConnector, times(2)).createOrUpdateAPI(*, *[AWSSwaggerDetails])(*)
       val swaggerDetails: Seq[AWSSwaggerDetails] = swaggerDetailsCaptor.getAllValues.asScala
@@ -119,7 +119,7 @@ class AwsAPIPublisherSpec extends AsyncHmrcSpec {
     }
 
     "call delete endpoint for RETIRED versions" in new Setup {
-      val apiDefinition: APIDefinition = someAPIDefinition(versions = Seq(anAPIVersion("1.0", APIStatus.RETIRED), anAPIVersion("2.0")))
+      val apiDefinition: APIDefinition = someAPIDefinition(versions = List(anAPIVersion("1.0", APIStatus.RETIRED), anAPIVersion("2.0")))
 
       when(underTest.awsAPIPublisherConnector.deleteAPI(*)(*))
         .thenReturn(successful(UUID.randomUUID().toString))
@@ -146,7 +146,7 @@ class AwsAPIPublisherSpec extends AsyncHmrcSpec {
 
     "delete multiple versions of the API in AWS" in new Setup {
       when(underTest.awsAPIPublisherConnector.deleteAPI(*)(*)).thenReturn(successful(UUID.randomUUID().toString))
-      val apiDefinition: APIDefinition = someAPIDefinition(versions = Seq(anAPIVersion("1.0"), anAPIVersion("2.0")))
+      val apiDefinition: APIDefinition = someAPIDefinition(versions = List(anAPIVersion("1.0"), anAPIVersion("2.0")))
 
       await(underTest.delete(apiDefinition))
 
