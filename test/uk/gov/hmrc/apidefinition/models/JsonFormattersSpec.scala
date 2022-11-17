@@ -34,12 +34,12 @@ class JsonFormattersSpec extends AsyncHmrcSpec {
     }
 
     "write isTrial when it is defined in the API access" in {
-      val apiAccess = PrivateAPIAccess(Seq("A", "B"), isTrial = Some(false))
+      val apiAccess = PrivateAPIAccess(List("A", "B"), isTrial = Some(false))
       apiAccessWrites.writes(apiAccess).toString shouldBe """{"type":"PRIVATE","whitelistedApplicationIds":["A","B"],"isTrial":false}"""
     }
 
     "omit isTrial when it is not defined in the API access" in {
-      val apiAccess = PrivateAPIAccess(Seq("A", "B"), isTrial = None)
+      val apiAccess = PrivateAPIAccess(List("A", "B"), isTrial = None)
       apiAccessWrites.writes(apiAccess).toString shouldBe """{"type":"PRIVATE","whitelistedApplicationIds":["A","B"]}"""
     }
   }

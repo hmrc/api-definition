@@ -24,17 +24,31 @@ import uk.gov.hmrc.apidefinition.models.AuthType.AuthType
 import uk.gov.hmrc.apidefinition.models.HttpMethod.HttpMethod
 import uk.gov.hmrc.apidefinition.models.ResourceThrottlingTier.ResourceThrottlingTier
 
+sealed trait ApiVersionSource {
+  def asText: String
+}
+case object RAML extends ApiVersionSource {
+  val asText = "RAML"
+}
+case object OAS extends ApiVersionSource {
+  val asText = "OAS"
+}
+
+case object UNKNOWN extends ApiVersionSource {
+  val asText = "UNKNOWN"
+}
+
 case class APIDefinition(
     serviceName: String,
     serviceBaseUrl: String,
     name: String,
     description: String,
     context: String,
-    versions: Seq[APIVersion],
+    versions: List[APIVersion],
     requiresTrust: Option[Boolean],
     isTestSupport: Option[Boolean] = None,
     lastPublishedAt: Option[DateTime] = None,
-    categories: Option[Seq[APICategory]] = None
+    categories: Option[List[APICategory]] = None
   )
 
 case class ExtendedAPIDefinition(
@@ -45,14 +59,14 @@ case class ExtendedAPIDefinition(
     context: String,
     requiresTrust: Boolean,
     isTestSupport: Boolean,
-    versions: Seq[ExtendedAPIVersion],
+    versions: List[ExtendedAPIVersion],
     lastPublishedAt: Option[DateTime]
   )
 
 case class ExtendedAPIVersion(
     version: String,
     status: APIStatus,
-    endpoints: Seq[Endpoint],
+    endpoints: List[Endpoint],
     productionAvailability: Option[APIAvailability],
     sandboxAvailability: Option[APIAvailability]
   )
@@ -63,9 +77,10 @@ case class APIVersion(
     version: String,
     status: APIStatus,
     access: Option[APIAccess] = Some(PublicAPIAccess()),
-    endpoints: Seq[Endpoint],
+    endpoints: List[Endpoint],
     endpointsEnabled: Option[Boolean] = None,
-    awsRequestId: Option[String] = None
+    awsRequestId: Option[String] = None,
+    versionSource: ApiVersionSource = UNKNOWN
   )
 
 // API resource (also called API endpoint)
@@ -76,7 +91,7 @@ case class Endpoint(
     authType: AuthType,
     throttlingTier: ResourceThrottlingTier,
     scope: Option[String] = None,
-    queryParameters: Option[Seq[Parameter]] = None
+    queryParameters: Option[List[Parameter]] = None
   )
 
 // Query Parameter
@@ -97,7 +112,7 @@ object PublicAPIAccess {
   implicit val strictReads = Reads[PublicAPIAccess](json => json.validate[JsObject].filter(_.values.isEmpty).map(_ => PublicAPIAccess()))
 }
 
-case class PrivateAPIAccess(whitelistedApplicationIds: Seq[String], isTrial: Option[Boolean] = None) extends APIAccess
+case class PrivateAPIAccess(whitelistedApplicationIds: List[String], isTrial: Option[Boolean] = None) extends APIAccess
 
 object PrivateAPIAccess {
   implicit val format2 = Json.format[PrivateAPIAccess]

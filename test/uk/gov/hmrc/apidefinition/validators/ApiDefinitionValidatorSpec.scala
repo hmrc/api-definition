@@ -73,14 +73,14 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
       "Calendar API",
       "My Calendar API",
       "individuals/calendar",
-      Seq(APIVersion(
+      List(APIVersion(
         "1.0",
         APIStatus.PROTOTYPED,
         Some(PublicAPIAccess()),
-        Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
+        List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
       )),
       Some(false),
-      categories = Some(Seq(OTHER))
+      categories = Some(List(OTHER))
     )
   }
 
@@ -101,30 +101,30 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
 
     "fail validation if a version number is referenced more than once" in new Setup {
       lazy val apiDefinition: APIDefinition = calendarApi.copy(versions =
-        Seq(
+        List(
           APIVersion(
             "1.0",
             APIStatus.PROTOTYPED,
             Some(PublicAPIAccess()),
-            Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
+            List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
           ),
           APIVersion(
             "1.1",
             APIStatus.PROTOTYPED,
             Some(PublicAPIAccess()),
-            Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
+            List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
           ),
           APIVersion(
             "1.1",
             APIStatus.PROTOTYPED,
             Some(PublicAPIAccess()),
-            Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
+            List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
           ),
           APIVersion(
             "1.2",
             APIStatus.PROTOTYPED,
             Some(PublicAPIAccess()),
-            Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
+            List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
           )
         )
       )
@@ -152,7 +152,7 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
     }
 
     "fail validation if categories is empty" in new Setup {
-      lazy val apiDefinition: APIDefinition = calendarApi.copy(categories = Some(Seq()))
+      lazy val apiDefinition: APIDefinition = calendarApi.copy(categories = Some(List()))
 
       assertValidationFailure(apiDefinition, List("Field 'categories' should exist and not be empty for API 'Calendar API'"))
     }
@@ -163,19 +163,19 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
     }
 
     "fail validation when if there is an API version without version number" in new Setup {
-      lazy val versions: Seq[APIVersion]    =
-        Seq(
+      lazy val versions: List[APIVersion]    =
+        List(
           APIVersion(
             "1.0",
             APIStatus.PROTOTYPED,
             Some(PublicAPIAccess()),
-            Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
+            List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
           ),
           APIVersion(
             "",
             APIStatus.PROTOTYPED,
             Some(PublicAPIAccess()),
-            Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
+            List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
           )
         )
       lazy val apiDefinition: APIDefinition = calendarApi.copy(versions = versions)
@@ -184,7 +184,7 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
     }
 
     "fail validation when no Endpoint is provided" in new Setup {
-      lazy val apiDefinition: APIDefinition = calendarApi.copy(versions = Seq(APIVersion("1.0", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Nil)))
+      lazy val apiDefinition: APIDefinition = calendarApi.copy(versions = List(APIVersion("1.0", APIStatus.PROTOTYPED, Some(PublicAPIAccess()), Nil)))
 
       assertValidationFailure(apiDefinition, List("Field 'versions.endpoints' must not be empty for API 'Calendar API' version '1.0'"))
     }
@@ -201,7 +201,7 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
     val moneyApiVersion = APIVersion(
       version = "1.0",
       status = APIStatus.PROTOTYPED,
-      endpoints = Seq(moneyEndpoint)
+      endpoints = List(moneyEndpoint)
     )
 
     lazy val moneyApiDefinition = APIDefinition(
@@ -210,9 +210,9 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
       name = "Money API",
       description = "API for checking payments",
       context = "individuals/money",
-      versions = Seq(moneyApiVersion),
+      versions = List(moneyApiVersion),
       requiresTrust = Some(false),
-      categories = Some(Seq(OTHER))
+      categories = Some(List(OTHER))
     )
 
     val specialChars = List(
@@ -237,7 +237,7 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
     "fail validation when the endpoint URI is empty" in new Setup {
 
       lazy val apiDefinition: APIDefinition = moneyApiDefinition.copy(
-        versions = Seq(moneyApiVersion.copy(endpoints = Seq(moneyEndpoint.copy(uriPattern = ""))))
+        versions = List(moneyApiVersion.copy(endpoints = List(moneyEndpoint.copy(uriPattern = ""))))
       )
 
       assertValidationFailure(apiDefinition, List("Field 'endpoints.uriPattern' is required for API 'Money API' version '1.0' endpoint 'Check Payments'"))
@@ -247,7 +247,7 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
       s"fail validation if the endpoint contains $char in the URI" in new Setup {
         lazy val endpointUri                  = s"/payments$char"
         lazy val apiDefinition: APIDefinition = moneyApiDefinition.copy(
-          versions = Seq(moneyApiVersion.copy(endpoints = Seq(moneyEndpoint.copy(uriPattern = endpointUri))))
+          versions = List(moneyApiVersion.copy(endpoints = List(moneyEndpoint.copy(uriPattern = endpointUri))))
         )
 
         assertValidationFailure(
@@ -260,7 +260,7 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
 
     "pass validation if the API definition contains the root endpoint" in new Setup {
       lazy val apiDefinition: APIDefinition = moneyApiDefinition.copy(
-        versions = Seq(moneyApiVersion.copy(endpoints = Seq(moneyEndpoint.copy(uriPattern = "/"))))
+        versions = List(moneyApiVersion.copy(endpoints = List(moneyEndpoint.copy(uriPattern = "/"))))
       )
       assertValidationSuccess(apiDefinition)
     }
@@ -268,7 +268,7 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
     "fail validation if the endpoint has no name" in new Setup {
       val endpoint                          = "/hello/friend"
       lazy val apiDefinition: APIDefinition = moneyApiDefinition.copy(
-        versions = Seq(moneyApiVersion.copy(endpoints = Seq(moneyEndpoint.copy(uriPattern = endpoint, endpointName = ""))))
+        versions = List(moneyApiVersion.copy(endpoints = List(moneyEndpoint.copy(uriPattern = endpoint, endpointName = ""))))
       )
 
       assertValidationFailure(apiDefinition, List(s"Field 'endpoints.endpointName' is required for API 'Money API' version '1.0'"))
@@ -277,7 +277,7 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
     "fail validation if the endpoint defines path parameters with ':'" in new Setup {
       val endpoint                          = "/hello/:friend"
       lazy val apiDefinition: APIDefinition = moneyApiDefinition.copy(
-        versions = Seq(moneyApiVersion.copy(endpoints = Seq(moneyEndpoint.copy(uriPattern = endpoint))))
+        versions = List(moneyApiVersion.copy(endpoints = List(moneyEndpoint.copy(uriPattern = endpoint))))
       )
 
       assertValidationFailure(
@@ -297,7 +297,7 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
     pathParameterUris.foreach { case (endpointUri: String, segment: String) =>
       s"fail validation if the endpoint ($endpointUri) defines path parameters incorrectly" in new Setup {
         lazy val apiDefinition: APIDefinition = moneyApiDefinition.copy(
-          versions = Seq(moneyApiVersion.copy(endpoints = Seq(moneyEndpoint.copy(uriPattern = endpointUri))))
+          versions = List(moneyApiVersion.copy(endpoints = List(moneyEndpoint.copy(uriPattern = endpointUri))))
         )
 
         assertValidationFailure(
@@ -310,7 +310,7 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
 
     s"fail validation if the endpoint defines multiple path parameters incorrectly" in new Setup {
       lazy val apiDefinition: APIDefinition = moneyApiDefinition.copy(
-        versions = Seq(moneyApiVersion.copy(endpoints = Seq(moneyEndpoint.copy(uriPattern = "/hello/{my/friend}"))))
+        versions = List(moneyApiVersion.copy(endpoints = List(moneyEndpoint.copy(uriPattern = "/hello/{my/friend}"))))
       )
 
       assertValidationFailure(
@@ -326,7 +326,7 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
     "fail validation when a query parameter name is empty" in new Setup {
 
       lazy val apiDefinition: APIDefinition = moneyApiDefinition.copy(
-        versions = Seq(moneyApiVersion.copy(endpoints = Seq(moneyEndpoint.copy(queryParameters = Some(Seq(moneyQueryParameter.copy(name = "")))))))
+        versions = List(moneyApiVersion.copy(endpoints = List(moneyEndpoint.copy(queryParameters = Some(List(moneyQueryParameter.copy(name = "")))))))
       )
 
       assertValidationFailure(apiDefinition, List("Field 'queryParameters.name' is required for API 'Money API' version '1.0' endpoint 'Check Payments'"))
@@ -337,7 +337,7 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
 
         val queryParamName                    = s"param$char"
         lazy val apiDefinition: APIDefinition = moneyApiDefinition.copy(
-          versions = Seq(moneyApiVersion.copy(endpoints = Seq(moneyEndpoint.copy(queryParameters = Some(Seq(moneyQueryParameter.copy(name = queryParamName)))))))
+          versions = List(moneyApiVersion.copy(endpoints = List(moneyEndpoint.copy(queryParameters = Some(List(moneyQueryParameter.copy(name = queryParamName)))))))
         )
 
         assertValidationFailure(
@@ -350,28 +350,28 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
 
     "fail validation when no scopes are provided for a user restricted endpoint" in new Setup {
       lazy val apiDefinition: APIDefinition = moneyApiDefinition.copy(
-        versions = Seq(moneyApiVersion.copy(endpoints = Seq(moneyEndpoint.copy(scope = None))))
+        versions = List(moneyApiVersion.copy(endpoints = List(moneyEndpoint.copy(scope = None))))
       )
       assertValidationFailure(apiDefinition, List("Field 'endpoints.scope' is required for API 'Money API' version '1.0' endpoint 'Check Payments'"))
     }
 
     "pass validation when no scopes are provided for an application restricted endpoint" in new Setup {
       lazy val apiDefinition: APIDefinition = moneyApiDefinition.copy(
-        versions = Seq(moneyApiVersion.copy(endpoints = Seq(moneyEndpoint.copy(authType = AuthType.APPLICATION, scope = None))))
+        versions = List(moneyApiVersion.copy(endpoints = List(moneyEndpoint.copy(authType = AuthType.APPLICATION, scope = None))))
       )
       assertValidationSuccess(apiDefinition)
     }
 
     "pass validation when scopes are provided for an application restricted endpoint" in new Setup {
       lazy val apiDefinition: APIDefinition = moneyApiDefinition.copy(
-        versions = Seq(moneyApiVersion.copy(endpoints = Seq(moneyEndpoint.copy(authType = AuthType.APPLICATION, scope = Some("scope")))))
+        versions = List(moneyApiVersion.copy(endpoints = List(moneyEndpoint.copy(authType = AuthType.APPLICATION, scope = Some("scope")))))
       )
       assertValidationSuccess(apiDefinition)
     }
 
     "accumulate multiple errors in the response" in new Setup {
       lazy val apiDefinition: APIDefinition = moneyApiDefinition.copy(
-        versions = Seq(moneyApiVersion.copy(endpoints = Seq(moneyEndpoint.copy(uriPattern = ""))))
+        versions = List(moneyApiVersion.copy(endpoints = List(moneyEndpoint.copy(uriPattern = ""))))
       )
       when(mockAPIDefinitionService.fetchByContext("individuals/money"))
         .thenReturn(successful(Some(moneyApiDefinition.copy(serviceName = "anotherService"))))

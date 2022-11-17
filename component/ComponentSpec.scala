@@ -26,8 +26,6 @@ import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 
-import scala.concurrent.ExecutionContext.Implicits.global
-
 trait ComponentSpec extends AsyncHmrcSpec
   with DefaultPlayMongoRepositorySupport[APIDefinition] with BeforeAndAfterAll with GuiceOneServerPerSuite {
 

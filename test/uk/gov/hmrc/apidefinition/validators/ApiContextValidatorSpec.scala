@@ -30,7 +30,7 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
 
   trait Setup {
 
-    def testAPIDefinition(serviceName: String = "money-service", context: String = "money", versions: Seq[String] = Seq("1.0")) =
+    def testAPIDefinition(serviceName: String = "money-service", context: String = "money", versions: List[String] = List("1.0")) =
       APIDefinition(
         serviceName = serviceName,
         serviceBaseUrl = "http://www.money.com",
@@ -41,13 +41,13 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
         requiresTrust = Some(false)
       )
 
-    private def generateApiVersions(versions: Seq[String]): Seq[APIVersion] = {
+    private def generateApiVersions(versions: List[String]): List[APIVersion] = {
       versions.map(version => {
         APIVersion(
           version,
           APIStatus.PROTOTYPED,
           Some(PublicAPIAccess()),
-          Seq(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
+          List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
         )
       })
     }
@@ -70,17 +70,17 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
       errors.toList should contain allElementsOf expectedErrors
     }
 
-    def fetchByTopLevelContextWillReturn(apiDefinitions: Seq[APIDefinition]) =
+    def fetchByTopLevelContextWillReturn(apiDefinitions: List[APIDefinition]) =
       when(mockAPIDefinitionRepository.fetchAllByTopLevelContext(any[String])).thenReturn(successful(apiDefinitions))
 
-    def thereAreNoOverlappingAPIContexts = fetchByTopLevelContextWillReturn(Seq.empty)
+    def thereAreNoOverlappingAPIContexts = fetchByTopLevelContextWillReturn(Nil)
 
     def contextMustNotBeChangedErrorMessage(errorContext: String): String = s"Field 'context' must not be changed $errorContext"
 
     val mockAPIDefinitionService: APIDefinitionService       = mock[APIDefinitionService]
     val mockAPIDefinitionRepository: APIDefinitionRepository = mock[APIDefinitionRepository]
     val mockAppConfig: AppConfig                             = mock[AppConfig]
-    when(mockAppConfig.skipContextValidationAllowlist).thenReturn(List())
+    when(mockAppConfig.skipContextValidationAllowlist).thenReturn(Nil)
 
     val validatorUnderTest: ApiContextValidator = new ApiContextValidator(mockAPIDefinitionService, mockAPIDefinitionRepository, mockAppConfig)
   }
@@ -129,10 +129,10 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
     "pass validation for new version of existing API with legacy context" in new Setup {
       lazy val context: String                            = "money"
       lazy val serviceName: String                        = "money-service"
-      lazy val apiDefinition: APIDefinition               = testAPIDefinition(serviceName, context, Seq("1.0", "2.0"))
-      lazy val apiDefinitionWithNewVersion: APIDefinition = testAPIDefinition(serviceName, context, Seq("1.0", "2.0", "3.0"))
+      lazy val apiDefinition: APIDefinition               = testAPIDefinition(serviceName, context, List("1.0", "2.0"))
+      lazy val apiDefinitionWithNewVersion: APIDefinition = testAPIDefinition(serviceName, context, List("1.0", "2.0", "3.0"))
 
-      fetchByTopLevelContextWillReturn(Seq(apiDefinition))
+      fetchByTopLevelContextWillReturn(List(apiDefinition))
       fetchByContextWillReturn(context, Some(apiDefinition))
       fetchByServiceNameWillReturn(serviceName, Some(apiDefinition))
 
@@ -145,8 +145,8 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
       lazy val oldContext: String                         = "money"
       lazy val newContext                                 = "new-money"
       lazy val serviceName: String                        = "money-service"
-      lazy val apiDefinition: APIDefinition               = testAPIDefinition(serviceName, oldContext, Seq("1.0", "2.0"))
-      lazy val apiDefinitionWithNewVersion: APIDefinition = testAPIDefinition(serviceName, newContext, Seq("1.0", "2.0", "3.0"))
+      lazy val apiDefinition: APIDefinition               = testAPIDefinition(serviceName, oldContext, List("1.0", "2.0"))
+      lazy val apiDefinitionWithNewVersion: APIDefinition = testAPIDefinition(serviceName, newContext, List("1.0", "2.0", "3.0"))
 
       thereAreNoOverlappingAPIContexts
       fetchByContextWillReturn(newContext, None)
@@ -317,7 +317,7 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
       lazy val existingAPI: APIDefinition = testAPIDefinition("existing-service", supersetContext)
       lazy val newAPI: APIDefinition      = testAPIDefinition("new-service", newContext)
 
-      fetchByTopLevelContextWillReturn(Seq(existingAPI))
+      fetchByTopLevelContextWillReturn(List(existingAPI))
       fetchByContextWillReturn(newContext, None)
       fetchByServiceNameWillReturn("new-service", None)
 
@@ -332,7 +332,7 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
       lazy val existingAPI: APIDefinition = testAPIDefinition("existing-service", subsetContext)
       lazy val newAPI: APIDefinition      = testAPIDefinition("new-service", newContext)
 
-      fetchByTopLevelContextWillReturn(Seq(existingAPI))
+      fetchByTopLevelContextWillReturn(List(existingAPI))
       fetchByContextWillReturn(newContext, None)
       fetchByServiceNameWillReturn("new-service", None)
 
@@ -347,7 +347,7 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
       lazy val existingAPI1: APIDefinition = testAPIDefinition("existing-service-1", "individuals/foo")
       lazy val existingAPI2: APIDefinition = testAPIDefinition("existing-service-2", "individuals/bar")
 
-      fetchByTopLevelContextWillReturn(Seq(existingAPI1, existingAPI2))
+      fetchByTopLevelContextWillReturn(List(existingAPI1, existingAPI2))
       fetchByContextWillReturn(newContext, None)
       fetchByServiceNameWillReturn("new-service", None)
 
@@ -362,7 +362,7 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
       lazy val existingAPI1: APIDefinition = testAPIDefinition("existing-service-1", "individuals/ba")
       lazy val existingAPI2: APIDefinition = testAPIDefinition("existing-service-2", "individuals/baz2")
 
-      fetchByTopLevelContextWillReturn(Seq(existingAPI1, existingAPI2))
+      fetchByTopLevelContextWillReturn(List(existingAPI1, existingAPI2))
       fetchByContextWillReturn(newContext, None)
       fetchByServiceNameWillReturn("new-service", None)
 

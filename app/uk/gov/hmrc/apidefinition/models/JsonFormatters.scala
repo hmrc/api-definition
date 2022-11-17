@@ -33,37 +33,6 @@ object JsonFormatters {
   implicit val formatHttpMethod             = EnumJson.enumFormat(HttpMethod)
   implicit val formatResourceThrottlingTier = EnumJson.enumFormat(ResourceThrottlingTier)
 
-  implicit object apiAccessWrites extends Writes[APIAccess] {
-
-    private val privApiWrites: OWrites[(APIAccessType, Seq[String], Option[Boolean])] = (
-      (JsPath \ "type").write[APIAccessType] and
-        (JsPath \ "whitelistedApplicationIds").write[Seq[String]] and
-        (JsPath \ "isTrial").writeNullable[Boolean]
-    ).tupled
-
-    override def writes(access: APIAccess) = access match {
-      case _: PublicAPIAccess        => Json.obj("type" -> PUBLIC)
-      case privApi: PrivateAPIAccess => privApiWrites.writes((PRIVATE, privApi.whitelistedApplicationIds, privApi.isTrial))
-      case acc                       => throw new RuntimeException(s"Unknown API Access $acc")
-    }
-  }
-
-  implicit val apiAccessReads: Reads[APIAccess] =
-    (
-      (JsPath \ "type").read[APIAccessType.APIAccessType] and
-        (JsPath \ "whitelistedApplicationIds").readNullable[Seq[String]] and
-        (JsPath \ "isTrial").readNullable[Boolean] tupled
-    ) map {
-      case (PUBLIC, None | Some(Seq()), _)                                  => PublicAPIAccess()
-      case (PRIVATE, Some(whitelistedApplicationIds: Seq[String]), isTrial) => PrivateAPIAccess(whitelistedApplicationIds, isTrial)
-      case (PRIVATE, None, isTrial)                                         => PrivateAPIAccess(Seq.empty, isTrial)
-      case unknownApiAccess                                                 => throw new RuntimeException(s"Unknown API Access $unknownApiAccess")
-    }
-
-  implicit val formatParameter  = Json.format[Parameter]
-  implicit val formatEndpoint   = Json.format[Endpoint]
-  implicit val formatAPIVersion = Json.format[APIVersion]
-
   private val dateTimeFormatter = ISODateTimeFormat.dateTime().withZoneUTC()
 
   implicit val dateTimeReads: Reads[DateTime] = new Reads[DateTime] {
@@ -85,10 +54,50 @@ object JsonFormatters {
 
   implicit val dateTimeFormats = Format(fjs = dateTimeReads, tjs = dateTimeWrites)
 
-  implicit val formatAPIDefinition         = Json.format[APIDefinition]
-  implicit val formatAPIAvailability       = Json.format[APIAvailability]
-  implicit val formatExtendedAPIVersion    = Json.format[ExtendedAPIVersion]
-  implicit val formatExtendedAPIDefinition = Json.format[ExtendedAPIDefinition]
+  implicit object apiAccessWrites extends Writes[APIAccess] {
+
+    private val privApiWrites: OWrites[(APIAccessType, List[String], Option[Boolean])] = (
+      (JsPath \ "type").write[APIAccessType] and
+        (JsPath \ "whitelistedApplicationIds").write[List[String]] and
+        (JsPath \ "isTrial").writeNullable[Boolean]
+    ).tupled
+
+    override def writes(access: APIAccess) = access match {
+      case _: PublicAPIAccess        => Json.obj("type" -> PUBLIC)
+      case privApi: PrivateAPIAccess => privApiWrites.writes((PRIVATE, privApi.whitelistedApplicationIds, privApi.isTrial))
+      case acc                       => throw new RuntimeException(s"Unknown API Access $acc")
+    }
+  }
+
+  implicit val apiAccessReads: Reads[APIAccess] =
+    (
+      (JsPath \ "type").read[APIAccessType.APIAccessType] and
+        (JsPath \ "whitelistedApplicationIds").readNullable[List[String]] and
+        (JsPath \ "isTrial").readNullable[Boolean] tupled
+    ) map {
+      case (PUBLIC, None | Some(Nil), _)                                    => PublicAPIAccess()
+      case (PRIVATE, Some(whitelistedApplicationIds: List[String]), isTrial) => PrivateAPIAccess(whitelistedApplicationIds, isTrial)
+      case (PRIVATE, None, isTrial)                                         => PrivateAPIAccess(Nil, isTrial)
+      case unknownApiAccess                                                 => throw new RuntimeException(s"Unknown API Access $unknownApiAccess")
+    }
+
+  implicit val apiVersionSourceJF: Format[ApiVersionSource] = new Format[ApiVersionSource] {
+    def reads(json: JsValue): JsResult[ApiVersionSource] = json match {
+      case JsString(RAML.asText) => JsSuccess(RAML)
+      case JsString(OAS.asText) => JsSuccess(OAS)
+      case JsString(UNKNOWN.asText) => JsSuccess(UNKNOWN)
+      case e => JsError(s"Cannot parse source value from '$e'")
+    }
+
+    def writes(foo: ApiVersionSource): JsValue = {
+      JsString(foo.asText)
+    }
+  }
+  
+  import play.api.libs.functional.syntax._ // Combinator syntax
+
+  implicit val formatParameter  = Json.format[Parameter]
+  implicit val formatEndpoint   = Json.format[Endpoint]
 
   implicit val formatAWSParameterType  = EnumJson.enumFormat(AWSParameterType)
   implicit val formatAWSQueryParameter = Json.format[AWSQueryParameter]
@@ -103,6 +112,29 @@ object JsonFormatters {
   implicit val formatAWSHttpVerbDetails = Json.format[AWSHttpVerbDetails]
   implicit val formatAWSAPIInfo         = Json.format[AWSAPIInfo]
   implicit val formatAWSSwaggerDetails  = Json.format[AWSSwaggerDetails]
+  
+  implicit val formatAPIAvailability       = Json.format[APIAvailability]
+  implicit val formatExtendedAPIVersion    = Json.format[ExtendedAPIVersion]
+  implicit val formatExtendedAPIDefinition: OFormat[ExtendedAPIDefinition] = Json.format[ExtendedAPIDefinition]
+  
+  
+  val apiVersionReads: Reads[APIVersion] = (
+    (JsPath \ "version").read[String] and
+    (JsPath \ "status").read[APIStatus.APIStatus] and
+    (JsPath \ "access").readNullable[APIAccess] and
+    (JsPath \ "endpoints").read[List[Endpoint]] and
+    (JsPath \ "endpointsEnabled").readNullable[Boolean] and
+    (JsPath \ "awsRequestId").readNullable[String] and
+    (JsPath \ "versionSource").readNullable[ApiVersionSource].map(_.fold[ApiVersionSource](UNKNOWN)(identity))
+  )(APIVersion.apply _)
+
+  val apiVersionWrites: OWrites[APIVersion] = Json.writes[APIVersion]
+  implicit val formatApiVersion = OFormat[APIVersion](apiVersionReads, apiVersionWrites)
+
+  implicit val formatAPIDefinition: OFormat[APIDefinition] = Json.format[APIDefinition]
+
+
+
 }
 
 object EnumJson {

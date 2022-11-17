@@ -31,7 +31,7 @@ class AWSPayloadHelperSpec extends AsyncHmrcSpec {
     queryParameters = None
   )
 
-  private val queryParameters = Seq(
+  private val queryParameters = List(
     Parameter(name = "city"),
     Parameter(name = "address", required = true),
     Parameter(name = "postcode", required = true)
@@ -48,14 +48,14 @@ class AWSPayloadHelperSpec extends AsyncHmrcSpec {
         authType = AuthType.USER,
         throttlingTier = ResourceThrottlingTier.UNLIMITED,
         scope = Some("read:user"),
-        queryParameters = Some(Seq(Parameter(name = "surname", required = true)))
+        queryParameters = Some(List(Parameter(name = "surname", required = true)))
       )
 
       val apiVersion = APIVersion(
         version = "1.0",
         status = APIStatus.PUBLISHED,
         access = Some(PublicAPIAccess()),
-        endpoints = Seq(populatedEndpoint),
+        endpoints = List(populatedEndpoint),
         endpointsEnabled = Some(true)
       )
 
