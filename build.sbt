@@ -49,8 +49,7 @@ lazy val microservice = Project(appName, file("."))
   .settings(
     resolvers ++= Seq(
       Resolver.sonatypeRepo("releases")
-    ),
-    resolvers += "hmrc-releases" at "https://artefacts.tax.service.gov.uk/artifactory/hmrc-releases/"
+    )
   )
 
 def onPackageName(rootPackage: String): String => Boolean = {
