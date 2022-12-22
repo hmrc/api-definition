@@ -192,7 +192,7 @@ object AuthType extends Enumeration {
 
 object HttpMethod extends Enumeration {
   type HttpMethod = Value
-  val GET, POST, PUT, PATCH, DELETE, OPTIONS = Value
+  val GET, POST, PUT, PATCH, DELETE, OPTIONS, HEAD = Value
 }
 
 object ResourceThrottlingTier extends Enumeration {
