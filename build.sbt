@@ -12,7 +12,7 @@ lazy val ComponentTest = config("component") extend Test
 
 lazy val playSettings: Seq[Setting[_]] = Seq.empty
 
-lazy val microservice = (project in file("."))
+lazy val microservice = Project(appName, file("."))
   .enablePlugins(PlayScala, SbtAutoBuildPlugin, SbtDistributablesPlugin)
   .disablePlugins(JUnitXmlReportPlugin)
   .settings(playSettings: _*)
@@ -49,8 +49,7 @@ lazy val microservice = (project in file("."))
   .settings(
     resolvers ++= Seq(
       Resolver.sonatypeRepo("releases")
-    ),
-    resolvers += "hmrc-releases" at "https://artefacts.tax.service.gov.uk/artifactory/hmrc-releases/"
+    )
   )
 
 def onPackageName(rootPackage: String): String => Boolean = {
