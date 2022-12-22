@@ -12,7 +12,7 @@ lazy val ComponentTest = config("component") extend Test
 
 lazy val playSettings: Seq[Setting[_]] = Seq.empty
 
-lazy val microservice = (project in file("."))
+lazy val microservice = Project(appName, file("."))
   .enablePlugins(PlayScala, SbtAutoBuildPlugin, SbtDistributablesPlugin)
   .disablePlugins(JUnitXmlReportPlugin)
   .settings(playSettings: _*)
