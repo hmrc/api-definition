@@ -57,7 +57,7 @@ class AWSAPIPublisherConnectorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuit
     )
   private val apiName              = "calendar--1.0"
 
-  private val swagger              =
+  private val swagger =
     AWSSwaggerDetails(
       paths = Map("/check-weather" -> Map("get" -> anAWSHttpVerbDetails)),
       info = AWSAPIInfo("calendar", "1.0")

@@ -49,9 +49,9 @@ import play.shaded.ahc.org.asynchttpclient.DefaultAsyncHttpClientConfig
 class DocumentationServiceSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite with Utils {
   import DocumentationService.PROXY_SAFE_CONTENT_TYPE
 
-  val serviceName                               = "hello-world"
-  val version                                   = "1.0"
-  val serviceUrl                                = "http://localhost"
+  val serviceName = "hello-world"
+  val version     = "1.0"
+  val serviceUrl  = "http://localhost"
 
   val productionV1Availability: APIAvailability = APIAvailability(
     endpointsEnabled = true,
@@ -67,21 +67,21 @@ class DocumentationServiceSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wi
     authorised = false
   )
 
-  val sandboxV2Availability: APIAvailability    = APIAvailability(
+  val sandboxV2Availability: APIAvailability = APIAvailability(
     endpointsEnabled = true,
     PublicAPIAccess(),
     loggedIn = false,
     authorised = false
   )
 
-  val sandboxV3Availability: APIAvailability    = APIAvailability(
+  val sandboxV3Availability: APIAvailability = APIAvailability(
     endpointsEnabled = false,
     PublicAPIAccess(),
     loggedIn = false,
     authorised = false
   )
 
-  val apiDefinition: APIDefinition              = APIDefinition(
+  val apiDefinition: APIDefinition = APIDefinition(
     serviceName = serviceName,
     serviceBaseUrl = serviceUrl,
     name = "Hello World",

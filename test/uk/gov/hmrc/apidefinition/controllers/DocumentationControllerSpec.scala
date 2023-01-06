@@ -67,9 +67,9 @@ class DocumentationControllerSpec extends AsyncHmrcSpec with StubControllerCompo
   }
 
   trait RegistrationSetup extends Setup {
-    val versions                                  = Seq("1.0", "1.1", "2.0")
-    val versionsJsonString: String                = versions.map(v => s""""$v"""").mkString(",")
-    val url                                       = "https://abc.example.com"
+    val versions                   = Seq("1.0", "1.1", "2.0")
+    val versionsJsonString: String = versions.map(v => s""""$v"""").mkString(",")
+    val url                        = "https://abc.example.com"
 
     val registrationRequestBody: String           =
       s"""{

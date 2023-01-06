@@ -27,10 +27,12 @@ import uk.gov.hmrc.apidefinition.models.ResourceThrottlingTier.ResourceThrottlin
 sealed trait ApiVersionSource {
   def asText: String
 }
+
 case object RAML extends ApiVersionSource {
   val asText = "RAML"
 }
-case object OAS extends ApiVersionSource {
+
+case object OAS  extends ApiVersionSource {
   val asText = "OAS"
 }
 

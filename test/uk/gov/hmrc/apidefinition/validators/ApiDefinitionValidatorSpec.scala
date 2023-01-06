@@ -163,7 +163,7 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
     }
 
     "fail validation when if there is an API version without version number" in new Setup {
-      lazy val versions: List[APIVersion]    =
+      lazy val versions: List[APIVersion]   =
         List(
           APIVersion(
             "1.0",

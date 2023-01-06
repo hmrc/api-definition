@@ -84,7 +84,7 @@ class APIDefinitionService @Inject() (
     apiDefinitionRepository.fetchByServiceName(serviceName)
   }
 
-  def fetchByName(name: String): Future[Option[APIDefinition]]               = {
+  def fetchByName(name: String): Future[Option[APIDefinition]] = {
     apiDefinitionRepository.fetchByName(name)
   }
 

@@ -91,14 +91,14 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll {
     val versionWithoutAccessDefinedAvailability =
       APIAvailability(versionWithoutAccessDefined.endpointsEnabled.getOrElse(false), PublicAPIAccess(), loggedIn = false, authorised = true)
 
-    val publicVersionAvailability               = APIAvailability(
+    val publicVersionAvailability = APIAvailability(
       publicVersion.endpointsEnabled.getOrElse(false),
       publicVersion.access.get,
       loggedIn = false,
       authorised = true
     )
 
-    val privateVersionAvailability              = APIAvailability(
+    val privateVersionAvailability = APIAvailability(
       privateVersionWithAppWhitelisted.endpointsEnabled.getOrElse(false),
       privateVersionWithAppWhitelisted.access.get,
       loggedIn = false,

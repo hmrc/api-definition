@@ -40,11 +40,11 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
   private def withSource(source: ApiVersionSource)(apiVersion: APIVersion): APIVersion = {
     apiVersion.copy(versionSource = source)
   }
-  
+
   private def defnWithSource(source: ApiVersionSource)(apiDefn: APIDefinition): APIDefinition = {
     apiDefn.copy(versions = apiDefn.versions.map(withSource(source)(_)))
   }
-  override implicit lazy val app: Application = appBuilder.build()
+  override implicit lazy val app: Application                                                 = appBuilder.build()
 
   private val helloApiVersion = APIVersion(
     version = "1.0",
