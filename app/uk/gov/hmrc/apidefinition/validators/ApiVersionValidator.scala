@@ -16,11 +16,12 @@
 
 package uk.gov.hmrc.apidefinition.validators
 
-import cats.implicits._
 import javax.inject.{Inject, Singleton}
-import uk.gov.hmrc.apidefinition.models.{APIStatus, APIVersion, Endpoint}
-
 import scala.concurrent.ExecutionContext
+
+import cats.implicits._
+
+import uk.gov.hmrc.apidefinition.models.{APIStatus, APIVersion, Endpoint}
 
 @Singleton
 class ApiVersionValidator @Inject() (apiEndpointValidator: ApiEndpointValidator)(implicit override val ec: ExecutionContext) extends Validator[APIVersion] {

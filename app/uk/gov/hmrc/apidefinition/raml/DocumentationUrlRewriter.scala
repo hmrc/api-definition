@@ -17,7 +17,9 @@
 package uk.gov.hmrc.apidefinition.raml
 
 import javax.inject.{Inject, Singleton}
+
 import uk.gov.hmrc.ramltools.loaders.UrlRewriter
+
 import uk.gov.hmrc.apidefinition.config.AppConfig
 
 @Singleton

@@ -16,17 +16,20 @@
 
 package uk.gov.hmrc.apidefinition.controllers
 
-import akka.stream.Materializer
-import play.api.test.{FakeRequest, StubControllerComponentsFactory, StubPlayBodyParsersFactory}
-import uk.gov.hmrc.apidefinition.config.AppConfig
 import scala.concurrent.ExecutionContext.Implicits.global
-import uk.gov.hmrc.apidefinition.services.SpecificationService
-import play.api.mvc.AnyContentAsEmpty
-import play.api.libs.json.Json
 import scala.concurrent.Future.successful
-import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
-import play.api.test.Helpers._
+
+import akka.stream.Materializer
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+
+import play.api.libs.json.Json
+import play.api.mvc.AnyContentAsEmpty
+import play.api.test.Helpers._
+import play.api.test.{FakeRequest, StubControllerComponentsFactory, StubPlayBodyParsersFactory}
+
+import uk.gov.hmrc.apidefinition.config.AppConfig
+import uk.gov.hmrc.apidefinition.services.SpecificationService
+import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 
 class SpecificationControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite with StubControllerComponentsFactory with StubPlayBodyParsersFactory {
 

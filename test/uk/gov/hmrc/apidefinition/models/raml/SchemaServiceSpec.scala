@@ -16,13 +16,15 @@
 
 package uk.gov.hmrc.apidefinition.models.raml
 
+import scala.io.Source
+
 import org.scalatest.Assertion
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import play.api.libs.json.{JsValue, Json}
-import uk.gov.hmrc.apidefinition.models.apispecification.{EnumerationValue, JsonSchema}
 
-import scala.io.Source
+import play.api.libs.json.{JsValue, Json}
+
+import uk.gov.hmrc.apidefinition.models.apispecification.{EnumerationValue, JsonSchema}
 
 class SchemaServiceSpec extends AnyWordSpec with Matchers {
 

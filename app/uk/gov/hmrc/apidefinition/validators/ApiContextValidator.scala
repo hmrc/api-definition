@@ -17,19 +17,19 @@
 package uk.gov.hmrc.apidefinition.validators
 
 import java.nio.file.{Path, Paths}
+import javax.inject.{Inject, Singleton}
+import scala.concurrent.Future.successful
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.matching.Regex
 
 import cats.Monoid._
 import cats.data.Validated.Invalid
 import cats.implicits._
-import javax.inject.{Inject, Singleton}
+
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.models.APIDefinition
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.services.APIDefinitionService
-
-import scala.concurrent.Future.successful
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.matching.Regex
 
 @Singleton
 class ApiContextValidator @Inject() (

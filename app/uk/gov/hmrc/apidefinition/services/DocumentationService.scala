@@ -16,19 +16,22 @@
 
 package uk.gov.hmrc.apidefinition.services
 
-import akka.stream.Materializer
 import javax.inject.{Inject, Singleton}
+import scala.concurrent.{ExecutionContext, Future}
+
+import akka.stream.Materializer
+
 import play.api.http.HttpEntity
 import play.api.http.Status._
 import play.api.libs.ws.WSResponse
 import play.api.mvc.Result
 import play.api.mvc.Results._
+import uk.gov.hmrc.http.{InternalServerException, NotFoundException}
+
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.connector.ApiMicroserviceConnector
 import uk.gov.hmrc.apidefinition.models.{APIDefinition, APIVersion}
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
-import uk.gov.hmrc.http.{InternalServerException, NotFoundException}
-import scala.concurrent.{ExecutionContext, Future}
 
 object DocumentationService {
   val PROXY_SAFE_CONTENT_TYPE = "Proxy-Safe-Content-Type"

@@ -17,6 +17,7 @@
 package uk.gov.hmrc.apidefinition.models.apispecification
 
 import play.api.libs.json._
+
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 
 class ApiSpecificationFormattersSpec extends AsyncHmrcSpec {

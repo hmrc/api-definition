@@ -16,12 +16,13 @@
 
 package uk.gov.hmrc.apidefinition.validators
 
-import cats.data.ValidatedNel
-import cats.implicits._
-import uk.gov.hmrc.apidefinition.models.APIDefinition
-
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.matching.Regex
+
+import cats.data.ValidatedNel
+import cats.implicits._
+
+import uk.gov.hmrc.apidefinition.models.APIDefinition
 
 trait Validator[T] {
 

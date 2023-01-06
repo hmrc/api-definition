@@ -17,7 +17,9 @@
 package uk.gov.hmrc.apidefinition.config
 
 import javax.inject.{Inject, Singleton}
+
 import net.ceedubs.ficus.Ficus._
+
 import play.api.{Configuration, Environment, Mode}
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 

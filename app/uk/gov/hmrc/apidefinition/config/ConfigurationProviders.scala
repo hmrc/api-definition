@@ -17,16 +17,15 @@
 package uk.gov.hmrc.apidefinition.config
 
 import javax.inject.{Inject, Provider, Singleton}
+
 import play.api.inject.{Binding, Module}
 import play.api.{Configuration, Environment, Mode}
-import uk.gov.hmrc.apidefinition.services.{EmailNotificationService, LoggingNotificationService, NotificationService}
-import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.http.HttpClient
+import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+import uk.gov.hmrc.ramltools.loaders.{RamlLoader, UrlRewriter}
 
-import uk.gov.hmrc.ramltools.loaders.RamlLoader
-import uk.gov.hmrc.apidefinition.raml.DocumentationRamlLoader
-import uk.gov.hmrc.ramltools.loaders.UrlRewriter
-import uk.gov.hmrc.apidefinition.raml.DocumentationUrlRewriter
+import uk.gov.hmrc.apidefinition.raml.{DocumentationRamlLoader, DocumentationUrlRewriter}
+import uk.gov.hmrc.apidefinition.services.{EmailNotificationService, LoggingNotificationService, NotificationService}
 import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
 
 class ConfigurationModule extends Module {

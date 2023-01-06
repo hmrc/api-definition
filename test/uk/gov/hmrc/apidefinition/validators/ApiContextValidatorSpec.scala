@@ -16,14 +16,15 @@
 
 package uk.gov.hmrc.apidefinition.validators
 
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future.successful
+
 import cats.data.Validated.{Invalid, Valid}
+
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.services.APIDefinitionService
-
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future.successful
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 
 class ApiContextValidatorSpec extends AsyncHmrcSpec {

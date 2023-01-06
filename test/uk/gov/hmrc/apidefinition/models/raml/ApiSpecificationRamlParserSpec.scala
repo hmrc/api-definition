@@ -16,10 +16,10 @@
 
 package uk.gov.hmrc.apidefinition.models.apispecification
 
-import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
-
-import RamlSpecHelper.loadRaml
 import play.api.libs.json.Json
+
+import uk.gov.hmrc.apidefinition.models.apispecification.RamlSpecHelper.loadRaml
+import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 
 class ApiSpecificationRamlParserSpec extends AsyncHmrcSpec {
   import uk.gov.hmrc.apidefinition.models.raml.SchemaTestHelper._

@@ -16,21 +16,23 @@
 
 package uk.gov.hmrc.apidefinition.repository
 
+import javax.inject.{Inject, Singleton}
+import scala.concurrent.{ExecutionContext, Future}
+
 import org.bson.codecs.configuration.CodecRegistries.{fromCodecs, fromRegistries}
 import org.mongodb.scala.MongoClient.DEFAULT_CODEC_REGISTRY
 import org.mongodb.scala.MongoCollection
 import org.mongodb.scala.bson.conversions.Bson
-import org.mongodb.scala.model.{FindOneAndReplaceOptions, ReturnDocument}
 import org.mongodb.scala.model.Filters.{equal, regex}
+import org.mongodb.scala.model.{FindOneAndReplaceOptions, ReturnDocument}
+
 import play.api.Logging
-import uk.gov.hmrc.apidefinition.models.APIDefinition
-import uk.gov.hmrc.apidefinition.models.JsonFormatters._
-import uk.gov.hmrc.apidefinition.utils.IndexHelper.createUniqueBackgroundSingleFieldAscendingIndex
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, CollectionFactory, PlayMongoRepository}
 
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import uk.gov.hmrc.apidefinition.models.APIDefinition
+import uk.gov.hmrc.apidefinition.models.JsonFormatters._
+import uk.gov.hmrc.apidefinition.utils.IndexHelper.createUniqueBackgroundSingleFieldAscendingIndex
 
 @Singleton
 class APIDefinitionRepository @Inject() (mongoComponent: MongoComponent)(implicit val ec: ExecutionContext)

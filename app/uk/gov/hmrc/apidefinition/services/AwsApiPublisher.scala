@@ -16,20 +16,22 @@
 
 package uk.gov.hmrc.apidefinition.services
 
-import com.google.inject.Singleton
 import javax.inject.Inject
+import scala.concurrent.Future.sequence
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.control.NonFatal
+import scala.util.matching.Regex
+
+import com.google.inject.Singleton
+
+import uk.gov.hmrc.http.HeaderCarrier
+
 import uk.gov.hmrc.apidefinition.connector.AWSAPIPublisherConnector
 import uk.gov.hmrc.apidefinition.models.AWSAPIDefinition.awsApiGatewayName
 import uk.gov.hmrc.apidefinition.models.{APIDefinition, APIStatus, APIVersion}
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.utils.AWSPayloadHelper.buildAWSSwaggerDetails
-import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
-
-import scala.concurrent.Future.sequence
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.control.NonFatal
-import scala.util.matching.Regex
 
 @Singleton
 class AwsApiPublisher @Inject() (val awsAPIPublisherConnector: AWSAPIPublisherConnector, val apiDefinitionRepository: APIDefinitionRepository)(implicit val ec: ExecutionContext)

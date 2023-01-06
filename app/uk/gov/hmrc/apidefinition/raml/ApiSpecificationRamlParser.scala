@@ -16,19 +16,17 @@
 
 package uk.gov.hmrc.apidefinition.raml
 
+import javax.inject.{Inject, Singleton}
 import scala.collection.JavaConverters._
 
-import org.raml.v2.api.model.v10.resources.{Resource => RamlResource}
-import org.raml.v2.api.model.v10.datamodel.{ExampleSpec => RamlExampleSpec}
-import org.raml.v2.api.model.v10.datamodel.{TypeDeclaration => RamlTypeDeclaration}
-import org.raml.v2.api.model.v10.datamodel.{StringTypeDeclaration => RamlStringTypeDeclaration}
-import org.raml.v2.api.model.v10.methods.{Method => RamlMethod}
-import javax.inject.{Inject, Singleton}
-
-import uk.gov.hmrc.apidefinition.raml.RamlSyntax._
-import uk.gov.hmrc.apidefinition.models.apispecification._
-import uk.gov.hmrc.apidefinition.services.SchemaService
 import akka.http.scaladsl.model.headers.LinkParams.`type`
+import org.raml.v2.api.model.v10.datamodel.{ExampleSpec => RamlExampleSpec, StringTypeDeclaration => RamlStringTypeDeclaration, TypeDeclaration => RamlTypeDeclaration}
+import org.raml.v2.api.model.v10.methods.{Method => RamlMethod}
+import org.raml.v2.api.model.v10.resources.{Resource => RamlResource}
+
+import uk.gov.hmrc.apidefinition.models.apispecification._
+import uk.gov.hmrc.apidefinition.raml.RamlSyntax._
+import uk.gov.hmrc.apidefinition.services.SchemaService
 
 @Singleton
 class ApiSpecificationRamlParser @Inject() (schemaService: SchemaService) {

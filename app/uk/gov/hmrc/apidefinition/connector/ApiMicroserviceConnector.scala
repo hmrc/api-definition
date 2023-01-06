@@ -17,9 +17,9 @@
 package uk.gov.hmrc.apidefinition.connector
 
 import javax.inject.{Inject, Singleton}
-import play.api.libs.ws.{WSClient, WSResponse}
-
 import scala.concurrent.{ExecutionContext, Future}
+
+import play.api.libs.ws.{WSClient, WSResponse}
 
 import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
 

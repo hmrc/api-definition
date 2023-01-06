@@ -17,16 +17,18 @@
 package uk.gov.hmrc.apidefinition.services
 
 import javax.inject.{Inject, Singleton}
+import scala.concurrent.Future.{failed, successful}
+import scala.concurrent.{ExecutionContext, Future}
+
 import org.joda.time.{DateTime, DateTimeZone}
+
+import uk.gov.hmrc.http.HeaderCarrier
+
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.models.APIStatus.APIStatus
 import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
-
-import scala.concurrent.Future.{failed, successful}
-import scala.concurrent.{ExecutionContext, Future}
-import uk.gov.hmrc.http.HeaderCarrier
 
 @Singleton
 class APIDefinitionService @Inject() (

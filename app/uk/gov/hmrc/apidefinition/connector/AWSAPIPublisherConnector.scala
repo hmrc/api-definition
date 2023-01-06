@@ -17,21 +17,20 @@
 package uk.gov.hmrc.apidefinition.connector
 
 import javax.inject.Inject
+import scala.concurrent.Future.{failed, successful}
+import scala.concurrent.{ExecutionContext, Future}
+
 import play.api.http.ContentTypes.JSON
 import play.api.http.HeaderNames.CONTENT_TYPE
 import play.api.libs.json.Json
 import play.api.{Configuration, Environment, Mode}
+import uk.gov.hmrc.http.HttpReads.Implicits._
+import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, UpstreamErrorResponse}
+import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.models.AWSSwaggerDetails
 import uk.gov.hmrc.apidefinition.models.JsonFormatters._
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
-import uk.gov.hmrc.http.HttpClient
-
-import scala.concurrent.{ExecutionContext, Future}
-import uk.gov.hmrc.http.UpstreamErrorResponse
-import uk.gov.hmrc.http.HttpReads.Implicits._
-import scala.concurrent.Future.{failed, successful}
 
 object AWSAPIPublisherConnector {
   // Deliberately upper case RequestId !

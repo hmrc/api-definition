@@ -16,12 +16,12 @@
 
 package uk.gov.hmrc.apidefinition.models.apispecification
 
-import RamlSpecHelper.loadRaml
-import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
-
 import org.scalatest.prop.TableDrivenPropertyChecks._
+
+import uk.gov.hmrc.apidefinition.models.apispecification.RamlSpecHelper.loadRaml
 import uk.gov.hmrc.apidefinition.raml.ApiSpecificationRamlParser
 import uk.gov.hmrc.apidefinition.services.SchemaService
+import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 
 class GroupedResourcesSpec extends AsyncHmrcSpec {
   val schemaService              = new SchemaService()

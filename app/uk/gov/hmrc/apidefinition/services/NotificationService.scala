@@ -16,15 +16,16 @@
 
 package uk.gov.hmrc.apidefinition.services
 
-import play.api.libs.json.{Json, OFormat}
-import play.mvc.Http.Status.NOT_FOUND
-import uk.gov.hmrc.apidefinition.models.APIStatus.APIStatus
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
-import uk.gov.hmrc.http.HttpClient
 import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
+
+import play.api.libs.json.{Json, OFormat}
+import play.mvc.Http.Status.NOT_FOUND
 import uk.gov.hmrc.http.HttpReads.Implicits._
+import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpResponse}
+
+import uk.gov.hmrc.apidefinition.models.APIStatus.APIStatus
 import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
 
 trait NotificationService {

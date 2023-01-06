@@ -18,13 +18,14 @@ package uk.gov.hmrc.apidefinition.config
 
 import java.util.UUID
 
+import org.scalatest.BeforeAndAfterEach
+
 import play.api.{Configuration, Environment}
-import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
+import uk.gov.hmrc.http.HttpClient
+import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 import uk.gov.hmrc.apidefinition.services.{EmailNotificationService, LoggingNotificationService, NotificationService}
-import org.scalatest.BeforeAndAfterEach
-import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
-import uk.gov.hmrc.http.HttpClient
+import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 
 class ConfigurationProvidersSpec extends AsyncHmrcSpec with BeforeAndAfterEach {
 

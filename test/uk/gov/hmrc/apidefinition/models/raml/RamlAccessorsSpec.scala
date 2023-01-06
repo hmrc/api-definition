@@ -16,10 +16,11 @@
 
 package uk.gov.hmrc.apidefinition.models.raml
 
-import org.scalatest.prop.TableDrivenPropertyChecks._
-import uk.gov.hmrc.apidefinition.raml.{SafeValue, SafeValueAsString}
-import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.prop.TableDrivenPropertyChecks._
+import org.scalatest.wordspec.AnyWordSpec
+
+import uk.gov.hmrc.apidefinition.raml.{SafeValue, SafeValueAsString}
 
 class RamlAccessorsSpec extends AnyWordSpec with Matchers {
 

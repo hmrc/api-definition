@@ -18,6 +18,7 @@ package uk.gov.hmrc.apidefinition.raml
 
 import org.raml.v2.api.model.v10.common.{Annotable => RamlAnnotable}
 import org.raml.v2.api.model.v10.datamodel.{TypeInstance => RamlTypeInstance}
+
 import uk.gov.hmrc.apidefinition.models.apispecification.AnnotationExtension
 
 object RamlSyntax {

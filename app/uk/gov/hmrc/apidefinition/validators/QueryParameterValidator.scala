@@ -17,10 +17,10 @@
 package uk.gov.hmrc.apidefinition.validators
 
 import javax.inject.{Inject, Singleton}
-import uk.gov.hmrc.apidefinition.models.Parameter
-
 import scala.concurrent.ExecutionContext
 import scala.util.matching.Regex
+
+import uk.gov.hmrc.apidefinition.models.Parameter
 
 @Singleton
 class QueryParameterValidator @Inject() (implicit override val ec: ExecutionContext) extends Validator[Parameter] {

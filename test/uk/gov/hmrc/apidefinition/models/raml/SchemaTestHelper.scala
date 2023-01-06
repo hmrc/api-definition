@@ -16,10 +16,11 @@
 
 package uk.gov.hmrc.apidefinition.models.raml
 
-import uk.gov.hmrc.apidefinition.services.SchemaService
 import scala.io.Source
-import uk.gov.hmrc.apidefinition.raml.ApiSpecificationRamlParser
+
 import uk.gov.hmrc.apidefinition.models.apispecification.JsonSchema
+import uk.gov.hmrc.apidefinition.raml.ApiSpecificationRamlParser
+import uk.gov.hmrc.apidefinition.services.SchemaService
 
 object SchemaTestHelper {
 

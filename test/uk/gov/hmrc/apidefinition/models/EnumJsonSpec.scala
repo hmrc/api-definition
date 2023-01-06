@@ -17,6 +17,7 @@
 package uk.gov.hmrc.apidefinition.models
 
 import play.api.libs.json.Json
+
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 
 class EnumJsonSpec extends AsyncHmrcSpec {

@@ -20,6 +20,7 @@ import java.io.File
 
 import org.raml.v2.api.RamlModelBuilder
 import org.raml.v2.api.loader.FileResourceLoader
+
 import uk.gov.hmrc.ramltools.loaders.RamlLoader
 
 class StringRamlLoader extends RamlLoader {

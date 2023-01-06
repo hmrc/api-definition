@@ -16,14 +16,15 @@
 
 package uk.gov.hmrc.apidefinition
 
+import scala.concurrent.Future
+import scala.concurrent.Future.successful
+
 import play.api.libs.json.Json.toJson
 import play.api.libs.json.{JsPath, JsResult, JsValue, JsonValidationError, Reads}
 import play.api.mvc.Results.UnprocessableEntity
 import play.api.mvc.{Request, Result}
-import uk.gov.hmrc.apidefinition.models.{ErrorCode, ErrorResponse, FieldErrorDescription}
 
-import scala.concurrent.Future
-import scala.concurrent.Future.successful
+import uk.gov.hmrc.apidefinition.models.{ErrorCode, ErrorResponse, FieldErrorDescription}
 
 package object controllers {
 

@@ -17,9 +17,15 @@
 package uk.gov.hmrc.apidefinition.service
 
 import java.util
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future._
+import scala.util.Random
 
+import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+
 import play.api.http.Status
 import play.api.libs.ws.WSResponse
 import play.api.libs.ws.ahc.cache.{CacheableHttpResponseBodyPart, CacheableHttpResponseStatus, CacheableResponse}
@@ -27,24 +33,15 @@ import play.api.libs.ws.ahc.{AhcWSResponse, StandaloneAhcWSResponse}
 import play.api.mvc.Result
 import play.shaded.ahc.io.netty.handler.codec.http.DefaultHttpHeaders
 import play.shaded.ahc.org.asynchttpclient.uri.Uri
+import play.shaded.ahc.org.asynchttpclient.{AsyncHttpClientConfig, DefaultAsyncHttpClientConfig}
+import uk.gov.hmrc.http.{HeaderCarrier, InternalServerException, NotFoundException}
+
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.connector.ApiMicroserviceConnector
 import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
-import uk.gov.hmrc.apidefinition.services.DocumentationService
-import uk.gov.hmrc.http.{HeaderCarrier, InternalServerException, NotFoundException}
-import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
-
-import uk.gov.hmrc.apidefinition.utils.Utils
-
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future._
-import scala.util.Random
-import uk.gov.hmrc.apidefinition.services.SpecificationService
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import akka.stream.Materializer
-import play.shaded.ahc.org.asynchttpclient.AsyncHttpClientConfig
-import play.shaded.ahc.org.asynchttpclient.DefaultAsyncHttpClientConfig
+import uk.gov.hmrc.apidefinition.services.{DocumentationService, SpecificationService}
+import uk.gov.hmrc.apidefinition.utils.{AsyncHmrcSpec, Utils}
 
 class DocumentationServiceSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite with Utils {
   import DocumentationService.PROXY_SAFE_CONTENT_TYPE

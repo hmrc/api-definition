@@ -17,15 +17,15 @@
 package uk.gov.hmrc.apidefinition.services
 
 import java.net.URI
+import javax.inject.Singleton
+import scala.collection.immutable.ListMap
+import scala.io.Source
 
 import play.api.libs.json.Json
 
-import scala.collection.immutable.ListMap
-import scala.io.Source
 import uk.gov.hmrc.apidefinition.models.apispecification.JsonSchema
 import uk.gov.hmrc.apidefinition.models.apispecification.JsonSchema.JsonSchemaWithReference
 import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
-import javax.inject.Singleton
 
 @Singleton
 class SchemaService extends ApplicationLogger {
