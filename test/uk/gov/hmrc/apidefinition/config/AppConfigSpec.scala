@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,11 @@
 package uk.gov.hmrc.apidefinition.config
 
 import org.scalatest.BeforeAndAfterEach
+import org.scalatestplus.play.guice.GuiceOneAppPerTest
+
 import play.api.{Configuration, Environment}
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
-import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 
-import org.scalatestplus.play.guice.GuiceOneAppPerTest
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 
 class AppConfigSpec extends AsyncHmrcSpec

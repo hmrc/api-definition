@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,20 @@
 
 package uk.gov.hmrc.apidefinition.validators
 
+import javax.inject.{Inject, Singleton}
+import scala.concurrent.Future.successful
+import scala.concurrent.{ExecutionContext, Future}
+
 import cats.data.Validated.{Invalid, Valid}
 import cats.implicits._
-import javax.inject.{Inject, Singleton}
+
 import play.api.libs.json.Json.toJson
 import play.api.mvc.Result
 import play.api.mvc.Results.UnprocessableEntity
+
 import uk.gov.hmrc.apidefinition.models.ErrorCode.INVALID_REQUEST_PAYLOAD
 import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.services.APIDefinitionService
-
-import scala.concurrent.Future.successful
-import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class ApiDefinitionValidator @Inject() (

@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,14 +24,18 @@ object SafeValue {
     Option(nullableString).filter(_.nonEmpty)
   }
 
+  // scalastyle:off structural.type
   def apply(nullableObj: { def value(): String }): Option[String] = {
     Option(nullableObj).flatMap(obj => Option(obj.value())).filter(_.nonEmpty)
   }
+  // scalastyle:on structural.type
 }
 
 object SafeValueAsString {
   // Handle nulls from RAML
   def apply(nullableString: String): String = SafeValue(nullableString).getOrElse("")
 
+  // scalastyle:off structural.type
   def apply(nullableObj: { def value(): String }): String = SafeValue(nullableObj).getOrElse("")
+  // scalastyle:on structural.type
 }

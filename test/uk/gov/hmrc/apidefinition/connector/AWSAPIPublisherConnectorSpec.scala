@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package uk.gov.hmrc.apidefinition.connector
 
 import java.util.UUID
+import scala.concurrent.ExecutionContext.Implicits.global
 
 import com.codahale.metrics.SharedMetricRegistries
 import com.github.tomakehurst.wiremock.WireMockServer
@@ -24,21 +25,18 @@ import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration._
 import org.scalatest.BeforeAndAfterAll
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+
 import play.api.http.ContentTypes.JSON
 import play.api.http.HeaderNames.{AUTHORIZATION, CONTENT_TYPE}
 import play.api.http.Status.{INTERNAL_SERVER_ERROR, OK}
 import play.api.{Configuration, Environment}
+import uk.gov.hmrc.http.{Authorization, HeaderCarrier, HttpClient, UpstreamErrorResponse}
+import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.models.{AWSAPIInfo, AWSHttpVerbDetails, AWSResponse, AWSSwaggerDetails}
-import uk.gov.hmrc.http.Authorization
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
-import uk.gov.hmrc.http.HttpClient
-
-import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import uk.gov.hmrc.http.UpstreamErrorResponse
 
 class AWSAPIPublisherConnectorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite with BeforeAndAfterAll {
 
@@ -57,7 +55,7 @@ class AWSAPIPublisherConnectorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuit
     )
   private val apiName              = "calendar--1.0"
 
-  private val swagger              =
+  private val swagger =
     AWSSwaggerDetails(
       paths = Map("/check-weather" -> Map("get" -> anAWSHttpVerbDetails)),
       info = AWSAPIInfo("calendar", "1.0")

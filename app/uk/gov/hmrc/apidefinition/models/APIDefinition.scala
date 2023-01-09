@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,21 +16,27 @@
 
 package uk.gov.hmrc.apidefinition.models
 
-import org.joda.time.DateTime
-import play.api.libs.json.{JsObject, Json, Reads}
 import enumeratum.{Enum, EnumEntry, PlayJsonEnum}
+import org.joda.time.DateTime
+
+import play.api.libs.json.{JsObject, Json, Reads}
+
 import uk.gov.hmrc.apidefinition.models.APIStatus.APIStatus
 import uk.gov.hmrc.apidefinition.models.AuthType.AuthType
 import uk.gov.hmrc.apidefinition.models.HttpMethod.HttpMethod
 import uk.gov.hmrc.apidefinition.models.ResourceThrottlingTier.ResourceThrottlingTier
 
+// scalastyle:off number.of.types
+
 sealed trait ApiVersionSource {
   def asText: String
 }
+
 case object RAML extends ApiVersionSource {
   val asText = "RAML"
 }
-case object OAS extends ApiVersionSource {
+
+case object OAS  extends ApiVersionSource {
   val asText = "OAS"
 }
 
@@ -147,6 +153,8 @@ object APICategory extends Enum[APICategory] with PlayJsonEnum[APICategory] {
   case object VAT_MTD                      extends APICategory
   case object OTHER                        extends APICategory
 
+  // scalastyle:off cyclomatic.complexity
+
   def toAPICategoryDetails(category: APICategory): APICategoryDetails = {
     category match {
       case EXAMPLE                      => APICategoryDetails(EXAMPLE, "Example")
@@ -174,6 +182,7 @@ object APICategory extends Enum[APICategory] with PlayJsonEnum[APICategory] {
       case OTHER                        => APICategoryDetails(OTHER, "Other")
     }
   }
+  // scalastyle:on cyclomatic.complexity
 
   def allAPICategoryDetails = APICategory.values.map(toAPICategoryDetails)
 }
@@ -204,3 +213,5 @@ object SubscriptionThrottlingTier extends Enumeration {
   type ThrottlingTier = Value
   val BRONZE_SUBSCRIPTION, SILVER_SUBSCRIPTION, GOLD_SUBSCRIPTION, PLATINUM_SUBSCRIPTION, RHODIUM_SUBSCRIPTION = Value
 }
+
+// scalastyle:on number.of.types

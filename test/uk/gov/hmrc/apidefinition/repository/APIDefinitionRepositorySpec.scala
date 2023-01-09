@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,9 @@
 
 package uk.gov.hmrc.apidefinition.repository
 
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+
 import com.mongodb.MongoWriteException
 import org.joda.time.{DateTime, DateTimeZone}
 import org.mongodb.scala.model.Indexes.ascending
@@ -23,14 +26,13 @@ import org.mongodb.scala.model.{IndexModel, IndexOptions}
 import org.scalatest.concurrent.Eventually
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
-import uk.gov.hmrc.apidefinition.models._
-import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import uk.gov.hmrc.apidefinition.models._
+import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 
 class APIDefinitionRepositorySpec extends AsyncHmrcSpec
     with DefaultPlayMongoRepositorySupport[APIDefinition]
@@ -40,11 +42,11 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
   private def withSource(source: ApiVersionSource)(apiVersion: APIVersion): APIVersion = {
     apiVersion.copy(versionSource = source)
   }
-  
+
   private def defnWithSource(source: ApiVersionSource)(apiDefn: APIDefinition): APIDefinition = {
     apiDefn.copy(versions = apiDefn.versions.map(withSource(source)(_)))
   }
-  override implicit lazy val app: Application = appBuilder.build()
+  override implicit lazy val app: Application                                                 = appBuilder.build()
 
   private val helloApiVersion = APIVersion(
     version = "1.0",

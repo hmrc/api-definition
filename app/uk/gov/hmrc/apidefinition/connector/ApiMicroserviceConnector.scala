@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,9 @@
 package uk.gov.hmrc.apidefinition.connector
 
 import javax.inject.{Inject, Singleton}
-import play.api.libs.ws.{WSClient, WSResponse}
-
 import scala.concurrent.{ExecutionContext, Future}
+
+import play.api.libs.ws.{WSClient, WSResponse}
 
 import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
 

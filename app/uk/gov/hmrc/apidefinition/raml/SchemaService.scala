@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,28 +17,28 @@
 package uk.gov.hmrc.apidefinition.services
 
 import java.net.URI
+import javax.inject.Singleton
+import scala.collection.immutable.ListMap
+import scala.io.Source
 
 import play.api.libs.json.Json
 
-import scala.collection.immutable.ListMap
-import scala.io.Source
 import uk.gov.hmrc.apidefinition.models.apispecification.JsonSchema
 import uk.gov.hmrc.apidefinition.models.apispecification.JsonSchema.JsonSchemaWithReference
 import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
-import javax.inject.Singleton
 
 @Singleton
 class SchemaService extends ApplicationLogger {
 
   protected def fetchPlainTextSchema(uri: String): String = {
-    var source: Source = null
+    var source: Source = null   // scalastyle:ignore
     try {
       source = Source.fromURL(uri)
       source.mkString
     } finally {
       if (source != null) {
         source.close()
-        source = null
+        source = null           // scalastyle:ignore
       }
     }
   }
@@ -73,6 +73,7 @@ class SchemaService extends ApplicationLogger {
     Json.stringify(Json.toJson(jsonSchema))
   }
 
+  // scalastyle:off method.length
   private def resolveRefs(schema: JsonSchema, basePath: String, enclosingSchema: JsonSchema): JsonSchema = {
     def resolve(schema: JsonSchema, basePath: String, enclosingSchema: JsonSchema)(ref: String) = {
       val (referredSchemaPath, jsonPointerPathParts) = getPath(ref)
@@ -142,6 +143,7 @@ class SchemaService extends ApplicationLogger {
         )
     }
   }
+  // scalastyle:on method.length
 
   def getPath(ref: String): (String, Seq[String]) = {
     def splitJsonPointer(jsonPointer: String): Seq[String] = {

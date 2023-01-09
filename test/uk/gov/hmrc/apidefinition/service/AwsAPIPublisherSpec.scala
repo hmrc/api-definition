@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,18 +17,19 @@
 package uk.gov.hmrc.apidefinition.service
 
 import java.util.UUID
+import scala.collection.JavaConverters._
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future.{failed, successful}
 
 import org.mockito.{ArgumentCaptor, ArgumentMatchers}
+
+import uk.gov.hmrc.http.HeaderCarrier
+
 import uk.gov.hmrc.apidefinition.connector.AWSAPIPublisherConnector
 import uk.gov.hmrc.apidefinition.models.APIStatus.APIStatus
 import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.services.AwsApiPublisher
-import uk.gov.hmrc.http.HeaderCarrier
-
-import scala.collection.JavaConverters._
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future.{failed, successful}
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 
 class AwsAPIPublisherSpec extends AsyncHmrcSpec {

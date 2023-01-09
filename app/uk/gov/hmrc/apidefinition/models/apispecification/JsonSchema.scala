@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@
 
 package uk.gov.hmrc.apidefinition.models.apispecification
 
-import play.api.libs.functional.syntax._
-import play.api.libs.json._
-
 import scala.collection.Seq
 import scala.collection.immutable.ListMap
+
+import play.api.libs.functional.syntax._
+import play.api.libs.json._
 
 /*
  * ListMap is used instead of Map so that when iterating the entries are returned in insertion order. This means

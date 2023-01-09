@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,12 +20,13 @@ import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import mockws.{MockWS, MockWSHelpers}
 import org.scalatest.BeforeAndAfterAll
+
 import play.api.http.HttpEntity
 import play.api.http.Status._
 import play.api.mvc.{ResponseHeader, Result, Results}
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.apidefinition.utils.Utils
-import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
+
+import uk.gov.hmrc.apidefinition.utils.{AsyncHmrcSpec, Utils}
 
 class ApiMicroserviceConnectorSpec extends AsyncHmrcSpec with Utils with MockWSHelpers with BeforeAndAfterAll {
 
