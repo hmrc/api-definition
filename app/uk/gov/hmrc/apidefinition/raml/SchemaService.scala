@@ -31,14 +31,14 @@ import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
 class SchemaService extends ApplicationLogger {
 
   protected def fetchPlainTextSchema(uri: String): String = {
-    var source: Source = null
+    var source: Source = null   // scalastyle:ignore
     try {
       source = Source.fromURL(uri)
       source.mkString
     } finally {
       if (source != null) {
         source.close()
-        source = null
+        source = null           // scalastyle:ignore
       }
     }
   }
@@ -73,6 +73,7 @@ class SchemaService extends ApplicationLogger {
     Json.stringify(Json.toJson(jsonSchema))
   }
 
+  // scalastyle:off method.length
   private def resolveRefs(schema: JsonSchema, basePath: String, enclosingSchema: JsonSchema): JsonSchema = {
     def resolve(schema: JsonSchema, basePath: String, enclosingSchema: JsonSchema)(ref: String) = {
       val (referredSchemaPath, jsonPointerPathParts) = getPath(ref)
@@ -142,6 +143,7 @@ class SchemaService extends ApplicationLogger {
         )
     }
   }
+  // scalastyle:on method.length
 
   def getPath(ref: String): (String, Seq[String]) = {
     def splitJsonPointer(jsonPointer: String): Seq[String] = {

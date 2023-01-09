@@ -18,10 +18,12 @@ package uk.gov.hmrc.apidefinition.models.apispecification
 
 case class ResourceGroup(name: Option[String] = None, description: Option[String] = None, resources: List[Resource] = Nil) {
 
+  // scalastyle:off method.name
   def +(resource: Resource) = {
     // NOTE : Appending to end of list is not efficient but the list is small and we need to retain order (otherwise we need two reverses)
     ResourceGroup(name, description, resources :+ resource)
   }
+  // scalastyle:on method.name
 }
 
 object ResourceGroup {

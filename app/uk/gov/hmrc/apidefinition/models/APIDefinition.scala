@@ -26,6 +26,8 @@ import uk.gov.hmrc.apidefinition.models.AuthType.AuthType
 import uk.gov.hmrc.apidefinition.models.HttpMethod.HttpMethod
 import uk.gov.hmrc.apidefinition.models.ResourceThrottlingTier.ResourceThrottlingTier
 
+// scalastyle:off number.of.types
+
 sealed trait ApiVersionSource {
   def asText: String
 }
@@ -151,6 +153,8 @@ object APICategory extends Enum[APICategory] with PlayJsonEnum[APICategory] {
   case object VAT_MTD                      extends APICategory
   case object OTHER                        extends APICategory
 
+  // scalastyle:off cyclomatic.complexity
+
   def toAPICategoryDetails(category: APICategory): APICategoryDetails = {
     category match {
       case EXAMPLE                      => APICategoryDetails(EXAMPLE, "Example")
@@ -178,6 +182,7 @@ object APICategory extends Enum[APICategory] with PlayJsonEnum[APICategory] {
       case OTHER                        => APICategoryDetails(OTHER, "Other")
     }
   }
+  // scalastyle:on cyclomatic.complexity
 
   def allAPICategoryDetails = APICategory.values.map(toAPICategoryDetails)
 }
@@ -208,3 +213,5 @@ object SubscriptionThrottlingTier extends Enumeration {
   type ThrottlingTier = Value
   val BRONZE_SUBSCRIPTION, SILVER_SUBSCRIPTION, GOLD_SUBSCRIPTION, PLATINUM_SUBSCRIPTION, RHODIUM_SUBSCRIPTION = Value
 }
+
+// scalastyle:on number.of.types
