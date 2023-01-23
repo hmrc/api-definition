@@ -11,7 +11,7 @@ object AppDependencies {
     "uk.gov.hmrc"       %% "bootstrap-backend-play-28" % bootstrapVersion,
     "uk.gov.hmrc.mongo" %% "hmrc-mongo-play-28"        % mongoPlayVersion,
     "uk.gov.hmrc"       %% "play-json-union-formatter" % "1.17.0-play-28",
-    "uk.gov.hmrc"       %% "raml-tools"                % "1.20.0",
+    "uk.gov.hmrc"       %% "raml-tools"                % "1.21.0",
     "org.typelevel"     %% "cats-core"                 % "2.7.0",
     "com.beachape"      %% "enumeratum-play-json"      % "1.7.0"
   )
