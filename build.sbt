@@ -1,25 +1,23 @@
-import play.core.PlayVersion
 import play.sbt.PlayScala
 import uk.gov.hmrc.DefaultBuildSettings._
-import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin._
 import uk.gov.hmrc.SbtAutoBuildPlugin
 
 import bloop.integrations.sbt.BloopDefaults
 
 lazy val appName = "api-definition"
+scalaVersion := "2.13.8"
 
 lazy val ComponentTest = config("component") extend Test
 
-ThisBuild / scalafixDependencies += "com.github.liancheng" %% "organize-imports" % "0.6.0"
-
+//ThisBuild / scalafixDependencies += "com.github.liancheng" %% "organize-imports" % "0.6.0"
+ThisBuild / libraryDependencySchemes += "org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always
 inThisBuild(
-  List(
-    scalaVersion := "2.12.15",
-    semanticdbEnabled := true,
-    semanticdbVersion := scalafixSemanticdb.revision
-  )
+    List(
+//      scalaVersion := "2.13.8",
+      semanticdbEnabled := true,
+      semanticdbVersion := scalafixSemanticdb.revision
 )
-
+)
 lazy val playSettings: Seq[Setting[_]] = Seq.empty
 
 lazy val microservice = Project(appName, file("."))
@@ -27,14 +25,12 @@ lazy val microservice = Project(appName, file("."))
   .disablePlugins(JUnitXmlReportPlugin)
   .settings(playSettings: _*)
   .settings(scalaSettings: _*)
-  .settings(publishingSettings: _*)
   .settings(ScoverageSettings())
   .settings(defaultSettings(): _*)
   .settings(
     name := appName,
     majorVersion := 1,
-    scalaVersion := "2.12.15",
-    scalacOptions += "-Ypartial-unification",
+//    scalaVersion := "2.13.8",
     libraryDependencies ++= AppDependencies(),
     retrieveManaged := true
     )
@@ -55,11 +51,6 @@ lazy val microservice = Project(appName, file("."))
     ComponentTest / parallelExecution := false,
     ComponentTest / fork := false,
     addTestReportOption(ComponentTest, "component-reports")
-  )
-  .settings(
-    resolvers ++= Seq(
-      Resolver.sonatypeRepo("releases")
-    )
   )
 
 def onPackageName(rootPackage: String): String => Boolean = {

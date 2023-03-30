@@ -37,7 +37,7 @@ object ValidationErrors {
   implicit val format2: OFormat[ValidationErrors] = Json.format[ValidationErrors]
 }
 
-case class ErrorResponse(code: ErrorCode.Value, message: String, details: Option[Seq[FieldErrorDescription]] = None)
+case class ErrorResponse(code: ErrorCode.Value, message: String, details: Option[collection.Seq[FieldErrorDescription]] = None)
 
 object ErrorResponse {
   implicit val format1 = Json.format[FieldErrorDescription]

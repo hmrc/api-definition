@@ -4,16 +4,17 @@ import sbt._
 object AppDependencies {
   def apply(): Seq[ModuleID] = dependencies ++ testDependencies
 
-  private val bootstrapVersion = "7.12.0"
-  private val mongoPlayVersion = "0.74.0"
+  private val bootstrapVersion = "7.15.0"
+  private val mongoPlayVersion = "1.0.0"
 
   private lazy val dependencies = Seq(
     "uk.gov.hmrc"       %% "bootstrap-backend-play-28" % bootstrapVersion,
     "uk.gov.hmrc.mongo" %% "hmrc-mongo-play-28"        % mongoPlayVersion,
-    "uk.gov.hmrc"       %% "play-json-union-formatter" % "1.17.0-play-28",
-    "uk.gov.hmrc"       %% "raml-tools"                % "1.22.0",
+    "uk.gov.hmrc"       %% "play-json-union-formatter" % "1.18.0-play-28",
+    "uk.gov.hmrc"       %% "raml-tools"                % "1.23.0",
     "org.typelevel"     %% "cats-core"                 % "2.7.0",
-    "com.beachape"      %% "enumeratum-play-json"      % "1.7.0"
+    "com.beachape"      %% "enumeratum-play-json"      % "1.7.0",
+//    "org.scala-lang.modules"      % "scala-xml_2.12"      % "2.1.0"
   )
 
   private lazy val testDependencies = Seq(

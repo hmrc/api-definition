@@ -18,7 +18,7 @@ package uk.gov.hmrc.apidefinition.services
 
 import java.net.URI
 import javax.inject.Singleton
-import scala.collection.immutable.ListMap
+import scala.collection.mutable.ListMap
 import scala.io.Source
 
 import play.api.libs.json.Json

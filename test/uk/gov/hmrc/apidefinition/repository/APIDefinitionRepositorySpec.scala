@@ -116,7 +116,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
     requiresTrust = None
   )
 
-  override def repository: APIDefinitionRepository = app.injector.instanceOf[APIDefinitionRepository]
+  override val repository: APIDefinitionRepository = app.injector.instanceOf[APIDefinitionRepository]
 
   private def saveApi(repo: APIDefinitionRepository, apiDefinition: APIDefinition): Future[APIDefinition] = {
     repo.collection.insertOne(apiDefinition).toFuture().map(_ => apiDefinition)

@@ -16,9 +16,8 @@
 
 package uk.gov.hmrc.apidefinition.models.apispecification
 
-import scala.collection.Seq
-import scala.collection.immutable.ListMap
-
+//import scala.collection.{Seq, mutable}
+import scala.collection.mutable.ListMap
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 
@@ -39,7 +38,7 @@ case class JsonSchema(
     required: Seq[String] = Nil,
     definitions: ListMap[String, JsonSchema] = ListMap(),       // See above regarding use of ListMap
     ref: Option[String] = None,
-    enum: Seq[EnumerationValue] = Nil,
+    `enum`: Seq[EnumerationValue] = Nil,
     oneOf: Seq[JsonSchema] = Nil,
     pattern: Option[String] = None
   )
@@ -91,7 +90,7 @@ object JsonSchema {
       (__ \ "required").readNullable[Seq[String]].map(_.toSeq.flatten) and
       (__ \ "definitions").lazyReadNullable[ListMap[String, JsonSchema]](listMapReads[JsonSchema]).map(_.getOrElse(ListMap())) and
       (__ \ """$ref""").readNullable[String] and
-      (__ \ "enum").readNullable[Seq[EnumerationValue]].map(_.toSeq.flatten) and
+      (__ \ "enum").readNullable[collection.Seq[EnumerationValue]].map(_.toSeq.flatten) and
       (__ \ "oneOf").lazyReadNullable[Seq[JsonSchema]](Reads.seq[JsonSchema]).map(_.toSeq.flatten) and
       (__ \ "pattern").readNullable[String]
   )(JsonSchema.apply _)
@@ -111,8 +110,9 @@ object JsonSchema {
       (__ \ "required").writeNullable[Seq[String]].contramap[Seq[String]](seq => if (seq.isEmpty) None else Some(seq)) and
       (__ \ "definitions").lazyWriteNullable[ListMap[String, JsonSchema]](listMapWrites[JsonSchema]).contramap[ListMap[String, JsonSchema]](notIfEmpty) and
       (__ \ """$ref""").writeNullable[String] and
-      (__ \ "enum").writeNullable[Seq[EnumerationValue]].contramap[Seq[EnumerationValue]](notIfEmpty[EnumerationValue]) and
-      (__ \ "oneOf").lazyWriteNullable[Seq[JsonSchema]](Writes.seq[JsonSchema]).contramap[Seq[JsonSchema]](notIfEmpty[JsonSchema]) and
+      (__ \ "enum").writeNullable[collection.Seq[EnumerationValue]].contramap[Seq[EnumerationValue]](notIfEmpty[EnumerationValue]) and
+      (__ \ "oneOf").lazyWriteNullable[Seq[JsonSchema]](Writes.seq[JsonSchema])
+        .contramap[Seq[JsonSchema]](notIfEmpty[JsonSchema]) and
       (__ \ "pattern").writeNullable[String]
   )(unlift(JsonSchema.unapply))
 }

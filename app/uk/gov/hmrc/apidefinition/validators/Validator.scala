@@ -23,6 +23,7 @@ import cats.data.ValidatedNel
 import cats.implicits._
 
 import uk.gov.hmrc.apidefinition.models.APIDefinition
+import scala.Iterable
 
 trait Validator[T] {
 
@@ -40,7 +41,7 @@ trait Validator[T] {
     if (f(u)) u.validNel else errFn(u).invalidNel
   }
 
-  def validateAll[U](f: U => HMRCValidated[U])(us: Traversable[U]): HMRCValidated[List[U]] = {
+  def validateAll[U](f: U => HMRCValidated[U])(us: Iterable[U]): HMRCValidated[List[U]] = {
     us.toList.map(u => f(u).map(_ :: Nil)).combineAll
   }
 

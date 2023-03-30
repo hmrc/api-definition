@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.apidefinition.models.apispecification
 
-import scala.collection.immutable.ListMap
+import scala.collection.mutable.ListMap
 
 import play.api.libs.json.Json.fromJson
 import play.api.libs.json._
@@ -27,7 +27,7 @@ trait CommonJsonFormatters {
 
     def reads(json: JsValue) = json match {
       case JsObject(m) =>
-        type Errors = Seq[(JsPath, Seq[JsonValidationError])]
+        type Errors = collection.Seq[(JsPath, collection.Seq[JsonValidationError])]
 
         def locate(e: Errors, key: String) = e.map { case (path, validationError) => (JsPath \ key) ++ path -> validationError }
 

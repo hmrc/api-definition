@@ -54,8 +54,8 @@ package object controllers {
 
   /** Used to improve the error messages that request.body.validate might return.
     */
-  def validationResult(errors: Seq[(JsPath, Seq[JsonValidationError])]): JsValue = {
-    val errs: Seq[FieldErrorDescription] = errors flatMap { case (jsPath, seqValidationError) =>
+  def validationResult(errors: collection.Seq[(JsPath, collection.Seq[JsonValidationError])]): JsValue = {
+    val errs: collection.Seq[FieldErrorDescription] = errors flatMap { case (jsPath, seqValidationError) =>
       seqValidationError map {
         validationError =>
           val isMissingPath = validationError.message == "error.path.missing"

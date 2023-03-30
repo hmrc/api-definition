@@ -22,6 +22,7 @@ import org.joda.time.format.ISODateTimeFormat
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import uk.gov.hmrc.play.json.Union
+import scala.language.postfixOps
 
 import uk.gov.hmrc.apidefinition.models.APIAccessType._
 import uk.gov.hmrc.apidefinition.models.AWSParameterType._
@@ -139,7 +140,7 @@ object JsonFormatters {
 
 object EnumJson {
 
-  def enumReads[E <: Enumeration](enum: E): Reads[E#Value] = new Reads[E#Value] {
+  def enumReads[E <: Enumeration](`enum`: E): Reads[E#Value] = new Reads[E#Value] {
 
     override def reads(json: JsValue): JsResult[E#Value] = json match {
       case JsString(s) =>
@@ -158,7 +159,7 @@ object EnumJson {
     override def writes(v: E#Value): JsValue = JsString(v.toString)
   }
 
-  implicit def enumFormat[E <: Enumeration](enum: E): Format[E#Value] = {
+  implicit def enumFormat[E <: Enumeration](`enum`: E): Format[E#Value] = {
     Format(enumReads(enum), enumWrites)
   }
 
