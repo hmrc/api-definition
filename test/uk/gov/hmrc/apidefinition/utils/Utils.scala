@@ -18,7 +18,7 @@ package uk.gov.hmrc.apidefinition.utils
 
 import java.nio.file.Paths
 
-import scala.concurrent.duration.{FiniteDuration, SECONDS, _}
+import scala.concurrent.duration.{FiniteDuration, _}
 import scala.concurrent.{Await, Future}
 import akka.stream.scaladsl.{FileIO, Sink, Source}
 import akka.stream.{IOResult, Materializer}
