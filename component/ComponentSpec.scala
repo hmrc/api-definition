@@ -38,6 +38,6 @@ trait ComponentSpec extends AsyncHmrcSpec
 
   def get(endpoint: String): WSResponse = {
     val wsClient = app.injector.instanceOf[WSClient]
-    await(wsClient.url(s"http://localhost:$port$endpoint").get)
+    await(wsClient.url(s"http://localhost:$port$endpoint").get())
   }
 }

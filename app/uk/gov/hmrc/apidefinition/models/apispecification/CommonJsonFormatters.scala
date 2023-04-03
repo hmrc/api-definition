@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.apidefinition.models.apispecification
 
-import scala.collection.mutable.ListMap
+import scala.collection.immutable.ListMap
 
 import play.api.libs.json.Json.fromJson
 import play.api.libs.json._
