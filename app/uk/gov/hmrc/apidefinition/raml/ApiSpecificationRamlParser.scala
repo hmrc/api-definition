@@ -17,9 +17,8 @@
 package uk.gov.hmrc.apidefinition.raml
 
 import javax.inject.{Inject, Singleton}
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
-import akka.http.scaladsl.model.headers.LinkParams.`type`
 import org.raml.v2.api.model.v10.datamodel.{ExampleSpec => RamlExampleSpec, StringTypeDeclaration => RamlStringTypeDeclaration, TypeDeclaration => RamlTypeDeclaration}
 import org.raml.v2.api.model.v10.methods.{Method => RamlMethod}
 import org.raml.v2.api.model.v10.resources.{Resource => RamlResource}

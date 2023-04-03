@@ -147,7 +147,7 @@ class SchemaService extends ApplicationLogger {
 
   def getPath(ref: String): (String, Seq[String]) = {
     def splitJsonPointer(jsonPointer: String): Seq[String] = {
-      jsonPointer.dropWhile(_ == '/').split("/")
+      jsonPointer.dropWhile(_ == '/').split("/").toIndexedSeq
     }
 
     ref.split('#') match {

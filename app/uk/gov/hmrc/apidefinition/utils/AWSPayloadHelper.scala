@@ -48,7 +48,7 @@ object AWSPayloadHelper {
       resourceToEndpoints.view.mapValues { endpoints: Seq[Endpoint] =>
         endpoints.map { e: Endpoint =>
           (e.method.toString.toLowerCase, buildAWSHttpVerbDetails(e))
-        }.groupBy(_._1).mapValues(_.head._2).toMap
+        }.groupBy(_._1).view.mapValues(_.head._2).toMap
       } toMap
     }
 
