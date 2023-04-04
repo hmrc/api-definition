@@ -27,16 +27,16 @@ trait CommonJsonFormatters {
 
     def reads(json: JsValue) = json match {
       case JsObject(m) =>
-        type Errors = collection.Seq[(JsPath, collection.Seq[JsonValidationError])]
+        type Errors = Seq[(JsPath, collection.Seq[JsonValidationError])]
 
         def locate(e: Errors, key: String) = e.map { case (path, validationError) => (JsPath \ key) ++ path -> validationError }
 
         m.foldLeft(Right(ListMap.empty): Either[Errors, ListMap[String, V]]) {
           case (acc, (key, value)) => (acc, fromJson[V](value)(formatV)) match {
               case (Right(vs), JsSuccess(v, _)) => Right(vs + (key -> v))
-              case (Right(_), JsError(e))       => Left(locate(e, key))
+              case (Right(_), JsError(e))       => Left(locate(e.toSeq, key))
               case (Left(e), _: JsSuccess[_])   => Left(e)
-              case (Left(e1), JsError(e2))      => Left(e1 ++ locate(e2, key))
+              case (Left(e1), JsError(e2))      => Left(e1 ++ locate(e2.toSeq, key))
             }
         }.fold(JsError.apply, res => JsSuccess(res))
 

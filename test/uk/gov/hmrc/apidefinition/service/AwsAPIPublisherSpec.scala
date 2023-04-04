@@ -86,7 +86,7 @@ class AwsAPIPublisherSpec extends AsyncHmrcSpec {
       await(underTest.publishAll(List(apiDefinition1, apiDefinition2)))
 
       verify(underTest.awsAPIPublisherConnector, times(2)).createOrUpdateAPI(*, *[AWSSwaggerDetails])(*)
-      val swaggerDetails: collection.Seq[AWSSwaggerDetails] = swaggerDetailsCaptor.getAllValues.asScala
+      val swaggerDetails: Seq[AWSSwaggerDetails] = swaggerDetailsCaptor.getAllValues.asScala.toSeq
       swaggerDetails.head.info.title shouldBe apiDefinition1.name
       swaggerDetails(1).info.title shouldBe apiDefinition2.name
     }
