@@ -9,14 +9,13 @@ scalaVersion := "2.13.8"
 
 lazy val ComponentTest = config("component") extend Test
 
-//ThisBuild / scalafixDependencies += "com.github.liancheng" %% "organize-imports" % "0.6.0"
+ThisBuild / scalafixDependencies += "com.github.liancheng" %% "organize-imports" % "0.6.0"
 ThisBuild / libraryDependencySchemes += "org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always
 inThisBuild(
     List(
-//      scalaVersion := "2.13.8",
       semanticdbEnabled := true,
       semanticdbVersion := scalafixSemanticdb.revision
-)
+  )
 )
 lazy val playSettings: Seq[Setting[_]] = Seq.empty
 
@@ -30,7 +29,6 @@ lazy val microservice = Project(appName, file("."))
   .settings(
     name := appName,
     majorVersion := 1,
-//    scalaVersion := "2.13.8",
     libraryDependencies ++= AppDependencies(),
     retrieveManaged := true
     )
