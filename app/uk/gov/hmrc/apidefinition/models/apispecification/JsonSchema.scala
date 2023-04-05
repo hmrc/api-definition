@@ -111,8 +111,7 @@ object JsonSchema {
       (__ \ "definitions").lazyWriteNullable[ListMap[String, JsonSchema]](listMapWrites[JsonSchema]).contramap[ListMap[String, JsonSchema]](notIfEmpty) and
       (__ \ """$ref""").writeNullable[String] and
       (__ \ "enum").writeNullable[Seq[EnumerationValue]].contramap[Seq[EnumerationValue]](notIfEmpty[EnumerationValue]) and
-      (__ \ "oneOf").lazyWriteNullable[Seq[JsonSchema]](Writes.seq[JsonSchema])
-        .contramap[Seq[JsonSchema]](notIfEmpty[JsonSchema]) and
+      (__ \ "oneOf").lazyWriteNullable[Seq[JsonSchema]](Writes.seq[JsonSchema]).contramap[Seq[JsonSchema]](notIfEmpty[JsonSchema]) and
       (__ \ "pattern").writeNullable[String]
   )(unlift(JsonSchema.unapply))
 }
