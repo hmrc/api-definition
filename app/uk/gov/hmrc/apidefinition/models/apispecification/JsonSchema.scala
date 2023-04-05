@@ -38,7 +38,7 @@ case class JsonSchema(
     required: Seq[String] = Nil,
     definitions: ListMap[String, JsonSchema] = ListMap(),       // See above regarding use of ListMap
     ref: Option[String] = None,
-    `enum`: Seq[EnumerationValue] = Nil,
+    enumValue: Seq[EnumerationValue] = Nil,
     oneOf: Seq[JsonSchema] = Nil,
     pattern: Option[String] = None
   )
