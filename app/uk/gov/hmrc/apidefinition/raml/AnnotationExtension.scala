@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.apidefinition.models.apispecification
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 import org.raml.v2.api.model.v10.common.{Annotable => RamlAnnotable}
 import org.raml.v2.api.model.v10.datamodel.{TypeInstance => RamlTypeInstance}

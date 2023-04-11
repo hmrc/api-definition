@@ -17,9 +17,9 @@
 package uk.gov.hmrc.apidefinition.utils
 
 import scala.collection.immutable.TreeMap
-
 import uk.gov.hmrc.apidefinition.models.AWSAPIDefinition._
 import uk.gov.hmrc.apidefinition.models._
+import scala.language.postfixOps
 
 object AWSPayloadHelper {
 
@@ -44,16 +44,16 @@ object AWSPayloadHelper {
       )
     }
 
-    def groupEndpointsByResource(endpoints: Seq[Endpoint]): Map[String, Seq[Endpoint]] = {
-      endpoints.groupBy(_.uriPattern)
-    }
-
     def buildHttpVerbsDetails(resourceToEndpoints: Map[String, Seq[Endpoint]]): Map[String, Map[String, AWSHttpVerbDetails]] = {
-      resourceToEndpoints.mapValues { endpoints: Seq[Endpoint] =>
+      resourceToEndpoints.view.mapValues { endpoints: Seq[Endpoint] =>
         endpoints.map { e: Endpoint =>
           (e.method.toString.toLowerCase, buildAWSHttpVerbDetails(e))
-        }.groupBy(_._1).mapValues(_.head._2)
-      }
+        }.groupBy(_._1).view.mapValues(_.head._2).toMap
+      } toMap
+    }
+
+    def groupEndpointsByResource(endpoints: Seq[Endpoint]): Map[String, Seq[Endpoint]] = {
+      endpoints.groupBy(_.uriPattern)
     }
 
     // sorting alphabetically by resource

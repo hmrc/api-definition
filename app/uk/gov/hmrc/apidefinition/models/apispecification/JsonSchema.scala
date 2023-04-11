@@ -16,11 +16,10 @@
 
 package uk.gov.hmrc.apidefinition.models.apispecification
 
-import scala.collection.Seq
-import scala.collection.immutable.ListMap
-
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
+
+import scala.collection.immutable.ListMap
 
 /*
  * ListMap is used instead of Map so that when iterating the entries are returned in insertion order. This means
@@ -39,7 +38,7 @@ case class JsonSchema(
     required: Seq[String] = Nil,
     definitions: ListMap[String, JsonSchema] = ListMap(),       // See above regarding use of ListMap
     ref: Option[String] = None,
-    enum: Seq[EnumerationValue] = Nil,
+    enumValue: Seq[EnumerationValue] = Nil,
     oneOf: Seq[JsonSchema] = Nil,
     pattern: Option[String] = None
   )

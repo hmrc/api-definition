@@ -22,6 +22,7 @@ import org.joda.time.format.ISODateTimeFormat
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import uk.gov.hmrc.play.json.Union
+import scala.language.postfixOps
 
 import uk.gov.hmrc.apidefinition.models.APIAccessType._
 import uk.gov.hmrc.apidefinition.models.AWSParameterType._
@@ -139,15 +140,15 @@ object JsonFormatters {
 
 object EnumJson {
 
-  def enumReads[E <: Enumeration](enum: E): Reads[E#Value] = new Reads[E#Value] {
+  def enumReads[E <: Enumeration](enumValue: E): Reads[E#Value] = new Reads[E#Value] {
 
     override def reads(json: JsValue): JsResult[E#Value] = json match {
       case JsString(s) =>
         try {
-          JsSuccess(enum.withName(s))
+          JsSuccess(enumValue.withName(s))
         } catch {
           case _: NoSuchElementException =>
-            JsError(s"Enumeration expected of type: '${enum.getClass}', but it does not contain '$s'")
+            JsError(s"Enumeration expected of type: '${enumValue.getClass}', but it does not contain '$s'")
         }
 
       case _ => JsError("String value expected")
@@ -158,8 +159,8 @@ object EnumJson {
     override def writes(v: E#Value): JsValue = JsString(v.toString)
   }
 
-  implicit def enumFormat[E <: Enumeration](enum: E): Format[E#Value] = {
-    Format(enumReads(enum), enumWrites)
+  implicit def enumFormat[E <: Enumeration](enumValue: E): Format[E#Value] = {
+    Format(enumReads(enumValue), enumWrites)
   }
 
 }

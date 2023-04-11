@@ -98,7 +98,7 @@ class SchemaServiceSpec extends AnyWordSpec with Matchers {
         `type` = Some("my-type"),
         example = Some("my-example"),
         title = Some("my-title"),
-        `enum` = Seq(EnumerationValue("my-enum-a"))
+        enumValue = Seq(EnumerationValue("my-enum-a"))
       )
 
       val jsonSchemaText = Json.parse(loader.toJsonString(jsonSchema))
@@ -122,10 +122,10 @@ class SchemaServiceSpec extends AnyWordSpec with Matchers {
     jsonSchema.description shouldBe Some("my enums field")
 
     jsonSchema.oneOf.size shouldBe 1
-    jsonSchema.oneOf.head.`enum`.size shouldBe 2
+    jsonSchema.oneOf.head.enumValue.size shouldBe 2
 
-    jsonSchema.oneOf.head.`enum`.head.value shouldBe "enum-a"
-    jsonSchema.oneOf.head.`enum`(1).value shouldBe "enum-b"
+    jsonSchema.oneOf.head.enumValue.head.value shouldBe "enum-a"
+    jsonSchema.oneOf.head.enumValue(1).value shouldBe "enum-b"
   }
 
   private def loadResourceTextFile(uri: String): String = {

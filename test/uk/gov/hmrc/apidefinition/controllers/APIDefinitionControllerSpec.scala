@@ -66,7 +66,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
   trait QueryDispatcherSetup extends Setup {
 
     val apiDefinitions: Seq[APIDefinition] =
-      Array.fill(2)(APIDefinition("MyApiDefinitionServiceName1", "MyUrl", "MyName", "My description", "MyContext", Nil, None))
+      Array.fill(2)(APIDefinition("MyApiDefinitionServiceName1", "MyUrl", "MyName", "My description", "MyContext", Nil, None)).toIndexedSeq
 
     when(mockAPIDefinitionService.fetchByContext(*)).thenReturn(successful(Some(apiDefinitions.head)))
     when(mockAPIDefinitionService.fetchAllPublicAPIs(*)).thenReturn(successful(apiDefinitions))

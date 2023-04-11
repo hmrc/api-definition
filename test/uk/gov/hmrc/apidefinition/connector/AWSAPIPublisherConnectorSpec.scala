@@ -77,12 +77,12 @@ class AWSAPIPublisherConnectorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuit
     }
   }
 
-  override def beforeAll() {
+  override def beforeAll(): Unit = {
     wireMockServer.start()
     WireMock.configureFor(stubHost, stubPort)
   }
 
-  override def afterAll() {
+  override def afterAll(): Unit = {
     wireMockServer.stop()
   }
 

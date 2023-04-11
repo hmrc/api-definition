@@ -85,7 +85,7 @@ class EmailNotificationService(
           "environmentName" -> environmentName
         )
       )
-    ).flatMap(_ => successful(Unit))
+    ).flatMap(_ => successful(()))
   }
 
   private def sendEmail(payload: SendEmailRequest)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[HttpResponse] = {

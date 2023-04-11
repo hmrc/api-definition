@@ -45,7 +45,7 @@ package object controllers {
       {
         result =>
           result.fold(
-            errors => successful(UnprocessableEntity(validationResult(errors))),
+            errors => successful(UnprocessableEntity(validationResult(errors.map(error => (error._1, error._2.toSeq)).toSeq))),
             entity => f(entity)
           )
       }

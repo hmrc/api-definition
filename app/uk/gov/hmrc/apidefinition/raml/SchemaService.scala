@@ -17,12 +17,12 @@
 package uk.gov.hmrc.apidefinition.services
 
 import java.net.URI
+
 import javax.inject.Singleton
+
 import scala.collection.immutable.ListMap
 import scala.io.Source
-
 import play.api.libs.json.Json
-
 import uk.gov.hmrc.apidefinition.models.apispecification.JsonSchema
 import uk.gov.hmrc.apidefinition.models.apispecification.JsonSchema.JsonSchemaWithReference
 import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
@@ -147,7 +147,7 @@ class SchemaService extends ApplicationLogger {
 
   def getPath(ref: String): (String, Seq[String]) = {
     def splitJsonPointer(jsonPointer: String): Seq[String] = {
-      jsonPointer.dropWhile(_ == '/').split("/")
+      jsonPointer.dropWhile(_ == '/').split("/").toIndexedSeq
     }
 
     ref.split('#') match {

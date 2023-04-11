@@ -17,7 +17,7 @@
 package uk.gov.hmrc.apidefinition.service
 
 import java.util.UUID
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.{failed, successful}
 
@@ -86,7 +86,7 @@ class AwsAPIPublisherSpec extends AsyncHmrcSpec {
       await(underTest.publishAll(List(apiDefinition1, apiDefinition2)))
 
       verify(underTest.awsAPIPublisherConnector, times(2)).createOrUpdateAPI(*, *[AWSSwaggerDetails])(*)
-      val swaggerDetails: Seq[AWSSwaggerDetails] = swaggerDetailsCaptor.getAllValues.asScala
+      val swaggerDetails: Seq[AWSSwaggerDetails] = swaggerDetailsCaptor.getAllValues.asScala.toSeq
       swaggerDetails.head.info.title shouldBe apiDefinition1.name
       swaggerDetails(1).info.title shouldBe apiDefinition2.name
     }

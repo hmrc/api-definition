@@ -17,13 +17,14 @@
 package uk.gov.hmrc.apidefinition.utils
 
 import java.nio.file.Paths
+
 import scala.concurrent.duration.{FiniteDuration, _}
 import scala.concurrent.{Await, Future}
-
 import akka.stream.scaladsl.{FileIO, Sink, Source}
 import akka.stream.{IOResult, Materializer}
 import akka.util.ByteString
 
+import scala.language.postfixOps
 import play.api.libs.ws.WSResponse
 
 trait Utils {
