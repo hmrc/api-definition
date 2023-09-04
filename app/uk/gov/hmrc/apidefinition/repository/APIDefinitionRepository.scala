@@ -33,6 +33,7 @@ import uk.gov.hmrc.mongo.play.json.{Codecs, CollectionFactory, PlayMongoReposito
 import uk.gov.hmrc.apidefinition.models.APIDefinition
 import uk.gov.hmrc.apidefinition.models.JsonFormatters._
 import uk.gov.hmrc.apidefinition.utils.IndexHelper.createUniqueBackgroundSingleFieldAscendingIndex
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiContext
 
 @Singleton
 class APIDefinitionRepository @Inject() (mongoComponent: MongoComponent)(implicit val ec: ExecutionContext)
@@ -103,13 +104,13 @@ class APIDefinitionRepository @Inject() (mongoComponent: MongoComponent)(implici
     }
   }
 
-  def fetchByContext(context: String): Future[Option[APIDefinition]] = {
-    collection.find(equal("context", Codecs.toBson(context))).headOption().map { api =>
-      logger.debug(s"Retrieved API with context '$context' in mongo: $api")
+  def fetchByContext(context: ApiContext): Future[Option[APIDefinition]] = {
+    collection.find(equal("context", Codecs.toBson(context.value))).headOption().map { api =>
+      logger.debug(s"Retrieved API with context '${context.value}' in mongo: $api")
       api
     } recover {
       case e =>
-        logger.error(s"An error occurred while retrieving API with context '$context' in mongo", e)
+        logger.error(s"An error occurred while retrieving API with context '${context.value}' in mongo", e)
         throw e
     }
   }
@@ -118,8 +119,8 @@ class APIDefinitionRepository @Inject() (mongoComponent: MongoComponent)(implici
     collection.find().toFuture()
   }
 
-  def fetchAllByTopLevelContext(topLevelContext: String): Future[Seq[APIDefinition]] = {
-    collection.find(regex("context", f"^$topLevelContext\\/.*$$")).toFuture()
+  def fetchAllByTopLevelContext(topLevelContext: ApiContext): Future[Seq[APIDefinition]] = {
+    collection.find(regex("context", f"^${topLevelContext.value}\\/.*$$")).toFuture()
   }
 
   def delete(serviceName: String): Future[Unit] = {

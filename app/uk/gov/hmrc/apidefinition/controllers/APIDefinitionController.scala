@@ -34,6 +34,7 @@ import uk.gov.hmrc.apidefinition.models.{APICategory, APIDefinition, ErrorCode}
 import uk.gov.hmrc.apidefinition.services.APIDefinitionService
 import uk.gov.hmrc.apidefinition.utils.{APIDefinitionMapper, ApplicationLogger}
 import uk.gov.hmrc.apidefinition.validators.ApiDefinitionValidator
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiContext
 
 @Singleton
 class APIDefinitionController @Inject() (
@@ -93,7 +94,7 @@ class APIDefinitionController @Inject() (
 
     queryParameters match {
       case Nil | ("options", _) :: Nil                  => fetchAllPublicAPIs(options.alsoIncludePrivateTrials)
-      case ("context", context) :: Nil                  => fetchByContext(context)
+      case ("context", context) :: Nil                  => fetchByContext(ApiContext(context))
       case ("applicationId", applicationId) :: _        => fetchAllForApplication(applicationId, options.alsoIncludePrivateTrials)
       case ("type", typeValue) :: Nil                   => fetchDefinitionsByType(typeValue, options.alsoIncludePrivateTrials)
       case ("options", _) :: ("type", typeValue) :: Nil => fetchDefinitionsByType(typeValue, options.alsoIncludePrivateTrials)
@@ -132,7 +133,7 @@ class APIDefinitionController @Inject() (
     apiDefinitionService.fetchAll.map(apiDefinitionToResult) recover recovery
   }
 
-  private def fetchByContext(context: String) = {
+  private def fetchByContext(context: ApiContext) = {
     apiDefinitionService
       .fetchByContext(context).map {
         case Some(api) => Ok(Json.toJson(api)).withHeaders(HeaderNames.CACHE_CONTROL -> s"max-age=$fetchByContextTtlInSeconds")

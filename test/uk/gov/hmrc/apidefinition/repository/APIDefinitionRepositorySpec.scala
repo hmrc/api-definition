@@ -33,6 +33,7 @@ import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 
 import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiContext
 
 class APIDefinitionRepositorySpec extends AsyncHmrcSpec
     with DefaultPlayMongoRepositorySupport[APIDefinition]
@@ -67,7 +68,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
     serviceBaseUrl = "hello.com",
     name = "Hello",
     description = "This is the Hello API",
-    context = "hello",
+    context = ApiContext("hello"),
     versions = List(helloApiVersion),
     requiresTrust = None
   )
@@ -77,7 +78,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
     serviceBaseUrl = "calendar.com",
     name = "Calendar",
     description = "This is the Calendar API",
-    context = "calendar",
+    context = ApiContext("calendar"),
     versions = List(calendarApiVersion),
     requiresTrust = None
   )
@@ -94,7 +95,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
     serviceBaseUrl = "income-tax.protected.mdtp",
     name = "Individual Income Tax",
     description = "This is the Individual Income Tax API",
-    context = "individuals/income-tax",
+    context = ApiContext("individuals/income-tax"),
     versions = List(individualIncomeTaxApiVersion),
     requiresTrust = None
   )
@@ -111,7 +112,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
     serviceBaseUrl = "ni.protected.mdtp",
     name = "Individual National Insurance",
     description = "This is the Individual National Insurance API",
-    context = "individuals/ni",
+    context = ApiContext("individuals/ni"),
     versions = List(individualNIApiVersion),
     requiresTrust = None
   )
@@ -240,7 +241,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
     }
 
     "return None when there are no APIs with that context" in {
-      await(repository.save(calendarApiDefinition.copy(context = "abc")))
+      await(repository.save(calendarApiDefinition.copy(context = ApiContext("abc"))))
 
       val retrieved = await(repository.fetchByContext(calendarApiDefinition.context))
       retrieved shouldBe None
@@ -253,7 +254,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
       await(repository.save(individualIncomeTaxApiDefinition))
       await(repository.save(individualNIApiDefinition))
 
-      val retrieved = await(repository.fetchAllByTopLevelContext("individuals"))
+      val retrieved = await(repository.fetchAllByTopLevelContext(ApiContext("individuals")))
 
       retrieved.size shouldBe 2
     }
@@ -262,7 +263,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
       await(repository.save(helloApiDefinition))
       await(repository.save(calendarApiDefinition))
 
-      val retrieved = await(repository.fetchAllByTopLevelContext("individuals"))
+      val retrieved = await(repository.fetchAllByTopLevelContext(ApiContext("individuals")))
 
       retrieved.size shouldBe 0
     }
@@ -306,7 +307,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
         val inError = saveApi(repository, helloApiDefinition.copy(serviceName = "newServiceName", name = "newName", serviceBaseUrl = "newServiceBaseUrl"))
         await(inError)
       }
-      assertMongoError(caught, "context", helloApiDefinition.context)
+      assertMongoError(caught, "context", helloApiDefinition.context.value)
 
       collectionSize shouldBe 1
     }
@@ -316,7 +317,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
       collectionSize shouldBe 1
 
       val caught = intercept[MongoWriteException] {
-        val inError = saveApi(repository, helloApiDefinition.copy(context = "newContext", serviceName = "newServiceName", serviceBaseUrl = "newServiceBaseUrl"))
+        val inError = saveApi(repository, helloApiDefinition.copy(context = ApiContext("newContext"), serviceName = "newServiceName", serviceBaseUrl = "newServiceBaseUrl"))
         await(inError)
       }
       assertMongoError(caught, "name", helloApiDefinition.name)
@@ -329,7 +330,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
       collectionSize shouldBe 1
 
       val caught = intercept[MongoWriteException] {
-        val inError = saveApi(repository, helloApiDefinition.copy(name = "newName", context = "newContext", serviceBaseUrl = "newServiceBaseUrl"))
+        val inError = saveApi(repository, helloApiDefinition.copy(name = "newName", context = ApiContext("newContext"), serviceBaseUrl = "newServiceBaseUrl"))
         await(inError)
       }
       assertMongoError(caught, "serviceName", helloApiDefinition.serviceName)
@@ -342,7 +343,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
       collectionSize shouldBe 1
 
       val caught = intercept[MongoWriteException] {
-        val inError = saveApi(repository, helloApiDefinition.copy(name = "newName", context = "newContext", serviceName = "newServiceName"))
+        val inError = saveApi(repository, helloApiDefinition.copy(name = "newName", context = ApiContext("newContext"), serviceName = "newServiceName"))
         await(inError)
       }
       assertMongoError(caught, "serviceBaseUrl", helloApiDefinition.serviceBaseUrl)

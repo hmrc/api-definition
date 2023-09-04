@@ -31,6 +31,7 @@ import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.services.AwsApiPublisher
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiContext
 
 class AwsAPIPublisherSpec extends AsyncHmrcSpec {
 
@@ -53,7 +54,7 @@ class AwsAPIPublisherSpec extends AsyncHmrcSpec {
 
   private def someAPIDefinition(
       name: String = UUID.randomUUID().toString,
-      context: String = UUID.randomUUID().toString,
+      context: ApiContext = ApiContext.random,
       serviceBaseUrl: String = s"https://$host",
       versions: List[APIVersion] = List(anAPIVersion("2.0"))
     ): APIDefinition = {

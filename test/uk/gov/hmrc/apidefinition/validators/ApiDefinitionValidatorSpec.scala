@@ -31,6 +31,7 @@ import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.services.APIDefinitionService
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiContext
 
 class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite {
 
@@ -47,11 +48,11 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
     val apiVersionValidator: ApiVersionValidator             = new ApiVersionValidator(apiEndpointValidator)
     val apiDefinitionValidator: ApiDefinitionValidator       = new ApiDefinitionValidator(mockAPIDefinitionService, apiContextValidator, apiVersionValidator)
 
-    when(mockAPIDefinitionService.fetchByContext(any[String])).thenReturn(successful(None))
-    when(mockAPIDefinitionService.fetchByName(any[String])).thenReturn(successful(None))
-    when(mockAPIDefinitionService.fetchByServiceBaseUrl(any[String])).thenReturn(successful(None))
-    when(mockApiDefinitionRepository.fetchByServiceName(any[String])).thenReturn(successful(None))
-    when(mockApiDefinitionRepository.fetchAllByTopLevelContext(any[String])).thenReturn(successful(Seq.empty))
+    when(mockAPIDefinitionService.fetchByContext(*[ApiContext])).thenReturn(successful(None))
+    when(mockAPIDefinitionService.fetchByName(*[String])).thenReturn(successful(None))
+    when(mockAPIDefinitionService.fetchByServiceBaseUrl(*[String])).thenReturn(successful(None))
+    when(mockApiDefinitionRepository.fetchByServiceName(*[String])).thenReturn(successful(None))
+    when(mockApiDefinitionRepository.fetchAllByTopLevelContext(*[ApiContext])).thenReturn(successful(Seq.empty))
 
     def assertValidationSuccess(apiDefinition: => APIDefinition): Unit = {
       val result = await(apiDefinitionValidator.validate(apiDefinition)(_ => successful(NoContent)))
@@ -74,7 +75,7 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
       "http://calendar",
       "Calendar API",
       "My Calendar API",
-      "individuals/calendar",
+      ApiContext("individuals/calendar"),
       List(APIVersion(
         "1.0",
         APIStatus.PROTOTYPED,
@@ -92,7 +93,7 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
       lazy val apiDefinition: APIDefinition = calendarApi.copy(serviceBaseUrl = "")
 
       assertValidationFailure(apiDefinition, List("Field 'serviceBaseUrl' should not be empty for API 'Calendar API'"))
-      verify(mockAPIDefinitionService, never).fetchByServiceBaseUrl(any[String])
+      verify(mockAPIDefinitionService, never).fetchByServiceBaseUrl(*[String])
     }
 
     "fail validation if an empty serviceName is provided" in new Setup {
@@ -138,7 +139,7 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
       lazy val apiDefinition: APIDefinition = calendarApi.copy(name = "")
 
       assertValidationFailure(apiDefinition, List("Field 'name' should not be empty for API with service name 'calendar'"))
-      verify(mockAPIDefinitionService, never).fetchByName(any[String])
+      verify(mockAPIDefinitionService, never).fetchByName(*[String])
     }
 
     "fail validation if an empty description is provided" in new Setup {
@@ -211,7 +212,7 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
       serviceBaseUrl = "http://www.money.com",
       name = "Money API",
       description = "API for checking payments",
-      context = "individuals/money",
+      context = ApiContext("individuals/money"),
       versions = List(moneyApiVersion),
       requiresTrust = Some(false),
       categories = Some(List(OTHER))
@@ -375,7 +376,7 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
       lazy val apiDefinition: APIDefinition = moneyApiDefinition.copy(
         versions = List(moneyApiVersion.copy(endpoints = List(moneyEndpoint.copy(uriPattern = ""))))
       )
-      when(mockAPIDefinitionService.fetchByContext("individuals/money"))
+      when(mockAPIDefinitionService.fetchByContext(ApiContext("individuals/money")))
         .thenReturn(successful(Some(moneyApiDefinition.copy(serviceName = "anotherService"))))
       when(mockAPIDefinitionService.fetchByName("Money API"))
         .thenReturn(successful(Some(moneyApiDefinition.copy(serviceName = "anotherService"))))

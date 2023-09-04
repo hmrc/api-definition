@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.apidefinition.validators
 
-import java.nio.file.{Path, Paths}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
@@ -30,6 +29,10 @@ import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.models.APIDefinition
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.services.APIDefinitionService
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiContext
+import java.nio.file.Path
+import java.nio.file.Paths
+import cats.kernel.Monoid
 
 @Singleton
 class ApiContextValidator @Inject() (
@@ -37,17 +40,17 @@ class ApiContextValidator @Inject() (
     apiDefinitionRepository: APIDefinitionRepository,
     appConfig: AppConfig
   )(implicit override val ec: ExecutionContext
-  ) extends Validator[String] {
+  ) extends Validator[ApiContext] {
 
-  private val ValidTopLevelContexts: Set[String] =
-    Set("agents", "customs", "individuals", "mobile", "obligations", "organisations", "test", "payments", "misc", "accounts")
+  private val ValidTopLevelContexts: Set[ApiContext] =
+    Set("agents", "customs", "individuals", "mobile", "obligations", "organisations", "test", "payments", "misc", "accounts").map(ApiContext(_))
   private val contextRegex: Regex                = """^[a-zA-Z0-9_\-\/]+$""".r
 
-  def validate(errorContext: String, apiDefinition: APIDefinition)(implicit context: String): Future[HMRCValidated[String]] = {
+  def validate(errorContext: String, apiDefinition: APIDefinition)(implicit context: ApiContext): Future[HMRCValidated[ApiContext]] = {
     if (appConfig.skipContextValidationAllowlist.contains(apiDefinition.serviceName)) {
       successful(context.validNel)
     } else {
-      val validated = validateThat(_.nonEmpty, _ => s"Field 'context' should not be empty $errorContext").andThen(validateContext(errorContext)(_))
+      val validated = validateThat(_.value.nonEmpty, _ => s"Field 'context' should not be empty $errorContext").andThen(validateContext(errorContext)(_))
       validated match {
         case Invalid(_) => successful(validated)
         case _          => validateAgainstDatabase(errorContext, apiDefinition)
@@ -55,16 +58,16 @@ class ApiContextValidator @Inject() (
     }
   }
 
-  private def validateContext(errorContext: String)(implicit context: String): HMRCValidated[String] = {
+  private def validateContext(errorContext: String)(implicit context: ApiContext): HMRCValidated[ApiContext] = {
     (
-      validateThat(!_.startsWith("/"), _ => s"Field 'context' should not start with '/' $errorContext"),
-      validateThat(!_.endsWith("/"), _ => s"Field 'context' should not end with '/' $errorContext"),
-      validateThat(!_.contains("//"), _ => s"Field 'context' should not have empty path segments $errorContext"),
-      validateThat(_.matches(contextRegex), _ => s"Field 'context' should match regular expression '$contextRegex' $errorContext")
+      validateThat(!_.value.startsWith("/"), _ => s"Field 'context' should not start with '/' $errorContext"),
+      validateThat(!_.value.endsWith("/"), _ => s"Field 'context' should not end with '/' $errorContext"),
+      validateThat(!_.value.contains("//"), _ => s"Field 'context' should not have empty path segments $errorContext"),
+      validateThat(_.value.matches(contextRegex), _ => s"Field 'context' should match regular expression '$contextRegex' $errorContext")
     ).mapN((_, _, _, _) => context)
   }
 
-  private def validateAgainstDatabase(errorContext: String, apiDefinition: APIDefinition)(implicit context: String): Future[HMRCValidated[String]] = {
+  private def validateAgainstDatabase(errorContext: String, apiDefinition: APIDefinition)(implicit context: ApiContext): Future[HMRCValidated[ApiContext]] = {
     val existingAPIDefinitionFuture: Future[Option[APIDefinition]] = apiDefinitionService.fetchByContext(apiDefinition.context)
     for {
       contextUniqueValidated         <- validateFieldNotAlreadyUsed(existingAPIDefinitionFuture, s"Field 'context' must be unique $errorContext")(context, apiDefinition)
@@ -78,7 +81,7 @@ class ApiContextValidator @Inject() (
     } yield (contextUniqueValidated, contextNotChangedValidated, newAPITopLevelContextValidated).mapN((_, _, _) => context)
   }
 
-  private def validateContextNotChanged(errorContext: String, apiDefinition: APIDefinition)(implicit context: String): Future[HMRCValidated[String]] = {
+  private def validateContextNotChanged(errorContext: String, apiDefinition: APIDefinition)(implicit context: ApiContext): Future[HMRCValidated[ApiContext]] = {
     apiDefinitionRepository.fetchByServiceName(apiDefinition.serviceName)
       .map {
         case Some(found: APIDefinition) => found.context != apiDefinition.context
@@ -86,7 +89,7 @@ class ApiContextValidator @Inject() (
       }.map(contextChanged => validateThat(_ => !contextChanged, _ => s"Field 'context' must not be changed $errorContext"))
   }
 
-  private def validationsForNewAPI(errorContext: String)(implicit context: String): Future[HMRCValidated[String]] = {
+  private def validationsForNewAPI(errorContext: String)(implicit context: ApiContext): Future[HMRCValidated[ApiContext]] = {
     for {
       validTopLevelContext      <- validateTopLevelContext(errorContext)
       atLeastTwoContextSegments <- validateContextHasAtLeastTwoSegments(errorContext)
@@ -94,32 +97,37 @@ class ApiContextValidator @Inject() (
     } yield (validTopLevelContext, atLeastTwoContextSegments, noContextOverlaps).mapN((_, _, _) => context)
   }
 
-  private def validateTopLevelContext(errorContext: String)(implicit context: String): Future[HMRCValidated[String]] = {
-    def formattedTopLevelContexts: String = ValidTopLevelContexts.toList.sorted.mkString("'", "', '", "'")
+  private def validateTopLevelContext(errorContext: String)(implicit context: ApiContext): Future[HMRCValidated[ApiContext]] = {
+    def formattedTopLevelContexts: String = ValidTopLevelContexts.toList.map(_.value).sorted.mkString("'", "', '", "'")
 
     successful(validateThat(
-      _ => ValidTopLevelContexts.contains(context.split('/').head),
+      _ => ValidTopLevelContexts.contains(context.topLevelContext()),
       _ => s"Field 'context' must start with one of $formattedTopLevelContexts $errorContext"
     ))
   }
 
-  private def validateContextHasAtLeastTwoSegments(errorContext: String)(implicit context: String): Future[HMRCValidated[String]] =
+  private def validateContextHasAtLeastTwoSegments(errorContext: String)(implicit context: ApiContext): Future[HMRCValidated[ApiContext]] =
     successful(validateThat(
-      _ => context.split('/').length > 1,
+      _ => context.segments() > 1,
       _ => s"Field 'context' must have at least two segments $errorContext"
     ))
 
-  private def validateContextDoesNotOverlapExistingAPI(errorContext: String)(implicit context: String): Future[HMRCValidated[String]] = {
+  private def validateContextDoesNotOverlapExistingAPI(errorContext: String)(implicit context: ApiContext): Future[HMRCValidated[ApiContext]] = {
     def overlap(firstPath: Path, secondPath: Path): Boolean = {
       firstPath.startsWith(secondPath) || secondPath.startsWith(firstPath)
     }
 
+    implicit val fakeApiContextMonoid: Monoid[ApiContext] = new Monoid[ApiContext] {
+      def empty: ApiContext = ApiContext("")
+      def combine(x: ApiContext, y: ApiContext): ApiContext = ApiContext(x.value)
+    }
+
     for {
-      existingAPIDefinitions <- apiDefinitionRepository.fetchAllByTopLevelContext(context.split('/').head).map(_.filterNot(_.context == context))
+      existingAPIDefinitions <- apiDefinitionRepository.fetchAllByTopLevelContext(context.topLevelContext()).map(_.filterNot(_.context.value == context))
       existingContexts        = existingAPIDefinitions.map(_.context)
       validations             = existingContexts.map(otherContext =>
                                   validateThat(
-                                    _ => !overlap(Paths.get(otherContext), Paths.get(context)),
+                                    _ => !overlap(Paths.get(otherContext.value), Paths.get(context.value)),
                                     _ => s"Field 'context' overlaps with '$otherContext' $errorContext"
                                   )
                                 )

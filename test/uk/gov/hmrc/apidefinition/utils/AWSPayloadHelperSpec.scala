@@ -18,6 +18,7 @@ package uk.gov.hmrc.apidefinition.utils
 
 import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.utils.AWSPayloadHelper._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiContext
 
 class AWSPayloadHelperSpec extends AsyncHmrcSpec {
 
@@ -59,7 +60,7 @@ class AWSPayloadHelperSpec extends AsyncHmrcSpec {
         endpointsEnabled = Some(true)
       )
 
-      val constructedSwaggerDetails: AWSSwaggerDetails = buildAWSSwaggerDetails("new-api", apiVersion, "foo/bar", "https://test.mdtp")
+      val constructedSwaggerDetails: AWSSwaggerDetails = buildAWSSwaggerDetails("new-api", apiVersion, ApiContext("foo/bar"), "https://test.mdtp")
 
       constructedSwaggerDetails.info.title should be("new-api")
       constructedSwaggerDetails.info.version should be("1.0")

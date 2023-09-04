@@ -35,10 +35,11 @@ import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.services.{APIDefinitionService, AwsApiPublisher, NotificationService}
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiContext
 
 class APIDefinitionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll {
 
-  private val context         = "calendar"
+  private val context         = ApiContext("calendar")
   private val serviceName     = "calendar-service"
   private val fixedSavingTime = ISODateTimeFormat.dateTime().withZoneUTC().parseDateTime("2014-02-09T02:27:15.145Z")
 
@@ -52,7 +53,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll {
     setCurrentMillisSystem()
   }
 
-  private def anAPIDefinition(context: String, versions: APIVersion*) =
+  private def anAPIDefinition(context: ApiContext, versions: APIVersion*) =
     APIDefinition("service", "http://service", "name", "description", context, versions.toList, None, None, None)
 
   trait Setup {
@@ -171,7 +172,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll {
 
     "send notifications when version of API has changed status" in new Setup {
       val apiVersion                                        = "1.0"
-      val apiContext                                        = "foo"
+      val apiContext                                        = ApiContext("foo")
       val existingStatus: models.APIStatus.Value            = APIStatus.ALPHA
       val updatedStatus: models.APIStatus.Value             = APIStatus.BETA
       val existingAPIDefinition: APIDefinition              = anAPIDefinition(apiContext, aVersion(apiVersion, existingStatus, Some(PublicAPIAccess())))

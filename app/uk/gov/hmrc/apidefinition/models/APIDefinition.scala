@@ -25,6 +25,7 @@ import uk.gov.hmrc.apidefinition.models.APIStatus.APIStatus
 import uk.gov.hmrc.apidefinition.models.AuthType.AuthType
 import uk.gov.hmrc.apidefinition.models.HttpMethod.HttpMethod
 import uk.gov.hmrc.apidefinition.models.ResourceThrottlingTier.ResourceThrottlingTier
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiContext
 
 // scalastyle:off number.of.types
 
@@ -49,7 +50,7 @@ case class APIDefinition(
     serviceBaseUrl: String,
     name: String,
     description: String,
-    context: String,
+    context: ApiContext,
     versions: List[APIVersion],
     requiresTrust: Option[Boolean],
     isTestSupport: Option[Boolean] = None,
@@ -62,7 +63,7 @@ case class ExtendedAPIDefinition(
     serviceBaseUrl: String,
     name: String,
     description: String,
-    context: String,
+    context: ApiContext,
     requiresTrust: Boolean,
     isTestSupport: Boolean,
     versions: List[ExtendedAPIVersion],

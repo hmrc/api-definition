@@ -29,6 +29,7 @@ import uk.gov.hmrc.apidefinition.models.APIStatus.APIStatus
 import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiContext
 
 @Singleton
 class APIDefinitionService @Inject() (
@@ -90,7 +91,7 @@ class APIDefinitionService @Inject() (
     apiDefinitionRepository.fetchByName(name)
   }
 
-  def fetchByContext(context: String): Future[Option[APIDefinition]] = {
+  def fetchByContext(context: ApiContext): Future[Option[APIDefinition]] = {
     apiDefinitionRepository.fetchByContext(context)
   }
 

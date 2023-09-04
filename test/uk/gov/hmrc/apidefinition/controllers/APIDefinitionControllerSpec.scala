@@ -36,6 +36,7 @@ import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.services.APIDefinitionService
 import uk.gov.hmrc.apidefinition.utils.{APIDefinitionMapper, AsyncHmrcSpec}
 import uk.gov.hmrc.apidefinition.validators._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiContext
 
 class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFactory {
 
@@ -66,9 +67,9 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
   trait QueryDispatcherSetup extends Setup {
 
     val apiDefinitions: Seq[APIDefinition] =
-      Array.fill(2)(APIDefinition("MyApiDefinitionServiceName1", "MyUrl", "MyName", "My description", "MyContext", Nil, None)).toIndexedSeq
+      Array.fill(2)(APIDefinition("MyApiDefinitionServiceName1", "MyUrl", "MyName", "My description", ApiContext("MyContext"), Nil, None)).toIndexedSeq
 
-    when(mockAPIDefinitionService.fetchByContext(*)).thenReturn(successful(Some(apiDefinitions.head)))
+    when(mockAPIDefinitionService.fetchByContext(*[ApiContext])).thenReturn(successful(Some(apiDefinitions.head)))
     when(mockAPIDefinitionService.fetchAllPublicAPIs(*)).thenReturn(successful(apiDefinitions))
     when(mockAPIDefinitionService.fetchAllPrivateAPIs()).thenReturn(successful(apiDefinitions))
     when(mockAPIDefinitionService.fetchAll).thenReturn(successful(apiDefinitions))
@@ -82,7 +83,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
   }
 
   trait ValidatorSetup extends Setup {
-    when(mockAPIDefinitionService.fetchByContext(*)).thenReturn(successful(None))
+    when(mockAPIDefinitionService.fetchByContext(*[ApiContext])).thenReturn(successful(None))
     when(mockAPIDefinitionService.fetchByName(*)).thenReturn(successful(None))
     when(mockAPIDefinitionService.fetchByServiceBaseUrl(*)).thenReturn(successful(None))
     when(mockApiDefinitionRepository.fetchByServiceName(*)).thenReturn(successful(None))
@@ -92,7 +93,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
     }
 
     def thereAreNoOverlappingAPIContexts =
-      when(mockApiDefinitionRepository.fetchAllByTopLevelContext(*)).thenReturn(successful(Seq.empty))
+      when(mockApiDefinitionRepository.fetchAllByTopLevelContext(*[ApiContext])).thenReturn(successful(Seq.empty))
   }
 
   "createOrUpdate" should {
@@ -105,7 +106,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
           "http://calendar",
           "Calendar API",
           "My Calendar API",
-          "individuals/calendar",
+          ApiContext("individuals/calendar"),
           versions =
             List(
               APIVersion(
@@ -140,7 +141,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
           "http://calendar",
           "Calendar API",
           "My Calendar API",
-          "individuals/calendar",
+          ApiContext("individuals/calendar"),
           versions =
             List(
               APIVersion(
@@ -313,7 +314,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
         "http://calendar",
         "Calendar API",
         "My Calendar API",
-        "individuals/calendar",
+        ApiContext("individuals/calendar"),
         versions = List(APIVersion(
           "1.0",
           APIStatus.STABLE,
@@ -370,7 +371,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
         "http://calendar",
         "Calendar API",
         "My Calendar API",
-        "individuals/calendar",
+        ApiContext("individuals/calendar"),
         versions =
           List(APIVersion("1.0", APIStatus.STABLE, None, List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)), Some(true))),
         requiresTrust = Some(true),
@@ -426,7 +427,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
         "http://calendar",
         "Calendar API",
         "My Calendar API",
-        "individuals/calendar",
+        ApiContext("individuals/calendar"),
         versions = List(APIVersion(
           "1.0",
           APIStatus.STABLE,
@@ -496,7 +497,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
         "http://calendar",
         "Calendar API",
         "My Calendar API",
-        "calendar",
+        ApiContext("calendar"),
         versions = List(APIVersion(
           "1.0",
           APIStatus.BETA,
@@ -597,7 +598,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
 
     "return 404 Not Found when the context is defined and an API does not exist for the context" in new QueryDispatcherSetup {
 
-      when(mockAPIDefinitionService.fetchByContext(eqTo("calendar")))
+      when(mockAPIDefinitionService.fetchByContext(eqTo(ApiContext("calendar"))))
         .thenReturn(successful(None))
 
       private val result = underTest.queryDispatcher()(FakeRequest("GET", s"?context=calendar"))
@@ -608,7 +609,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
 
     "fail with a 500 (internal server error) when the context is defined and the service throws an exception" in new QueryDispatcherSetup {
 
-      when(mockAPIDefinitionService.fetchByContext(eqTo("calendar")))
+      when(mockAPIDefinitionService.fetchByContext(eqTo(ApiContext("calendar"))))
         .thenReturn(failed(new RuntimeException("Something went wrong")))
 
       private val result = underTest.queryDispatcher()(FakeRequest("GET", s"?context=calendar"))
@@ -636,7 +637,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
       contentAsJson(result) shouldEqual Json.toJson(apiDefinitions.head)
       header(HeaderNames.CACHE_CONTROL, result) shouldBe Some("max-age=1234")
 
-      verify(mockAPIDefinitionService).fetchByContext(eqTo(context))
+      verify(mockAPIDefinitionService).fetchByContext(eqTo(ApiContext(context)))
     }
 
     "accept an options parameter where alsoIncludePrivateTrials can be specified" when {
@@ -727,7 +728,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
 
       when(mockAPIDefinitionService.fetchByName(*)).thenReturn(successful(None))
       when(mockAPIDefinitionService.fetchByServiceBaseUrl(*)).thenReturn(successful(None))
-      when(mockAPIDefinitionService.fetchByContext(*)).thenReturn(successful(None))
+      when(mockAPIDefinitionService.fetchByContext(*[ApiContext])).thenReturn(successful(None))
       thereAreNoOverlappingAPIContexts
 
       private val result = underTest.validate()(request.withBody(Json.parse(calendarApiDefinition)))

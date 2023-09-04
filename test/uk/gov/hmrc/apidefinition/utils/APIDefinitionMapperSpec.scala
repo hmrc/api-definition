@@ -19,6 +19,7 @@ package uk.gov.hmrc.apidefinition.utils
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.models.APIStatus.APIStatus
 import uk.gov.hmrc.apidefinition.models._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiContext
 
 class APIDefinitionMapperSpec extends AsyncHmrcSpec {
 
@@ -33,7 +34,7 @@ class APIDefinitionMapperSpec extends AsyncHmrcSpec {
   }
 
   private def definition(versions: List[APIVersion]) = {
-    APIDefinition("calendar", "http://calendar", "Calendar API", "My Calendar API", "calendar", versions, None)
+    APIDefinition("calendar", "http://calendar", "Calendar API", "My Calendar API", ApiContext("calendar"), versions, None)
   }
 
   private def underTest(enabledPrototypedEndpoints: Boolean = false) = {

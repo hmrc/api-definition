@@ -26,12 +26,13 @@ import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.services.APIDefinitionService
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiContext
 
 class ApiContextValidatorSpec extends AsyncHmrcSpec {
 
   trait Setup {
 
-    def testAPIDefinition(serviceName: String = "money-service", context: String = "money", versions: List[String] = List("1.0")) =
+    def testAPIDefinition(serviceName: String = "money-service", context: ApiContext = ApiContext("money"), versions: List[String] = List("1.0")) =
       APIDefinition(
         serviceName = serviceName,
         serviceBaseUrl = "http://www.money.com",
@@ -53,26 +54,26 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
       })
     }
 
-    def fetchByContextWillReturn(context: String, apiDefinitionToReturn: Option[APIDefinition]) =
+    def fetchByContextWillReturn(context: ApiContext, apiDefinitionToReturn: Option[APIDefinition]) =
       when(mockAPIDefinitionService.fetchByContext(context)).thenReturn(successful(apiDefinitionToReturn))
 
     def fetchByServiceNameWillReturn(serviceName: String, apiDefinitionToReturn: Option[APIDefinition]) =
       when(mockAPIDefinitionRepository.fetchByServiceName(serviceName)).thenReturn(successful(apiDefinitionToReturn))
 
-    def verifyValidationPassed(result: validatorUnderTest.HMRCValidated[String], expectedContext: String) = {
+    def verifyValidationPassed(result: validatorUnderTest.HMRCValidated[ApiContext], expectedContext: ApiContext) = {
       result.isValid should be(true)
       val Valid(validatedContext) = result
       validatedContext should be(expectedContext)
     }
 
-    def verifyValidationFailed(result: validatorUnderTest.HMRCValidated[String], expectedErrors: Seq[String]) = {
+    def verifyValidationFailed(result: validatorUnderTest.HMRCValidated[ApiContext], expectedErrors: Seq[String]) = {
       val Invalid(errors) = result
       errors.size should be(expectedErrors.size)
       errors.toList should contain allElementsOf expectedErrors
     }
 
     def fetchByTopLevelContextWillReturn(apiDefinitions: List[APIDefinition]) =
-      when(mockAPIDefinitionRepository.fetchAllByTopLevelContext(any[String])).thenReturn(successful(apiDefinitions))
+      when(mockAPIDefinitionRepository.fetchAllByTopLevelContext(*[ApiContext])).thenReturn(successful(apiDefinitions))
 
     def thereAreNoOverlappingAPIContexts = fetchByTopLevelContextWillReturn(Nil)
 
@@ -90,18 +91,18 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
     lazy val errorContext: String = "for API"
 
     "skip context validation for APIs in the skip context validation allowlist" in new Setup {
-      val context: String                   = "/totally//inv@lid/context!!"
+      val context: ApiContext                   = ApiContext("/totally//inv@lid/context!!")
       val allowedApi                        = "some-important-api"
       lazy val apiDefinition: APIDefinition = testAPIDefinition(serviceName = allowedApi, context = context)
       when(mockAppConfig.skipContextValidationAllowlist).thenReturn(List(allowedApi))
 
-      val result: validatorUnderTest.HMRCValidated[String] = await(validatorUnderTest.validate(errorContext, apiDefinition)(context))
+      val result: validatorUnderTest.HMRCValidated[ApiContext] = await(validatorUnderTest.validate(errorContext, apiDefinition)(context))
 
       verifyValidationPassed(result, context)
     }
 
     "pass validation for new API with legitimate context" in new Setup {
-      lazy val context: String              = "individuals/money"
+      lazy val context: ApiContext              = ApiContext("individuals/money")
       lazy val serviceName: String          = "money-service"
       lazy val apiDefinition: APIDefinition = testAPIDefinition(serviceName, context)
 
@@ -109,26 +110,26 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
       fetchByContextWillReturn(context, None)
       fetchByServiceNameWillReturn(serviceName, None)
 
-      val result: validatorUnderTest.HMRCValidated[String] = await(validatorUnderTest.validate(errorContext, apiDefinition)(context))
+      val result: validatorUnderTest.HMRCValidated[ApiContext] = await(validatorUnderTest.validate(errorContext, apiDefinition)(context))
 
       verifyValidationPassed(result, context)
     }
 
     "pass validation for existing API with legitimate context" in new Setup {
-      lazy val context: String              = "money"
+      lazy val context: ApiContext              = ApiContext("money")
       lazy val serviceName: String          = "money-service"
       lazy val apiDefinition: APIDefinition = testAPIDefinition(serviceName, context)
 
       fetchByContextWillReturn(context, Some(apiDefinition))
       fetchByServiceNameWillReturn(serviceName, Some(apiDefinition))
 
-      val result: validatorUnderTest.HMRCValidated[String] = await(validatorUnderTest.validate(errorContext, apiDefinition)(context))
+      val result: validatorUnderTest.HMRCValidated[ApiContext] = await(validatorUnderTest.validate(errorContext, apiDefinition)(context))
 
       verifyValidationPassed(result, context)
     }
 
     "pass validation for new version of existing API with legacy context" in new Setup {
-      lazy val context: String                            = "money"
+      lazy val context: ApiContext                            = ApiContext("money")
       lazy val serviceName: String                        = "money-service"
       lazy val apiDefinition: APIDefinition               = testAPIDefinition(serviceName, context, List("1.0", "2.0"))
       lazy val apiDefinitionWithNewVersion: APIDefinition = testAPIDefinition(serviceName, context, List("1.0", "2.0", "3.0"))
@@ -137,14 +138,14 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
       fetchByContextWillReturn(context, Some(apiDefinition))
       fetchByServiceNameWillReturn(serviceName, Some(apiDefinition))
 
-      val result: validatorUnderTest.HMRCValidated[String] = await(validatorUnderTest.validate(errorContext, apiDefinitionWithNewVersion)(context))
+      val result: validatorUnderTest.HMRCValidated[ApiContext] = await(validatorUnderTest.validate(errorContext, apiDefinitionWithNewVersion)(context))
 
       verifyValidationPassed(result, context)
     }
 
     "fail if new version of existing API has different context" in new Setup {
-      lazy val oldContext: String                         = "money"
-      lazy val newContext                                 = "new-money"
+      lazy val oldContext: ApiContext                     = ApiContext("money")
+      lazy val newContext: ApiContext                     = ApiContext("new-money")
       lazy val serviceName: String                        = "money-service"
       lazy val apiDefinition: APIDefinition               = testAPIDefinition(serviceName, oldContext, List("1.0", "2.0"))
       lazy val apiDefinitionWithNewVersion: APIDefinition = testAPIDefinition(serviceName, newContext, List("1.0", "2.0", "3.0"))
@@ -153,47 +154,47 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
       fetchByContextWillReturn(newContext, None)
       fetchByServiceNameWillReturn(serviceName, Some(apiDefinition))
 
-      val result: validatorUnderTest.HMRCValidated[String] = await(validatorUnderTest.validate(errorContext, apiDefinitionWithNewVersion)(newContext))
+      val result: validatorUnderTest.HMRCValidated[ApiContext] = await(validatorUnderTest.validate(errorContext, apiDefinitionWithNewVersion)(newContext))
 
       val Invalid(errors) = result
       errors.head == contextMustNotBeChangedErrorMessage(errorContext) || errors.tail.contains(contextMustNotBeChangedErrorMessage(errorContext)) shouldBe true
     }
 
     "fail if context is empty" in new Setup {
-      lazy val context: String              = ""
+      lazy val context: ApiContext              = ApiContext("")
       lazy val apiDefinition: APIDefinition = testAPIDefinition(context = context)
 
-      val result: validatorUnderTest.HMRCValidated[String] = await(validatorUnderTest.validate(errorContext, apiDefinition)(context))
+      val result: validatorUnderTest.HMRCValidated[ApiContext] = await(validatorUnderTest.validate(errorContext, apiDefinition)(context))
 
       verifyZeroInteractions(mockAPIDefinitionService, mockAPIDefinitionRepository)
       verifyValidationFailed(result, Seq(s"Field 'context' should not be empty $errorContext"))
     }
 
     "fail validation when the context starts with '/' " in new Setup {
-      lazy val context: String              = "/hi"
+      lazy val context: ApiContext              = ApiContext("/hi")
       lazy val apiDefinition: APIDefinition = testAPIDefinition(context = context)
 
-      val result: validatorUnderTest.HMRCValidated[String] = await(validatorUnderTest.validate(errorContext, apiDefinition)(context))
+      val result: validatorUnderTest.HMRCValidated[ApiContext] = await(validatorUnderTest.validate(errorContext, apiDefinition)(context))
 
       verifyZeroInteractions(mockAPIDefinitionService, mockAPIDefinitionRepository)
       verifyValidationFailed(result, Seq(s"Field 'context' should not start with '/' $errorContext"))
     }
 
     "fail validation when the context ends with '/' " in new Setup {
-      lazy val context: String              = "hi/"
+      lazy val context: ApiContext              = ApiContext("hi/")
       lazy val apiDefinition: APIDefinition = testAPIDefinition(context = context)
 
-      val result: validatorUnderTest.HMRCValidated[String] = await(validatorUnderTest.validate(errorContext, apiDefinition)(context))
+      val result: validatorUnderTest.HMRCValidated[ApiContext] = await(validatorUnderTest.validate(errorContext, apiDefinition)(context))
 
       verifyZeroInteractions(mockAPIDefinitionService, mockAPIDefinitionRepository)
       verifyValidationFailed(result, Seq(s"Field 'context' should not end with '/' $errorContext"))
     }
 
     "fail validation when the context contains '//' " in new Setup {
-      val context: String                   = "hi//aloha"
+      val context: ApiContext                   = ApiContext("hi//aloha")
       lazy val apiDefinition: APIDefinition = testAPIDefinition(context = context)
 
-      val result: validatorUnderTest.HMRCValidated[String] = await(validatorUnderTest.validate(errorContext, apiDefinition)(context))
+      val result: validatorUnderTest.HMRCValidated[ApiContext] = await(validatorUnderTest.validate(errorContext, apiDefinition)(context))
 
       verifyZeroInteractions(mockAPIDefinitionService, mockAPIDefinitionRepository)
       verifyValidationFailed(result, Seq(s"Field 'context' should not have empty path segments $errorContext"))
@@ -205,10 +206,10 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
     )
     ('{' :: '}' :: prohibitedChars).foreach { char: Char =>
       s"fail validation if the API contains '$char' in the context" in new Setup {
-        lazy val badContext                   = s"my-context_$char"
+        lazy val badContext                   = ApiContext(s"my-context_$char")
         lazy val apiDefinition: APIDefinition = testAPIDefinition(context = badContext)
 
-        val result: validatorUnderTest.HMRCValidated[String] = await(validatorUnderTest.validate(errorContext, apiDefinition)(badContext))
+        val result: validatorUnderTest.HMRCValidated[ApiContext] = await(validatorUnderTest.validate(errorContext, apiDefinition)(badContext))
 
         verifyZeroInteractions(mockAPIDefinitionService, mockAPIDefinitionRepository)
         verifyValidationFailed(result, Seq(s"Field 'context' should match regular expression '^[a-zA-Z0-9_\\-\\/]+$$' $errorContext"))
@@ -216,8 +217,8 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
     }
 
     "fail validation when context has been changed" in new Setup {
-      lazy val context: String            = "individuals/money"
-      lazy val oldContext: String         = "individuals/old-money"
+      lazy val context: ApiContext            = ApiContext("individuals/money")
+      lazy val oldContext: ApiContext         = ApiContext("individuals/old-money")
       lazy val serviceName: String        = "money-service"
       val apiDefinition: APIDefinition    = testAPIDefinition(serviceName, context)
       val oldAPIDefinition: APIDefinition = testAPIDefinition(serviceName, oldContext)
@@ -226,13 +227,13 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
       fetchByContextWillReturn(context, None)
       fetchByServiceNameWillReturn(serviceName, Some(oldAPIDefinition))
 
-      val result: validatorUnderTest.HMRCValidated[String] = await(validatorUnderTest.validate(errorContext, apiDefinition)(context))
+      val result: validatorUnderTest.HMRCValidated[ApiContext] = await(validatorUnderTest.validate(errorContext, apiDefinition)(context))
 
       verifyValidationFailed(result, Seq(s"Field 'context' must not be changed $errorContext"))
     }
 
     "fail validation when context already exist for another API" in new Setup {
-      lazy val context: String          = "money"
+      lazy val context: ApiContext          = ApiContext("money")
       lazy val serviceName: String      = "money-service"
       lazy val otherServiceName: String = "other-service"
 
@@ -242,16 +243,16 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
       fetchByContextWillReturn(context, Some(otherAPIDefinition))
       fetchByServiceNameWillReturn(serviceName, None)
 
-      val result: validatorUnderTest.HMRCValidated[String] = await(validatorUnderTest.validate(errorContext, apiDefinition)(context))
+      val result: validatorUnderTest.HMRCValidated[ApiContext] = await(validatorUnderTest.validate(errorContext, apiDefinition)(context))
 
       verifyValidationFailed(result, Seq(s"Field 'context' must be unique $errorContext"))
     }
 
     "accumulate multiple validation errors together" in new Setup {
-      lazy val context: String              = "/hi//there/"
+      lazy val context: ApiContext          = ApiContext("/hi//there/")
       lazy val apiDefinition: APIDefinition = testAPIDefinition(context = context)
 
-      val result: validatorUnderTest.HMRCValidated[String] = await(validatorUnderTest.validate(errorContext, apiDefinition)(context))
+      val result: validatorUnderTest.HMRCValidated[ApiContext] = await(validatorUnderTest.validate(errorContext, apiDefinition)(context))
 
       verifyZeroInteractions(mockAPIDefinitionService, mockAPIDefinitionRepository)
 
@@ -268,7 +269,7 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
     val permittedTopLevelContexts = List("accounts", "agents", "customs", "mobile", "individuals", "obligations", "organisations", "test", "payments", "misc")
     permittedTopLevelContexts.foreach(topLevelContext =>
       s"pass validation with a top level context of $topLevelContext" in new Setup {
-        lazy val context: String              = s"$topLevelContext/foo"
+        lazy val context: ApiContext          = ApiContext(s"$topLevelContext/foo")
         lazy val serviceName: String          = "money-service"
         lazy val apiDefinition: APIDefinition = testAPIDefinition(serviceName, context)
 
@@ -276,14 +277,14 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
         fetchByContextWillReturn(context, None)
         fetchByServiceNameWillReturn(serviceName, None)
 
-        val result: validatorUnderTest.HMRCValidated[String] = await(validatorUnderTest.validate(errorContext, apiDefinition)(context))
+        val result: validatorUnderTest.HMRCValidated[ApiContext] = await(validatorUnderTest.validate(errorContext, apiDefinition)(context))
 
         verifyValidationPassed(result, context)
       }
     )
 
     "fail validation when new API does not use correct top level context" in new Setup {
-      lazy val context: String              = "foo/bar"
+      lazy val context: ApiContext          = ApiContext("foo/bar")
       lazy val serviceName: String          = "money-service"
       lazy val apiDefinition: APIDefinition = testAPIDefinition(serviceName, context)
 
@@ -293,13 +294,13 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
       fetchByContextWillReturn(context, None)
       fetchByServiceNameWillReturn(serviceName, None)
 
-      val result: validatorUnderTest.HMRCValidated[String] = await(validatorUnderTest.validate(errorContext, apiDefinition)(context))
+      val result: validatorUnderTest.HMRCValidated[ApiContext] = await(validatorUnderTest.validate(errorContext, apiDefinition)(context))
 
       verifyValidationFailed(result, Seq(s"Field 'context' must start with one of $formattedTopLevelContexts $errorContext"))
     }
 
     "fail validation when a new API does not have a multilevel context" in new Setup {
-      lazy val context: String              = permittedTopLevelContexts.head
+      lazy val context: ApiContext          = ApiContext(permittedTopLevelContexts.head)
       lazy val serviceName: String          = "money-service"
       lazy val apiDefinition: APIDefinition = testAPIDefinition(serviceName, context)
 
@@ -307,14 +308,14 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
       fetchByContextWillReturn(context, None)
       fetchByServiceNameWillReturn(serviceName, None)
 
-      val result: validatorUnderTest.HMRCValidated[String] = await(validatorUnderTest.validate(errorContext, apiDefinition)(context))
+      val result: validatorUnderTest.HMRCValidated[ApiContext] = await(validatorUnderTest.validate(errorContext, apiDefinition)(context))
 
       verifyValidationFailed(result, Seq(s"Field 'context' must have at least two segments $errorContext"))
     }
 
     "fail validation when new API context is subset of existing" in new Setup {
-      lazy val newContext: String         = "individuals/foo"
-      lazy val supersetContext: String    = s"$newContext/bar"
+      lazy val supersetContext: ApiContext    = ApiContext("individuals/foo/bar")
+      lazy val newContext: ApiContext         = ApiContext("individuals/foo")
       lazy val existingAPI: APIDefinition = testAPIDefinition("existing-service", supersetContext)
       lazy val newAPI: APIDefinition      = testAPIDefinition("new-service", newContext)
 
@@ -322,14 +323,14 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
       fetchByContextWillReturn(newContext, None)
       fetchByServiceNameWillReturn("new-service", None)
 
-      val result: validatorUnderTest.HMRCValidated[String] = await(validatorUnderTest.validate(errorContext, newAPI)(newContext))
+      val result: validatorUnderTest.HMRCValidated[ApiContext] = await(validatorUnderTest.validate(errorContext, newAPI)(newContext))
 
       verifyValidationFailed(result, Seq(s"Field 'context' overlaps with '$supersetContext' $errorContext"))
     }
 
     "fail validation when new API context is superset of existing" in new Setup {
-      lazy val subsetContext: String      = "individuals/foo"
-      lazy val newContext: String         = s"$subsetContext/bar"
+      lazy val subsetContext: ApiContext      = ApiContext("individuals/foo")
+      lazy val newContext: ApiContext         = ApiContext("individuals/foo/bar")
       lazy val existingAPI: APIDefinition = testAPIDefinition("existing-service", subsetContext)
       lazy val newAPI: APIDefinition      = testAPIDefinition("new-service", newContext)
 
@@ -337,37 +338,37 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
       fetchByContextWillReturn(newContext, None)
       fetchByServiceNameWillReturn("new-service", None)
 
-      val result: validatorUnderTest.HMRCValidated[String] = await(validatorUnderTest.validate(errorContext, newAPI)(newContext))
+      val result: validatorUnderTest.HMRCValidated[ApiContext] = await(validatorUnderTest.validate(errorContext, newAPI)(newContext))
 
-      verifyValidationFailed(result, Seq(s"Field 'context' overlaps with '$subsetContext' $errorContext"))
+      verifyValidationFailed(result, Seq(s"Field 'context' overlaps with '${subsetContext}' $errorContext"))
     }
 
     "pass validation when new API context does not overlap multiple other APIs in same top level context" in new Setup {
-      lazy val newContext: String          = "individuals/baz"
+      lazy val newContext: ApiContext          = ApiContext("individuals/baz")
       lazy val newAPI: APIDefinition       = testAPIDefinition("new-service", newContext)
-      lazy val existingAPI1: APIDefinition = testAPIDefinition("existing-service-1", "individuals/foo")
-      lazy val existingAPI2: APIDefinition = testAPIDefinition("existing-service-2", "individuals/bar")
+      lazy val existingAPI1: APIDefinition = testAPIDefinition("existing-service-1", ApiContext("individuals/foo"))
+      lazy val existingAPI2: APIDefinition = testAPIDefinition("existing-service-2", ApiContext("individuals/bar"))
 
       fetchByTopLevelContextWillReturn(List(existingAPI1, existingAPI2))
       fetchByContextWillReturn(newContext, None)
       fetchByServiceNameWillReturn("new-service", None)
 
-      val result: validatorUnderTest.HMRCValidated[String] = await(validatorUnderTest.validate(errorContext, newAPI)(newContext))
+      val result: validatorUnderTest.HMRCValidated[ApiContext] = await(validatorUnderTest.validate(errorContext, newAPI)(newContext))
 
       verifyValidationPassed(result, newContext)
     }
 
     "pass validation when new API context string overlaps but does not path overlap" in new Setup {
-      lazy val newContext: String          = "individuals/baz"
+      lazy val newContext: ApiContext          = ApiContext("individuals/baz")
       lazy val newAPI: APIDefinition       = testAPIDefinition("new-service", newContext)
-      lazy val existingAPI1: APIDefinition = testAPIDefinition("existing-service-1", "individuals/ba")
-      lazy val existingAPI2: APIDefinition = testAPIDefinition("existing-service-2", "individuals/baz2")
+      lazy val existingAPI1: APIDefinition = testAPIDefinition("existing-service-1", ApiContext("individuals/ba"))
+      lazy val existingAPI2: APIDefinition = testAPIDefinition("existing-service-2", ApiContext("individuals/baz2"))
 
       fetchByTopLevelContextWillReturn(List(existingAPI1, existingAPI2))
       fetchByContextWillReturn(newContext, None)
       fetchByServiceNameWillReturn("new-service", None)
 
-      val result: validatorUnderTest.HMRCValidated[String] = await(validatorUnderTest.validate(errorContext, newAPI)(newContext))
+      val result: validatorUnderTest.HMRCValidated[ApiContext] = await(validatorUnderTest.validate(errorContext, newAPI)(newContext))
 
       verifyValidationPassed(result, newContext)
     }

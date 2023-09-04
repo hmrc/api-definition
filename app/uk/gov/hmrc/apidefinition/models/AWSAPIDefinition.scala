@@ -111,7 +111,7 @@ object AWSAPIDefinition {
   }
 
   def awsApiGatewayName(version: String, apiDefinition: APIDefinition): String =
-    s"${apiDefinition.context.replaceAll("/", "--")}--$version"
+    s"${apiDefinition.context.value.replaceAll("/", "--")}--$version"
 
   def awsApiStatus(apiDefinition: APIDefinition, awsAPIDefinition: AWSAPIDefinition): String = {
     val status = apiDefinition.versions.filter(apiVersion => awsAPIDefinition.version.eq(apiVersion.version)).head.status
