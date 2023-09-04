@@ -19,8 +19,10 @@ package uk.gov.hmrc.apidefinition.models
 import uk.gov.hmrc.apidefinition.models.AWSParameterType.AWSParameterType
 import uk.gov.hmrc.apidefinition.models.AuthType.AuthType
 import uk.gov.hmrc.apidefinition.models.ResourceThrottlingTier.ResourceThrottlingTier
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiContext
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersionNbr
 
-case class AWSAPIDefinition(name: String, context: String, version: String, subscribersCount: Int, endpointConfig: AWSEndpointConfig, swagger: Option[AWSSwaggerDetails])
+case class AWSAPIDefinition(name: String, context: ApiContext, version: ApiVersionNbr, subscribersCount: Int, endpointConfig: AWSEndpointConfig, swagger: Option[AWSSwaggerDetails])
 
 case class AWSEndpointConfig(production_endpoints: Option[AWSEndpoint], sandbox_endpoints: AWSEndpoint, endpoint_type: String = "http")
 
@@ -34,7 +36,7 @@ case class AWSSwaggerDetails(
     host: Option[String] = None
   )
 
-case class AWSAPIInfo(title: String, version: String)
+case class AWSAPIInfo(title: String, version: ApiVersionNbr)
 
 case class AWSHttpVerbDetails(
     parameters: Option[Seq[AWSParameter]],
@@ -110,11 +112,14 @@ object AWSAPIDefinition {
     resourceThrottlingTierMap.getOrElse(resourceThrottlingTier, throw new IllegalArgumentException(s"Unknown Throttling Tier: $resourceThrottlingTier"))
   }
 
-  def awsApiGatewayName(version: String, apiDefinition: APIDefinition): String =
-    s"${apiDefinition.context.value.replaceAll("/", "--")}--$version"
+  def awsApiGatewayName(version: ApiVersionNbr, apiDefinition: APIDefinition): String = {
+      def asAwsSafeString(context: ApiContext): String = context.value.replaceAll("/", "--")
+  
+    s"${asAwsSafeString(apiDefinition.context)}--$version"
+  }
 
   def awsApiStatus(apiDefinition: APIDefinition, awsAPIDefinition: AWSAPIDefinition): String = {
-    val status = apiDefinition.versions.filter(apiVersion => awsAPIDefinition.version.eq(apiVersion.version)).head.status
+    val status = apiDefinition.versions.filter(apiVersion => awsAPIDefinition.version == apiVersion.version).head.status
     statusMap.getOrElse(status, throw new IllegalArgumentException(s"Unknown Status: $status"))
   }
 }

@@ -32,6 +32,7 @@ import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.connector.ApiMicroserviceConnector
 import uk.gov.hmrc.apidefinition.models.{APIDefinition, APIVersion}
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersionNbr
 
 object DocumentationService {
   val PROXY_SAFE_CONTENT_TYPE = "Proxy-Safe-Content-Type"
@@ -49,7 +50,7 @@ class DocumentationService @Inject() (
 
   import DocumentationService._
 
-  def fetchApiDocumentationResource(serviceName: String, version: String, resource: String): Future[Result] = {
+  def fetchApiDocumentationResource(serviceName: String, version: ApiVersionNbr, resource: String): Future[Result] = {
     def createProxySafeContentType(contentType: String): (String, String) = ((PROXY_SAFE_CONTENT_TYPE, contentType))
 
     for {
@@ -71,7 +72,7 @@ class DocumentationService @Inject() (
   }
 
   // noinspection ScalaStyle
-  private def fetchResource(serviceName: String, version: String, resource: String): Future[WSResponse] = {
+  private def fetchResource(serviceName: String, version: ApiVersionNbr, resource: String): Future[WSResponse] = {
 
     def fetchResourceFromMicroservice(serviceBaseUrl: String): Future[WSResponse] =
       apiMicroserviceConnector.fetchApiDocumentationResourceByUrl(serviceBaseUrl, version, resource)
@@ -90,7 +91,7 @@ class DocumentationService @Inject() (
       val failure = Future.failed[Option[APIVersion]](new NotFoundException(s"Version $version of $serviceName not found"))
 
       version match {
-        case "common" => None.pure[Future]
+        case ApiVersionNbr("common") => None.pure[Future]
         case v        =>
           val oVersion = apiDefinition.versions.find(_.version == version)
           oVersion.fold(failure)(v => Some(v).pure[Future])
@@ -109,11 +110,11 @@ class DocumentationService @Inject() (
     } yield response
   }
 
-  private def newInternalServerException(serviceName: String, version: String, resource: String, status: Int) = {
+  private def newInternalServerException(serviceName: String, version: ApiVersionNbr, resource: String, status: Int) = {
     new InternalServerException(s"Error (status $status) downloading $resource for $serviceName $version")
   }
 
-  private def newNotFoundException(serviceName: String, version: String, resource: String) = {
+  private def newNotFoundException(serviceName: String, version: ApiVersionNbr, resource: String) = {
     new NotFoundException(s"$resource not found for $serviceName $version")
   }
 }

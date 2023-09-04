@@ -20,12 +20,13 @@ import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.models.APIStatus.APIStatus
 import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiContext
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersionNbr
 
 class APIDefinitionMapperSpec extends AsyncHmrcSpec {
 
   private def version(version: String, status: APIStatus, endpointsEnabled: Option[Boolean] = None) = {
     APIVersion(
-      version,
+      ApiVersionNbr(version),
       status,
       None,
       List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),

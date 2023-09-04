@@ -28,6 +28,7 @@ import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpResponse}
 import uk.gov.hmrc.apidefinition.models.APIStatus
 import uk.gov.hmrc.apidefinition.services.{EmailNotificationService, SendEmailRequest}
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersionNbr
 
 class NotificationServiceSpec extends AsyncHmrcSpec {
 
@@ -74,7 +75,7 @@ class NotificationServiceSpec extends AsyncHmrcSpec {
 
   "Email Notification Service" should {
     val apiName    = "API"
-    val apiVersion = "1.0"
+    val apiVersion = ApiVersionNbr("1.0")
 
     "make appropriate HTTP call email service to send message" in new EmailNotificationSetup {
       private val existingAPIStatus = APIStatus.ALPHA
@@ -88,7 +89,7 @@ class NotificationServiceSpec extends AsyncHmrcSpec {
       capturedRequest.to shouldBe emailAddresses
       capturedRequest.templateId shouldBe emailTemplateId
       capturedRequest.parameters.get("apiName") shouldBe Some(apiName)
-      capturedRequest.parameters.get("apiVersion") shouldBe Some(apiVersion)
+      capturedRequest.parameters.get("apiVersion") shouldBe Some(apiVersion.toString)
       capturedRequest.parameters.get("currentStatus") shouldBe Some(existingAPIStatus.toString)
       capturedRequest.parameters.get("newStatus") shouldBe Some(newAPIStatus.toString)
       capturedRequest.parameters.get("environmentName") shouldBe Some(environmentName)

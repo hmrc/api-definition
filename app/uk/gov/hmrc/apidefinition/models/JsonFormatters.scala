@@ -26,6 +26,7 @@ import scala.language.postfixOps
 
 import uk.gov.hmrc.apidefinition.models.APIAccessType._
 import uk.gov.hmrc.apidefinition.models.AWSParameterType._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersionNbr
 
 object JsonFormatters {
 
@@ -122,7 +123,7 @@ object JsonFormatters {
   implicit val formatExtendedAPIDefinition: OFormat[ExtendedAPIDefinition] = Json.format[ExtendedAPIDefinition]
 
   val apiVersionReads: Reads[APIVersion] = (
-    (JsPath \ "version").read[String] and
+    (JsPath \ "version").read[ApiVersionNbr] and
       (JsPath \ "status").read[APIStatus.APIStatus] and
       (JsPath \ "access").readNullable[APIAccess] and
       (JsPath \ "endpoints").read[List[Endpoint]] and

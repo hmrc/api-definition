@@ -34,6 +34,7 @@ import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiContext
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersionNbr
 
 class APIDefinitionRepositorySpec extends AsyncHmrcSpec
     with DefaultPlayMongoRepositorySupport[APIDefinition]
@@ -50,14 +51,14 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
   override implicit lazy val app: Application                                                 = appBuilder.build()
 
   private val helloApiVersion = APIVersion(
-    version = "1.0",
+    version = ApiVersionNbr("1.0"),
     status = APIStatus.PROTOTYPED,
     access = None,
     endpoints = List(Endpoint("/world", "Say Hello to the World!", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
   )
 
   private val calendarApiVersion = APIVersion(
-    version = "2.0",
+    version = ApiVersionNbr("2.0"),
     status = APIStatus.PUBLISHED,
     access = None,
     endpoints = List(Endpoint("/date", "Check current date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
@@ -84,7 +85,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
   )
 
   private val individualIncomeTaxApiVersion = APIVersion(
-    version = "1.0",
+    version = ApiVersionNbr("1.0"),
     status = APIStatus.PUBLISHED,
     access = None,
     endpoints = List(Endpoint("/submit", "Submit Income Tax Return", HttpMethod.POST, AuthType.USER, ResourceThrottlingTier.UNLIMITED))
@@ -101,7 +102,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
   )
 
   private val individualNIApiVersion = APIVersion(
-    version = "1.0",
+    version = ApiVersionNbr("1.0"),
     status = APIStatus.PUBLISHED,
     access = None,
     endpoints = List(Endpoint("/submit", "Submit National Insurance", HttpMethod.POST, AuthType.USER, ResourceThrottlingTier.UNLIMITED))

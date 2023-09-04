@@ -26,6 +26,7 @@ import uk.gov.hmrc.apidefinition.models.AuthType.AuthType
 import uk.gov.hmrc.apidefinition.models.HttpMethod.HttpMethod
 import uk.gov.hmrc.apidefinition.models.ResourceThrottlingTier.ResourceThrottlingTier
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiContext
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersionNbr
 
 // scalastyle:off number.of.types
 
@@ -71,7 +72,7 @@ case class ExtendedAPIDefinition(
   )
 
 case class ExtendedAPIVersion(
-    version: String,
+    version: ApiVersionNbr,
     status: APIStatus,
     endpoints: List[Endpoint],
     productionAvailability: Option[APIAvailability],
@@ -81,7 +82,7 @@ case class ExtendedAPIVersion(
 case class APIAvailability(endpointsEnabled: Boolean, access: APIAccess, loggedIn: Boolean, authorised: Boolean)
 
 case class APIVersion(
-    version: String,
+    version: ApiVersionNbr,
     status: APIStatus,
     access: Option[APIAccess] = Some(PublicAPIAccess()),
     endpoints: List[Endpoint],

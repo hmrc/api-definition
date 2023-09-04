@@ -36,6 +36,7 @@ import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.services.{APIDefinitionService, AwsApiPublisher, NotificationService}
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiContext
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersionNbr
 
 class APIDefinitionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll {
 
@@ -74,12 +75,12 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll {
 
     val applicationId = randomUUID()
 
-    val versionWithoutAccessDefined: APIVersion         = aVersion(version = "1.0", access = None)
-    val publicVersion                                   = aVersion(version = "2.0", access = Some(PublicAPIAccess()))
-    val privateVersionWithAppWhitelisted: APIVersion    = aVersion(version = "3.0", access = Some(PrivateAPIAccess(List(applicationId.toString))))
-    val privateVersionWithoutAppWhitelisted: APIVersion = aVersion(version = "3.1", access = Some(PrivateAPIAccess(List("OTHER_APP_ID"))))
-    val privateTrialVersionWithWhitelist                = aVersion(version = "4.0", access = Some(PrivateAPIAccess(List(applicationId.toString), isTrial = Some(true))))
-    val privateTrialVersionWithoutWhitelist             = aVersion(version = "4.1", access = Some(PrivateAPIAccess(Nil, isTrial = Some(true))))
+    val versionWithoutAccessDefined: APIVersion         = aVersion(version = ApiVersionNbr("1.0"), access = None)
+    val publicVersion                                   = aVersion(version = ApiVersionNbr("2.0"), access = Some(PublicAPIAccess()))
+    val privateVersionWithAppWhitelisted: APIVersion    = aVersion(version = ApiVersionNbr("3.0"), access = Some(PrivateAPIAccess(List(applicationId.toString))))
+    val privateVersionWithoutAppWhitelisted: APIVersion = aVersion(version = ApiVersionNbr("3.1"), access = Some(PrivateAPIAccess(List("OTHER_APP_ID"))))
+    val privateTrialVersionWithWhitelist                = aVersion(version = ApiVersionNbr("4.0"), access = Some(PrivateAPIAccess(List(applicationId.toString), isTrial = Some(true))))
+    val privateTrialVersionWithoutWhitelist             = aVersion(version = ApiVersionNbr("4.1"), access = Some(PrivateAPIAccess(Nil, isTrial = Some(true))))
 
     val allVersions = List(
       versionWithoutAccessDefined,
@@ -171,7 +172,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll {
     }
 
     "send notifications when version of API has changed status" in new Setup {
-      val apiVersion                                        = "1.0"
+      val apiVersion                                        = ApiVersionNbr("1.0")
       val apiContext                                        = ApiContext("foo")
       val existingStatus: models.APIStatus.Value            = APIStatus.ALPHA
       val updatedStatus: models.APIStatus.Value             = APIStatus.BETA
@@ -389,7 +390,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll {
     }
   }
 
-  private def aVersion(version: String, status: APIStatus = APIStatus.BETA, access: Option[APIAccess]) =
+  private def aVersion(version: ApiVersionNbr, status: APIStatus = APIStatus.BETA, access: Option[APIAccess]) =
     APIVersion(version, status, access, List(Endpoint("/test", "test", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)))
 
   private def someAPIDefinition: APIDefinition =
@@ -401,7 +402,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll {
       context,
       List(
         APIVersion(
-          "1.0",
+          ApiVersionNbr("1.0"),
           APIStatus.BETA,
           Some(PublicAPIAccess()),
           List(

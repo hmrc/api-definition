@@ -34,6 +34,7 @@ import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 
 import uk.gov.hmrc.apidefinition.services.DocumentationService
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersionNbr
 
 class DocumentationControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFactory {
 
@@ -43,7 +44,7 @@ class DocumentationControllerSpec extends AsyncHmrcSpec with StubControllerCompo
     val documentationService: DocumentationService   = mock[DocumentationService]
     val hc: HeaderCarrier                            = HeaderCarrier()
     val serviceName: String                          = "api-example-microservice"
-    val version: String                              = "1.0"
+    val version: ApiVersionNbr                       = ApiVersionNbr("1.0")
     val resourceName: String                         = "application.raml"
     // scalastyle:off magic.number
     // val body: Array[Byte] = Array[Byte](0x1, 0x2, 0x3)
@@ -54,17 +55,17 @@ class DocumentationControllerSpec extends AsyncHmrcSpec with StubControllerCompo
     val underTest = new DocumentationController(documentationService, stubControllerComponents())
 
     def theDocumentationServiceWillReturnTheResource = {
-      when(documentationService.fetchApiDocumentationResource(*, *, *))
+      when(documentationService.fetchApiDocumentationResource(*, *[ApiVersionNbr], *))
         .thenReturn(successful(Ok(body).withHeaders(CONTENT_TYPE -> contentType)))
     }
 
     def theDocumentationServiceWillFailToReturnTheResource = {
-      when(documentationService.fetchApiDocumentationResource(*, *, *))
+      when(documentationService.fetchApiDocumentationResource(*, *[ApiVersionNbr], *))
         .thenReturn(failed(new RuntimeException("Some message")))
     }
 
     def theDocumentationServiceWillReturnNotFound = {
-      when(documentationService.fetchApiDocumentationResource(*, *, *))
+      when(documentationService.fetchApiDocumentationResource(*, *[ApiVersionNbr], *))
         .thenReturn(failed(new NotFoundException("some message")))
     }
   }

@@ -30,6 +30,7 @@ import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiContext
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersionNbr
 
 @Singleton
 class APIDefinitionService @Inject() (
@@ -67,7 +68,7 @@ class APIDefinitionService @Inject() (
   }
 
   private def checkAPIDefinitionForStatusChanges(apiDefinition: APIDefinition)(implicit hc: HeaderCarrier): Future[Unit] = {
-    def findStatusDifferences(existingAPIVersions: Seq[APIVersion], newAPIVersions: Seq[APIVersion]): Seq[(String, APIStatus, APIStatus)] =
+    def findStatusDifferences(existingAPIVersions: Seq[APIVersion], newAPIVersions: Seq[APIVersion]): Seq[(ApiVersionNbr, APIStatus, APIStatus)] =
       (existingAPIVersions ++ newAPIVersions)
         .groupBy(_.version)
         .filter(v => v._2.size == 2)

@@ -32,11 +32,12 @@ import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.services.AwsApiPublisher
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiContext
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersionNbr
 
 class AwsAPIPublisherSpec extends AsyncHmrcSpec {
 
   private def anAPIVersion(version: String, status: APIStatus = APIStatus.PROTOTYPED) = APIVersion(
-    version,
+    ApiVersionNbr(version),
     status,
     Some(PublicAPIAccess()),
     List(

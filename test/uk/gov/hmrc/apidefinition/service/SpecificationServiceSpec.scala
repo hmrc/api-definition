@@ -31,6 +31,7 @@ import uk.gov.hmrc.apidefinition.models.apispecification.RamlSpecHelper
 import uk.gov.hmrc.apidefinition.raml.{ApiSpecificationRamlParser, RAML}
 import uk.gov.hmrc.apidefinition.services.{SchemaService, SpecificationService}
 import uk.gov.hmrc.apidefinition.utils.{AsyncHmrcSpec, Utils}
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersionNbr
 
 class SpecificationServiceSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite with Utils {
 
@@ -53,7 +54,7 @@ class SpecificationServiceSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wi
     "fetch and parse raml" in new Setup {
       when(ramlLoader.load(any[String])).thenReturn(raml)
 
-      val ojs = await(specificationService.fetchApiSpecification("api-not-real", "1.0"))
+      val ojs = await(specificationService.fetchApiSpecification("api-not-real", ApiVersionNbr("1.0")))
 
       Json.stringify(ojs.value).contains(""""title":"My simple title"""") shouldBe true
     }
@@ -61,7 +62,7 @@ class SpecificationServiceSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wi
     "fetch and handle no raml found" in new Setup {
       when(ramlLoader.load(any[String])).thenReturn(Failure(new RamlNotFoundException("")))
 
-      val ojs = await(specificationService.fetchApiSpecification("api-not-real", "1.0"))
+      val ojs = await(specificationService.fetchApiSpecification("api-not-real", ApiVersionNbr("1.0")))
 
       ojs shouldBe None
     }

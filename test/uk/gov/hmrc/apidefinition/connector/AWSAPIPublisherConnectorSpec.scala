@@ -37,6 +37,7 @@ import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.models.{AWSAPIInfo, AWSHttpVerbDetails, AWSResponse, AWSSwaggerDetails}
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersionNbr
 
 class AWSAPIPublisherConnectorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite with BeforeAndAfterAll {
 
@@ -58,7 +59,7 @@ class AWSAPIPublisherConnectorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuit
   private val swagger =
     AWSSwaggerDetails(
       paths = Map("/check-weather" -> Map("get" -> anAWSHttpVerbDetails)),
-      info = AWSAPIInfo("calendar", "1.0")
+      info = AWSAPIInfo("calendar", ApiVersionNbr("1.0"))
     )
 
   trait Setup {

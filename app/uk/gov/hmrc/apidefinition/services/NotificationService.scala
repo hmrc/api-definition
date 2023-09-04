@@ -27,13 +27,14 @@ import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpResponse}
 
 import uk.gov.hmrc.apidefinition.models.APIStatus.APIStatus
 import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersionNbr
 
 trait NotificationService {
   val environmentName: String
 
   def notifyOfStatusChange(
       apiName: String,
-      apiVersion: String,
+      apiVersion: ApiVersionNbr,
       existingAPIStatus: APIStatus,
       newAPIStatus: APIStatus
     )(implicit ec: ExecutionContext,
@@ -45,7 +46,7 @@ class LoggingNotificationService(override val environmentName: String) extends N
 
   def notifyOfStatusChange(
       apiName: String,
-      apiVersion: String,
+      apiVersion: ApiVersionNbr,
       existingAPIStatus: APIStatus,
       newAPIStatus: APIStatus
     )(implicit ec: ExecutionContext,
@@ -67,7 +68,7 @@ class EmailNotificationService(
 
   override def notifyOfStatusChange(
       apiName: String,
-      apiVersion: String,
+      apiVersion: ApiVersionNbr,
       existingAPIStatus: APIStatus,
       newAPIStatus: APIStatus
     )(implicit ec: ExecutionContext,
@@ -79,7 +80,7 @@ class EmailNotificationService(
         emailTemplateId,
         Map(
           "apiName"         -> apiName,
-          "apiVersion"      -> apiVersion,
+          "apiVersion"      -> apiVersion.value,
           "currentStatus"   -> existingAPIStatus.toString,
           "newStatus"       -> newAPIStatus.toString,
           "environmentName" -> environmentName

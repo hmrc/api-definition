@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.apidefinition.models.apispecification
 
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersionNbr
+
 case class DocumentationItem(title: String, content: String)
 
 case class SecurityScheme(`type`: String, scope: Option[String])
@@ -31,7 +33,7 @@ case class Group(name: String, description: String)
 
 case class ApiSpecification(
     title: String,
-    version: String,
+    version: ApiVersionNbr,
     deprecationMessage: Option[String],
     documentationItems: List[DocumentationItem],
     resourceGroups: List[ResourceGroup],

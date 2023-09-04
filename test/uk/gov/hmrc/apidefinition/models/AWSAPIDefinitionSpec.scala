@@ -19,6 +19,7 @@ package uk.gov.hmrc.apidefinition.models
 import uk.gov.hmrc.apidefinition.models.AWSAPIDefinition.awsApiGatewayName
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiContext
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersionNbr
 
 class AWSAPIDefinitionSpec extends AsyncHmrcSpec {
 
@@ -29,7 +30,7 @@ class AWSAPIDefinitionSpec extends AsyncHmrcSpec {
       val apiDefinition = mock[APIDefinition]
       when(apiDefinition.context).thenReturn(ApiContext("my/calendar"))
 
-      awsApiGatewayName("1.0", apiDefinition) shouldBe "my--calendar--1.0"
+      awsApiGatewayName(ApiVersionNbr("1.0"), apiDefinition) shouldBe "my--calendar--1.0"
     }
 
   }

@@ -27,6 +27,7 @@ import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.services.APIDefinitionService
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiContext
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersionNbr
 
 class ApiContextValidatorSpec extends AsyncHmrcSpec {
 
@@ -46,7 +47,7 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
     private def generateApiVersions(versions: List[String]): List[APIVersion] = {
       versions.map(version => {
         APIVersion(
-          version,
+          ApiVersionNbr(version),
           APIStatus.PROTOTYPED,
           Some(PublicAPIAccess()),
           List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))

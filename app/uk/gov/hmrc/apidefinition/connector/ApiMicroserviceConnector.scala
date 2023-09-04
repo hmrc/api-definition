@@ -22,12 +22,13 @@ import scala.concurrent.{ExecutionContext, Future}
 import play.api.libs.ws.{WSClient, WSResponse}
 
 import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersionNbr
 
 @Singleton
 class ApiMicroserviceConnector @Inject() (ws: WSClient)(implicit val ec: ExecutionContext) extends ApplicationLogger {
 
   // TODO : Migrate to new hmrc WS client
-  def fetchApiDocumentationResourceByUrl(serviceUrl: String, version: String, resource: String): Future[WSResponse] = {
+  def fetchApiDocumentationResourceByUrl(serviceUrl: String, version: ApiVersionNbr, resource: String): Future[WSResponse] = {
     logger.info(s"Calling to local microservice to fetch documentation resource by URL: $serviceUrl, $version, $resource")
     ws.url(s"$serviceUrl/api/conf/$version/$resource").withMethod("GET").stream()
   }

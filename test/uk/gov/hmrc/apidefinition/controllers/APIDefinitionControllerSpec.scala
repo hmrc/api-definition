@@ -37,6 +37,7 @@ import uk.gov.hmrc.apidefinition.services.APIDefinitionService
 import uk.gov.hmrc.apidefinition.utils.{APIDefinitionMapper, AsyncHmrcSpec}
 import uk.gov.hmrc.apidefinition.validators._
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiContext
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersionNbr
 
 class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFactory {
 
@@ -110,7 +111,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
           versions =
             List(
               APIVersion(
-                "1.0",
+                ApiVersionNbr("1.0"),
                 APIStatus.STABLE,
                 None,
                 List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
@@ -145,7 +146,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
           versions =
             List(
               APIVersion(
-                "1.0",
+                ApiVersionNbr("1.0"),
                 APIStatus.STABLE,
                 None,
                 List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
@@ -316,7 +317,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
         "My Calendar API",
         ApiContext("individuals/calendar"),
         versions = List(APIVersion(
-          "1.0",
+          ApiVersionNbr("1.0"),
           APIStatus.STABLE,
           Some(PublicAPIAccess()),
           List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
@@ -373,7 +374,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
         "My Calendar API",
         ApiContext("individuals/calendar"),
         versions =
-          List(APIVersion("1.0", APIStatus.STABLE, None, List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)), Some(true))),
+          List(APIVersion(ApiVersionNbr("1.0"), APIStatus.STABLE, None, List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)), Some(true))),
         requiresTrust = Some(true),
         None,
         None,
@@ -429,7 +430,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
         "My Calendar API",
         ApiContext("individuals/calendar"),
         versions = List(APIVersion(
-          "1.0",
+          ApiVersionNbr("1.0"),
           APIStatus.STABLE,
           Some(PrivateAPIAccess(List("app-id-1", "app-id-2"))),
           List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
@@ -499,7 +500,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
         "My Calendar API",
         ApiContext("calendar"),
         versions = List(APIVersion(
-          "1.0",
+          ApiVersionNbr("1.0"),
           APIStatus.BETA,
           Some(PublicAPIAccess()),
           List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
