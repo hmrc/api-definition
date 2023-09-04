@@ -123,7 +123,7 @@ class ApiContextValidator @Inject() (
     }
 
     for {
-      existingAPIDefinitions <- apiDefinitionRepository.fetchAllByTopLevelContext(context.topLevelContext()).map(_.filterNot(_.context.value == context))
+      existingAPIDefinitions <- apiDefinitionRepository.fetchAllByTopLevelContext(context.topLevelContext()).map(_.filterNot(_.context == context))
       existingContexts        = existingAPIDefinitions.map(_.context)
       validations             = existingContexts.map(otherContext =>
                                   validateThat(

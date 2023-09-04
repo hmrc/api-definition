@@ -26,7 +26,7 @@ import scala.language.postfixOps
 
 import uk.gov.hmrc.apidefinition.models.APIAccessType._
 import uk.gov.hmrc.apidefinition.models.AWSParameterType._
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersionNbr
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 
 object JsonFormatters {
 
@@ -85,19 +85,6 @@ object JsonFormatters {
       case unknownApiAccess                                                  => throw new RuntimeException(s"Unknown API Access $unknownApiAccess")
     }
 
-  implicit val apiVersionSourceJF: Format[ApiVersionSource] = new Format[ApiVersionSource] {
-
-    def reads(json: JsValue): JsResult[ApiVersionSource] = json match {
-      case JsString(RAML.asText)    => JsSuccess(RAML)
-      case JsString(OAS.asText)     => JsSuccess(OAS)
-      case JsString(UNKNOWN.asText) => JsSuccess(UNKNOWN)
-      case e                        => JsError(s"Cannot parse source value from '$e'")
-    }
-
-    def writes(foo: ApiVersionSource): JsValue = {
-      JsString(foo.asText)
-    }
-  }
 
   import play.api.libs.functional.syntax._ // Combinator syntax
 
@@ -129,7 +116,7 @@ object JsonFormatters {
       (JsPath \ "endpoints").read[List[Endpoint]] and
       (JsPath \ "endpointsEnabled").readNullable[Boolean] and
       (JsPath \ "awsRequestId").readNullable[String] and
-      (JsPath \ "versionSource").readNullable[ApiVersionSource].map(_.fold[ApiVersionSource](UNKNOWN)(identity))
+      (JsPath \ "versionSource").readNullable[ApiVersionSource].map(_.fold[ApiVersionSource](ApiVersionSource.UNKNOWN)(identity))
   )(APIVersion.apply _)
 
   val apiVersionWrites: OWrites[APIVersion] = Json.writes[APIVersion]

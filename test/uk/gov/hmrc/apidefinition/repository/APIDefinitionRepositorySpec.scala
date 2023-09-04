@@ -33,8 +33,7 @@ import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 
 import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiContext
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersionNbr
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 
 class APIDefinitionRepositorySpec extends AsyncHmrcSpec
     with DefaultPlayMongoRepositorySupport[APIDefinition]
@@ -279,7 +278,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
       await(repository.delete(calendarApiDefinition.serviceName))
 
       val retrieved = await(repository.fetchAll())
-      retrieved shouldBe List(defnWithSource(UNKNOWN)(helloApiDefinition))
+      retrieved shouldBe List(defnWithSource(ApiVersionSource.UNKNOWN)(helloApiDefinition))
     }
 
   }

@@ -21,9 +21,9 @@ import org.joda.time.{DateTime, DateTimeZone}
 import play.api.libs.json.{JsError, JsNumber, Json}
 
 import uk.gov.hmrc.apidefinition.models.JsonFormatters.{apiAccessWrites, dateTimeReads}
-import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
+import uk.gov.hmrc.apidefinition.utils.HmrcSpec
 
-class JsonFormattersSpec extends AsyncHmrcSpec {
+class JsonFormattersSpec extends HmrcSpec {
 
   "JsonFormatters" should {
 

@@ -25,26 +25,9 @@ import uk.gov.hmrc.apidefinition.models.APIStatus.APIStatus
 import uk.gov.hmrc.apidefinition.models.AuthType.AuthType
 import uk.gov.hmrc.apidefinition.models.HttpMethod.HttpMethod
 import uk.gov.hmrc.apidefinition.models.ResourceThrottlingTier.ResourceThrottlingTier
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiContext
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersionNbr
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 
 // scalastyle:off number.of.types
-
-sealed trait ApiVersionSource {
-  def asText: String
-}
-
-case object RAML extends ApiVersionSource {
-  val asText = "RAML"
-}
-
-case object OAS  extends ApiVersionSource {
-  val asText = "OAS"
-}
-
-case object UNKNOWN extends ApiVersionSource {
-  val asText = "UNKNOWN"
-}
 
 case class APIDefinition(
     serviceName: String,
@@ -88,7 +71,7 @@ case class APIVersion(
     endpoints: List[Endpoint],
     endpointsEnabled: Option[Boolean] = None,
     awsRequestId: Option[String] = None,
-    versionSource: ApiVersionSource = UNKNOWN
+    versionSource: ApiVersionSource = ApiVersionSource.UNKNOWN
   )
 
 // API resource (also called API endpoint)
