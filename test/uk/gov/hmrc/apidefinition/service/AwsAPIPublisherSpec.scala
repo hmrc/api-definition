@@ -33,6 +33,9 @@ import uk.gov.hmrc.apidefinition.services.AwsApiPublisher
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiContext
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersionNbr
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ResourceThrottlingTier
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.HttpMethod
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.AuthType
 
 class AwsAPIPublisherSpec extends AsyncHmrcSpec {
 

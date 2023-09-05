@@ -16,25 +16,24 @@
 
 package uk.gov.hmrc.apiplatform.modules.apis.domain.models
 
-import scala.util.Random
+import uk.gov.hmrc.apiplatform.modules.common.utils.SealedTraitJsonFormatting
 
-import play.api.libs.json.Json
+sealed trait AuthType
 
-final case class ApiContext(value: String) extends AnyVal {
-  
-  def topLevelContext(): ApiContext = ApiContext(value.split("/").head)
+object AuthType {
+  case object NONE extends AuthType
+  case object APPLICATION extends AuthType
+  case object USER extends AuthType
 
-  def segments(): Int = value.split("/").length
+  val values = Set(NONE, APPLICATION, USER)
 
-  override def toString(): String = value
-}
-
-object ApiContext {
-  implicit val formatApiContext = Json.valueFormat[ApiContext]
-
-  implicit val ordering: Ordering[ApiContext] = new Ordering[ApiContext] {
-    override def compare(x: ApiContext, y: ApiContext): Int = x.value.compareTo(y.value)
+  def apply(text: String): Option[AuthType] = {
+    AuthType.values.find(_.toString == text.toUpperCase())
   }
 
-  def random = ApiContext(Random.alphanumeric.take(10).mkString)
+  def unsafeApply(text: String): AuthType = 
+    apply(text).getOrElse(throw new RuntimeException(s"$text is not a valid Auth Type"))
+
+  implicit val formatAuthType = SealedTraitJsonFormatting.createFormatFor[AuthType]("AuthType", apply)
+
 }

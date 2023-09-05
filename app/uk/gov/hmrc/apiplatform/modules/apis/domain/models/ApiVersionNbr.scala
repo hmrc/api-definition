@@ -25,7 +25,7 @@ final case class ApiVersionNbr(value: String) extends AnyVal {
 }
 
 object ApiVersionNbr {
-  implicit val apiVersionFormat = Json.valueFormat[ApiVersionNbr]
+  implicit val formatApiVersionNbr = Json.valueFormat[ApiVersionNbr]
 
   implicit val ordering: Ordering[ApiVersionNbr] = new Ordering[ApiVersionNbr] {
     override def compare(x: ApiVersionNbr, y: ApiVersionNbr): Int = x.value.compareTo(y.value)

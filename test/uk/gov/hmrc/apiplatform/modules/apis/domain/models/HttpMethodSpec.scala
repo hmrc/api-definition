@@ -21,15 +21,19 @@ import play.api.libs.json.JsString
 import uk.gov.hmrc.apiplatform.modules.common.utils._
 import org.scalatest.prop.TableDrivenPropertyChecks
 
-class ApiVersionSourceSpec extends BaseJsonFormattersSpec with TableDrivenPropertyChecks {
+class HttpMethodSpec extends BaseJsonFormattersSpec with TableDrivenPropertyChecks {
   
-  "ApiVersionSource" should {
+  "HttpMethod" should {
     val values =
       Table(
-        ("Source", "text"),
-        ( ApiVersionSource.OAS, "oas"),
-        ( ApiVersionSource.RAML, "raml"),
-        ( ApiVersionSource.UNKNOWN, "unknown")
+        ("Method", "text"),
+        ( HttpMethod.GET, "get"),
+        ( HttpMethod.POST, "post"),
+        ( HttpMethod.PUT, "put"),
+        ( HttpMethod.PATCH, "patch"),
+        ( HttpMethod.DELETE, "delete"),
+        ( HttpMethod.OPTIONS, "options"),
+        ( HttpMethod.HEAD, "head")
       )
 
     "convert to string correctly" in {
@@ -40,38 +44,38 @@ class ApiVersionSourceSpec extends BaseJsonFormattersSpec with TableDrivenProper
 
     "convert lower case string to case object" in {
       forAll(values) { (s, t) => 
-        ApiVersionSource.apply(t) shouldBe Some(s)
-        ApiVersionSource.unsafeApply(t) shouldBe s
+        HttpMethod.apply(t) shouldBe Some(s)
+        HttpMethod.unsafeApply(t) shouldBe s
       }
     }
 
     "convert mixed case string to case object" in {
       forAll(values) { (s, t) => 
-        ApiVersionSource.apply(t.toUpperCase()) shouldBe Some(s)
-        ApiVersionSource.unsafeApply(t.toUpperCase()) shouldBe s
+        HttpMethod.apply(t.toUpperCase()) shouldBe Some(s)
+        HttpMethod.unsafeApply(t.toUpperCase()) shouldBe s
       }
     }
 
     "convert string value to None when undefined or empty" in {
-      ApiVersionSource.apply("rubbish") shouldBe None
-      ApiVersionSource.apply("") shouldBe None
+      HttpMethod.apply("rubbish") shouldBe None
+      HttpMethod.apply("") shouldBe None
     }
       
     "throw when string value is invalid" in {
       intercept[RuntimeException] {
-        ApiVersionSource.unsafeApply("rubbish")
-      }.getMessage() should include ("API Version Source")
+        HttpMethod.unsafeApply("rubbish")
+      }.getMessage() should include ("Http Method")
     }
 
     "read from Json" in {
       forAll(values) { (s, t) =>
-        testFromJson[ApiVersionSource](s""""$t"""")(s)
+        testFromJson[HttpMethod](s""""$t"""")(s)
       }
     }
 
     "write to Json" in {
       forAll(values) { (s, t) =>
-        Json.toJson[ApiVersionSource](s) shouldBe JsString(t.toUpperCase())
+        Json.toJson[HttpMethod](s) shouldBe JsString(t.toUpperCase())
       }
     }
   }

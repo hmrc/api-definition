@@ -31,12 +31,12 @@ object ApiStatus {
 
   final val values = Set(PROTOTYPED, ALPHA, BETA, STABLE, PUBLISHED, DEPRECATED, RETIRED)
 
-  def apply(apiStatusText: String): Option[ApiStatus] = {
-    ApiStatus.values.find(_.toString == apiStatusText.toUpperCase)
+  def apply(text: String): Option[ApiStatus] = {
+    ApiStatus.values.find(_.toString == text.toUpperCase)
   }
 
-  def unsafeApply(apiStatusText: String): ApiStatus = 
-    apply(apiStatusText).getOrElse(throw new RuntimeException(s"$apiStatusText is not a valid API status"))
+  def unsafeApply(text: String): ApiStatus = 
+    apply(text).getOrElse(throw new RuntimeException(s"$text is not a valid API Status"))
 
   implicit val formatApiStatus = SealedTraitJsonFormatting.createFormatFor[ApiStatus]("API Status", apply)
 }

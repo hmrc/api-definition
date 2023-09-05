@@ -30,11 +30,11 @@ import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.models.ErrorCode._
 import uk.gov.hmrc.apidefinition.models.JsonFormatters._
-import uk.gov.hmrc.apidefinition.models.{APICategory, APIDefinition, ErrorCode}
+import uk.gov.hmrc.apidefinition.models.{APIDefinition, ErrorCode}
 import uk.gov.hmrc.apidefinition.services.APIDefinitionService
 import uk.gov.hmrc.apidefinition.utils.{APIDefinitionMapper, ApplicationLogger}
 import uk.gov.hmrc.apidefinition.validators.ApiDefinitionValidator
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiContext
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 
 @Singleton
 class APIDefinitionController @Inject() (
@@ -107,7 +107,7 @@ class APIDefinitionController @Inject() (
   }
 
   def fetchAllAPICategories: Action[AnyContent] = Action.async {
-    successful(Ok(Json.toJson(APICategory.allAPICategoryDetails)))
+    successful(Ok(Json.toJson(ApiCategory.allApiCategoryDetails)))
   }
 
   private def extractQueryOptions(request: Request[AnyContent]) = {

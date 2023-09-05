@@ -27,6 +27,9 @@ import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.services.APIDefinitionService
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ResourceThrottlingTier
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.HttpMethod
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.AuthType
 
 class ApiContextValidatorSpec extends AsyncHmrcSpec {
 

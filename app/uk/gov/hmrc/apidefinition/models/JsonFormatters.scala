@@ -27,15 +27,13 @@ import scala.language.postfixOps
 import uk.gov.hmrc.apidefinition.models.APIAccessType._
 import uk.gov.hmrc.apidefinition.models.AWSParameterType._
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.AuthType
 
 object JsonFormatters {
 
-  implicit val formatAPICategoryDetails     = Json.format[APICategoryDetails]
+  implicit val formatApiCategoryDetails     = Json.format[ApiCategoryDetails]
   
   implicit val formatAPIAccessType          = EnumJson.enumFormat(APIAccessType)
-  implicit val formatAuthType               = EnumJson.enumFormat(AuthType)
-  implicit val formatHttpMethod             = EnumJson.enumFormat(HttpMethod)
-  implicit val formatResourceThrottlingTier = EnumJson.enumFormat(ResourceThrottlingTier)
 
   private val dateTimeFormatter = ISODateTimeFormat.dateTime().withZoneUTC()
 

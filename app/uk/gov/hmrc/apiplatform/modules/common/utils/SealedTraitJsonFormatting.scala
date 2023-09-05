@@ -19,15 +19,15 @@ package uk.gov.hmrc.apiplatform.modules.common.utils
 object SealedTraitJsonFormatting {
   import play.api.libs.json._
   
-  def createFormatFor[T](name: String, fn: String => Option[T]) = new Format[T] {
+  def createFormatFor[T](name: String, read: String => Option[T], write: T => String = (t: T) => t.toString ) = new Format[T] {
 
     def reads(json: JsValue): JsResult[T] = json match {
-        case JsString(text)         => fn(text).fold[JsResult[T]]{JsError(s"text is not a valid $name")}(JsSuccess(_))
+        case JsString(text)         => read(text).fold[JsResult[T]]{JsError(s"text is not a valid $name")}(JsSuccess(_))
       case e                        => JsError(s"Cannot parse $name from '$e'")
     }
 
     def writes(foo: T): JsValue = {
-      JsString(foo.toString)
+      JsString(write(foo))
     }
   }
 }

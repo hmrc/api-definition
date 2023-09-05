@@ -18,9 +18,9 @@ package uk.gov.hmrc.apidefinition.models
 
 import play.api.libs.json.Json
 
-import uk.gov.hmrc.apidefinition.models.APICategory._
 import uk.gov.hmrc.apidefinition.models.JsonFormatters._
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiCategory
 
 class APIDefinitionSpec extends AsyncHmrcSpec {
 
@@ -126,7 +126,7 @@ class APIDefinitionSpec extends AsyncHmrcSpec {
     "read from JSON when the API categories are defined with correct values" in {
       val apiDefinition = anApiDefinition(categories = Some("[\"CUSTOMS\", \"VAT\"]"))
 
-      apiDefinition.categories shouldBe Some(Seq(CUSTOMS, VAT))
+      apiDefinition.categories shouldBe Some(Seq(ApiCategory.CUSTOMS, ApiCategory.VAT))
     }
 
     "fail to read from JSON when the API categories are defined with incorrect values" in {
@@ -136,17 +136,17 @@ class APIDefinitionSpec extends AsyncHmrcSpec {
     }
   }
 
-  "APICategory" should {
+  "ApiCategory" should {
     "return details for a given category" in {
-      val details = APICategory.toAPICategoryDetails(BUSINESS_RATES)
+      val details = ApiCategory.toApiCategoryDetails(ApiCategory.BUSINESS_RATES)
 
-      details.category shouldBe BUSINESS_RATES
+      details.category shouldBe ApiCategory.BUSINESS_RATES
       details.name shouldBe "Business Rates"
     }
 
-    "return appropriate APICategoryDetails objects for each APICategory" in {
-      APICategory.values.foreach { category =>
-        val details = APICategory.toAPICategoryDetails(category)
+    "return appropriate ApiCategoryDetails objects for each ApiCategory" in {
+      ApiCategory.values.foreach { category =>
+        val details = ApiCategory.toApiCategoryDetails(category)
         details.category shouldBe category
       }
     }

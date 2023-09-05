@@ -24,7 +24,7 @@ import org.scalatest.prop.TableDrivenPropertyChecks
 class ApiStatusSpec extends BaseJsonFormattersSpec with TableDrivenPropertyChecks {
 
   "ApiStatus" should {
-    val statuses =
+    val values =
       Table(
         ("Status", "text"),
         ( ApiStatus.ALPHA, "alpha"),
@@ -37,20 +37,20 @@ class ApiStatusSpec extends BaseJsonFormattersSpec with TableDrivenPropertyCheck
       )
 
     "convert to string correctly" in {
-      forAll(statuses) { (s,t) =>
+      forAll(values) { (s,t) =>
         s.toString() shouldBe t.toUpperCase()
       }
     }
 
     "convert lower case string to case object" in {
-      forAll(statuses) { (s, t) => 
+      forAll(values) { (s, t) => 
         ApiStatus.apply(t) shouldBe Some(s)
         ApiStatus.unsafeApply(t) shouldBe s
       }
     }
 
     "convert mixed case string to case object" in {
-      forAll(statuses) { (s, t) => 
+      forAll(values) { (s, t) => 
         ApiStatus.apply(t.toUpperCase()) shouldBe Some(s)
         ApiStatus.unsafeApply(t.toUpperCase()) shouldBe s
       }
@@ -63,18 +63,18 @@ class ApiStatusSpec extends BaseJsonFormattersSpec with TableDrivenPropertyCheck
       
     "throw when string value is invalid" in {
       intercept[RuntimeException] {
-        ApiStatus.unsafeApply("rubbish") shouldBe None
-      }
+        ApiStatus.unsafeApply("rubbish")
+      }.getMessage() should include ("API Status")
     }
 
     "read from Json" in {
-      forAll(statuses) { (s, t) =>
+      forAll(values) { (s, t) =>
         testFromJson[ApiStatus](s""""$t"""")(s)
       }
     }
 
     "write to Json" in {
-      forAll(statuses) { (s, t) =>
+      forAll(values) { (s, t) =>
         Json.toJson[ApiStatus](s) shouldBe JsString(t.toUpperCase())
       }
     }

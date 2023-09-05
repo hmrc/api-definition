@@ -25,7 +25,6 @@ import play.api.mvc.Results.{NoContent, UnprocessableEntity}
 import play.api.test.Helpers._
 
 import uk.gov.hmrc.apidefinition.config.AppConfig
-import uk.gov.hmrc.apidefinition.models.APICategory.OTHER
 import uk.gov.hmrc.apidefinition.models.ErrorCode.INVALID_REQUEST_PAYLOAD
 import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
@@ -83,7 +82,7 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
         List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
       )),
       Some(false),
-      categories = Some(List(OTHER))
+      categories = Some(List(ApiCategory.OTHER))
     )
   }
 
@@ -215,7 +214,7 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
       context = ApiContext("individuals/money"),
       versions = List(moneyApiVersion),
       requiresTrust = Some(false),
-      categories = Some(List(OTHER))
+      categories = Some(List(ApiCategory.OTHER))
     )
 
     val specialChars = List(

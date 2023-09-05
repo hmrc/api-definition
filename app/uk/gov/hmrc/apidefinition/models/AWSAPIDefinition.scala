@@ -17,8 +17,6 @@
 package uk.gov.hmrc.apidefinition.models
 
 import uk.gov.hmrc.apidefinition.models.AWSParameterType.AWSParameterType
-import uk.gov.hmrc.apidefinition.models.AuthType.AuthType
-import uk.gov.hmrc.apidefinition.models.ResourceThrottlingTier.ResourceThrottlingTier
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 
 case class AWSAPIDefinition(name: String, context: ApiContext, version: ApiVersionNbr, subscribersCount: Int, endpointConfig: AWSEndpointConfig, swagger: Option[AWSSwaggerDetails])
@@ -95,13 +93,13 @@ object AWSAPIDefinition {
     ApiStatus.RETIRED    -> "RETIRED"
   )
 
-  private val authTypeMap = Map(
+  private val authTypeMap = Map[AuthType, String](
     AuthType.NONE        -> "None",
     AuthType.APPLICATION -> "Application %26 Application User",
     AuthType.USER        -> "Application User"
   )
 
-  private val resourceThrottlingTierMap = Map(ResourceThrottlingTier.UNLIMITED -> "Unlimited")
+  private val resourceThrottlingTierMap = Map[ResourceThrottlingTier, String](ResourceThrottlingTier.UNLIMITED -> "Unlimited")
 
   def awsAuthType(authType: AuthType): String = {
     authTypeMap.getOrElse(authType, throw new IllegalArgumentException(s"Unknown Auth Type: $authType"))

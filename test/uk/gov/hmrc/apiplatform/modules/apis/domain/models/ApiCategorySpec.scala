@@ -21,15 +21,14 @@ import play.api.libs.json.JsString
 import uk.gov.hmrc.apiplatform.modules.common.utils._
 import org.scalatest.prop.TableDrivenPropertyChecks
 
-class ApiVersionSourceSpec extends BaseJsonFormattersSpec with TableDrivenPropertyChecks {
-  
-  "ApiVersionSource" should {
+class ApiCategorySpec extends BaseJsonFormattersSpec with TableDrivenPropertyChecks {
+
+  "ApiCategorySpec" should {
     val values =
       Table(
-        ("Source", "text"),
-        ( ApiVersionSource.OAS, "oas"),
-        ( ApiVersionSource.RAML, "raml"),
-        ( ApiVersionSource.UNKNOWN, "unknown")
+        ("Category", "text"),
+        ( ApiCategory.AGENTS, "agents"),
+        ( ApiCategory.BUSINESS_RATES, "business_rates")
       )
 
     "convert to string correctly" in {
@@ -40,38 +39,38 @@ class ApiVersionSourceSpec extends BaseJsonFormattersSpec with TableDrivenProper
 
     "convert lower case string to case object" in {
       forAll(values) { (s, t) => 
-        ApiVersionSource.apply(t) shouldBe Some(s)
-        ApiVersionSource.unsafeApply(t) shouldBe s
+        ApiCategory.apply(t) shouldBe Some(s)
+        ApiCategory.unsafeApply(t) shouldBe s
       }
     }
 
     "convert mixed case string to case object" in {
       forAll(values) { (s, t) => 
-        ApiVersionSource.apply(t.toUpperCase()) shouldBe Some(s)
-        ApiVersionSource.unsafeApply(t.toUpperCase()) shouldBe s
+        ApiCategory.apply(t.toUpperCase()) shouldBe Some(s)
+        ApiCategory.unsafeApply(t.toUpperCase()) shouldBe s
       }
     }
 
     "convert string value to None when undefined or empty" in {
-      ApiVersionSource.apply("rubbish") shouldBe None
-      ApiVersionSource.apply("") shouldBe None
+      ApiCategory.apply("rubbish") shouldBe None
+      ApiCategory.apply("") shouldBe None
     }
       
     "throw when string value is invalid" in {
       intercept[RuntimeException] {
-        ApiVersionSource.unsafeApply("rubbish")
-      }.getMessage() should include ("API Version Source")
+        ApiCategory.unsafeApply("rubbish")
+      }.getMessage() should include ("API Category")
     }
 
     "read from Json" in {
       forAll(values) { (s, t) =>
-        testFromJson[ApiVersionSource](s""""$t"""")(s)
+        testFromJson[ApiCategory](s""""$t"""")(s)
       }
     }
 
     "write to Json" in {
       forAll(values) { (s, t) =>
-        Json.toJson[ApiVersionSource](s) shouldBe JsString(t.toUpperCase())
+        Json.toJson[ApiCategory](s) shouldBe JsString(t.toUpperCase())
       }
     }
   }

@@ -21,15 +21,15 @@ import play.api.libs.json.JsString
 import uk.gov.hmrc.apiplatform.modules.common.utils._
 import org.scalatest.prop.TableDrivenPropertyChecks
 
-class ApiVersionSourceSpec extends BaseJsonFormattersSpec with TableDrivenPropertyChecks {
-  
-  "ApiVersionSource" should {
+class AuthTypeSpec extends BaseJsonFormattersSpec with TableDrivenPropertyChecks {
+
+  "AuthType" should {
     val values =
       Table(
-        ("Source", "text"),
-        ( ApiVersionSource.OAS, "oas"),
-        ( ApiVersionSource.RAML, "raml"),
-        ( ApiVersionSource.UNKNOWN, "unknown")
+        ("AuthType", "text"),
+        ( AuthType.NONE, "none"),
+        ( AuthType.USER, "user"),
+        ( AuthType.APPLICATION, "application")
       )
 
     "convert to string correctly" in {
@@ -40,38 +40,38 @@ class ApiVersionSourceSpec extends BaseJsonFormattersSpec with TableDrivenProper
 
     "convert lower case string to case object" in {
       forAll(values) { (s, t) => 
-        ApiVersionSource.apply(t) shouldBe Some(s)
-        ApiVersionSource.unsafeApply(t) shouldBe s
+        AuthType.apply(t) shouldBe Some(s)
+        AuthType.unsafeApply(t) shouldBe s
       }
     }
 
     "convert mixed case string to case object" in {
       forAll(values) { (s, t) => 
-        ApiVersionSource.apply(t.toUpperCase()) shouldBe Some(s)
-        ApiVersionSource.unsafeApply(t.toUpperCase()) shouldBe s
+        AuthType.apply(t.toUpperCase()) shouldBe Some(s)
+        AuthType.unsafeApply(t.toUpperCase()) shouldBe s
       }
     }
 
     "convert string value to None when undefined or empty" in {
-      ApiVersionSource.apply("rubbish") shouldBe None
-      ApiVersionSource.apply("") shouldBe None
+      AuthType.apply("rubbish") shouldBe None
+      AuthType.apply("") shouldBe None
     }
       
     "throw when string value is invalid" in {
       intercept[RuntimeException] {
-        ApiVersionSource.unsafeApply("rubbish")
-      }.getMessage() should include ("API Version Source")
+        AuthType.unsafeApply("rubbish")
+      }.getMessage() should include ("Auth Type")
     }
 
     "read from Json" in {
       forAll(values) { (s, t) =>
-        testFromJson[ApiVersionSource](s""""$t"""")(s)
+        testFromJson[AuthType](s""""$t"""")(s)
       }
     }
 
     "write to Json" in {
       forAll(values) { (s, t) =>
-        Json.toJson[ApiVersionSource](s) shouldBe JsString(t.toUpperCase())
+        Json.toJson[AuthType](s) shouldBe JsString(t.toUpperCase())
       }
     }
   }

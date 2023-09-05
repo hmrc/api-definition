@@ -21,15 +21,13 @@ import play.api.libs.json.JsString
 import uk.gov.hmrc.apiplatform.modules.common.utils._
 import org.scalatest.prop.TableDrivenPropertyChecks
 
-class ApiVersionSourceSpec extends BaseJsonFormattersSpec with TableDrivenPropertyChecks {
+class ResourceThrottlingTierSpec extends BaseJsonFormattersSpec with TableDrivenPropertyChecks {
   
-  "ApiVersionSource" should {
+  "SubscriptionThrottlingTier" should {
     val values =
       Table(
-        ("Source", "text"),
-        ( ApiVersionSource.OAS, "oas"),
-        ( ApiVersionSource.RAML, "raml"),
-        ( ApiVersionSource.UNKNOWN, "unknown")
+        ("Tier", "text"),
+        ( ResourceThrottlingTier.UNLIMITED, "unlimited")
       )
 
     "convert to string correctly" in {
@@ -40,38 +38,38 @@ class ApiVersionSourceSpec extends BaseJsonFormattersSpec with TableDrivenProper
 
     "convert lower case string to case object" in {
       forAll(values) { (s, t) => 
-        ApiVersionSource.apply(t) shouldBe Some(s)
-        ApiVersionSource.unsafeApply(t) shouldBe s
+        ResourceThrottlingTier.apply(t) shouldBe Some(s)
+        ResourceThrottlingTier.unsafeApply(t) shouldBe s
       }
     }
 
     "convert mixed case string to case object" in {
       forAll(values) { (s, t) => 
-        ApiVersionSource.apply(t.toUpperCase()) shouldBe Some(s)
-        ApiVersionSource.unsafeApply(t.toUpperCase()) shouldBe s
+        ResourceThrottlingTier.apply(t.toUpperCase()) shouldBe Some(s)
+        ResourceThrottlingTier.unsafeApply(t.toUpperCase()) shouldBe s
       }
     }
 
     "convert string value to None when undefined or empty" in {
-      ApiVersionSource.apply("rubbish") shouldBe None
-      ApiVersionSource.apply("") shouldBe None
+      ResourceThrottlingTier.apply("rubbish") shouldBe None
+      ResourceThrottlingTier.apply("") shouldBe None
     }
       
     "throw when string value is invalid" in {
       intercept[RuntimeException] {
-        ApiVersionSource.unsafeApply("rubbish")
-      }.getMessage() should include ("API Version Source")
+        ResourceThrottlingTier.unsafeApply("rubbish")
+      }.getMessage() should include ("Resource Throttling Tier")
     }
 
     "read from Json" in {
       forAll(values) { (s, t) =>
-        testFromJson[ApiVersionSource](s""""$t"""")(s)
+        testFromJson[ResourceThrottlingTier](s""""$t"""")(s)
       }
     }
 
     "write to Json" in {
       forAll(values) { (s, t) =>
-        Json.toJson[ApiVersionSource](s) shouldBe JsString(t.toUpperCase())
+        Json.toJson[ResourceThrottlingTier](s) shouldBe JsString(t.toUpperCase())
       }
     }
   }

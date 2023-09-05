@@ -44,7 +44,6 @@ import play.mvc.Http.HeaderNames
 import uk.gov.hmrc.http.{BadRequestException, UnauthorizedException}
 
 import uk.gov.hmrc.apidefinition.config.AppConfig
-import uk.gov.hmrc.apidefinition.models.APICategory.OTHER
 import uk.gov.hmrc.apidefinition.models.ErrorCode.INVALID_REQUEST_PAYLOAD
 import uk.gov.hmrc.apidefinition.models.JsonFormatters._
 import uk.gov.hmrc.apidefinition.models._
@@ -52,9 +51,7 @@ import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.services.APIDefinitionService
 import uk.gov.hmrc.apidefinition.utils.{APIDefinitionMapper, AsyncHmrcSpec}
 import uk.gov.hmrc.apidefinition.validators._
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiContext
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiStatus
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersionNbr
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 
 class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFactory {
 
@@ -138,7 +135,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
           requiresTrust = Some(true),
           None,
           lastPublishedAt = None,
-          Some(List(OTHER))
+          Some(List(ApiCategory.OTHER))
         )
 
       thereAreNoOverlappingAPIContexts
@@ -173,7 +170,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
           requiresTrust = Some(true),
           None,
           lastPublishedAt = None,
-          Some(List(OTHER))
+          Some(List(ApiCategory.OTHER))
         )
 
       thereAreNoOverlappingAPIContexts
@@ -343,7 +340,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
         requiresTrust = Some(true),
         None,
         None,
-        Some(List(OTHER))
+        Some(List(ApiCategory.OTHER))
       )
 
       thereAreNoOverlappingAPIContexts
@@ -395,7 +392,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
         requiresTrust = Some(true),
         None,
         None,
-        Some(List(OTHER))
+        Some(List(ApiCategory.OTHER))
       )
 
       thereAreNoOverlappingAPIContexts
@@ -456,7 +453,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
         requiresTrust = Some(true),
         None,
         None,
-        Some(List(OTHER))
+        Some(List(ApiCategory.OTHER))
       )
 
       thereAreNoOverlappingAPIContexts
@@ -809,8 +806,8 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
       status(result) shouldBe OK
       val body: String = contentAsString(result)
 
-      APICategory.values.foreach { category =>
-        body.contains(s""""category":"${category.entryName}"""")
+      ApiCategory.values.foreach { category =>
+        body.contains(s""""category":"${category.toString()}"""")
       }
     }
   }

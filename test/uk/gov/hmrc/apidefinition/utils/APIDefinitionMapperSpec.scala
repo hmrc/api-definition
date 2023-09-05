@@ -21,6 +21,9 @@ import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiStatus
 import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiContext
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersionNbr
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ResourceThrottlingTier
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.HttpMethod
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.AuthType
 
 class APIDefinitionMapperSpec extends AsyncHmrcSpec {
 

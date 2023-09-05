@@ -22,7 +22,8 @@ import scala.util.matching.Regex
 
 import cats.implicits._
 
-import uk.gov.hmrc.apidefinition.models.{AuthType, Endpoint, Parameter}
+import uk.gov.hmrc.apidefinition.models.{Endpoint, Parameter}
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.AuthType
 
 @Singleton
 class ApiEndpointValidator @Inject() (queryParameterValidator: QueryParameterValidator)(implicit override val ec: ExecutionContext) extends Validator[Endpoint] {
