@@ -26,8 +26,7 @@ import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.services.APIDefinitionService
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiContext
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersionNbr
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 
 class ApiContextValidatorSpec extends AsyncHmrcSpec {
 
@@ -48,7 +47,7 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
       versions.map(version => {
         APIVersion(
           ApiVersionNbr(version),
-          APIStatus.PROTOTYPED,
+          ApiStatus.PROTOTYPED,
           Some(PublicAPIAccess()),
           List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
         )

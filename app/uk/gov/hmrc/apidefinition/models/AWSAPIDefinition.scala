@@ -19,8 +19,7 @@ package uk.gov.hmrc.apidefinition.models
 import uk.gov.hmrc.apidefinition.models.AWSParameterType.AWSParameterType
 import uk.gov.hmrc.apidefinition.models.AuthType.AuthType
 import uk.gov.hmrc.apidefinition.models.ResourceThrottlingTier.ResourceThrottlingTier
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiContext
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersionNbr
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 
 case class AWSAPIDefinition(name: String, context: ApiContext, version: ApiVersionNbr, subscribersCount: Int, endpointConfig: AWSEndpointConfig, swagger: Option[AWSSwaggerDetails])
 
@@ -86,14 +85,14 @@ object AWSParameterType extends Enumeration {
 
 object AWSAPIDefinition {
 
-  private val statusMap = Map(
-    APIStatus.ALPHA      -> "PUBLISHED",
-    APIStatus.BETA       -> "PUBLISHED",
-    APIStatus.STABLE     -> "PUBLISHED",
-    APIStatus.PROTOTYPED -> "PUBLISHED",
-    APIStatus.PUBLISHED  -> "PUBLISHED",
-    APIStatus.DEPRECATED -> "DEPRECATED",
-    APIStatus.RETIRED    -> "RETIRED"
+  private val statusMap = Map[ApiStatus, String](
+    ApiStatus.ALPHA      -> "PUBLISHED",
+    ApiStatus.BETA       -> "PUBLISHED",
+    ApiStatus.STABLE     -> "PUBLISHED",
+    ApiStatus.PROTOTYPED -> "PUBLISHED",
+    ApiStatus.PUBLISHED  -> "PUBLISHED",
+    ApiStatus.DEPRECATED -> "DEPRECATED",
+    ApiStatus.RETIRED    -> "RETIRED"
   )
 
   private val authTypeMap = Map(
@@ -119,7 +118,7 @@ object AWSAPIDefinition {
   }
 
   def awsApiStatus(apiDefinition: APIDefinition, awsAPIDefinition: AWSAPIDefinition): String = {
-    val status = apiDefinition.versions.filter(apiVersion => awsAPIDefinition.version == apiVersion.version).head.status
+    val status: ApiStatus = apiDefinition.versions.filter(apiVersion => awsAPIDefinition.version == apiVersion.version).head.status
     statusMap.getOrElse(status, throw new IllegalArgumentException(s"Unknown Status: $status"))
   }
 }

@@ -25,12 +25,11 @@ import org.joda.time.{DateTime, DateTimeZone}
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apidefinition.config.AppConfig
-import uk.gov.hmrc.apidefinition.models.APIStatus.APIStatus
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiStatus
 import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiContext
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersionNbr
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 
 @Singleton
 class APIDefinitionService @Inject() (
@@ -68,7 +67,7 @@ class APIDefinitionService @Inject() (
   }
 
   private def checkAPIDefinitionForStatusChanges(apiDefinition: APIDefinition)(implicit hc: HeaderCarrier): Future[Unit] = {
-    def findStatusDifferences(existingAPIVersions: Seq[APIVersion], newAPIVersions: Seq[APIVersion]): Seq[(ApiVersionNbr, APIStatus, APIStatus)] =
+    def findStatusDifferences(existingAPIVersions: Seq[APIVersion], newAPIVersions: Seq[APIVersion]): Seq[(ApiVersionNbr, ApiStatus, ApiStatus)] =
       (existingAPIVersions ++ newAPIVersions)
         .groupBy(_.version)
         .filter(v => v._2.size == 2)

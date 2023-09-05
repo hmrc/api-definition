@@ -10,6 +10,7 @@ object ScoverageSettings {
     // Semicolon-separated list of regexs matching classes to exclude
     coverageExcludedPackages := Seq(
       "<empty>",
+      """.*\.controllers\.binders""",
       "com.kenshoo.play.metrics.*",
       "prod.*",
       "testOnlyDoNotUseInAppConf.*",

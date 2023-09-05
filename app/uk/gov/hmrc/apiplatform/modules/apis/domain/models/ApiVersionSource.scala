@@ -16,23 +16,18 @@
 
 package uk.gov.hmrc.apiplatform.modules.apis.domain.models
 
-sealed trait ApiVersionSource {
-  def asText: String
-}
+import uk.gov.hmrc.apiplatform.modules.common.utils.SealedTraitJsonFormatting
+import play.api.libs.json.Format
+
+sealed trait ApiVersionSource
 
 object ApiVersionSource {
 
-  case object RAML extends ApiVersionSource {
-    val asText = "RAML"
-  }
+  case object RAML extends ApiVersionSource
+  case object OAS  extends ApiVersionSource
+  case object UNKNOWN extends ApiVersionSource
 
-  case object OAS  extends ApiVersionSource {
-    val asText = "OAS"
-  }
-
-  case object UNKNOWN extends ApiVersionSource {
-    val asText = "UNKNOWN"
-  }
+  val values = Set(RAML, OAS, UNKNOWN)
 
   import cats.implicits._
 
@@ -44,21 +39,9 @@ object ApiVersionSource {
   }
 
   def unsafeApply(text: String): ApiVersionSource = {
-    apply(text).getOrElse(throw new RuntimeException(s"$text is not a valid api version source"))
+    apply(text).getOrElse(throw new RuntimeException(s"$text is not a valid API version source"))
   }
 
-  import play.api.libs.json._
-  
-  implicit val apiVersionSourceJF: Format[ApiVersionSource] = new Format[ApiVersionSource] {
-
-    def reads(json: JsValue): JsResult[ApiVersionSource] = json match {
-        case JsString(text)         => apply(text).fold[JsResult[ApiVersionSource]]{JsError(s"text is not a valid api version source")}(JsSuccess(_))
-      case e                        => JsError(s"Cannot parse source value from '$e'")
-    }
-
-    def writes(foo: ApiVersionSource): JsValue = {
-      JsString(foo.asText)
-    }
-  }
-
+  implicit val apiVersionSourceJF: Format[ApiVersionSource] = SealedTraitJsonFormatting.createFormatFor[ApiVersionSource]("API Version Source", apply)
 }
+

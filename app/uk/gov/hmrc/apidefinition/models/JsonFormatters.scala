@@ -31,7 +31,7 @@ import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 object JsonFormatters {
 
   implicit val formatAPICategoryDetails     = Json.format[APICategoryDetails]
-  implicit val formatAPIStatus              = EnumJson.enumFormat(APIStatus)
+  
   implicit val formatAPIAccessType          = EnumJson.enumFormat(APIAccessType)
   implicit val formatAuthType               = EnumJson.enumFormat(AuthType)
   implicit val formatHttpMethod             = EnumJson.enumFormat(HttpMethod)
@@ -111,7 +111,7 @@ object JsonFormatters {
 
   val apiVersionReads: Reads[APIVersion] = (
     (JsPath \ "version").read[ApiVersionNbr] and
-      (JsPath \ "status").read[APIStatus.APIStatus] and
+      (JsPath \ "status").read[ApiStatus] and
       (JsPath \ "access").readNullable[APIAccess] and
       (JsPath \ "endpoints").read[List[Endpoint]] and
       (JsPath \ "endpointsEnabled").readNullable[Boolean] and

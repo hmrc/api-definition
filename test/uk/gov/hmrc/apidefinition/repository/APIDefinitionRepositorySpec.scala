@@ -51,14 +51,14 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
 
   private val helloApiVersion = APIVersion(
     version = ApiVersionNbr("1.0"),
-    status = APIStatus.PROTOTYPED,
+    status = ApiStatus.PROTOTYPED,
     access = None,
     endpoints = List(Endpoint("/world", "Say Hello to the World!", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
   )
 
   private val calendarApiVersion = APIVersion(
     version = ApiVersionNbr("2.0"),
-    status = APIStatus.PUBLISHED,
+    status = ApiStatus.PUBLISHED,
     access = None,
     endpoints = List(Endpoint("/date", "Check current date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
   )
@@ -85,7 +85,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
 
   private val individualIncomeTaxApiVersion = APIVersion(
     version = ApiVersionNbr("1.0"),
-    status = APIStatus.PUBLISHED,
+    status = ApiStatus.PUBLISHED,
     access = None,
     endpoints = List(Endpoint("/submit", "Submit Income Tax Return", HttpMethod.POST, AuthType.USER, ResourceThrottlingTier.UNLIMITED))
   )
@@ -102,7 +102,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
 
   private val individualNIApiVersion = APIVersion(
     version = ApiVersionNbr("1.0"),
-    status = APIStatus.PUBLISHED,
+    status = ApiStatus.PUBLISHED,
     access = None,
     endpoints = List(Endpoint("/submit", "Submit National Insurance", HttpMethod.POST, AuthType.USER, ResourceThrottlingTier.UNLIMITED))
   )

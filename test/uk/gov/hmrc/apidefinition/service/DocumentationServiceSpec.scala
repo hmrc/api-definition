@@ -44,6 +44,7 @@ import uk.gov.hmrc.apidefinition.services.{DocumentationService, SpecificationSe
 import uk.gov.hmrc.apidefinition.utils.{AsyncHmrcSpec, Utils}
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiContext
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersionNbr
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiStatus
 
 class DocumentationServiceSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite with Utils {
   import DocumentationService.PROXY_SAFE_CONTENT_TYPE
@@ -89,9 +90,9 @@ class DocumentationServiceSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wi
     requiresTrust = Some(false),
     isTestSupport = Some(false),
     versions = List(
-      APIVersion(ApiVersionNbr("1.0"), APIStatus.STABLE, endpoints = Nil, endpointsEnabled = None),
-      APIVersion(ApiVersionNbr("2.0"), APIStatus.BETA, endpoints = Nil),
-      APIVersion(ApiVersionNbr("3.0"), APIStatus.ALPHA, endpoints = Nil)
+      APIVersion(ApiVersionNbr("1.0"), ApiStatus.STABLE, endpoints = Nil, endpointsEnabled = None),
+      APIVersion(ApiVersionNbr("2.0"), ApiStatus.BETA, endpoints = Nil),
+      APIVersion(ApiVersionNbr("3.0"), ApiStatus.ALPHA, endpoints = Nil)
     ),
     lastPublishedAt = None
   )

@@ -26,7 +26,7 @@ import org.mockito.{ArgumentCaptor, ArgumentMatchers}
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apidefinition.connector.AWSAPIPublisherConnector
-import uk.gov.hmrc.apidefinition.models.APIStatus.APIStatus
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiStatus
 import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.services.AwsApiPublisher
@@ -36,7 +36,7 @@ import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersionNbr
 
 class AwsAPIPublisherSpec extends AsyncHmrcSpec {
 
-  private def anAPIVersion(version: String, status: APIStatus = APIStatus.PROTOTYPED) = APIVersion(
+  private def anAPIVersion(version: String, status: ApiStatus = ApiStatus.PROTOTYPED) = APIVersion(
     ApiVersionNbr(version),
     status,
     Some(PublicAPIAccess()),
@@ -122,7 +122,7 @@ class AwsAPIPublisherSpec extends AsyncHmrcSpec {
     }
 
     "call delete endpoint for RETIRED versions" in new Setup {
-      val apiDefinition: APIDefinition = someAPIDefinition(versions = List(anAPIVersion("1.0", APIStatus.RETIRED), anAPIVersion("2.0")))
+      val apiDefinition: APIDefinition = someAPIDefinition(versions = List(anAPIVersion("1.0", ApiStatus.RETIRED), anAPIVersion("2.0")))
 
       when(underTest.awsAPIPublisherConnector.deleteAPI(*)(*))
         .thenReturn(successful(UUID.randomUUID().toString))

@@ -17,14 +17,14 @@
 package uk.gov.hmrc.apidefinition.utils
 
 import uk.gov.hmrc.apidefinition.config.AppConfig
-import uk.gov.hmrc.apidefinition.models.APIStatus.APIStatus
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiStatus
 import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiContext
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersionNbr
 
 class APIDefinitionMapperSpec extends AsyncHmrcSpec {
 
-  private def version(version: String, status: APIStatus, endpointsEnabled: Option[Boolean] = None) = {
+  private def version(version: String, status: ApiStatus, endpointsEnabled: Option[Boolean] = None) = {
     APIVersion(
       ApiVersionNbr(version),
       status,
@@ -48,109 +48,109 @@ class APIDefinitionMapperSpec extends AsyncHmrcSpec {
   "Mapper" should {
 
     "map PROTOTYPED to BETA and set endpointsEnabled=true when production URLs for prototyped APIs is enabled" in {
-      val originalDefinition = definition(List(version("1.0", APIStatus.PROTOTYPED)))
+      val originalDefinition = definition(List(version("1.0", ApiStatus.PROTOTYPED)))
       val mappedDefinition   = underTest(true).mapLegacyStatuses(originalDefinition)
 
-      mappedDefinition.versions.head.status shouldBe APIStatus.BETA
+      mappedDefinition.versions.head.status shouldBe ApiStatus.BETA
       mappedDefinition.versions.head.endpointsEnabled shouldBe Some(true)
     }
 
     "map PROTOTYPED to BETA and set endpointsEnabled=false when production URLs for prototyped APIs is not enabled" in {
-      val originalDefinition = definition(List(version("1.0", APIStatus.PROTOTYPED)))
+      val originalDefinition = definition(List(version("1.0", ApiStatus.PROTOTYPED)))
       val mappedDefinition   = underTest().mapLegacyStatuses(originalDefinition)
 
-      mappedDefinition.versions.head.status shouldBe APIStatus.BETA
+      mappedDefinition.versions.head.status shouldBe ApiStatus.BETA
       mappedDefinition.versions.head.endpointsEnabled shouldBe Some(false)
     }
 
     "map PROTOTYPED to BETA and keep value for endpointsEnabled when production URLs for prototyped APIs is enabled" in {
-      val originalDefinition = definition(List(version("1.0", APIStatus.PROTOTYPED, Some(false))))
+      val originalDefinition = definition(List(version("1.0", ApiStatus.PROTOTYPED, Some(false))))
       val mappedDefinition   = underTest(true).mapLegacyStatuses(originalDefinition)
 
-      mappedDefinition.versions.head.status shouldBe APIStatus.BETA
+      mappedDefinition.versions.head.status shouldBe ApiStatus.BETA
       mappedDefinition.versions.head.endpointsEnabled shouldBe Some(false)
     }
 
     "map PROTOTYPED to BETA and keep value for endpointsEnabled when production URLs for prototyped APIs is not enabled" in {
-      val originalDefinition = definition(List(version("1.0", APIStatus.PROTOTYPED, Some(true))))
+      val originalDefinition = definition(List(version("1.0", ApiStatus.PROTOTYPED, Some(true))))
       val mappedDefinition   = underTest().mapLegacyStatuses(originalDefinition)
 
-      mappedDefinition.versions.head.status shouldBe APIStatus.BETA
+      mappedDefinition.versions.head.status shouldBe ApiStatus.BETA
       mappedDefinition.versions.head.endpointsEnabled shouldBe Some(true)
     }
 
     // PUBLISHED
     "map PUBLISHED to STABLE and set endpointsEnabled=true when not explicitly set" in {
-      val originalDefinition = definition(List(version("1.0", APIStatus.PUBLISHED)))
+      val originalDefinition = definition(List(version("1.0", ApiStatus.PUBLISHED)))
       val mappedDefinition   = underTest().mapLegacyStatuses(originalDefinition)
 
-      mappedDefinition.versions.head.status shouldBe APIStatus.STABLE
+      mappedDefinition.versions.head.status shouldBe ApiStatus.STABLE
       mappedDefinition.versions.head.endpointsEnabled shouldBe Some(true)
     }
 
     "map PUBLISHED to STABLE and preserve endpointsEnabled=false when explicitly set" in {
-      val originalDefinition = definition(List(version("1.0", APIStatus.PUBLISHED, Some(false))))
+      val originalDefinition = definition(List(version("1.0", ApiStatus.PUBLISHED, Some(false))))
       val mappedDefinition   = underTest().mapLegacyStatuses(originalDefinition)
 
-      mappedDefinition.versions.head.status shouldBe APIStatus.STABLE
+      mappedDefinition.versions.head.status shouldBe ApiStatus.STABLE
       mappedDefinition.versions.head.endpointsEnabled shouldBe Some(false)
     }
 
     "map PUBLISHED to STABLE and preserve endpointsEnabled=true when explicitly set" in {
-      val originalDefinition = definition(List(version("1.0", APIStatus.PUBLISHED, Some(false))))
+      val originalDefinition = definition(List(version("1.0", ApiStatus.PUBLISHED, Some(false))))
       val mappedDefinition   = underTest().mapLegacyStatuses(originalDefinition)
 
-      mappedDefinition.versions.head.status shouldBe APIStatus.STABLE
+      mappedDefinition.versions.head.status shouldBe ApiStatus.STABLE
       mappedDefinition.versions.head.endpointsEnabled shouldBe Some(false)
     }
 
     // DEPRECATED
     "map DEPRECATED to DEPRECATED and set endpointsEnabled=true when not explicitly set" in {
-      val originalDefinition = definition(List(version("1.0", APIStatus.DEPRECATED)))
+      val originalDefinition = definition(List(version("1.0", ApiStatus.DEPRECATED)))
       val mappedDefinition   = underTest().mapLegacyStatuses(originalDefinition)
 
-      mappedDefinition.versions.head.status shouldBe APIStatus.DEPRECATED
+      mappedDefinition.versions.head.status shouldBe ApiStatus.DEPRECATED
       mappedDefinition.versions.head.endpointsEnabled shouldBe Some(true)
     }
 
     "map DEPRECATED to DEPRECATED and set endpointsEnabled=false when explicitly set to false" in {
-      val originalDefinition = definition(List(version("1.0", APIStatus.DEPRECATED, Some(false))))
+      val originalDefinition = definition(List(version("1.0", ApiStatus.DEPRECATED, Some(false))))
       val mappedDefinition   = underTest().mapLegacyStatuses(originalDefinition)
 
-      mappedDefinition.versions.head.status shouldBe APIStatus.DEPRECATED
+      mappedDefinition.versions.head.status shouldBe ApiStatus.DEPRECATED
       mappedDefinition.versions.head.endpointsEnabled shouldBe Some(false)
     }
 
     "map DEPRECATED to DEPRECATED and set endpointsEnabled=true when explicitly set to true" in {
-      val originalDefinition = definition(List(version("1.0", APIStatus.DEPRECATED, Some(false))))
+      val originalDefinition = definition(List(version("1.0", ApiStatus.DEPRECATED, Some(false))))
       val mappedDefinition   = underTest().mapLegacyStatuses(originalDefinition)
 
-      mappedDefinition.versions.head.status shouldBe APIStatus.DEPRECATED
+      mappedDefinition.versions.head.status shouldBe ApiStatus.DEPRECATED
       mappedDefinition.versions.head.endpointsEnabled shouldBe Some(false)
     }
 
     // RETIRED
     "map RETIRED to RETIRED and set endpointsEnabled=true when not explicitly set" in {
-      val originalDefinition = definition(List(version("1.0", APIStatus.RETIRED)))
+      val originalDefinition = definition(List(version("1.0", ApiStatus.RETIRED)))
       val mappedDefinition   = underTest().mapLegacyStatuses(originalDefinition)
 
-      mappedDefinition.versions.head.status shouldBe APIStatus.RETIRED
+      mappedDefinition.versions.head.status shouldBe ApiStatus.RETIRED
       mappedDefinition.versions.head.endpointsEnabled shouldBe Some(true)
     }
 
     "map RETIRED to RETIRED and set endpointsEnabled=false when explicitly set to false" in {
-      val originalDefinition = definition(List(version("1.0", APIStatus.RETIRED, Some(false))))
+      val originalDefinition = definition(List(version("1.0", ApiStatus.RETIRED, Some(false))))
       val mappedDefinition   = underTest().mapLegacyStatuses(originalDefinition)
 
-      mappedDefinition.versions.head.status shouldBe APIStatus.RETIRED
+      mappedDefinition.versions.head.status shouldBe ApiStatus.RETIRED
       mappedDefinition.versions.head.endpointsEnabled shouldBe Some(false)
     }
 
     "map RETIRED to RETIRED and set endpointsEnabled=true when explicitly set to true" in {
-      val originalDefinition = definition(List(version("1.0", APIStatus.RETIRED, Some(false))))
+      val originalDefinition = definition(List(version("1.0", ApiStatus.RETIRED, Some(false))))
       val mappedDefinition   = underTest().mapLegacyStatuses(originalDefinition)
 
-      mappedDefinition.versions.head.status shouldBe APIStatus.RETIRED
+      mappedDefinition.versions.head.status shouldBe ApiStatus.RETIRED
       mappedDefinition.versions.head.endpointsEnabled shouldBe Some(false)
     }
   }

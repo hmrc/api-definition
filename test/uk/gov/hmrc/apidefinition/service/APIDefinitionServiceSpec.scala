@@ -29,8 +29,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HeaderNames._
 
 import uk.gov.hmrc.apidefinition.config.AppConfig
-import uk.gov.hmrc.apidefinition.models
-import uk.gov.hmrc.apidefinition.models.APIStatus.APIStatus
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiStatus
 import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.services.{APIDefinitionService, AwsApiPublisher, NotificationService}
@@ -174,8 +173,8 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll {
     "send notifications when version of API has changed status" in new Setup {
       val apiVersion                                        = ApiVersionNbr("1.0")
       val apiContext                                        = ApiContext("foo")
-      val existingStatus: models.APIStatus.Value            = APIStatus.ALPHA
-      val updatedStatus: models.APIStatus.Value             = APIStatus.BETA
+      val existingStatus: ApiStatus                         = ApiStatus.ALPHA
+      val updatedStatus: ApiStatus                          = ApiStatus.BETA
       val existingAPIDefinition: APIDefinition              = anAPIDefinition(apiContext, aVersion(apiVersion, existingStatus, Some(PublicAPIAccess())))
       val updatedAPIDefinition: APIDefinition               = anAPIDefinition(apiContext, aVersion(apiVersion, updatedStatus, Some(PublicAPIAccess())))
       val updatedAPIDefinitionWithSavingTime: APIDefinition = updatedAPIDefinition.copy(lastPublishedAt = Some(fixedSavingTime))
@@ -390,7 +389,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll {
     }
   }
 
-  private def aVersion(version: ApiVersionNbr, status: APIStatus = APIStatus.BETA, access: Option[APIAccess]) =
+  private def aVersion(version: ApiVersionNbr, status: ApiStatus = ApiStatus.BETA, access: Option[APIAccess]) =
     APIVersion(version, status, access, List(Endpoint("/test", "test", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)))
 
   private def someAPIDefinition: APIDefinition =
@@ -403,7 +402,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll {
       List(
         APIVersion(
           ApiVersionNbr("1.0"),
-          APIStatus.BETA,
+          ApiStatus.BETA,
           Some(PublicAPIAccess()),
           List(
             Endpoint(

@@ -14,6 +14,22 @@
  * limitations under the License.
  */
 
+/*
+ * Copyright 2023 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package uk.gov.hmrc.apidefinition.controllers
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -37,6 +53,7 @@ import uk.gov.hmrc.apidefinition.services.APIDefinitionService
 import uk.gov.hmrc.apidefinition.utils.{APIDefinitionMapper, AsyncHmrcSpec}
 import uk.gov.hmrc.apidefinition.validators._
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiContext
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiStatus
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersionNbr
 
 class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFactory {
@@ -112,7 +129,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
             List(
               APIVersion(
                 ApiVersionNbr("1.0"),
-                APIStatus.STABLE,
+                ApiStatus.STABLE,
                 None,
                 List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
                 Some(true)
@@ -147,7 +164,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
             List(
               APIVersion(
                 ApiVersionNbr("1.0"),
-                APIStatus.STABLE,
+                ApiStatus.STABLE,
                 None,
                 List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
                 Some(true)
@@ -318,7 +335,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
         ApiContext("individuals/calendar"),
         versions = List(APIVersion(
           ApiVersionNbr("1.0"),
-          APIStatus.STABLE,
+          ApiStatus.STABLE,
           Some(PublicAPIAccess()),
           List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
           Some(true)
@@ -374,7 +391,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
         "My Calendar API",
         ApiContext("individuals/calendar"),
         versions =
-          List(APIVersion(ApiVersionNbr("1.0"), APIStatus.STABLE, None, List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)), Some(true))),
+          List(APIVersion(ApiVersionNbr("1.0"), ApiStatus.STABLE, None, List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)), Some(true))),
         requiresTrust = Some(true),
         None,
         None,
@@ -431,7 +448,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
         ApiContext("individuals/calendar"),
         versions = List(APIVersion(
           ApiVersionNbr("1.0"),
-          APIStatus.STABLE,
+          ApiStatus.STABLE,
           Some(PrivateAPIAccess(List("app-id-1", "app-id-2"))),
           List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
           Some(true)
@@ -501,7 +518,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
         ApiContext("calendar"),
         versions = List(APIVersion(
           ApiVersionNbr("1.0"),
-          APIStatus.BETA,
+          ApiStatus.BETA,
           Some(PublicAPIAccess()),
           List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
           Some(true)

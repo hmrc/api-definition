@@ -21,7 +21,7 @@ import org.joda.time.DateTime
 
 import play.api.libs.json.{JsObject, Json, Reads}
 
-import uk.gov.hmrc.apidefinition.models.APIStatus.APIStatus
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiStatus
 import uk.gov.hmrc.apidefinition.models.AuthType.AuthType
 import uk.gov.hmrc.apidefinition.models.HttpMethod.HttpMethod
 import uk.gov.hmrc.apidefinition.models.ResourceThrottlingTier.ResourceThrottlingTier
@@ -56,7 +56,7 @@ case class ExtendedAPIDefinition(
 
 case class ExtendedAPIVersion(
     version: ApiVersionNbr,
-    status: APIStatus,
+    status: ApiStatus,
     endpoints: List[Endpoint],
     productionAvailability: Option[APIAvailability],
     sandboxAvailability: Option[APIAvailability]
@@ -66,7 +66,7 @@ case class APIAvailability(endpointsEnabled: Boolean, access: APIAccess, loggedI
 
 case class APIVersion(
     version: ApiVersionNbr,
-    status: APIStatus,
+    status: ApiStatus,
     access: Option[APIAccess] = Some(PublicAPIAccess()),
     endpoints: List[Endpoint],
     endpointsEnabled: Option[Boolean] = None,
@@ -173,11 +173,6 @@ object APICategory extends Enum[APICategory] with PlayJsonEnum[APICategory] {
 }
 
 case class APICategoryDetails(category: APICategory, name: String)
-
-object APIStatus extends Enumeration {
-  type APIStatus = Value
-  val PROTOTYPED, PUBLISHED, ALPHA, BETA, STABLE, DEPRECATED, RETIRED = Value
-}
 
 object AuthType extends Enumeration {
   type AuthType = Value

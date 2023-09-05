@@ -19,7 +19,8 @@ package uk.gov.hmrc.apidefinition.utils
 import javax.inject.{Inject, Singleton}
 
 import uk.gov.hmrc.apidefinition.config.AppConfig
-import uk.gov.hmrc.apidefinition.models.{APIDefinition, APIStatus, APIVersion}
+import uk.gov.hmrc.apidefinition.models.{APIDefinition, APIVersion}
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiStatus
 
 @Singleton
 class APIDefinitionMapper @Inject() (val appContext: AppConfig) {
@@ -30,14 +31,14 @@ class APIDefinitionMapper @Inject() (val appContext: AppConfig) {
 
     def mapVersion(version: APIVersion): APIVersion = {
       version.status match {
-        case APIStatus.PROTOTYPED =>
-          version.copy(status = APIStatus.BETA, endpointsEnabled = version.endpointsEnabled.orElse(Some(buildProductionUrlsForPrototypedAPIs)))
-        case APIStatus.PUBLISHED  =>
-          version.copy(status = APIStatus.STABLE, endpointsEnabled = version.endpointsEnabled.orElse(Some(true)))
-        case APIStatus.DEPRECATED =>
-          version.copy(status = APIStatus.DEPRECATED, endpointsEnabled = version.endpointsEnabled.orElse(Some(true)))
-        case APIStatus.RETIRED    =>
-          version.copy(status = APIStatus.RETIRED, endpointsEnabled = version.endpointsEnabled.orElse(Some(true)))
+        case ApiStatus.PROTOTYPED =>
+          version.copy(status = ApiStatus.BETA, endpointsEnabled = version.endpointsEnabled.orElse(Some(buildProductionUrlsForPrototypedAPIs)))
+        case ApiStatus.PUBLISHED  =>
+          version.copy(status = ApiStatus.STABLE, endpointsEnabled = version.endpointsEnabled.orElse(Some(true)))
+        case ApiStatus.DEPRECATED =>
+          version.copy(status = ApiStatus.DEPRECATED, endpointsEnabled = version.endpointsEnabled.orElse(Some(true)))
+        case ApiStatus.RETIRED    =>
+          version.copy(status = ApiStatus.RETIRED, endpointsEnabled = version.endpointsEnabled.orElse(Some(true)))
         case _                    => version
       }
     }

@@ -25,9 +25,8 @@ import play.mvc.Http.Status.NOT_FOUND
 import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpResponse}
 
-import uk.gov.hmrc.apidefinition.models.APIStatus.APIStatus
 import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersionNbr
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 
 trait NotificationService {
   val environmentName: String
@@ -35,8 +34,8 @@ trait NotificationService {
   def notifyOfStatusChange(
       apiName: String,
       apiVersion: ApiVersionNbr,
-      existingAPIStatus: APIStatus,
-      newAPIStatus: APIStatus
+      existingApiStatus: ApiStatus,
+      newApiStatus: ApiStatus
     )(implicit ec: ExecutionContext,
       headerCarrier: HeaderCarrier
     ): Future[Unit]
@@ -47,13 +46,13 @@ class LoggingNotificationService(override val environmentName: String) extends N
   def notifyOfStatusChange(
       apiName: String,
       apiVersion: ApiVersionNbr,
-      existingAPIStatus: APIStatus,
-      newAPIStatus: APIStatus
+      existingApiStatus: ApiStatus,
+      newApiStatus: ApiStatus
     )(implicit ec: ExecutionContext,
       headerCarrier: HeaderCarrier
     ): Future[Unit] = {
     Future {
-      logger.info(s"API [$apiName] Version [$apiVersion] Status has changed from [$existingAPIStatus] to [$newAPIStatus] in [$environmentName] environment")
+      logger.info(s"API [$apiName] Version [$apiVersion] Status has changed from [$existingApiStatus] to [$newApiStatus] in [$environmentName] environment")
     }
   }
 }
@@ -69,8 +68,8 @@ class EmailNotificationService(
   override def notifyOfStatusChange(
       apiName: String,
       apiVersion: ApiVersionNbr,
-      existingAPIStatus: APIStatus,
-      newAPIStatus: APIStatus
+      existingApiStatus: ApiStatus,
+      newApiStatus: ApiStatus
     )(implicit ec: ExecutionContext,
       headerCarrier: HeaderCarrier
     ): Future[Unit] = {
@@ -81,8 +80,8 @@ class EmailNotificationService(
         Map(
           "apiName"         -> apiName,
           "apiVersion"      -> apiVersion.value,
-          "currentStatus"   -> existingAPIStatus.toString,
-          "newStatus"       -> newAPIStatus.toString,
+          "currentStatus"   -> existingApiStatus.toString,
+          "newStatus"       -> newApiStatus.toString,
           "environmentName" -> environmentName
         )
       )

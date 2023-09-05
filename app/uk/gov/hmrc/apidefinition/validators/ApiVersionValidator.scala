@@ -21,7 +21,8 @@ import scala.concurrent.ExecutionContext
 
 import cats.implicits._
 
-import uk.gov.hmrc.apidefinition.models.{APIStatus, APIVersion, Endpoint}
+import uk.gov.hmrc.apidefinition.models.{APIVersion, Endpoint}
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiStatus
 
 @Singleton
 class ApiVersionValidator @Inject() (apiEndpointValidator: ApiEndpointValidator)(implicit override val ec: ExecutionContext) extends Validator[APIVersion] {
@@ -38,7 +39,7 @@ class ApiVersionValidator @Inject() (apiEndpointValidator: ApiEndpointValidator)
 
   private def validateStatus(errorContext: String)(implicit version: APIVersion): HMRCValidated[APIVersion] = {
     version.status match {
-      case APIStatus.ALPHA | APIStatus.BETA | APIStatus.STABLE =>
+      case ApiStatus.ALPHA | ApiStatus.BETA | ApiStatus.STABLE =>
         validateThat(_ => version.endpointsEnabled.nonEmpty, _ => s"Field 'versions.endpointsEnabled' is required $errorContext")
       case _                                                   => version.validNel
     }

@@ -60,3 +60,5 @@ lazy val microservice = Project(appName, file("."))
 def onPackageName(rootPackage: String): String => Boolean = {
   testName => testName startsWith rootPackage
 }
+
+Global / bloopAggregateSourceDependencies := true
