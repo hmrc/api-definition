@@ -14,25 +14,22 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.apidefinition.models
+package uk.gov.hmrc.apiplatform.modules.apis.domain.models
 
 import org.joda.time.{DateTime, DateTimeZone}
-
 import play.api.libs.json.{JsError, JsNumber, Json}
-
-import uk.gov.hmrc.apidefinition.models.JsonFormatters.{dateTimeReads}
 import uk.gov.hmrc.apidefinition.utils.HmrcSpec
 
 class JsonFormattersSpec extends HmrcSpec {
 
-  "JsonFormatters" should {
+  "DateTimeJsonFormatters" should {
 
     "fail to read a DateTime json value if not formatted in ISO 8601" in {
       val timeInMillis = DateTime.now(DateTimeZone.UTC).getMillis
       val dateTime     = JsNumber(timeInMillis)
 
       val expectedErrorMessage = JsError(s"Unexpected format for DateTime: $dateTime")
-      Json.fromJson[DateTime](json = dateTime)(fjs = dateTimeReads) shouldBe expectedErrorMessage
+      Json.fromJson[DateTime](json = dateTime)(fjs = DateTimeJsonFormatters.dateTimeReads) shouldBe expectedErrorMessage
     }
   }
 

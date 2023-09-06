@@ -18,6 +18,7 @@ package uk.gov.hmrc.apidefinition.models
 
 import uk.gov.hmrc.apidefinition.models.AWSParameterType.AWSParameterType
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiDefinition
 
 case class AWSAPIDefinition(name: String, context: ApiContext, version: ApiVersionNbr, subscribersCount: Int, endpointConfig: AWSEndpointConfig, swagger: Option[AWSSwaggerDetails])
 
@@ -109,13 +110,13 @@ object AWSAPIDefinition {
     resourceThrottlingTierMap.getOrElse(resourceThrottlingTier, throw new IllegalArgumentException(s"Unknown Throttling Tier: $resourceThrottlingTier"))
   }
 
-  def awsApiGatewayName(version: ApiVersionNbr, apiDefinition: APIDefinition): String = {
+  def awsApiGatewayName(version: ApiVersionNbr, apiDefinition: ApiDefinition): String = {
       def asAwsSafeString(context: ApiContext): String = context.value.replaceAll("/", "--")
   
     s"${asAwsSafeString(apiDefinition.context)}--$version"
   }
 
-  def awsApiStatus(apiDefinition: APIDefinition, awsAPIDefinition: AWSAPIDefinition): String = {
+  def awsApiStatus(apiDefinition: ApiDefinition, awsAPIDefinition: AWSAPIDefinition): String = {
     val status: ApiStatus = apiDefinition.versions.filter(apiVersion => awsAPIDefinition.version == apiVersion.version).head.status
     statusMap.getOrElse(status, throw new IllegalArgumentException(s"Unknown Status: $status"))
   }

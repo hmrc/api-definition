@@ -33,10 +33,10 @@ import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
-import uk.gov.hmrc.apidefinition.models.APIDefinition
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiDefinition
 
 class APIDefinitionRepositorySpec extends AsyncHmrcSpec
-    with DefaultPlayMongoRepositorySupport[APIDefinition]
+    with DefaultPlayMongoRepositorySupport[ApiDefinition]
     with GuiceOneAppPerSuite with BeforeAndAfterEach
     with BeforeAndAfterAll with Eventually {
 
@@ -44,7 +44,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
     apiVersion.copy(versionSource = source)
   }
 
-  private def defnWithSource(source: ApiVersionSource)(apiDefn: APIDefinition): APIDefinition = {
+  private def defnWithSource(source: ApiVersionSource)(apiDefn: ApiDefinition): ApiDefinition = {
     apiDefn.copy(versions = apiDefn.versions.map(withSource(source)(_)))
   }
   override implicit lazy val app: Application                                                 = appBuilder.build()
@@ -63,7 +63,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
     endpoints = List(Endpoint("/date", "Check current date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
   )
 
-  private val helloApiDefinition = APIDefinition(
+  private val helloApiDefinition = ApiDefinition(
     serviceName = "hello-service",
     serviceBaseUrl = "hello.com",
     name = "Hello",
@@ -73,7 +73,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
     requiresTrust = None
   )
 
-  private val calendarApiDefinition = APIDefinition(
+  private val calendarApiDefinition = ApiDefinition(
     serviceName = "calendar-service",
     serviceBaseUrl = "calendar.com",
     name = "Calendar",
@@ -90,7 +90,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
     endpoints = List(Endpoint("/submit", "Submit Income Tax Return", HttpMethod.POST, AuthType.USER, ResourceThrottlingTier.UNLIMITED))
   )
 
-  private val individualIncomeTaxApiDefinition = APIDefinition(
+  private val individualIncomeTaxApiDefinition = ApiDefinition(
     serviceName = "income-tax",
     serviceBaseUrl = "income-tax.protected.mdtp",
     name = "Individual Income Tax",
@@ -107,7 +107,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
     endpoints = List(Endpoint("/submit", "Submit National Insurance", HttpMethod.POST, AuthType.USER, ResourceThrottlingTier.UNLIMITED))
   )
 
-  private val individualNIApiDefinition = APIDefinition(
+  private val individualNIApiDefinition = ApiDefinition(
     serviceName = "ni",
     serviceBaseUrl = "ni.protected.mdtp",
     name = "Individual National Insurance",
@@ -119,7 +119,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
 
   override val repository: APIDefinitionRepository = app.injector.instanceOf[APIDefinitionRepository]
 
-  private def saveApi(repo: APIDefinitionRepository, apiDefinition: APIDefinition): Future[APIDefinition] = {
+  private def saveApi(repo: APIDefinitionRepository, apiDefinition: ApiDefinition): Future[ApiDefinition] = {
     repo.collection.insertOne(apiDefinition).toFuture().map(_ => apiDefinition)
   }
 

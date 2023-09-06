@@ -52,6 +52,7 @@ import uk.gov.hmrc.apidefinition.services.APIDefinitionService
 import uk.gov.hmrc.apidefinition.utils.{APIDefinitionMapper, AsyncHmrcSpec}
 import uk.gov.hmrc.apidefinition.validators._
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiDefinition
 
 class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFactory {
 
@@ -81,8 +82,8 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
 
   trait QueryDispatcherSetup extends Setup {
 
-    val apiDefinitions: Seq[APIDefinition] =
-      Array.fill(2)(APIDefinition("MyApiDefinitionServiceName1", "MyUrl", "MyName", "My description", ApiContext("MyContext"), Nil, None)).toIndexedSeq
+    val apiDefinitions: Seq[ApiDefinition] =
+      Array.fill(2)(ApiDefinition("MyApiDefinitionServiceName1", "MyUrl", "MyName", "My description", ApiContext("MyContext"), Nil, None)).toIndexedSeq
 
     when(mockAPIDefinitionService.fetchByContext(*[ApiContext])).thenReturn(successful(Some(apiDefinitions.head)))
     when(mockAPIDefinitionService.fetchAllPublicAPIs(*)).thenReturn(successful(apiDefinitions))
@@ -116,7 +117,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
     "succeed with a 204 (NO CONTENT) when payload is valid and service responds successfully" in new ValidatorSetup {
 
       val apiDefinition =
-        APIDefinition(
+        ApiDefinition(
           "calendar",
           "http://calendar",
           "Calendar API",
@@ -151,7 +152,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
     "map legacy API statuses to new statuses before calling the service" in new ValidatorSetup {
 
       val apiDefinition =
-        APIDefinition(
+        ApiDefinition(
           "calendar",
           "http://calendar",
           "Calendar API",
@@ -324,7 +325,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
           |  ]
           |}""".stripMargin.replaceAll("\n", " ")
 
-      val apiDefinition = APIDefinition(
+      val apiDefinition = ApiDefinition(
         "calendar",
         "http://calendar",
         "Calendar API",
@@ -381,7 +382,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
           |  ]
           |}""".stripMargin.replaceAll("\n", " ")
 
-      val apiDefinition = APIDefinition(
+      val apiDefinition = ApiDefinition(
         "calendar",
         "http://calendar",
         "Calendar API",
@@ -437,7 +438,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
           |  ]
           |}""".stripMargin.replaceAll("\n", " ")
 
-      val apiDefinition = APIDefinition(
+      val apiDefinition = ApiDefinition(
         "calendar",
         "http://calendar",
         "Calendar API",
@@ -507,7 +508,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
 
   "fetch" should {
     "succeed with a 200 (ok) when a public API exists for the given serviceName" in new Setup {
-      val apiDefinition = APIDefinition(
+      val apiDefinition = ApiDefinition(
         serviceName,
         "http://calendar",
         "Calendar API",

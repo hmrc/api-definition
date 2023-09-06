@@ -30,7 +30,6 @@ import uk.gov.hmrc.http.HeaderNames._
 
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiStatus
-import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.services.{APIDefinitionService, AwsApiPublisher, NotificationService}
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
@@ -43,6 +42,7 @@ import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiAccess
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.Endpoint
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiAvailability
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersion
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiDefinition
 
 class APIDefinitionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll {
 
@@ -61,7 +61,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll {
   }
 
   private def anAPIDefinition(context: ApiContext, versions: ApiVersion*) =
-    APIDefinition("service", "http://service", "name", "description", context, versions.toList, None, None, None)
+    ApiDefinition("service", "http://service", "name", "description", context, versions.toList, None, None, None)
 
   trait Setup {
 
@@ -182,9 +182,9 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll {
       val apiContext                                        = ApiContext("foo")
       val existingStatus: ApiStatus                         = ApiStatus.ALPHA
       val updatedStatus: ApiStatus                          = ApiStatus.BETA
-      val existingAPIDefinition: APIDefinition              = anAPIDefinition(apiContext, aVersion(apiVersion, existingStatus, Some(ApiAccess.PUBLIC)))
-      val updatedAPIDefinition: APIDefinition               = anAPIDefinition(apiContext, aVersion(apiVersion, updatedStatus, Some(ApiAccess.PUBLIC)))
-      val updatedAPIDefinitionWithSavingTime: APIDefinition = updatedAPIDefinition.copy(lastPublishedAt = Some(fixedSavingTime))
+      val existingAPIDefinition: ApiDefinition              = anAPIDefinition(apiContext, aVersion(apiVersion, existingStatus, Some(ApiAccess.PUBLIC)))
+      val updatedAPIDefinition: ApiDefinition               = anAPIDefinition(apiContext, aVersion(apiVersion, updatedStatus, Some(ApiAccess.PUBLIC)))
+      val updatedAPIDefinitionWithSavingTime: ApiDefinition = updatedAPIDefinition.copy(lastPublishedAt = Some(fixedSavingTime))
 
       when(mockAPIDefinitionRepository.fetchByContext(apiContext)).thenReturn(successful(Some(existingAPIDefinition)))
       when(mockNotificationService.notifyOfStatusChange(existingAPIDefinition.name, apiVersion, existingStatus, updatedStatus)).thenReturn(unitSuccess)
@@ -318,7 +318,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll {
       val expectedApiDefinitions = Seq(apiDefinitionWithAllVersions, apiDefinition)
       when(mockAPIDefinitionRepository.fetchAll()).thenReturn(successful(expectedApiDefinitions))
 
-      val result: Seq[APIDefinition] = await(underTest.fetchAll)
+      val result: Seq[ApiDefinition] = await(underTest.fetchAll)
 
       result shouldBe expectedApiDefinitions
     }
@@ -386,8 +386,8 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll {
 
   "publishAllToAws" should {
     "publish all APIs" in new Setup {
-      val apiDefinition1: APIDefinition = someAPIDefinition
-      val apiDefinition2: APIDefinition = someAPIDefinition
+      val apiDefinition1: ApiDefinition = someAPIDefinition
+      val apiDefinition2: ApiDefinition = someAPIDefinition
       when(mockAPIDefinitionRepository.fetchAll()).thenReturn(successful(Seq(apiDefinition1, apiDefinition2)))
 
       await(underTest.publishAllToAws())
@@ -399,8 +399,8 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll {
   private def aVersion(version: ApiVersionNbr, status: ApiStatus = ApiStatus.BETA, access: Option[ApiAccess]) =
     ApiVersion(version, status, access, List(Endpoint("/test", "test", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)))
 
-  private def someAPIDefinition: APIDefinition =
-    APIDefinition(
+  private def someAPIDefinition: ApiDefinition =
+    ApiDefinition(
       serviceName,
       "http://calendar",
       "Calendar API",

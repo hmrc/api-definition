@@ -19,7 +19,7 @@ package uk.gov.hmrc.apidefinition.utils
 import javax.inject.{Inject, Singleton}
 
 import uk.gov.hmrc.apidefinition.config.AppConfig
-import uk.gov.hmrc.apidefinition.models.{APIDefinition}
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiDefinition
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 
 @Singleton
@@ -27,7 +27,7 @@ class APIDefinitionMapper @Inject() (val appContext: AppConfig) {
 
   val buildProductionUrlsForPrototypedAPIs = appContext.buildProductionUrlForPrototypedAPIs
 
-  def mapLegacyStatuses(apiDefinition: APIDefinition): APIDefinition = {
+  def mapLegacyStatuses(apiDefinition: ApiDefinition): ApiDefinition = {
 
     def mapVersion(version: ApiVersion): ApiVersion = {
       version.status match {

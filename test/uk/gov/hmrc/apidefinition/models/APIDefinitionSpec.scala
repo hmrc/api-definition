@@ -18,10 +18,11 @@ package uk.gov.hmrc.apidefinition.models
 
 import play.api.libs.json.Json
 
-import uk.gov.hmrc.apidefinition.models.JsonFormatters._
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiCategory
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiAccess
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiDefinition
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiCategoryDetails
 
 class APIDefinitionSpec extends AsyncHmrcSpec {
 
@@ -58,7 +59,7 @@ class APIDefinitionSpec extends AsyncHmrcSpec {
            |   ]
            |}""".stripMargin.replaceAll("\n", " ")
 
-      Json.parse(body).as[APIDefinition]
+      Json.parse(body).as[ApiDefinition]
     }
 
     "read from JSON when the API access type is PUBLIC and there is no whitelist" in {
@@ -130,9 +131,9 @@ class APIDefinitionSpec extends AsyncHmrcSpec {
     }
   }
 
-  "ApiCategory" should {
+  "ApiCategoryDetails" should {
     "return details for a given category" in {
-      val details = ApiCategory.toApiCategoryDetails(ApiCategory.BUSINESS_RATES)
+      val details = ApiCategoryDetails.toApiCategoryDetails(ApiCategory.BUSINESS_RATES)
 
       details.category shouldBe ApiCategory.BUSINESS_RATES
       details.name shouldBe "Business Rates"
@@ -140,7 +141,7 @@ class APIDefinitionSpec extends AsyncHmrcSpec {
 
     "return appropriate ApiCategoryDetails objects for each ApiCategory" in {
       ApiCategory.values.foreach { category =>
-        val details = ApiCategory.toApiCategoryDetails(category)
+        val details = ApiCategoryDetails.toApiCategoryDetails(category)
         details.category shouldBe category
       }
     }

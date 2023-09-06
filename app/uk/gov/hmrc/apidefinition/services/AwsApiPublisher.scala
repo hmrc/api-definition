@@ -28,7 +28,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apidefinition.connector.AWSAPIPublisherConnector
 import uk.gov.hmrc.apidefinition.models.AWSAPIDefinition.awsApiGatewayName
-import uk.gov.hmrc.apidefinition.models.{APIDefinition}
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiDefinition
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.utils.AWSPayloadHelper.buildAWSSwaggerDetails
 import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
@@ -40,12 +40,12 @@ class AwsApiPublisher @Inject() (val awsAPIPublisherConnector: AWSAPIPublisherCo
 
   val hostRegex: Regex = "https?://(.+)".r
 
-  def publishAll(apiDefinitions: Seq[APIDefinition])(implicit hc: HeaderCarrier): Future[Unit] = {
+  def publishAll(apiDefinitions: Seq[ApiDefinition])(implicit hc: HeaderCarrier): Future[Unit] = {
     Future.sequence(apiDefinitions.map(publish))
       .map(_ => (()))
   }
 
-  def publish(apiDefinition: APIDefinition)(implicit hc: HeaderCarrier): Future[Unit] = {
+  def publish(apiDefinition: ApiDefinition)(implicit hc: HeaderCarrier): Future[Unit] = {
     sequence {
       apiDefinition.versions.map { apiVersion =>
         val apiName = awsApiGatewayName(apiVersion.version, apiDefinition)
@@ -77,7 +77,7 @@ class AwsApiPublisher @Inject() (val awsAPIPublisherConnector: AWSAPIPublisherCo
       .map(awsRequestId => logger.info(s"Successfully published API [$apiName] Version [${apiVersion.version}] under AWS Request Id [$awsRequestId]"))
   }
 
-  def delete(apiDefinition: APIDefinition)(implicit hc: HeaderCarrier): Future[Unit] = {
+  def delete(apiDefinition: ApiDefinition)(implicit hc: HeaderCarrier): Future[Unit] = {
     sequence {
       apiDefinition.versions.map { apiVersion =>
         deleteAPIVersion(awsApiGatewayName(apiVersion.version, apiDefinition))

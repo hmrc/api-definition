@@ -30,7 +30,8 @@ import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.models.ErrorCode._
 import uk.gov.hmrc.apidefinition.models.JsonFormatters._
-import uk.gov.hmrc.apidefinition.models.{APIDefinition, ErrorCode}
+import uk.gov.hmrc.apidefinition.models.{ErrorCode}
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiDefinition
 import uk.gov.hmrc.apidefinition.services.APIDefinitionService
 import uk.gov.hmrc.apidefinition.utils.{APIDefinitionMapper, ApplicationLogger}
 import uk.gov.hmrc.apidefinition.validators.ApiDefinitionValidator
@@ -49,7 +50,7 @@ class APIDefinitionController @Inject() (
   val fetchByContextTtlInSeconds: String = appContext.fetchByContextTtlInSeconds
 
   def createOrUpdate(): Action[JsValue] = Action.async(parse.json) { implicit request =>
-    handleRequest[APIDefinition](request) { requestBody =>
+    handleRequest[ApiDefinition](request) { requestBody =>
       apiDefinitionValidator.validate(requestBody) { validatedDefinition =>
         logger.info(s"Create/Update API definition request: $validatedDefinition")
         apiDefinitionService.createOrUpdate(apiDefinitionMapper.mapLegacyStatuses(validatedDefinition)).map { _ =>
@@ -80,7 +81,7 @@ class APIDefinitionController @Inject() (
   }
 
   def validate: Action[JsValue] = Action.async(parse.json) { implicit request =>
-    handleRequest[APIDefinition](request) { requestBody =>
+    handleRequest[ApiDefinition](request) { requestBody =>
       apiDefinitionValidator.validate(requestBody) { validatedDefinition =>
         successful(Accepted(Json.toJson(validatedDefinition)))
       }
@@ -107,14 +108,14 @@ class APIDefinitionController @Inject() (
   }
 
   def fetchAllAPICategories: Action[AnyContent] = Action.async {
-    successful(Ok(Json.toJson(ApiCategory.allApiCategoryDetails)))
+    successful(Ok(Json.toJson(ApiCategoryDetails.allApiCategoryDetails)))
   }
 
   private def extractQueryOptions(request: Request[AnyContent]) = {
     QueryOptions(request.getQueryString("options"))
   }
 
-  private def apiDefinitionToResult(result: Seq[APIDefinition]) = {
+  private def apiDefinitionToResult(result: Seq[ApiDefinition]) = {
     Ok(Json.toJson(result))
   }
 

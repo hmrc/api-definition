@@ -22,7 +22,7 @@ import scala.util.matching.Regex
 import cats.data.ValidatedNel
 import cats.implicits._
 
-import uk.gov.hmrc.apidefinition.models.APIDefinition
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiDefinition
 import scala.Iterable
 
 trait Validator[T] {
@@ -52,9 +52,9 @@ trait Validator[T] {
     }
   }
 
-  def validateFieldNotAlreadyUsed(fetchApi: => Future[Option[APIDefinition]], errorMessage: String)(implicit t: T, apiDefinition: APIDefinition): Future[HMRCValidated[T]] = {
+  def validateFieldNotAlreadyUsed(fetchApi: => Future[Option[ApiDefinition]], errorMessage: String)(implicit t: T, apiDefinition: ApiDefinition): Future[HMRCValidated[T]] = {
     fetchApi.map {
-      case Some(found: APIDefinition) => found.serviceName != apiDefinition.serviceName
+      case Some(found: ApiDefinition) => found.serviceName != apiDefinition.serviceName
       case _                          => false
     }.map(alreadyUsed => validateThat(_ => !alreadyUsed, _ => errorMessage))
   }

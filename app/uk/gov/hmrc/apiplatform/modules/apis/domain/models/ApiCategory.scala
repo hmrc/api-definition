@@ -21,8 +21,6 @@ import play.api.libs.json.Json
 
 sealed trait ApiCategory
 
-case class ApiCategoryDetails(category: ApiCategory, name: String)
-
 object ApiCategory {
   
   case object EXAMPLE                      extends ApiCategory
@@ -65,8 +63,13 @@ object ApiCategory {
     apply(text).getOrElse(throw new RuntimeException(s"$text is not a valid API Category"))
 
   implicit val formatApiCategory = SealedTraitJsonFormatting.createFormatFor[ApiCategory]("API Category", apply)
+}
 
+case class ApiCategoryDetails(category: ApiCategory, name: String)
+
+object ApiCategoryDetails {
   def toApiCategoryDetails(category: ApiCategory): ApiCategoryDetails = {
+    import ApiCategory._
     category match {
       case EXAMPLE                      => ApiCategoryDetails(EXAMPLE, "Example")
       case AGENTS                       => ApiCategoryDetails(AGENTS, "Agents")
@@ -95,8 +98,6 @@ object ApiCategory {
   }
 
   def allApiCategoryDetails = ApiCategory.values.map(toApiCategoryDetails)
-}
 
-object ApiCategoryDetails {
-  val formatApiCategoryDetails = Json.format[ApiCategoryDetails]
+  implicit val formatApiCategoryDetails = Json.format[ApiCategoryDetails]
 }

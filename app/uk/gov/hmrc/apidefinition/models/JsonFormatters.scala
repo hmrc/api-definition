@@ -23,34 +23,12 @@ import play.api.libs.json._
 import uk.gov.hmrc.play.json.Union
 
 import uk.gov.hmrc.apidefinition.models.AWSParameterType._
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.DateTimeJsonFormatters
 
 object JsonFormatters {
+  import DateTimeJsonFormatters._
 
-  implicit val formatApiCategoryDetails     = Json.format[ApiCategoryDetails]
-  
-  private val dateTimeFormatter = ISODateTimeFormat.dateTime().withZoneUTC()
-
-  implicit val dateTimeReads: Reads[DateTime] = new Reads[DateTime] {
-
-    override def reads(json: JsValue): JsResult[DateTime] = {
-      json match {
-        case JsString(s) => JsSuccess(dateTimeFormatter.parseDateTime(s))
-        case _           => JsError(s"Unexpected format for DateTime: $json")
-      }
-    }
-  }
-
-  implicit val dateTimeWrites: Writes[DateTime] = new Writes[DateTime] {
-
-    override def writes(dateTime: DateTime): JsValue = {
-      JsString(dateTimeFormatter.print(dateTime))
-    }
-  }
-
-  implicit val dateTimeFormats = Format(fjs = dateTimeReads, tjs = dateTimeWrites)
-
- 
   implicit val formatAWSParameterType  = EnumJson.enumFormat(AWSParameterType)
   implicit val formatAWSQueryParameter = Json.format[AWSQueryParameter]
   implicit val formatAWSPathParameter  = Json.format[AWSPathParameter]
@@ -66,37 +44,10 @@ object JsonFormatters {
   implicit val formatAWSSwaggerDetails  = Json.format[AWSSwaggerDetails]
 
 
-  implicit val formatAPIDefinition: OFormat[APIDefinition] = Json.format[APIDefinition]
-
   implicit val formatExtendedAPIVersion                                    = Json.format[ExtendedAPIVersion]
   implicit val formatExtendedAPIDefinition: OFormat[ExtendedAPIDefinition] = Json.format[ExtendedAPIDefinition]
 
 
 }
 
-object EnumJson {
 
-  def enumReads[E <: Enumeration](enumValue: E): Reads[E#Value] = new Reads[E#Value] {
-
-    override def reads(json: JsValue): JsResult[E#Value] = json match {
-      case JsString(s) =>
-        try {
-          JsSuccess(enumValue.withName(s))
-        } catch {
-          case _: NoSuchElementException =>
-            JsError(s"Enumeration expected of type: '${enumValue.getClass}', but it does not contain '$s'")
-        }
-
-      case _ => JsError("String value expected")
-    }
-  }
-
-  implicit def enumWrites[E <: Enumeration]: Writes[E#Value] = new Writes[E#Value] {
-    override def writes(v: E#Value): JsValue = JsString(v.toString)
-  }
-
-  implicit def enumFormat[E <: Enumeration](enumValue: E): Format[E#Value] = {
-    Format(enumReads(enumValue), enumWrites)
-  }
-
-}
