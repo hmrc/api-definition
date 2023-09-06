@@ -28,7 +28,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apidefinition.connector.AWSAPIPublisherConnector
 import uk.gov.hmrc.apidefinition.models.AWSAPIDefinition.awsApiGatewayName
-import uk.gov.hmrc.apidefinition.models.{APIDefinition, APIVersion}
+import uk.gov.hmrc.apidefinition.models.{APIDefinition}
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.utils.AWSPayloadHelper.buildAWSSwaggerDetails
 import uk.gov.hmrc.apidefinition.utils.ApplicationLogger

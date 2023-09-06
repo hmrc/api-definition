@@ -52,6 +52,8 @@ import uk.gov.hmrc.apidefinition.services.APIDefinitionService
 import uk.gov.hmrc.apidefinition.utils.{APIDefinitionMapper, AsyncHmrcSpec}
 import uk.gov.hmrc.apidefinition.validators._
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.Endpoint
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.APIVersion
 
 class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFactory {
 

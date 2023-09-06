@@ -24,13 +24,12 @@ import uk.gov.hmrc.play.json.Union
 
 import uk.gov.hmrc.apidefinition.models.AWSParameterType._
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.APIVersion
 
 object JsonFormatters {
 
   implicit val formatApiCategoryDetails     = Json.format[ApiCategoryDetails]
   
-  // implicit val formatAPIAccessType          = EnumJson.enumFormat(APIAccessType)
-
   private val dateTimeFormatter = ISODateTimeFormat.dateTime().withZoneUTC()
 
   implicit val dateTimeReads: Reads[DateTime] = new Reads[DateTime] {
@@ -52,8 +51,7 @@ object JsonFormatters {
 
   implicit val dateTimeFormats = Format(fjs = dateTimeReads, tjs = dateTimeWrites)
 
-  implicit val formatEndpoint  = Json.format[Endpoint]
-
+ 
   implicit val formatAWSParameterType  = EnumJson.enumFormat(AWSParameterType)
   implicit val formatAWSQueryParameter = Json.format[AWSQueryParameter]
   implicit val formatAWSPathParameter  = Json.format[AWSPathParameter]
@@ -78,14 +76,14 @@ object JsonFormatters {
       (JsPath \ "endpointsEnabled").readNullable[Boolean] and
       (JsPath \ "awsRequestId").readNullable[String] and
       ((JsPath \ "versionSource").read[ApiVersionSource] or Reads.pure[ApiVersionSource](ApiVersionSource.UNKNOWN))
-  )(APIVersion.apply _)
+  )(uk.gov.hmrc.apiplatform.modules.apis.domain.models.APIVersion.apply _)
 
   val apiVersionWrites: OWrites[APIVersion] = Json.writes[APIVersion]
   implicit val formatApiVersion             = OFormat[APIVersion](apiVersionReads, apiVersionWrites)
 
   implicit val formatAPIDefinition: OFormat[APIDefinition] = Json.format[APIDefinition]
 
-  implicit val formatAPIAvailability                                       = Json.format[APIAvailability]
+
   implicit val formatExtendedAPIVersion                                    = Json.format[ExtendedAPIVersion]
   implicit val formatExtendedAPIDefinition: OFormat[ExtendedAPIDefinition] = Json.format[ExtendedAPIDefinition]
 

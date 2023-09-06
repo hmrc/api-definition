@@ -19,8 +19,8 @@ package uk.gov.hmrc.apidefinition.utils
 import javax.inject.{Inject, Singleton}
 
 import uk.gov.hmrc.apidefinition.config.AppConfig
-import uk.gov.hmrc.apidefinition.models.{APIDefinition, APIVersion}
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiStatus
+import uk.gov.hmrc.apidefinition.models.{APIDefinition}
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 
 @Singleton
 class APIDefinitionMapper @Inject() (val appContext: AppConfig) {

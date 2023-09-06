@@ -32,6 +32,7 @@ import uk.gov.hmrc.apidefinition.services.APIDefinitionService
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.QueryParameter
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.Endpoint
 
 class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite {
 

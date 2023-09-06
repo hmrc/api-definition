@@ -37,6 +37,7 @@ import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ResourceThrottlingTier
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.HttpMethod
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.AuthType
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.Endpoint
 
 class APIDefinitionRepositorySpec extends AsyncHmrcSpec
     with DefaultPlayMongoRepositorySupport[APIDefinition]

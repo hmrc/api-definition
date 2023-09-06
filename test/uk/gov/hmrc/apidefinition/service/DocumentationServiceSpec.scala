@@ -46,6 +46,8 @@ import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiContext
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersionNbr
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiStatus
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiAccess
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiAvailability
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.APIVersion
 
 class DocumentationServiceSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite with Utils {
   import DocumentationService.PROXY_SAFE_CONTENT_TYPE
@@ -54,28 +56,28 @@ class DocumentationServiceSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wi
   val version     = "1.0"
   val serviceUrl  = "http://localhost"
 
-  val productionV1Availability: APIAvailability = APIAvailability(
+  val productionV1Availability: ApiAvailability = ApiAvailability(
     endpointsEnabled = true,
     ApiAccess.Private(Nil),
     loggedIn = false,
     authorised = false
   )
 
-  val productionV2Availability: APIAvailability = APIAvailability(
+  val productionV2Availability: ApiAvailability = ApiAvailability(
     endpointsEnabled = true,
     ApiAccess.Private(Nil),
     loggedIn = false,
     authorised = false
   )
 
-  val sandboxV2Availability: APIAvailability = APIAvailability(
+  val sandboxV2Availability: ApiAvailability = ApiAvailability(
     endpointsEnabled = true,
     ApiAccess.PUBLIC,
     loggedIn = false,
     authorised = false
   )
 
-  val sandboxV3Availability: APIAvailability = APIAvailability(
+  val sandboxV3Availability: ApiAvailability = ApiAvailability(
     endpointsEnabled = false,
     ApiAccess.PUBLIC,
     loggedIn = false,

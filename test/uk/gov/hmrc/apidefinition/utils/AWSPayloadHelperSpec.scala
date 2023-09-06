@@ -18,14 +18,7 @@ package uk.gov.hmrc.apidefinition.utils
 
 import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.utils.AWSPayloadHelper._
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiContext
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersionNbr
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiStatus
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ResourceThrottlingTier
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.HttpMethod
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.AuthType
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiAccess
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.QueryParameter
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 
 class AWSPayloadHelperSpec extends AsyncHmrcSpec {
 

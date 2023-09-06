@@ -19,6 +19,7 @@ package uk.gov.hmrc.apidefinition.models
 import org.joda.time.DateTime
 
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.APIVersion
 
 case class APIDefinition(
     serviceName: String,
@@ -49,29 +50,10 @@ case class ExtendedAPIVersion(
     version: ApiVersionNbr,
     status: ApiStatus,
     endpoints: List[Endpoint],
-    productionAvailability: Option[APIAvailability],
-    sandboxAvailability: Option[APIAvailability]
+    productionAvailability: Option[ApiAvailability],
+    sandboxAvailability: Option[ApiAvailability]
   )
 
-case class APIAvailability(endpointsEnabled: Boolean, access: ApiAccess, loggedIn: Boolean, authorised: Boolean)
 
-case class APIVersion(
-    version: ApiVersionNbr,
-    status: ApiStatus,
-    access: Option[ApiAccess] = Some(ApiAccess.PUBLIC),
-    endpoints: List[Endpoint],
-    endpointsEnabled: Option[Boolean] = None,
-    awsRequestId: Option[String] = None,
-    versionSource: ApiVersionSource = ApiVersionSource.UNKNOWN
-  )
 
-// API resource (also called API endpoint)
-case class Endpoint(
-    uriPattern: String,
-    endpointName: String,
-    method: HttpMethod,
-    authType: AuthType,
-    throttlingTier: ResourceThrottlingTier,
-    scope: Option[String] = None,
-    queryParameters: Option[List[QueryParameter]] = None
-  )
+

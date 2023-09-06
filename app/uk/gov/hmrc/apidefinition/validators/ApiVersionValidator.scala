@@ -21,8 +21,7 @@ import scala.concurrent.ExecutionContext
 
 import cats.implicits._
 
-import uk.gov.hmrc.apidefinition.models.{APIVersion, Endpoint}
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiStatus
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 
 @Singleton
 class ApiVersionValidator @Inject() (apiEndpointValidator: ApiEndpointValidator)(implicit override val ec: ExecutionContext) extends Validator[APIVersion] {

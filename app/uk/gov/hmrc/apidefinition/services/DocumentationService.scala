@@ -30,9 +30,9 @@ import uk.gov.hmrc.http.{InternalServerException, NotFoundException}
 
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.connector.ApiMicroserviceConnector
-import uk.gov.hmrc.apidefinition.models.{APIDefinition, APIVersion}
+import uk.gov.hmrc.apidefinition.models.{APIDefinition}
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersionNbr
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 
 object DocumentationService {
   val PROXY_SAFE_CONTENT_TYPE = "Proxy-Safe-Content-Type"

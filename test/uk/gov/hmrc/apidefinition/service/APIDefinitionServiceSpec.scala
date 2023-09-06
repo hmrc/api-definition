@@ -40,6 +40,9 @@ import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ResourceThrottlingTier
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.HttpMethod
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.AuthType
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiAccess
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.Endpoint
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiAvailability
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.APIVersion
 
 class APIDefinitionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll {
 
@@ -95,16 +98,16 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll {
     )
 
     val versionWithoutAccessDefinedAvailability =
-      APIAvailability(versionWithoutAccessDefined.endpointsEnabled.getOrElse(false), ApiAccess.PUBLIC, loggedIn = false, authorised = true)
+      ApiAvailability(versionWithoutAccessDefined.endpointsEnabled.getOrElse(false), ApiAccess.PUBLIC, loggedIn = false, authorised = true)
 
-    val publicVersionAvailability = APIAvailability(
+    val publicVersionAvailability = ApiAvailability(
       publicVersion.endpointsEnabled.getOrElse(false),
       publicVersion.access.get,
       loggedIn = false,
       authorised = true
     )
 
-    val privateVersionAvailability = APIAvailability(
+    val privateVersionAvailability = ApiAvailability(
       privateVersionWithAppWhitelisted.endpointsEnabled.getOrElse(false),
       privateVersionWithAppWhitelisted.access.get,
       loggedIn = false,
