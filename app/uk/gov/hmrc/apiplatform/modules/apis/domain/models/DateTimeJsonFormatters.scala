@@ -19,6 +19,7 @@ package uk.gov.hmrc.apiplatform.modules.apis.domain.models
 import org.joda.time.DateTime
 import org.joda.time.format.ISODateTimeFormat
 import play.api.libs.json._
+import org.joda.time.DateTimeZone
 
 object DateTimeJsonFormatters {
 
@@ -28,7 +29,7 @@ object DateTimeJsonFormatters {
 
     override def reads(json: JsValue): JsResult[DateTime] = {
       json match {
-        case JsString(s) => JsSuccess(dateTimeFormatter.parseDateTime(s))
+        case JsString(s) => JsSuccess(dateTimeFormatter.parseDateTime(s).withZone(DateTimeZone.UTC))
         case _           => JsError(s"Unexpected format for DateTime: $json")
       }
     }
