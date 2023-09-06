@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.apidefinition.models
+package uk.gov.hmrc.apiplatform.modules.apis.domain.models
 
 import play.api.libs.json.Json
 
@@ -22,11 +22,10 @@ import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiCategory
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiAccess
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiDefinition
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiCategoryDetails
 
-class APIDefinitionSpec extends AsyncHmrcSpec {
+class ApiDefinitionSpec extends AsyncHmrcSpec {
 
-  "APIDefinition" should {
+  "ApiDefinition" should {
     def anApiDefinition(accessType: String = "PUBLIC", whitelistedApplicationIds: Option[String] = None, isTrial: Option[Boolean] = None, categories: Option[String] = None) = {
 
       val body =
@@ -73,13 +72,6 @@ class APIDefinitionSpec extends AsyncHmrcSpec {
 
       apiDefinition.versions.head.access shouldBe Some(ApiAccess.PUBLIC)
     }
-
-    // This no longer applies - we just ignore the whitelisted app ids like we do for all other 'odd' data
-    // "fail to read from JSON when the API access type is PUBLIC and there is a non-empty whitelist" in {
-    //   intercept[RuntimeException] {
-    //     anApiDefinition(whitelistedApplicationIds = Some("[\"an-application-id\"]"))
-    //   }
-    // }
 
     "read from JSON when the API access type is PRIVATE and there is an empty whitelist" in {
       val apiDefinition = anApiDefinition(
@@ -131,19 +123,5 @@ class APIDefinitionSpec extends AsyncHmrcSpec {
     }
   }
 
-  "ApiCategoryDetails" should {
-    "return details for a given category" in {
-      val details = ApiCategoryDetails.toApiCategoryDetails(ApiCategory.BUSINESS_RATES)
 
-      details.category shouldBe ApiCategory.BUSINESS_RATES
-      details.name shouldBe "Business Rates"
-    }
-
-    "return appropriate ApiCategoryDetails objects for each ApiCategory" in {
-      ApiCategory.values.foreach { category =>
-        val details = ApiCategoryDetails.toApiCategoryDetails(category)
-        details.category shouldBe category
-      }
-    }
-  }
 }

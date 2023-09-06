@@ -16,18 +16,12 @@
 
 package uk.gov.hmrc.apidefinition.models
 
-import org.joda.time.DateTime
-import org.joda.time.format.ISODateTimeFormat
-
 import play.api.libs.json._
 import uk.gov.hmrc.play.json.Union
 
 import uk.gov.hmrc.apidefinition.models.AWSParameterType._
 
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.DateTimeJsonFormatters
-
 object JsonFormatters {
-  import DateTimeJsonFormatters._
 
   implicit val formatAWSParameterType  = EnumJson.enumFormat(AWSParameterType)
   implicit val formatAWSQueryParameter = Json.format[AWSQueryParameter]
@@ -42,10 +36,6 @@ object JsonFormatters {
   implicit val formatAWSHttpVerbDetails = Json.format[AWSHttpVerbDetails]
   implicit val formatAWSAPIInfo         = Json.format[AWSAPIInfo]
   implicit val formatAWSSwaggerDetails  = Json.format[AWSSwaggerDetails]
-
-
-  implicit val formatExtendedAPIVersion                                    = Json.format[ExtendedAPIVersion]
-  implicit val formatExtendedAPIDefinition: OFormat[ExtendedAPIDefinition] = Json.format[ExtendedAPIDefinition]
 
 
 }

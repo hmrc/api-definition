@@ -14,16 +14,27 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.apidefinition.models
+package uk.gov.hmrc.apiplatform.modules.apis.domain.models
 
 import org.joda.time.DateTime
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersion
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ExtendedAPIVersion
 
-case class ExtendedAPIVersion(
-    version: ApiVersionNbr,
-    status: ApiStatus,
-    endpoints: List[Endpoint],
-    productionAvailability: Option[ApiAvailability],
-    sandboxAvailability: Option[ApiAvailability]
+// Not used in Api Definition
+case class ExtendedAPIDefinition(
+  serviceName: String,
+  serviceBaseUrl: String,
+  name: String,
+  description: String,
+  context: ApiContext,
+  requiresTrust: Boolean,
+  isTestSupport: Boolean,
+  versions: List[ExtendedAPIVersion],
+  lastPublishedAt: Option[DateTime]
   )
+  
+object ExtendedAPIDefinition {
+  import play.api.libs.json.Json
+  import DateTimeJsonFormatters._
+  implicit val formatExtendedAPIDefinition = Json.format[ExtendedAPIDefinition]
+}
