@@ -20,7 +20,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 import com.mongodb.MongoWriteException
-import org.joda.time.{DateTime, DateTimeZone}
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.{IndexModel, IndexOptions}
 import org.scalatest.concurrent.Eventually
@@ -34,6 +33,8 @@ import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiDefinition
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 
 class APIDefinitionRepositorySpec extends AsyncHmrcSpec
     with DefaultPlayMongoRepositorySupport[ApiDefinition]
@@ -137,7 +138,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
 
     "create a new API definition in Mongo" in {
 
-      val aTime = DateTime.now(DateTimeZone.UTC)
+      val aTime = Instant.now().truncatedTo(ChronoUnit.MILLIS)
 
       val apiDefinition = calendarApiDefinition.copy(lastPublishedAt = Some(aTime))
       await(repository.save(apiDefinition))

@@ -20,14 +20,14 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future.{failed, successful}
 import scala.concurrent.{ExecutionContext, Future}
 
-import org.joda.time.{DateTime, DateTimeZone}
-
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import java.time.Clock
+import uk.gov.hmrc.apiplatform.modules.common.domain.services.ClockNow
 
 object APIDefinitionService {
   
@@ -36,12 +36,13 @@ object APIDefinitionService {
 
 @Singleton
 class APIDefinitionService @Inject() (
+    val clock: Clock,
     awsApiPublisher: AwsApiPublisher,
     apiDefinitionRepository: APIDefinitionRepository,
     notificationService: NotificationService,
     playApplicationContext: AppConfig
   )(implicit val ec: ExecutionContext
-  ) extends ApplicationLogger {
+  ) extends ApplicationLogger with ClockNow {
 
   def createOrUpdate(apiDefinition: ApiDefinition)(implicit hc: HeaderCarrier): Future[Unit] = {
 
@@ -64,7 +65,7 @@ class APIDefinitionService @Inject() (
     for {
       _                        <- checkAPIDefinitionForStatusChanges(apiDefinition)
       _                        <- publish()
-      definitionWithPublishTime = apiDefinition.copy(lastPublishedAt = Some(DateTime.now(DateTimeZone.UTC)))
+      definitionWithPublishTime = apiDefinition.copy(lastPublishedAt = Some(instant()))
       _                        <- apiDefinitionRepository.save(definitionWithPublishTime) recoverWith recoverSave
     } yield ()
   }

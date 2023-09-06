@@ -21,10 +21,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
 
-import org.joda.time.DateTimeUtils._
-import org.joda.time.format.ISODateTimeFormat
-import org.scalatest.BeforeAndAfterAll
-
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HeaderNames._
 
@@ -33,32 +29,15 @@ import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiStatus
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.services.{APIDefinitionService, AwsApiPublisher, NotificationService}
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiContext
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersionNbr
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ResourceThrottlingTier
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.HttpMethod
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.AuthType
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiAccess
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.Endpoint
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiAvailability
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersion
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiDefinition
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 
-class APIDefinitionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll {
+class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
 
   private val context         = ApiContext("calendar")
   private val serviceName     = "calendar-service"
-  private val fixedSavingTime = ISODateTimeFormat.dateTime().withZoneUTC().parseDateTime("2014-02-09T02:27:15.145Z")
 
   def unitSuccess: Future[Unit] = successful { () }
-
-  override def beforeAll(): Unit = {
-    setCurrentMillisFixed(fixedSavingTime.getMillis)
-  }
-
-  override def afterAll(): Unit = {
-    setCurrentMillisSystem()
-  }
 
   private def anAPIDefinition(context: ApiContext, versions: ApiVersion*) =
     ApiDefinition("service", "http://service", "name", "description", context, versions.toList, None, None, None)
@@ -73,6 +52,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll {
     val mockAppContext: AppConfig                            = mock[AppConfig]
 
     val underTest = new APIDefinitionService(
+      FixedClock.clock,
       mockAwsApiPublisher,
       mockAPIDefinitionRepository,
       mockNotificationService,
@@ -116,7 +96,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll {
 
     val apiDefinitionWithAllVersions = anAPIDefinition(context, allVersions: _*)
     val apiDefinition                = someAPIDefinition
-    val apiDefinitionWithSavingTime  = apiDefinition.copy(lastPublishedAt = Some(fixedSavingTime))
+    val apiDefinitionWithSavingTime  = apiDefinition.copy(lastPublishedAt = Some(instant))
 
     when(mockAPIDefinitionRepository.fetchByServiceName(apiDefinition.serviceName)).thenReturn(successful(Some(apiDefinition)))
     when(mockAwsApiPublisher.delete(apiDefinition)).thenReturn(successful(()))
@@ -184,7 +164,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll {
       val updatedStatus: ApiStatus                          = ApiStatus.BETA
       val existingAPIDefinition: ApiDefinition              = anAPIDefinition(apiContext, aVersion(apiVersion, existingStatus, Some(ApiAccess.PUBLIC)))
       val updatedAPIDefinition: ApiDefinition               = anAPIDefinition(apiContext, aVersion(apiVersion, updatedStatus, Some(ApiAccess.PUBLIC)))
-      val updatedAPIDefinitionWithSavingTime: ApiDefinition = updatedAPIDefinition.copy(lastPublishedAt = Some(fixedSavingTime))
+      val updatedAPIDefinitionWithSavingTime: ApiDefinition = updatedAPIDefinition.copy(lastPublishedAt = Some(instant))
 
       when(mockAPIDefinitionRepository.fetchByContext(apiContext)).thenReturn(successful(Some(existingAPIDefinition)))
       when(mockNotificationService.notifyOfStatusChange(existingAPIDefinition.name, apiVersion, existingStatus, updatedStatus)).thenReturn(unitSuccess)

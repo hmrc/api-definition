@@ -16,7 +16,8 @@
 
 package uk.gov.hmrc.apiplatform.modules.apis.domain.models
 
-import org.joda.time.DateTime
+import uk.gov.hmrc.apiplatform.modules.common.domain.services.InstantJsonFormatter
+import java.time.Instant
 
 case class ApiDefinition(
     serviceName: String,
@@ -27,12 +28,12 @@ case class ApiDefinition(
     versions: List[ApiVersion],
     requiresTrust: Option[Boolean],
     isTestSupport: Option[Boolean] = None,
-    lastPublishedAt: Option[DateTime] = None,
+    lastPublishedAt: Option[Instant] = None,
     categories: Option[List[ApiCategory]] = None
   )
 
 object ApiDefinition {
   import play.api.libs.json._
-  import DateTimeJsonFormatters._
+  import InstantJsonFormatter.WithTimeZone._
   implicit val formatAPIDefinition: OFormat[ApiDefinition] = Json.format[ApiDefinition]
 }

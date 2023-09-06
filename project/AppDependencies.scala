@@ -12,9 +12,7 @@ object AppDependencies {
     "uk.gov.hmrc.mongo" %% "hmrc-mongo-play-28"        % mongoPlayVersion,
     "uk.gov.hmrc"       %% "play-json-union-formatter" % "1.18.0-play-28",
     "uk.gov.hmrc"       %% "raml-tools"                % "1.23.0",
-    "org.typelevel"     %% "cats-core"                 % "2.7.0",
-    "com.beachape"      %% "enumeratum-play-json"      % "1.7.0",
-//    "org.scala-lang.modules"      % "scala-xml_2.12"      % "2.1.0"
+    "org.typelevel"     %% "cats-core"                 % "2.9.0"
   )
 
   private lazy val testDependencies = Seq(
