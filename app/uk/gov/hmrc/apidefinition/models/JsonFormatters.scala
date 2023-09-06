@@ -24,7 +24,6 @@ import uk.gov.hmrc.play.json.Union
 
 import uk.gov.hmrc.apidefinition.models.AWSParameterType._
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.APIVersion
 
 object JsonFormatters {
 
@@ -66,23 +65,8 @@ object JsonFormatters {
   implicit val formatAWSAPIInfo         = Json.format[AWSAPIInfo]
   implicit val formatAWSSwaggerDetails  = Json.format[AWSSwaggerDetails]
 
-  import play.api.libs.functional.syntax._ // Combinator syntax
-
-  val apiVersionReads: Reads[APIVersion] = (
-    (JsPath \ "version").read[ApiVersionNbr] and
-      (JsPath \ "status").read[ApiStatus] and
-      (JsPath \ "access").readNullable[ApiAccess] and
-      (JsPath \ "endpoints").read[List[Endpoint]] and
-      (JsPath \ "endpointsEnabled").readNullable[Boolean] and
-      (JsPath \ "awsRequestId").readNullable[String] and
-      ((JsPath \ "versionSource").read[ApiVersionSource] or Reads.pure[ApiVersionSource](ApiVersionSource.UNKNOWN))
-  )(uk.gov.hmrc.apiplatform.modules.apis.domain.models.APIVersion.apply _)
-
-  val apiVersionWrites: OWrites[APIVersion] = Json.writes[APIVersion]
-  implicit val formatApiVersion             = OFormat[APIVersion](apiVersionReads, apiVersionWrites)
 
   implicit val formatAPIDefinition: OFormat[APIDefinition] = Json.format[APIDefinition]
-
 
   implicit val formatExtendedAPIVersion                                    = Json.format[ExtendedAPIVersion]
   implicit val formatExtendedAPIDefinition: OFormat[ExtendedAPIDefinition] = Json.format[ExtendedAPIDefinition]

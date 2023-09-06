@@ -42,7 +42,7 @@ import uk.gov.hmrc.apiplatform.modules.apis.domain.models.AuthType
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiAccess
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.Endpoint
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiAvailability
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.APIVersion
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersion
 
 class APIDefinitionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll {
 
@@ -60,7 +60,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll {
     setCurrentMillisSystem()
   }
 
-  private def anAPIDefinition(context: ApiContext, versions: APIVersion*) =
+  private def anAPIDefinition(context: ApiContext, versions: ApiVersion*) =
     APIDefinition("service", "http://service", "name", "description", context, versions.toList, None, None, None)
 
   trait Setup {
@@ -81,10 +81,10 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll {
 
     val applicationId = randomUUID()
 
-    val versionWithoutAccessDefined: APIVersion         = aVersion(version = ApiVersionNbr("1.0"), access = None)
+    val versionWithoutAccessDefined: ApiVersion         = aVersion(version = ApiVersionNbr("1.0"), access = None)
     val publicVersion                                   = aVersion(version = ApiVersionNbr("2.0"), access = Some(ApiAccess.PUBLIC))
-    val privateVersionWithAppWhitelisted: APIVersion    = aVersion(version = ApiVersionNbr("3.0"), access = Some(ApiAccess.Private(List(applicationId.toString))))
-    val privateVersionWithoutAppWhitelisted: APIVersion = aVersion(version = ApiVersionNbr("3.1"), access = Some(ApiAccess.Private(List("OTHER_APP_ID"))))
+    val privateVersionWithAppWhitelisted: ApiVersion    = aVersion(version = ApiVersionNbr("3.0"), access = Some(ApiAccess.Private(List(applicationId.toString))))
+    val privateVersionWithoutAppWhitelisted: ApiVersion = aVersion(version = ApiVersionNbr("3.1"), access = Some(ApiAccess.Private(List("OTHER_APP_ID"))))
     val privateTrialVersionWithWhitelist                = aVersion(version = ApiVersionNbr("4.0"), access = Some(ApiAccess.Private(List(applicationId.toString), isTrial = Some(true))))
     val privateTrialVersionWithoutWhitelist             = aVersion(version = ApiVersionNbr("4.1"), access = Some(ApiAccess.Private(Nil, isTrial = Some(true))))
 
@@ -397,7 +397,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll {
   }
 
   private def aVersion(version: ApiVersionNbr, status: ApiStatus = ApiStatus.BETA, access: Option[ApiAccess]) =
-    APIVersion(version, status, access, List(Endpoint("/test", "test", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)))
+    ApiVersion(version, status, access, List(Endpoint("/test", "test", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)))
 
   private def someAPIDefinition: APIDefinition =
     APIDefinition(
@@ -407,7 +407,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll {
       "My Calendar API",
       context,
       List(
-        APIVersion(
+        ApiVersion(
           ApiVersionNbr("1.0"),
           ApiStatus.BETA,
           Some(ApiAccess.PUBLIC),

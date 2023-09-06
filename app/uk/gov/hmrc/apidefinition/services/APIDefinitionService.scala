@@ -72,7 +72,7 @@ class APIDefinitionService @Inject() (
   }
 
   private def checkAPIDefinitionForStatusChanges(apiDefinition: APIDefinition)(implicit hc: HeaderCarrier): Future[Unit] = {
-    def findStatusDifferences(existingAPIVersions: Seq[APIVersion], newAPIVersions: Seq[APIVersion]): Seq[(ApiVersionNbr, ApiStatus, ApiStatus)] =
+    def findStatusDifferences(existingAPIVersions: Seq[ApiVersion], newAPIVersions: Seq[ApiVersion]): Seq[(ApiVersionNbr, ApiStatus, ApiStatus)] =
       (existingAPIVersions ++ newAPIVersions)
         .groupBy(_.version)
         .filter(v => v._2.size == 2)
@@ -125,7 +125,7 @@ class APIDefinitionService @Inject() (
 
   def fetchAllPrivateAPIs(): Future[Seq[APIDefinition]] = {
 
-    def hasPrivateAccess(apiVersion: APIVersion) = apiVersion.access match {
+    def hasPrivateAccess(apiVersion: ApiVersion) = apiVersion.access match {
       case Some(ApiAccess.Private(_, _)) => true
       case _                            => false
     }

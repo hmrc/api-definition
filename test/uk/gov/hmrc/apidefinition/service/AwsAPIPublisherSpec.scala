@@ -35,7 +35,7 @@ import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 
 class AwsAPIPublisherSpec extends AsyncHmrcSpec {
 
-  private def anAPIVersion(version: String, status: ApiStatus = ApiStatus.PROTOTYPED) = APIVersion(
+  private def anAPIVersion(version: String, status: ApiStatus = ApiStatus.PROTOTYPED) = ApiVersion(
     ApiVersionNbr(version),
     status,
     Some(ApiAccess.PUBLIC),
@@ -56,7 +56,7 @@ class AwsAPIPublisherSpec extends AsyncHmrcSpec {
       name: String = UUID.randomUUID().toString,
       context: ApiContext = ApiContext.random,
       serviceBaseUrl: String = s"https://$host",
-      versions: List[APIVersion] = List(anAPIVersion("2.0"))
+      versions: List[ApiVersion] = List(anAPIVersion("2.0"))
     ): APIDefinition = {
     APIDefinition(
       UUID.randomUUID().toString,

@@ -47,9 +47,9 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
         requiresTrust = Some(false)
       )
 
-    private def generateApiVersions(versions: List[String]): List[APIVersion] = {
+    private def generateApiVersions(versions: List[String]): List[ApiVersion] = {
       versions.map(version => {
-        APIVersion(
+        ApiVersion(
           ApiVersionNbr(version),
           ApiStatus.PROTOTYPED,
           Some(ApiAccess.PUBLIC),

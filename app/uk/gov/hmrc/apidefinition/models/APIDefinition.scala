@@ -19,7 +19,7 @@ package uk.gov.hmrc.apidefinition.models
 import org.joda.time.DateTime
 
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.APIVersion
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersion
 
 case class APIDefinition(
     serviceName: String,
@@ -27,7 +27,7 @@ case class APIDefinition(
     name: String,
     description: String,
     context: ApiContext,
-    versions: List[APIVersion],
+    versions: List[ApiVersion],
     requiresTrust: Option[Boolean],
     isTestSupport: Option[Boolean] = None,
     lastPublishedAt: Option[DateTime] = None,

@@ -85,10 +85,10 @@ class DocumentationService @Inject() (
       apiDefinitionRepository.fetchByServiceName(serviceName).flatMap(_.fold(failure)(_.pure[Future]))
     }
 
-    def getApiVersionOrThrow(apiDefinition: APIDefinition): Future[Option[APIVersion]] = {
+    def getApiVersionOrThrow(apiDefinition: APIDefinition): Future[Option[ApiVersion]] = {
       import cats.implicits._
 
-      val failure = Future.failed[Option[APIVersion]](new NotFoundException(s"Version $version of $serviceName not found"))
+      val failure = Future.failed[Option[ApiVersion]](new NotFoundException(s"Version $version of $serviceName not found"))
 
       version match {
         case ApiVersionNbr("common") => None.pure[Future]

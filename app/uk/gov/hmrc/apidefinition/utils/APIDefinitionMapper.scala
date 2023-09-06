@@ -29,7 +29,7 @@ class APIDefinitionMapper @Inject() (val appContext: AppConfig) {
 
   def mapLegacyStatuses(apiDefinition: APIDefinition): APIDefinition = {
 
-    def mapVersion(version: APIVersion): APIVersion = {
+    def mapVersion(version: ApiVersion): ApiVersion = {
       version.status match {
         case ApiStatus.PROTOTYPED =>
           version.copy(status = ApiStatus.BETA, endpointsEnabled = version.endpointsEnabled.orElse(Some(buildProductionUrlsForPrototypedAPIs)))

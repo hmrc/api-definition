@@ -24,7 +24,7 @@ import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 
 object AWSPayloadHelper {
 
-  def buildAWSSwaggerDetails(apiName: String, apiVersion: APIVersion, basePath: ApiContext, host: String): AWSSwaggerDetails = {
+  def buildAWSSwaggerDetails(apiName: String, apiVersion: ApiVersion, basePath: ApiContext, host: String): AWSSwaggerDetails = {
     AWSSwaggerDetails(
       paths = buildAWSPaths(apiVersion),
       info = AWSAPIInfo(apiName, apiVersion.version),
@@ -33,7 +33,7 @@ object AWSPayloadHelper {
     )
   }
 
-  private def buildAWSPaths(apiVersion: APIVersion): Map[String, Map[String, AWSHttpVerbDetails]] = {
+  private def buildAWSPaths(apiVersion: ApiVersion): Map[String, Map[String, AWSHttpVerbDetails]] = {
 
     def buildAWSHttpVerbDetails(e: Endpoint): AWSHttpVerbDetails = {
       AWSHttpVerbDetails(

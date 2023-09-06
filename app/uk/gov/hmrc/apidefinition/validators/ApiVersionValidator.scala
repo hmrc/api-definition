@@ -24,9 +24,9 @@ import cats.implicits._
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 
 @Singleton
-class ApiVersionValidator @Inject() (apiEndpointValidator: ApiEndpointValidator)(implicit override val ec: ExecutionContext) extends Validator[APIVersion] {
+class ApiVersionValidator @Inject() (apiEndpointValidator: ApiEndpointValidator)(implicit override val ec: ExecutionContext) extends Validator[ApiVersion] {
 
-  def validate(ec: String)(implicit version: APIVersion): HMRCValidated[APIVersion] = {
+  def validate(ec: String)(implicit version: ApiVersion): HMRCValidated[ApiVersion] = {
     val errorContext: String = if (version.version.value.isEmpty) ec else s"$ec version '${version.version}'"
     (
       validateThat(_.version.value.nonEmpty, _ => s"Field 'versions.version' is required $errorContext"),
@@ -36,7 +36,7 @@ class ApiVersionValidator @Inject() (apiEndpointValidator: ApiEndpointValidator)
     ).mapN((_, _, _, _) => version)
   }
 
-  private def validateStatus(errorContext: String)(implicit version: APIVersion): HMRCValidated[APIVersion] = {
+  private def validateStatus(errorContext: String)(implicit version: ApiVersion): HMRCValidated[ApiVersion] = {
     version.status match {
       case ApiStatus.ALPHA | ApiStatus.BETA | ApiStatus.STABLE =>
         validateThat(_ => version.endpointsEnabled.nonEmpty, _ => s"Field 'versions.endpointsEnabled' is required $errorContext")

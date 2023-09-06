@@ -103,7 +103,7 @@ class ApiDefinitionValidator @Inject() (
     !definition.versions.map(_.version).groupBy(identity).view.mapValues(_.size).exists(_._2 > 1)
   }
 
-  private def validateAllVersions(errorContext: String)(apiDefinition: APIDefinition): HMRCValidated[List[APIVersion]] = {
-    validateAll[APIVersion](u => apiVersionValidator.validate(errorContext)(u))(apiDefinition.versions)
+  private def validateAllVersions(errorContext: String)(apiDefinition: APIDefinition): HMRCValidated[List[ApiVersion]] = {
+    validateAll[ApiVersion](u => apiVersionValidator.validate(errorContext)(u))(apiDefinition.versions)
   }
 }

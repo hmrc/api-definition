@@ -24,7 +24,7 @@ import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 class APIDefinitionMapperSpec extends AsyncHmrcSpec {
 
   private def version(version: String, status: ApiStatus, endpointsEnabled: Option[Boolean] = None) = {
-    APIVersion(
+    ApiVersion(
       ApiVersionNbr(version),
       status,
       None,
@@ -33,7 +33,7 @@ class APIDefinitionMapperSpec extends AsyncHmrcSpec {
     )
   }
 
-  private def definition(versions: List[APIVersion]) = {
+  private def definition(versions: List[ApiVersion]) = {
     APIDefinition("calendar", "http://calendar", "Calendar API", "My Calendar API", ApiContext("calendar"), versions, None)
   }
 

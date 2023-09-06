@@ -52,7 +52,7 @@ class AWSPayloadHelperSpec extends AsyncHmrcSpec {
         queryParameters = Some(List(QueryParameter(name = "surname", required = true)))
       )
 
-      val apiVersion = APIVersion(
+      val apiVersion = ApiVersion(
         version = ApiVersionNbr("1.0"),
         status = ApiStatus.PUBLISHED,
         access = Some(ApiAccess.PUBLIC),

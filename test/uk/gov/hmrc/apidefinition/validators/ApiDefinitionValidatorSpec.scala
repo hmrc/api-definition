@@ -77,7 +77,7 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
       "Calendar API",
       "My Calendar API",
       ApiContext("individuals/calendar"),
-      List(APIVersion(
+      List(ApiVersion(
         ApiVersionNbr("1.0"),
         ApiStatus.PROTOTYPED,
         Some(ApiAccess.PUBLIC),
@@ -106,25 +106,25 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
     "fail validation if a version number is referenced more than once" in new Setup {
       lazy val apiDefinition: APIDefinition = calendarApi.copy(versions =
         List(
-          APIVersion(
+          ApiVersion(
             ApiVersionNbr("1.0"),
             ApiStatus.PROTOTYPED,
             Some(ApiAccess.PUBLIC),
             List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
           ),
-          APIVersion(
+          ApiVersion(
             ApiVersionNbr("1.1"),
             ApiStatus.PROTOTYPED,
             Some(ApiAccess.PUBLIC),
             List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
           ),
-          APIVersion(
+          ApiVersion(
             ApiVersionNbr("1.1"),
             ApiStatus.PROTOTYPED,
             Some(ApiAccess.PUBLIC),
             List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
           ),
-          APIVersion(
+          ApiVersion(
             ApiVersionNbr("1.2"),
             ApiStatus.PROTOTYPED,
             Some(ApiAccess.PUBLIC),
@@ -161,21 +161,21 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
       assertValidationFailure(apiDefinition, List("Field 'categories' should exist and not be empty for API 'Calendar API'"))
     }
 
-    "fail validation when no APIVersion is provided" in new Setup {
+    "fail validation when no ApiVersion is provided" in new Setup {
       lazy val apiDefinition: APIDefinition = calendarApi.copy(versions = Nil)
       assertValidationFailure(apiDefinition, List("Field 'versions' must not be empty for API 'Calendar API'"))
     }
 
     "fail validation when if there is an API version without version number" in new Setup {
-      lazy val versions: List[APIVersion]   =
+      lazy val versions: List[ApiVersion]   =
         List(
-          APIVersion(
+          ApiVersion(
             ApiVersionNbr("1.0"),
             ApiStatus.PROTOTYPED,
             Some(ApiAccess.PUBLIC),
             List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
           ),
-          APIVersion(
+          ApiVersion(
             ApiVersionNbr(""),
             ApiStatus.PROTOTYPED,
             Some(ApiAccess.PUBLIC),
@@ -188,7 +188,7 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
     }
 
     "fail validation when no Endpoint is provided" in new Setup {
-      lazy val apiDefinition: APIDefinition = calendarApi.copy(versions = List(APIVersion(ApiVersionNbr("1.0"), ApiStatus.PROTOTYPED, Some(ApiAccess.PUBLIC), Nil)))
+      lazy val apiDefinition: APIDefinition = calendarApi.copy(versions = List(ApiVersion(ApiVersionNbr("1.0"), ApiStatus.PROTOTYPED, Some(ApiAccess.PUBLIC), Nil)))
 
       assertValidationFailure(apiDefinition, List("Field 'versions.endpoints' must not be empty for API 'Calendar API' version '1.0'"))
     }
@@ -202,7 +202,7 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
       scope = Some("read:money")
     )
 
-    val moneyApiVersion = APIVersion(
+    val moneyApiVersion = ApiVersion(
       version = ApiVersionNbr("1.0"),
       status = ApiStatus.PROTOTYPED,
       endpoints = List(moneyEndpoint)

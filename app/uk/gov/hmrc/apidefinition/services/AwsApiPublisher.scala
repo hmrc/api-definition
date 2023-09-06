@@ -68,7 +68,7 @@ class AwsApiPublisher @Inject() (val awsAPIPublisherConnector: AWSAPIPublisherCo
       apiDefinitionName: String,
       serviceBaseUrl: String,
       context: ApiContext,
-      apiVersion: APIVersion
+      apiVersion: ApiVersion
     )(implicit hc: HeaderCarrier
     ): Future[Unit] = {
     val hostRegex(host) = serviceBaseUrl

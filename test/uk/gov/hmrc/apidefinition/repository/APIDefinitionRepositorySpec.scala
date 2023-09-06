@@ -31,20 +31,16 @@ import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 
-import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ResourceThrottlingTier
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.HttpMethod
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.AuthType
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.Endpoint
+import uk.gov.hmrc.apidefinition.models.APIDefinition
 
 class APIDefinitionRepositorySpec extends AsyncHmrcSpec
     with DefaultPlayMongoRepositorySupport[APIDefinition]
     with GuiceOneAppPerSuite with BeforeAndAfterEach
     with BeforeAndAfterAll with Eventually {
 
-  private def withSource(source: ApiVersionSource)(apiVersion: APIVersion): APIVersion = {
+  private def withSource(source: ApiVersionSource)(apiVersion: ApiVersion): ApiVersion = {
     apiVersion.copy(versionSource = source)
   }
 
@@ -53,14 +49,14 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
   }
   override implicit lazy val app: Application                                                 = appBuilder.build()
 
-  private val helloApiVersion = APIVersion(
+  private val helloApiVersion = ApiVersion(
     version = ApiVersionNbr("1.0"),
     status = ApiStatus.PROTOTYPED,
     access = None,
     endpoints = List(Endpoint("/world", "Say Hello to the World!", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
   )
 
-  private val calendarApiVersion = APIVersion(
+  private val calendarApiVersion = ApiVersion(
     version = ApiVersionNbr("2.0"),
     status = ApiStatus.PUBLISHED,
     access = None,
@@ -87,7 +83,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
     requiresTrust = None
   )
 
-  private val individualIncomeTaxApiVersion = APIVersion(
+  private val individualIncomeTaxApiVersion = ApiVersion(
     version = ApiVersionNbr("1.0"),
     status = ApiStatus.PUBLISHED,
     access = None,
@@ -104,7 +100,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
     requiresTrust = None
   )
 
-  private val individualNIApiVersion = APIVersion(
+  private val individualNIApiVersion = ApiVersion(
     version = ApiVersionNbr("1.0"),
     status = ApiStatus.PUBLISHED,
     access = None,
