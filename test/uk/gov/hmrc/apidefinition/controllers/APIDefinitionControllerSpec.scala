@@ -333,7 +333,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
         versions = List(APIVersion(
           ApiVersionNbr("1.0"),
           ApiStatus.STABLE,
-          Some(PublicAPIAccess()),
+          Some(ApiAccess.PUBLIC),
           List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
           Some(true)
         )),
@@ -446,7 +446,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
         versions = List(APIVersion(
           ApiVersionNbr("1.0"),
           ApiStatus.STABLE,
-          Some(PrivateAPIAccess(List("app-id-1", "app-id-2"))),
+          Some(ApiAccess.Private(List("app-id-1", "app-id-2"))),
           List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
           Some(true)
         )),
@@ -516,7 +516,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
         versions = List(APIVersion(
           ApiVersionNbr("1.0"),
           ApiStatus.BETA,
-          Some(PublicAPIAccess()),
+          Some(ApiAccess.PUBLIC),
           List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
           Some(true)
         )),

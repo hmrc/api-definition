@@ -36,13 +36,14 @@ import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersionNbr
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ResourceThrottlingTier
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.HttpMethod
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.AuthType
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiAccess
 
 class AwsAPIPublisherSpec extends AsyncHmrcSpec {
 
   private def anAPIVersion(version: String, status: ApiStatus = ApiStatus.PROTOTYPED) = APIVersion(
     ApiVersionNbr(version),
     status,
-    Some(PublicAPIAccess()),
+    Some(ApiAccess.PUBLIC),
     List(
       Endpoint(
         "/today",

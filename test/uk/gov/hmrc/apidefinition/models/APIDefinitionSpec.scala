@@ -21,16 +21,9 @@ import play.api.libs.json.Json
 import uk.gov.hmrc.apidefinition.models.JsonFormatters._
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiCategory
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiAccess
 
 class APIDefinitionSpec extends AsyncHmrcSpec {
-
-  "APIAccess" should {
-    "marshall from json for private access without whitelistedApplicationIds" in {
-      val jsonText = """{"type": "PRIVATE"}"""
-
-      (Json.parse(jsonText)).as[APIAccess]
-    }
-  }
 
   "APIDefinition" should {
     def anApiDefinition(accessType: String = "PUBLIC", whitelistedApplicationIds: Option[String] = None, isTrial: Option[Boolean] = None, categories: Option[String] = None) = {
@@ -71,20 +64,21 @@ class APIDefinitionSpec extends AsyncHmrcSpec {
     "read from JSON when the API access type is PUBLIC and there is no whitelist" in {
       val apiDefinition = anApiDefinition()
 
-      apiDefinition.versions.head.access shouldBe Some(PublicAPIAccess())
+      apiDefinition.versions.head.access shouldBe Some(ApiAccess.PUBLIC)
     }
 
     "read from JSON when the API access type is PUBLIC and there is an empty whitelist" in {
       val apiDefinition = anApiDefinition(whitelistedApplicationIds = Some("[]"))
 
-      apiDefinition.versions.head.access shouldBe Some(PublicAPIAccess())
+      apiDefinition.versions.head.access shouldBe Some(ApiAccess.PUBLIC)
     }
 
-    "fail to read from JSON when the API access type is PUBLIC and there is a non-empty whitelist" in {
-      intercept[RuntimeException] {
-        anApiDefinition(whitelistedApplicationIds = Some("[\"an-application-id\"]"))
-      }
-    }
+    // This no longer applies - we just ignore the whitelisted app ids like we do for all other 'odd' data
+    // "fail to read from JSON when the API access type is PUBLIC and there is a non-empty whitelist" in {
+    //   intercept[RuntimeException] {
+    //     anApiDefinition(whitelistedApplicationIds = Some("[\"an-application-id\"]"))
+    //   }
+    // }
 
     "read from JSON when the API access type is PRIVATE and there is an empty whitelist" in {
       val apiDefinition = anApiDefinition(
@@ -92,7 +86,7 @@ class APIDefinitionSpec extends AsyncHmrcSpec {
         whitelistedApplicationIds = Some("[]")
       )
 
-      apiDefinition.versions.head.access shouldBe Some(PrivateAPIAccess(Nil))
+      apiDefinition.versions.head.access shouldBe Some(ApiAccess.Private(Nil))
     }
 
     "read from JSON when the API access type is PRIVATE and there is an empty whitelist and isTrial is true" in {
@@ -102,19 +96,19 @@ class APIDefinitionSpec extends AsyncHmrcSpec {
         isTrial = Some(true)
       )
 
-      apiDefinition.versions.head.access shouldBe Some(PrivateAPIAccess(Nil, Some(true)))
+      apiDefinition.versions.head.access shouldBe Some(ApiAccess.Private(Nil, Some(true)))
     }
 
     "read from JSON when the API access type is PRIVATE and there is a non-empty whitelist" in {
       val apiDefinition = anApiDefinition(accessType = "PRIVATE", whitelistedApplicationIds = Some("[\"an-application-id\"]"))
 
-      apiDefinition.versions.head.access shouldBe Some(PrivateAPIAccess(List("an-application-id")))
+      apiDefinition.versions.head.access shouldBe Some(ApiAccess.Private(List("an-application-id")))
     }
 
     "no longer fail to read from JSON when the API access type is PRIVATE and there is no whitelist" in {
       val apiDefinition = anApiDefinition(accessType = "PRIVATE", whitelistedApplicationIds = None)
 
-      apiDefinition.versions.head.access shouldBe Some(PrivateAPIAccess(List.empty))
+      apiDefinition.versions.head.access shouldBe Some(ApiAccess.Private(List.empty))
     }
 
     "read from JSON when the API categories are defined but empty" in {

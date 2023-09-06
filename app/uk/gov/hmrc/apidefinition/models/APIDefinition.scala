@@ -16,15 +16,9 @@
 
 package uk.gov.hmrc.apidefinition.models
 
-import enumeratum.{Enum, EnumEntry, PlayJsonEnum}
 import org.joda.time.DateTime
 
-import play.api.libs.json.{JsObject, Json, Reads}
-
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiStatus
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
-
-// scalastyle:off number.of.types
 
 case class APIDefinition(
     serviceName: String,
@@ -59,12 +53,12 @@ case class ExtendedAPIVersion(
     sandboxAvailability: Option[APIAvailability]
   )
 
-case class APIAvailability(endpointsEnabled: Boolean, access: APIAccess, loggedIn: Boolean, authorised: Boolean)
+case class APIAvailability(endpointsEnabled: Boolean, access: ApiAccess, loggedIn: Boolean, authorised: Boolean)
 
 case class APIVersion(
     version: ApiVersionNbr,
     status: ApiStatus,
-    access: Option[APIAccess] = Some(PublicAPIAccess()),
+    access: Option[ApiAccess] = Some(ApiAccess.PUBLIC),
     endpoints: List[Endpoint],
     endpointsEnabled: Option[Boolean] = None,
     awsRequestId: Option[String] = None,
@@ -79,32 +73,5 @@ case class Endpoint(
     authType: AuthType,
     throttlingTier: ResourceThrottlingTier,
     scope: Option[String] = None,
-    queryParameters: Option[List[Parameter]] = None
+    queryParameters: Option[List[QueryParameter]] = None
   )
-
-// Query Parameter
-case class Parameter(name: String, required: Boolean = false)
-
-case class PublishingException(message: String) extends Exception(message)
-
-object APIAccessType extends Enumeration {
-  type APIAccessType = Value
-  val PRIVATE, PUBLIC = Value
-}
-
-trait APIAccess
-
-case class PublicAPIAccess() extends APIAccess
-
-object PublicAPIAccess {
-  implicit val strictReads = Reads[PublicAPIAccess](json => json.validate[JsObject].filter(_.values.isEmpty).map(_ => PublicAPIAccess()))
-}
-
-case class PrivateAPIAccess(whitelistedApplicationIds: List[String], isTrial: Option[Boolean] = None) extends APIAccess
-
-object PrivateAPIAccess {
-  implicit val format2 = Json.format[PrivateAPIAccess]
-}
-
-
-// scalastyle:on number.of.types

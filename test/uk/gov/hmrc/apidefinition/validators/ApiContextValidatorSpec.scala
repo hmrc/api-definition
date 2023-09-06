@@ -51,7 +51,7 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
         APIVersion(
           ApiVersionNbr(version),
           ApiStatus.PROTOTYPED,
-          Some(PublicAPIAccess()),
+          Some(ApiAccess.PUBLIC),
           List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
         )
       })

@@ -22,7 +22,8 @@ import scala.util.matching.Regex
 
 import cats.implicits._
 
-import uk.gov.hmrc.apidefinition.models.{Endpoint, Parameter}
+import uk.gov.hmrc.apidefinition.models.{Endpoint}
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.QueryParameter
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.AuthType
 
 @Singleton
@@ -72,8 +73,8 @@ class ApiEndpointValidator @Inject() (queryParameterValidator: QueryParameterVal
       .combineAll
   }
 
-  private def validateQueryParameters(errorContext: String, endpoint: Endpoint): HMRCValidated[List[Parameter]] = {
-    validateAll[Parameter](u => queryParameterValidator.validate(errorContext)(u))(endpoint.queryParameters.getOrElse(Seq()))
+  private def validateQueryParameters(errorContext: String, endpoint: Endpoint): HMRCValidated[List[QueryParameter]] = {
+    validateAll[QueryParameter](u => queryParameterValidator.validate(errorContext)(u))(endpoint.queryParameters.getOrElse(Seq()))
   }
 
 }

@@ -24,6 +24,8 @@ import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiStatus
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ResourceThrottlingTier
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.HttpMethod
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.AuthType
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiAccess
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.QueryParameter
 
 class AWSPayloadHelperSpec extends AsyncHmrcSpec {
 
@@ -38,9 +40,9 @@ class AWSPayloadHelperSpec extends AsyncHmrcSpec {
   )
 
   private val queryParameters = List(
-    Parameter(name = "city"),
-    Parameter(name = "address", required = true),
-    Parameter(name = "postcode", required = true)
+    QueryParameter(name = "city"),
+    QueryParameter(name = "address", required = true),
+    QueryParameter(name = "postcode", required = true)
   )
 
   private val endpointWithQueryParameters = endpoint.copy(queryParameters = Some(queryParameters))
@@ -54,13 +56,13 @@ class AWSPayloadHelperSpec extends AsyncHmrcSpec {
         authType = AuthType.USER,
         throttlingTier = ResourceThrottlingTier.UNLIMITED,
         scope = Some("read:user"),
-        queryParameters = Some(List(Parameter(name = "surname", required = true)))
+        queryParameters = Some(List(QueryParameter(name = "surname", required = true)))
       )
 
       val apiVersion = APIVersion(
         version = ApiVersionNbr("1.0"),
         status = ApiStatus.PUBLISHED,
-        access = Some(PublicAPIAccess()),
+        access = Some(ApiAccess.PUBLIC),
         endpoints = List(populatedEndpoint),
         endpointsEnabled = Some(true)
       )

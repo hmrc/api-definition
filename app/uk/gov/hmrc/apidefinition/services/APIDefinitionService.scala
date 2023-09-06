@@ -31,6 +31,11 @@ import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 
+object APIDefinitionService {
+  
+  case class PublishingException(message: String) extends Exception(message)
+}
+
 @Singleton
 class APIDefinitionService @Inject() (
     awsApiPublisher: AwsApiPublisher,
@@ -46,7 +51,7 @@ class APIDefinitionService @Inject() (
       (for {
         _ <- awsApiPublisher.publish(apiDefinition)
       } yield ()) recoverWith {
-        case e: PublishingException =>
+        case e: APIDefinitionService.PublishingException =>
           logger.error(s"Failed to create or update API [${apiDefinition.name}]", e)
           failed(new RuntimeException(s"Could not publish API: [${apiDefinition.name}]"))
       }
@@ -121,7 +126,7 @@ class APIDefinitionService @Inject() (
   def fetchAllPrivateAPIs(): Future[Seq[APIDefinition]] = {
 
     def hasPrivateAccess(apiVersion: APIVersion) = apiVersion.access match {
-      case Some(PrivateAPIAccess(_, _)) => true
+      case Some(ApiAccess.Private(_, _)) => true
       case _                            => false
     }
 
@@ -146,8 +151,8 @@ class APIDefinitionService @Inject() (
   }
 
   private def filterAPIForApplications(alsoIncludePrivateTrials: Boolean, applicationIds: String*): APIDefinition => Option[APIDefinition] = { api =>
-    val filteredVersions = api.versions.filter(_.access.getOrElse(PublicAPIAccess) match {
-      case access: PrivateAPIAccess =>
+    val filteredVersions = api.versions.filter(_.access.getOrElse(ApiAccess.PUBLIC) match {
+      case access: ApiAccess.Private =>
         access.whitelistedApplicationIds.exists(s => applicationIds.contains(s)) || (access.isTrial.contains(true) && alsoIncludePrivateTrials)
       case _                        => true
     })

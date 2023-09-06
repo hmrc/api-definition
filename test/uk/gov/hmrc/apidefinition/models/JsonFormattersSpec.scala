@@ -20,7 +20,7 @@ import org.joda.time.{DateTime, DateTimeZone}
 
 import play.api.libs.json.{JsError, JsNumber, Json}
 
-import uk.gov.hmrc.apidefinition.models.JsonFormatters.{apiAccessWrites, dateTimeReads}
+import uk.gov.hmrc.apidefinition.models.JsonFormatters.{dateTimeReads}
 import uk.gov.hmrc.apidefinition.utils.HmrcSpec
 
 class JsonFormattersSpec extends HmrcSpec {
@@ -33,16 +33,6 @@ class JsonFormattersSpec extends HmrcSpec {
 
       val expectedErrorMessage = JsError(s"Unexpected format for DateTime: $dateTime")
       Json.fromJson[DateTime](json = dateTime)(fjs = dateTimeReads) shouldBe expectedErrorMessage
-    }
-
-    "write isTrial when it is defined in the API access" in {
-      val apiAccess = PrivateAPIAccess(List("A", "B"), isTrial = Some(false))
-      apiAccessWrites.writes(apiAccess).toString shouldBe """{"type":"PRIVATE","whitelistedApplicationIds":["A","B"],"isTrial":false}"""
-    }
-
-    "omit isTrial when it is not defined in the API access" in {
-      val apiAccess = PrivateAPIAccess(List("A", "B"), isTrial = None)
-      apiAccessWrites.writes(apiAccess).toString shouldBe """{"type":"PRIVATE","whitelistedApplicationIds":["A","B"]}"""
     }
   }
 

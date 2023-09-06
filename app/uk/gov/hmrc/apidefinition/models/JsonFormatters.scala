@@ -19,21 +19,17 @@ package uk.gov.hmrc.apidefinition.models
 import org.joda.time.DateTime
 import org.joda.time.format.ISODateTimeFormat
 
-import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import uk.gov.hmrc.play.json.Union
-import scala.language.postfixOps
 
-import uk.gov.hmrc.apidefinition.models.APIAccessType._
 import uk.gov.hmrc.apidefinition.models.AWSParameterType._
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.AuthType
 
 object JsonFormatters {
 
   implicit val formatApiCategoryDetails     = Json.format[ApiCategoryDetails]
   
-  implicit val formatAPIAccessType          = EnumJson.enumFormat(APIAccessType)
+  // implicit val formatAPIAccessType          = EnumJson.enumFormat(APIAccessType)
 
   private val dateTimeFormatter = ISODateTimeFormat.dateTime().withZoneUTC()
 
@@ -56,37 +52,6 @@ object JsonFormatters {
 
   implicit val dateTimeFormats = Format(fjs = dateTimeReads, tjs = dateTimeWrites)
 
-  implicit object apiAccessWrites extends Writes[APIAccess] {
-
-    private val privApiWrites: OWrites[(APIAccessType, List[String], Option[Boolean])] = (
-      (JsPath \ "type").write[APIAccessType] and
-        (JsPath \ "whitelistedApplicationIds").write[List[String]] and
-        (JsPath \ "isTrial").writeNullable[Boolean]
-    ).tupled
-
-    override def writes(access: APIAccess) = access match {
-      case _: PublicAPIAccess        => Json.obj("type" -> PUBLIC)
-      case privApi: PrivateAPIAccess => privApiWrites.writes((PRIVATE, privApi.whitelistedApplicationIds, privApi.isTrial))
-      case acc                       => throw new RuntimeException(s"Unknown API Access $acc")
-    }
-  }
-
-  implicit val apiAccessReads: Reads[APIAccess] =
-    (
-      (JsPath \ "type").read[APIAccessType.APIAccessType] and
-        (JsPath \ "whitelistedApplicationIds").readNullable[List[String]] and
-        (JsPath \ "isTrial").readNullable[Boolean] tupled
-    ) map {
-      case (PUBLIC, None | Some(Nil), _)                                     => PublicAPIAccess()
-      case (PRIVATE, Some(whitelistedApplicationIds: List[String]), isTrial) => PrivateAPIAccess(whitelistedApplicationIds, isTrial)
-      case (PRIVATE, None, isTrial)                                          => PrivateAPIAccess(Nil, isTrial)
-      case unknownApiAccess                                                  => throw new RuntimeException(s"Unknown API Access $unknownApiAccess")
-    }
-
-
-  import play.api.libs.functional.syntax._ // Combinator syntax
-
-  implicit val formatParameter = Json.format[Parameter]
   implicit val formatEndpoint  = Json.format[Endpoint]
 
   implicit val formatAWSParameterType  = EnumJson.enumFormat(AWSParameterType)
@@ -103,24 +68,27 @@ object JsonFormatters {
   implicit val formatAWSAPIInfo         = Json.format[AWSAPIInfo]
   implicit val formatAWSSwaggerDetails  = Json.format[AWSSwaggerDetails]
 
-  implicit val formatAPIAvailability                                       = Json.format[APIAvailability]
-  implicit val formatExtendedAPIVersion                                    = Json.format[ExtendedAPIVersion]
-  implicit val formatExtendedAPIDefinition: OFormat[ExtendedAPIDefinition] = Json.format[ExtendedAPIDefinition]
+  import play.api.libs.functional.syntax._ // Combinator syntax
 
   val apiVersionReads: Reads[APIVersion] = (
     (JsPath \ "version").read[ApiVersionNbr] and
       (JsPath \ "status").read[ApiStatus] and
-      (JsPath \ "access").readNullable[APIAccess] and
+      (JsPath \ "access").readNullable[ApiAccess] and
       (JsPath \ "endpoints").read[List[Endpoint]] and
       (JsPath \ "endpointsEnabled").readNullable[Boolean] and
       (JsPath \ "awsRequestId").readNullable[String] and
-      (JsPath \ "versionSource").readNullable[ApiVersionSource].map(_.fold[ApiVersionSource](ApiVersionSource.UNKNOWN)(identity))
+      ((JsPath \ "versionSource").read[ApiVersionSource] or Reads.pure[ApiVersionSource](ApiVersionSource.UNKNOWN))
   )(APIVersion.apply _)
 
   val apiVersionWrites: OWrites[APIVersion] = Json.writes[APIVersion]
   implicit val formatApiVersion             = OFormat[APIVersion](apiVersionReads, apiVersionWrites)
 
   implicit val formatAPIDefinition: OFormat[APIDefinition] = Json.format[APIDefinition]
+
+  implicit val formatAPIAvailability                                       = Json.format[APIAvailability]
+  implicit val formatExtendedAPIVersion                                    = Json.format[ExtendedAPIVersion]
+  implicit val formatExtendedAPIDefinition: OFormat[ExtendedAPIDefinition] = Json.format[ExtendedAPIDefinition]
+
 
 }
 

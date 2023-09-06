@@ -21,6 +21,7 @@ import uk.gov.hmrc.apidefinition.models.AWSAPIDefinition._
 import uk.gov.hmrc.apidefinition.models._
 import scala.language.postfixOps
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiContext
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.QueryParameter
 
 object AWSPayloadHelper {
 
@@ -74,7 +75,7 @@ object AWSPayloadHelper {
 
   def buildAWSQueryParameters(endpoint: Endpoint): Seq[AWSQueryParameter] = {
     endpoint.queryParameters.getOrElse(Seq()).map {
-      p: Parameter => AWSQueryParameter(name = p.name, required = p.required)
+      p: QueryParameter => AWSQueryParameter(name = p.name, required = p.required)
     }.sortBy(_.name)
   }
 }

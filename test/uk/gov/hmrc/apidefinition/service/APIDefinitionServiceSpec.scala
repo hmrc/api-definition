@@ -39,6 +39,7 @@ import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersionNbr
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ResourceThrottlingTier
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.HttpMethod
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.AuthType
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiAccess
 
 class APIDefinitionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll {
 
@@ -78,11 +79,11 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll {
     val applicationId = randomUUID()
 
     val versionWithoutAccessDefined: APIVersion         = aVersion(version = ApiVersionNbr("1.0"), access = None)
-    val publicVersion                                   = aVersion(version = ApiVersionNbr("2.0"), access = Some(PublicAPIAccess()))
-    val privateVersionWithAppWhitelisted: APIVersion    = aVersion(version = ApiVersionNbr("3.0"), access = Some(PrivateAPIAccess(List(applicationId.toString))))
-    val privateVersionWithoutAppWhitelisted: APIVersion = aVersion(version = ApiVersionNbr("3.1"), access = Some(PrivateAPIAccess(List("OTHER_APP_ID"))))
-    val privateTrialVersionWithWhitelist                = aVersion(version = ApiVersionNbr("4.0"), access = Some(PrivateAPIAccess(List(applicationId.toString), isTrial = Some(true))))
-    val privateTrialVersionWithoutWhitelist             = aVersion(version = ApiVersionNbr("4.1"), access = Some(PrivateAPIAccess(Nil, isTrial = Some(true))))
+    val publicVersion                                   = aVersion(version = ApiVersionNbr("2.0"), access = Some(ApiAccess.PUBLIC))
+    val privateVersionWithAppWhitelisted: APIVersion    = aVersion(version = ApiVersionNbr("3.0"), access = Some(ApiAccess.Private(List(applicationId.toString))))
+    val privateVersionWithoutAppWhitelisted: APIVersion = aVersion(version = ApiVersionNbr("3.1"), access = Some(ApiAccess.Private(List("OTHER_APP_ID"))))
+    val privateTrialVersionWithWhitelist                = aVersion(version = ApiVersionNbr("4.0"), access = Some(ApiAccess.Private(List(applicationId.toString), isTrial = Some(true))))
+    val privateTrialVersionWithoutWhitelist             = aVersion(version = ApiVersionNbr("4.1"), access = Some(ApiAccess.Private(Nil, isTrial = Some(true))))
 
     val allVersions = List(
       versionWithoutAccessDefined,
@@ -94,7 +95,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll {
     )
 
     val versionWithoutAccessDefinedAvailability =
-      APIAvailability(versionWithoutAccessDefined.endpointsEnabled.getOrElse(false), PublicAPIAccess(), loggedIn = false, authorised = true)
+      APIAvailability(versionWithoutAccessDefined.endpointsEnabled.getOrElse(false), ApiAccess.PUBLIC, loggedIn = false, authorised = true)
 
     val publicVersionAvailability = APIAvailability(
       publicVersion.endpointsEnabled.getOrElse(false),
@@ -178,8 +179,8 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll {
       val apiContext                                        = ApiContext("foo")
       val existingStatus: ApiStatus                         = ApiStatus.ALPHA
       val updatedStatus: ApiStatus                          = ApiStatus.BETA
-      val existingAPIDefinition: APIDefinition              = anAPIDefinition(apiContext, aVersion(apiVersion, existingStatus, Some(PublicAPIAccess())))
-      val updatedAPIDefinition: APIDefinition               = anAPIDefinition(apiContext, aVersion(apiVersion, updatedStatus, Some(PublicAPIAccess())))
+      val existingAPIDefinition: APIDefinition              = anAPIDefinition(apiContext, aVersion(apiVersion, existingStatus, Some(ApiAccess.PUBLIC)))
+      val updatedAPIDefinition: APIDefinition               = anAPIDefinition(apiContext, aVersion(apiVersion, updatedStatus, Some(ApiAccess.PUBLIC)))
       val updatedAPIDefinitionWithSavingTime: APIDefinition = updatedAPIDefinition.copy(lastPublishedAt = Some(fixedSavingTime))
 
       when(mockAPIDefinitionRepository.fetchByContext(apiContext)).thenReturn(successful(Some(existingAPIDefinition)))
@@ -392,7 +393,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll {
     }
   }
 
-  private def aVersion(version: ApiVersionNbr, status: ApiStatus = ApiStatus.BETA, access: Option[APIAccess]) =
+  private def aVersion(version: ApiVersionNbr, status: ApiStatus = ApiStatus.BETA, access: Option[ApiAccess]) =
     APIVersion(version, status, access, List(Endpoint("/test", "test", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)))
 
   private def someAPIDefinition: APIDefinition =
@@ -406,7 +407,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll {
         APIVersion(
           ApiVersionNbr("1.0"),
           ApiStatus.BETA,
-          Some(PublicAPIAccess()),
+          Some(ApiAccess.PUBLIC),
           List(
             Endpoint(
               "/today",
