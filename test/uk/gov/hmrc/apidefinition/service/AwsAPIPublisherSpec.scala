@@ -34,7 +34,7 @@ import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 
 class AwsAPIPublisherSpec extends AsyncHmrcSpec {
 
-  private def anAPIVersion(version: String, status: ApiStatus = ApiStatus.PROTOTYPED) = ApiVersion(
+  private def anAPIVersion(version: String, status: ApiStatus = ApiStatus.BETA) = ApiVersion(
     ApiVersionNbr(version),
     status,
     Some(ApiAccess.PUBLIC),

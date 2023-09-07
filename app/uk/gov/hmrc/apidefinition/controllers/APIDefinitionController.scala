@@ -32,14 +32,13 @@ import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.models.ErrorCode
 import uk.gov.hmrc.apidefinition.models.ErrorCode._
 import uk.gov.hmrc.apidefinition.services.APIDefinitionService
-import uk.gov.hmrc.apidefinition.utils.{APIDefinitionMapper, ApplicationLogger}
+import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
 import uk.gov.hmrc.apidefinition.validators.ApiDefinitionValidator
 
 @Singleton
 class APIDefinitionController @Inject() (
     apiDefinitionValidator: ApiDefinitionValidator,
     apiDefinitionService: APIDefinitionService,
-    apiDefinitionMapper: APIDefinitionMapper,
     appContext: AppConfig,
     cc: ControllerComponents
   )(implicit val ec: ExecutionContext
@@ -51,7 +50,7 @@ class APIDefinitionController @Inject() (
     handleRequest[ApiDefinition](request) { requestBody =>
       apiDefinitionValidator.validate(requestBody) { validatedDefinition =>
         logger.info(s"Create/Update API definition request: $validatedDefinition")
-        apiDefinitionService.createOrUpdate(apiDefinitionMapper.mapLegacyStatuses(validatedDefinition)).map { _ =>
+        apiDefinitionService.createOrUpdate(validatedDefinition).map { _ =>
           logger.info("API definition successfully created/updated")
           NoContent
         } recover recovery

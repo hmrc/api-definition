@@ -88,8 +88,6 @@ object AWSAPIDefinition {
     ApiStatus.ALPHA      -> "PUBLISHED",
     ApiStatus.BETA       -> "PUBLISHED",
     ApiStatus.STABLE     -> "PUBLISHED",
-    ApiStatus.PROTOTYPED -> "PUBLISHED",
-    ApiStatus.PUBLISHED  -> "PUBLISHED",
     ApiStatus.DEPRECATED -> "DEPRECATED",
     ApiStatus.RETIRED    -> "RETIRED"
   )

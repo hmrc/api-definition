@@ -66,6 +66,7 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
 
       val validationErrors = contentAsJson(result).as[ValidationErrors]
       validationErrors.code shouldBe INVALID_REQUEST_PAYLOAD
+
       validationErrors.messages shouldBe failureMessages
     }
 
@@ -77,9 +78,10 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
       ApiContext("individuals/calendar"),
       List(ApiVersion(
         ApiVersionNbr("1.0"),
-        ApiStatus.PROTOTYPED,
+        ApiStatus.BETA,
         Some(ApiAccess.PUBLIC),
-        List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
+        List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
+        endpointsEnabled = Some(true)
       )),
       Some(false),
       categories = Some(List(ApiCategory.OTHER))
@@ -106,27 +108,31 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
         List(
           ApiVersion(
             ApiVersionNbr("1.0"),
-            ApiStatus.PROTOTYPED,
+            ApiStatus.BETA,
             Some(ApiAccess.PUBLIC),
-            List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
+            List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
+            endpointsEnabled = Some(true)
           ),
           ApiVersion(
             ApiVersionNbr("1.1"),
-            ApiStatus.PROTOTYPED,
+            ApiStatus.BETA,
             Some(ApiAccess.PUBLIC),
-            List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
+            List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
+            endpointsEnabled = Some(true)
           ),
           ApiVersion(
             ApiVersionNbr("1.1"),
-            ApiStatus.PROTOTYPED,
+            ApiStatus.BETA,
             Some(ApiAccess.PUBLIC),
-            List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
+            List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
+            endpointsEnabled = Some(true)
           ),
           ApiVersion(
             ApiVersionNbr("1.2"),
-            ApiStatus.PROTOTYPED,
+            ApiStatus.BETA,
             Some(ApiAccess.PUBLIC),
-            List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
+            List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
+            endpointsEnabled = Some(true)
           )
         )
       )
@@ -169,15 +175,17 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
         List(
           ApiVersion(
             ApiVersionNbr("1.0"),
-            ApiStatus.PROTOTYPED,
+            ApiStatus.BETA,
             Some(ApiAccess.PUBLIC),
-            List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
+            List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
+            endpointsEnabled = Some(true)
           ),
           ApiVersion(
             ApiVersionNbr(""),
-            ApiStatus.PROTOTYPED,
+            ApiStatus.BETA,
             Some(ApiAccess.PUBLIC),
-            List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
+            List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
+            endpointsEnabled = Some(true)
           )
         )
       lazy val apiDefinition: ApiDefinition = calendarApi.copy(versions = versions)
@@ -186,7 +194,7 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
     }
 
     "fail validation when no Endpoint is provided" in new Setup {
-      lazy val apiDefinition: ApiDefinition = calendarApi.copy(versions = List(ApiVersion(ApiVersionNbr("1.0"), ApiStatus.PROTOTYPED, Some(ApiAccess.PUBLIC), Nil)))
+      lazy val apiDefinition: ApiDefinition = calendarApi.copy(versions = List(ApiVersion(ApiVersionNbr("1.0"), ApiStatus.BETA, Some(ApiAccess.PUBLIC), Nil, endpointsEnabled = Some(true))))
 
       assertValidationFailure(apiDefinition, List("Field 'versions.endpoints' must not be empty for API 'Calendar API' version '1.0'"))
     }
@@ -202,8 +210,9 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
 
     val moneyApiVersion = ApiVersion(
       version = ApiVersionNbr("1.0"),
-      status = ApiStatus.PROTOTYPED,
-      endpoints = List(moneyEndpoint)
+      status = ApiStatus.BETA,
+      endpoints = List(moneyEndpoint),
+      endpointsEnabled = Some(true)
     )
 
     lazy val moneyApiDefinition = ApiDefinition(

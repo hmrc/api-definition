@@ -49,7 +49,7 @@ import uk.gov.hmrc.apidefinition.models.ErrorCode.INVALID_REQUEST_PAYLOAD
 import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.services.APIDefinitionService
-import uk.gov.hmrc.apidefinition.utils.{APIDefinitionMapper, AsyncHmrcSpec}
+import uk.gov.hmrc.apidefinition.utils.{AsyncHmrcSpec}
 import uk.gov.hmrc.apidefinition.validators._
 
 class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFactory {
@@ -73,9 +73,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
     val apiVersionValidator: ApiVersionValidator         = new ApiVersionValidator(apiEndpointValidator)
     val apiDefinitionValidator: ApiDefinitionValidator   = new ApiDefinitionValidator(mockAPIDefinitionService, apiContextValidator, apiVersionValidator)
 
-    val apiDefinitionMapper: APIDefinitionMapper = new APIDefinitionMapper(mockAppContext)
-
-    val underTest = new APIDefinitionController(apiDefinitionValidator, mockAPIDefinitionService, apiDefinitionMapper, mockAppContext, stubControllerComponents())
+    val underTest = new APIDefinitionController(apiDefinitionValidator, mockAPIDefinitionService, mockAppContext, stubControllerComponents())
   }
 
   trait QueryDispatcherSetup extends Setup {
@@ -143,39 +141,6 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
       val result = underTest.createOrUpdate()(request.withBody(Json.parse(calendarApiDefinition)))
 
       status(result) shouldBe NO_CONTENT
-
-      verify(mockAPIDefinitionService).createOrUpdate(refEq(apiDefinition))(*)
-    }
-
-    "map legacy API statuses to new statuses before calling the service" in new ValidatorSetup {
-
-      val apiDefinition =
-        ApiDefinition(
-          "calendar",
-          "http://calendar",
-          "Calendar API",
-          "My Calendar API",
-          ApiContext("individuals/calendar"),
-          versions =
-            List(
-              ApiVersion(
-                ApiVersionNbr("1.0"),
-                ApiStatus.STABLE,
-                None,
-                List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
-                Some(true)
-              )
-            ),
-          requiresTrust = Some(true),
-          None,
-          lastPublishedAt = None,
-          Some(List(ApiCategory.OTHER))
-        )
-
-      thereAreNoOverlappingAPIContexts
-      theServiceWillCreateOrUpdateTheAPIDefinition
-
-      await(underTest.createOrUpdate()(request.withBody(Json.parse(legacyCalendarApiDefinition))))
 
       verify(mockAPIDefinitionService).createOrUpdate(refEq(apiDefinition))(*)
     }
