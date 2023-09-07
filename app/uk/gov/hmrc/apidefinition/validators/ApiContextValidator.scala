@@ -108,7 +108,7 @@ class ApiContextValidator @Inject() (
 
   private def validateContextHasAtLeastTwoSegments(errorContext: String)(implicit context: ApiContext): Future[HMRCValidated[ApiContext]] =
     successful(validateThat(
-      _ => context.segments() > 1,
+      _ => context.segments().length > 1,
       _ => s"Field 'context' must have at least two segments $errorContext"
     ))
 
