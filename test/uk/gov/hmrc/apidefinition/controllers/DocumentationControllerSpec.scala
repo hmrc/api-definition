@@ -30,11 +30,11 @@ import play.api.mvc.AnyContentAsEmpty
 import play.api.mvc.Results._
 import play.api.test.Helpers._
 import play.api.test.{FakeRequest, StubControllerComponentsFactory}
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersionNbr
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 
 import uk.gov.hmrc.apidefinition.services.DocumentationService
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersionNbr
 
 class DocumentationControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFactory {
 

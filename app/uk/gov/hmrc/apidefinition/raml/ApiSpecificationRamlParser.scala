@@ -23,10 +23,11 @@ import org.raml.v2.api.model.v10.datamodel.{ExampleSpec => RamlExampleSpec, Stri
 import org.raml.v2.api.model.v10.methods.{Method => RamlMethod}
 import org.raml.v2.api.model.v10.resources.{Resource => RamlResource}
 
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersionNbr
+
 import uk.gov.hmrc.apidefinition.models.apispecification._
 import uk.gov.hmrc.apidefinition.raml.RamlSyntax._
 import uk.gov.hmrc.apidefinition.services.SchemaService
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersionNbr
 
 @Singleton
 class ApiSpecificationRamlParser @Inject() (schemaService: SchemaService) {

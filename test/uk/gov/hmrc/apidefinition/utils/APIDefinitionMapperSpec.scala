@@ -16,10 +16,9 @@
 
 package uk.gov.hmrc.apidefinition.utils
 
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiDefinition, ApiStatus, _}
+
 import uk.gov.hmrc.apidefinition.config.AppConfig
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiStatus
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiDefinition
 
 class APIDefinitionMapperSpec extends AsyncHmrcSpec {
 

@@ -16,11 +16,10 @@
 
 package uk.gov.hmrc.apidefinition.models
 
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiContext, ApiDefinition, ApiVersionNbr}
+
 import uk.gov.hmrc.apidefinition.models.AWSAPIDefinition.awsApiGatewayName
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiContext
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersionNbr
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiDefinition
 
 class AWSAPIDefinitionSpec extends AsyncHmrcSpec {
 

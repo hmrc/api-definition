@@ -24,17 +24,16 @@ import scala.util.control.NonFatal
 import play.api.http.HeaderNames
 import play.api.libs.json._
 import play.api.mvc._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiDefinition, _}
 import uk.gov.hmrc.http.UnauthorizedException
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import uk.gov.hmrc.apidefinition.config.AppConfig
+import uk.gov.hmrc.apidefinition.models.ErrorCode
 import uk.gov.hmrc.apidefinition.models.ErrorCode._
-import uk.gov.hmrc.apidefinition.models.{ErrorCode}
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiDefinition
 import uk.gov.hmrc.apidefinition.services.APIDefinitionService
 import uk.gov.hmrc.apidefinition.utils.{APIDefinitionMapper, ApplicationLogger}
 import uk.gov.hmrc.apidefinition.validators.ApiDefinitionValidator
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 
 @Singleton
 class APIDefinitionController @Inject() (

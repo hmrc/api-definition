@@ -24,15 +24,14 @@ import scala.util.matching.Regex
 
 import com.google.inject.Singleton
 
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiDefinition, _}
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apidefinition.connector.AWSAPIPublisherConnector
 import uk.gov.hmrc.apidefinition.models.AWSAPIDefinition.awsApiGatewayName
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiDefinition
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.utils.AWSPayloadHelper.buildAWSSwaggerDetails
 import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 
 @Singleton
 class AwsApiPublisher @Inject() (val awsAPIPublisherConnector: AWSAPIPublisherConnector, val apiDefinitionRepository: APIDefinitionRepository)(implicit val ec: ExecutionContext)

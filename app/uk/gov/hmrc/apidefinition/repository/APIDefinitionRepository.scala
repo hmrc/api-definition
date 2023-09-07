@@ -27,10 +27,10 @@ import org.mongodb.scala.model.Filters.{equal, regex}
 import org.mongodb.scala.model.{FindOneAndReplaceOptions, ReturnDocument}
 
 import play.api.Logging
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, CollectionFactory, PlayMongoRepository}
 
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.apidefinition.utils.IndexHelper.createUniqueBackgroundSingleFieldAscendingIndex
 
 @Singleton

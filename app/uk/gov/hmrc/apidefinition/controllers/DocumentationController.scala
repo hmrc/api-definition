@@ -21,13 +21,13 @@ import scala.concurrent.ExecutionContext
 import scala.util.control.NonFatal
 
 import play.api.mvc.{Action, AnyContent, ControllerComponents, Result}
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersionNbr
 import uk.gov.hmrc.http.NotFoundException
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import uk.gov.hmrc.apidefinition.models.ErrorCode
 import uk.gov.hmrc.apidefinition.services.DocumentationService
 import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersionNbr
 
 @Singleton
 class DocumentationController @Inject() (service: DocumentationService, cc: ControllerComponents)(implicit val ec: ExecutionContext)

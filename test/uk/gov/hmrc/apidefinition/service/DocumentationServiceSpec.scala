@@ -34,6 +34,7 @@ import play.api.mvc.Result
 import play.shaded.ahc.io.netty.handler.codec.http.DefaultHttpHeaders
 import play.shaded.ahc.org.asynchttpclient.uri.Uri
 import play.shaded.ahc.org.asynchttpclient.{AsyncHttpClientConfig, DefaultAsyncHttpClientConfig}
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.http.{HeaderCarrier, InternalServerException, NotFoundException}
 
 import uk.gov.hmrc.apidefinition.config.AppConfig
@@ -41,13 +42,6 @@ import uk.gov.hmrc.apidefinition.connector.ApiMicroserviceConnector
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.services.{DocumentationService, SpecificationService}
 import uk.gov.hmrc.apidefinition.utils.{AsyncHmrcSpec, Utils}
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiContext
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersionNbr
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiStatus
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiAccess
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiAvailability
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersion
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiDefinition
 
 class DocumentationServiceSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite with Utils {
   import DocumentationService.PROXY_SAFE_CONTENT_TYPE

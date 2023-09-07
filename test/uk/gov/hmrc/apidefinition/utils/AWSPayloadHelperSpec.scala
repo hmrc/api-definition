@@ -16,9 +16,10 @@
 
 package uk.gov.hmrc.apidefinition.utils
 
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+
 import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.utils.AWSPayloadHelper._
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 
 class AWSPayloadHelperSpec extends AsyncHmrcSpec {
 

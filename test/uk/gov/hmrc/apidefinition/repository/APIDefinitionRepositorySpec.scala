@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.apidefinition.repository
 
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -28,13 +30,10 @@ import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiDefinition, _}
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiDefinition
-import java.time.Instant
-import java.time.temporal.ChronoUnit
 
 class APIDefinitionRepositorySpec extends AsyncHmrcSpec
     with DefaultPlayMongoRepositorySupport[ApiDefinition]

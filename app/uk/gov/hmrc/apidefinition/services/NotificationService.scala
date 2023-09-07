@@ -22,11 +22,11 @@ import scala.util.{Failure, Success, Try}
 
 import play.api.libs.json.{Json, OFormat}
 import play.mvc.Http.Status.NOT_FOUND
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpResponse}
 
 import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 
 trait NotificationService {
   val environmentName: String

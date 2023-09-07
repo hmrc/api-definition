@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.apidefinition.validators
 
+import java.nio.file.{Path, Paths}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
@@ -24,15 +25,13 @@ import scala.util.matching.Regex
 import cats.Monoid._
 import cats.data.Validated.Invalid
 import cats.implicits._
+import cats.kernel.Monoid
+
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiContext, ApiDefinition}
 
 import uk.gov.hmrc.apidefinition.config.AppConfig
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiDefinition
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.services.APIDefinitionService
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiContext
-import java.nio.file.Path
-import java.nio.file.Paths
-import cats.kernel.Monoid
 
 @Singleton
 class ApiContextValidator @Inject() (
@@ -44,7 +43,7 @@ class ApiContextValidator @Inject() (
 
   private val ValidTopLevelContexts: Set[ApiContext] =
     Set("agents", "customs", "individuals", "mobile", "obligations", "organisations", "test", "payments", "misc", "accounts").map(ApiContext(_))
-  private val contextRegex: Regex                = """^[a-zA-Z0-9_\-\/]+$""".r
+  private val contextRegex: Regex                    = """^[a-zA-Z0-9_\-\/]+$""".r
 
   def validate(errorContext: String, apiDefinition: ApiDefinition)(implicit context: ApiContext): Future[HMRCValidated[ApiContext]] = {
     if (appConfig.skipContextValidationAllowlist.contains(apiDefinition.serviceName)) {
@@ -118,7 +117,7 @@ class ApiContextValidator @Inject() (
     }
 
     implicit val fakeApiContextMonoid: Monoid[ApiContext] = new Monoid[ApiContext] {
-      def empty: ApiContext = ApiContext("")
+      def empty: ApiContext                                 = ApiContext("")
       def combine(x: ApiContext, y: ApiContext): ApiContext = ApiContext(x.value)
     }
 

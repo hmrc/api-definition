@@ -41,6 +41,7 @@ import play.api.mvc.Result
 import play.api.test.Helpers._
 import play.api.test.{FakeRequest, StubControllerComponentsFactory}
 import play.mvc.Http.HeaderNames
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.http.{BadRequestException, UnauthorizedException}
 
 import uk.gov.hmrc.apidefinition.config.AppConfig
@@ -50,7 +51,6 @@ import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.services.APIDefinitionService
 import uk.gov.hmrc.apidefinition.utils.{APIDefinitionMapper, AsyncHmrcSpec}
 import uk.gov.hmrc.apidefinition.validators._
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 
 class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFactory {
 
@@ -387,7 +387,13 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
         "My Calendar API",
         ApiContext("individuals/calendar"),
         versions =
-          List(ApiVersion(ApiVersionNbr("1.0"), ApiStatus.STABLE, None, List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)), Some(true))),
+          List(ApiVersion(
+            ApiVersionNbr("1.0"),
+            ApiStatus.STABLE,
+            None,
+            List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
+            Some(true)
+          )),
         requiresTrust = Some(true),
         None,
         None,

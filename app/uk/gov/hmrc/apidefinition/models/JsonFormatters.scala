@@ -37,7 +37,4 @@ object JsonFormatters {
   implicit val formatAWSAPIInfo         = Json.format[AWSAPIInfo]
   implicit val formatAWSSwaggerDetails  = Json.format[AWSSwaggerDetails]
 
-
 }
-
-

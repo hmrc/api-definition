@@ -16,21 +16,21 @@
 
 package uk.gov.hmrc.apidefinition.services
 
+import java.time.Clock
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future.{failed, successful}
 import scala.concurrent.{ExecutionContext, Future}
 
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.services.ClockNow
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
-import java.time.Clock
-import uk.gov.hmrc.apiplatform.modules.common.domain.services.ClockNow
 
 object APIDefinitionService {
-  
+
   case class PublishingException(message: String) extends Exception(message)
 }
 
@@ -126,7 +126,7 @@ class APIDefinitionService @Inject() (
 
     def hasPrivateAccess(apiVersion: ApiVersion) = apiVersion.access match {
       case Some(ApiAccess.Private(_, _)) => true
-      case _                            => false
+      case _                             => false
     }
 
     def removePublicVersions(api: ApiDefinition) =
@@ -153,7 +153,7 @@ class APIDefinitionService @Inject() (
     val filteredVersions = api.versions.filter(_.access.getOrElse(ApiAccess.PUBLIC) match {
       case access: ApiAccess.Private =>
         access.whitelistedApplicationIds.exists(s => applicationIds.contains(s)) || (access.isTrial.contains(true) && alsoIncludePrivateTrials)
-      case _                        => true
+      case _                         => true
     })
 
     if (filteredVersions.isEmpty) None

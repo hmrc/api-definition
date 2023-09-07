@@ -26,12 +26,11 @@ import cats.implicits._
 import play.api.libs.json.Json.toJson
 import play.api.mvc.Result
 import play.api.mvc.Results.UnprocessableEntity
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiDefinition, _}
 
 import uk.gov.hmrc.apidefinition.models.ErrorCode.INVALID_REQUEST_PAYLOAD
 import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.services.APIDefinitionService
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiDefinition
 
 @Singleton
 class ApiDefinitionValidator @Inject() (

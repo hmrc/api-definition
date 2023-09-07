@@ -17,10 +17,12 @@
 package uk.gov.hmrc.apidefinition.utils
 
 import scala.collection.immutable.TreeMap
+import scala.language.postfixOps
+
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+
 import uk.gov.hmrc.apidefinition.models.AWSAPIDefinition._
 import uk.gov.hmrc.apidefinition.models._
-import scala.language.postfixOps
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 
 object AWSPayloadHelper {
 

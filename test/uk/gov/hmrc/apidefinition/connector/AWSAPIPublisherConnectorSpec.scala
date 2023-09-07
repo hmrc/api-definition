@@ -31,13 +31,13 @@ import play.api.http.ContentTypes.JSON
 import play.api.http.HeaderNames.{AUTHORIZATION, CONTENT_TYPE}
 import play.api.http.Status.{INTERNAL_SERVER_ERROR, OK}
 import play.api.{Configuration, Environment}
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersionNbr
 import uk.gov.hmrc.http.{Authorization, HeaderCarrier, HttpClient, UpstreamErrorResponse}
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.models.{AWSAPIInfo, AWSHttpVerbDetails, AWSResponse, AWSSwaggerDetails}
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersionNbr
 
 class AWSAPIPublisherConnectorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite with BeforeAndAfterAll {
 

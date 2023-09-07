@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.apidefinition.validators
 
+import scala.Iterable
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.matching.Regex
 
@@ -23,7 +24,6 @@ import cats.data.ValidatedNel
 import cats.implicits._
 
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiDefinition
-import scala.Iterable
 
 trait Validator[T] {
 
