@@ -829,32 +829,6 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
     }
   }
 
-  private val legacyCalendarApiDefinition =
-    """{
-      |  "serviceName": "calendar",
-      |  "name": "Calendar API",
-      |  "description": "My Calendar API",
-      |  "serviceBaseUrl": "http://calendar",
-      |  "context": "individuals/calendar",
-      |  "requiresTrust": true,
-      |  "categories": ["OTHER"],
-      |  "versions": [
-      |  {
-      |    "version" : "1.0",
-      |    "status" : "PUBLISHED",
-      |    "endpoints": [
-      |    {
-      |      "uriPattern": "/today",
-      |      "endpointName":"Get Today's Date",
-      |      "method": "GET",
-      |      "authType": "NONE",
-      |      "throttlingTier": "UNLIMITED"
-      |    }
-      |    ]
-      |  }
-      |  ]
-      |}""".stripMargin.replaceAll("\n", " ")
-
   private val calendarApiDefinition =
     """{
       |  "serviceName": "calendar",

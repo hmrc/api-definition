@@ -95,7 +95,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
 
     val apiDefinitionWithAllVersions = anAPIDefinition(context, allVersions: _*)
     val apiDefinition                = someAPIDefinition
-    val apiDefinitionWithSavingTime  = apiDefinition.copy(lastPublishedAt = Some(instant))
+    val apiDefinitionWithSavingTime  = apiDefinition.copy(lastPublishedAt = Some(instant()))
 
     when(mockAPIDefinitionRepository.fetchByServiceName(apiDefinition.serviceName)).thenReturn(successful(Some(apiDefinition)))
     when(mockAwsApiPublisher.delete(apiDefinition)).thenReturn(successful(()))
@@ -163,7 +163,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
       val updatedStatus: ApiStatus                          = ApiStatus.BETA
       val existingAPIDefinition: ApiDefinition              = anAPIDefinition(apiContext, aVersion(apiVersion, existingStatus, Some(ApiAccess.PUBLIC)))
       val updatedAPIDefinition: ApiDefinition               = anAPIDefinition(apiContext, aVersion(apiVersion, updatedStatus, Some(ApiAccess.PUBLIC)))
-      val updatedAPIDefinitionWithSavingTime: ApiDefinition = updatedAPIDefinition.copy(lastPublishedAt = Some(instant))
+      val updatedAPIDefinitionWithSavingTime: ApiDefinition = updatedAPIDefinition.copy(lastPublishedAt = Some(instant()))
 
       when(mockAPIDefinitionRepository.fetchByContext(apiContext)).thenReturn(successful(Some(existingAPIDefinition)))
       when(mockNotificationService.notifyOfStatusChange(existingAPIDefinition.name, apiVersion, existingStatus, updatedStatus)).thenReturn(unitSuccess)
