@@ -194,7 +194,8 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
     }
 
     "fail validation when no Endpoint is provided" in new Setup {
-      lazy val apiDefinition: ApiDefinition = calendarApi.copy(versions = List(ApiVersion(ApiVersionNbr("1.0"), ApiStatus.BETA, Some(ApiAccess.PUBLIC), Nil, endpointsEnabled = Some(true))))
+      lazy val apiDefinition: ApiDefinition =
+        calendarApi.copy(versions = List(ApiVersion(ApiVersionNbr("1.0"), ApiStatus.BETA, Some(ApiAccess.PUBLIC), Nil, endpointsEnabled = Some(true))))
 
       assertValidationFailure(apiDefinition, List("Field 'versions.endpoints' must not be empty for API 'Calendar API' version '1.0'"))
     }
