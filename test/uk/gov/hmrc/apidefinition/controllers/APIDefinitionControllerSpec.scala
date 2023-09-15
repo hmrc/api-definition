@@ -52,7 +52,7 @@ import uk.gov.hmrc.apidefinition.services.APIDefinitionService
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 import uk.gov.hmrc.apidefinition.validators._
 
-class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFactory {
+class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFactory with TolerantJsonApiDefinition {
 
   trait Setup {
 
@@ -79,7 +79,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
   trait QueryDispatcherSetup extends Setup {
 
     val apiDefinitions: Seq[ApiDefinition] =
-      Array.fill(2)(ApiDefinition("MyApiDefinitionServiceName1", "MyUrl", "MyName", "My description", ApiContext("MyContext"), Nil, None)).toIndexedSeq
+      Array.fill(2)(ApiDefinition("MyApiDefinitionServiceName1", "MyUrl", "MyName", "My description", ApiContext("MyContext"), Nil, false, false, None, List(ApiCategory.AGENTS))).toIndexedSeq
 
     when(mockAPIDefinitionService.fetchByContext(*[ApiContext])).thenReturn(successful(Some(apiDefinitions.head)))
     when(mockAPIDefinitionService.fetchAllPublicAPIs(*)).thenReturn(successful(apiDefinitions))
@@ -124,15 +124,15 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
               ApiVersion(
                 ApiVersionNbr("1.0"),
                 ApiStatus.STABLE,
-                None,
+                ApiAccess.PUBLIC,
                 List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
-                Some(true)
+                true
               )
             ),
-          requiresTrust = Some(true),
-          None,
+          requiresTrust = true,
+          isTestSupport = false,
           lastPublishedAt = None,
-          Some(List(ApiCategory.OTHER))
+          List(ApiCategory.OTHER)
         )
 
       thereAreNoOverlappingAPIContexts
@@ -297,14 +297,14 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
         versions = List(ApiVersion(
           ApiVersionNbr("1.0"),
           ApiStatus.STABLE,
-          Some(ApiAccess.PUBLIC),
+          ApiAccess.PUBLIC,
           List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
-          Some(true)
+          true
         )),
-        requiresTrust = Some(true),
-        None,
-        None,
-        Some(List(ApiCategory.OTHER))
+        requiresTrust = true,
+        isTestSupport = false,
+        lastPublishedAt = None,
+        List(ApiCategory.OTHER)
       )
 
       thereAreNoOverlappingAPIContexts
@@ -355,14 +355,14 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
           List(ApiVersion(
             ApiVersionNbr("1.0"),
             ApiStatus.STABLE,
-            None,
+            ApiAccess.PUBLIC,
             List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
-            Some(true)
+            true
           )),
-        requiresTrust = Some(true),
+        requiresTrust = true,
+        false,
         None,
-        None,
-        Some(List(ApiCategory.OTHER))
+        List(ApiCategory.OTHER)
       )
 
       thereAreNoOverlappingAPIContexts
@@ -416,14 +416,14 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
         versions = List(ApiVersion(
           ApiVersionNbr("1.0"),
           ApiStatus.STABLE,
-          Some(ApiAccess.Private(List("app-id-1", "app-id-2"))),
+          ApiAccess.Private(List("app-id-1", "app-id-2"), false),
           List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
-          Some(true)
+          true
         )),
-        requiresTrust = Some(true),
+        requiresTrust = true,
+        false,
         None,
-        None,
-        Some(List(ApiCategory.OTHER))
+        List(ApiCategory.OTHER)
       )
 
       thereAreNoOverlappingAPIContexts
@@ -486,11 +486,14 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
         versions = List(ApiVersion(
           ApiVersionNbr("1.0"),
           ApiStatus.BETA,
-          Some(ApiAccess.PUBLIC),
+          ApiAccess.PUBLIC,
           List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
-          Some(true)
+          true
         )),
-        requiresTrust = None
+        requiresTrust = false,
+        false,
+        None,
+        List(ApiCategory.AGENTS)
       )
 
       when(mockAPIDefinitionService.fetchByServiceName(eqTo(serviceName)))

@@ -38,9 +38,8 @@ class ApiVersionValidator @Inject() (apiEndpointValidator: ApiEndpointValidator)
 
   private def validateStatus(errorContext: String)(implicit version: ApiVersion): HMRCValidated[ApiVersion] = {
     version.status match {
-      case ApiStatus.ALPHA | ApiStatus.BETA | ApiStatus.STABLE =>
-        validateThat(_ => version.endpointsEnabled.nonEmpty, _ => s"Field 'versions.endpointsEnabled' is required $errorContext")
-      case _                                                   => version.validNel
+      case ApiStatus.ALPHA => validateThat(_ => version.endpointsEnabled == false, _ => s"Field 'versions.endpointsEnabled' must be false for ALPHA status")
+      case _               => version.validNel
     }
   }
 }

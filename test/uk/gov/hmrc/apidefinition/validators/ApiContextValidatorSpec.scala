@@ -40,7 +40,9 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
         description = "API for checking payments",
         context = context,
         versions = generateApiVersions(versions),
-        requiresTrust = Some(false)
+        requiresTrust = false,
+        isTestSupport = false,
+        categories = List(ApiCategory.OTHER)
       )
 
     private def generateApiVersions(versions: List[String]): List[ApiVersion] = {
@@ -48,8 +50,11 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
         ApiVersion(
           ApiVersionNbr(version),
           ApiStatus.BETA,
-          Some(ApiAccess.PUBLIC),
-          List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
+          ApiAccess.PUBLIC,
+          List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
+          false,
+          None,
+          ApiVersionSource.OAS
         )
       })
     }

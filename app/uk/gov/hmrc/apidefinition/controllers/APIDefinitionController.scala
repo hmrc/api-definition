@@ -34,6 +34,7 @@ import uk.gov.hmrc.apidefinition.models.ErrorCode._
 import uk.gov.hmrc.apidefinition.services.APIDefinitionService
 import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
 import uk.gov.hmrc.apidefinition.validators.ApiDefinitionValidator
+import uk.gov.hmrc.apidefinition.models.TolerantJsonApiDefinition
 
 @Singleton
 class APIDefinitionController @Inject() (
@@ -42,7 +43,7 @@ class APIDefinitionController @Inject() (
     appContext: AppConfig,
     cc: ControllerComponents
   )(implicit val ec: ExecutionContext
-  ) extends BackendController(cc) with ApplicationLogger {
+  ) extends BackendController(cc) with ApplicationLogger with TolerantJsonApiDefinition {
 
   val fetchByContextTtlInSeconds: String = appContext.fetchByContextTtlInSeconds
 

@@ -84,14 +84,15 @@ class DocumentationServiceSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wi
     name = "Hello World",
     description = "Example",
     context = ApiContext("hello"),
-    requiresTrust = Some(false),
-    isTestSupport = Some(false),
+    requiresTrust = false,
+    isTestSupport = false,
     versions = List(
-      ApiVersion(ApiVersionNbr("1.0"), ApiStatus.STABLE, endpoints = Nil, endpointsEnabled = None),
+      ApiVersion(ApiVersionNbr("1.0"), ApiStatus.STABLE, endpoints = Nil, endpointsEnabled = false),
       ApiVersion(ApiVersionNbr("2.0"), ApiStatus.BETA, endpoints = Nil),
       ApiVersion(ApiVersionNbr("3.0"), ApiStatus.ALPHA, endpoints = Nil)
     ),
-    lastPublishedAt = None
+    lastPublishedAt = None,
+    categories = List(ApiCategory.OTHER)
   )
 
   private val sampleFileSource: Source[ByteString, _] = createSourceFrom("hello")

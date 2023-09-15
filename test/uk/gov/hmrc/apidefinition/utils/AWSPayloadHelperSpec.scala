@@ -30,16 +30,16 @@ class AWSPayloadHelperSpec extends AsyncHmrcSpec {
     authType = AuthType.NONE,
     throttlingTier = ResourceThrottlingTier.UNLIMITED,
     scope = None,
-    queryParameters = None
+    queryParameters = List()
   )
 
-  private val queryParameters = List(
+  private val someQueryParameters = List(
     QueryParameter(name = "city"),
     QueryParameter(name = "address", required = true),
     QueryParameter(name = "postcode", required = true)
   )
 
-  private val endpointWithQueryParameters = endpoint.copy(queryParameters = Some(queryParameters))
+  private val endpointWithQueryParameters = endpoint.copy(queryParameters = someQueryParameters)
 
   "buildAWSSwaggerDetails" should {
     "correctly construct an AWSSwaggerDetails object" in {
@@ -50,15 +50,17 @@ class AWSPayloadHelperSpec extends AsyncHmrcSpec {
         authType = AuthType.USER,
         throttlingTier = ResourceThrottlingTier.UNLIMITED,
         scope = Some("read:user"),
-        queryParameters = Some(List(QueryParameter(name = "surname", required = true)))
+        queryParameters = List(QueryParameter(name = "surname", required = true))
       )
 
       val apiVersion = ApiVersion(
         version = ApiVersionNbr("1.0"),
         status = ApiStatus.STABLE,
-        access = Some(ApiAccess.PUBLIC),
+        access = ApiAccess.PUBLIC,
         endpoints = List(populatedEndpoint),
-        endpointsEnabled = Some(true)
+        endpointsEnabled = true,
+        awsRequestId = None,
+        versionSource = ApiVersionSource.OAS
       )
 
       val constructedSwaggerDetails: AWSSwaggerDetails = buildAWSSwaggerDetails("new-api", apiVersion, ApiContext("foo/bar"), "https://test.mdtp")

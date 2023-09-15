@@ -75,7 +75,7 @@ object AWSPayloadHelper {
   }
 
   def buildAWSQueryParameters(endpoint: Endpoint): Seq[AWSQueryParameter] = {
-    endpoint.queryParameters.getOrElse(Seq()).map {
+    endpoint.queryParameters.map {
       p: QueryParameter => AWSQueryParameter(name = p.name, required = p.required)
     }.sortBy(_.name)
   }

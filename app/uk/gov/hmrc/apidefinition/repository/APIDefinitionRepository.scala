@@ -32,13 +32,14 @@ import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, CollectionFactory, PlayMongoRepository}
 
 import uk.gov.hmrc.apidefinition.utils.IndexHelper.createUniqueBackgroundSingleFieldAscendingIndex
+import uk.gov.hmrc.apidefinition.models.TolerantJsonApiDefinition
 
 @Singleton
 class APIDefinitionRepository @Inject() (mongoComponent: MongoComponent)(implicit val ec: ExecutionContext)
     extends PlayMongoRepository[ApiDefinition](
       collectionName = "api",
       mongoComponent = mongoComponent,
-      domainFormat = ApiDefinition.formatAPIDefinition,
+      domainFormat = TolerantJsonApiDefinition.tolerantFormatApiDefinition,
       indexes = Seq("context", "name", "serviceName", "serviceBaseUrl")
         .map(fieldName => createUniqueBackgroundSingleFieldAscendingIndex(fieldName, s"${fieldName}Index"))
     ) with Logging {
@@ -50,7 +51,7 @@ class APIDefinitionRepository @Inject() (mongoComponent: MongoComponent)(implici
         fromRegistries(
           fromCodecs(
             Codecs.playFormatCodec(domainFormat),
-            Codecs.playFormatCodec(ApiDefinition.formatAPIDefinition)
+            Codecs.playFormatCodec(TolerantJsonApiDefinition.tolerantFormatApiDefinition)
           ),
           DEFAULT_CODEC_REGISTRY
         )

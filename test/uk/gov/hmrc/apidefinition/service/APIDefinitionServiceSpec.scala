@@ -39,7 +39,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
   def unitSuccess: Future[Unit] = successful { () }
 
   private def anAPIDefinition(context: ApiContext, versions: ApiVersion*) =
-    ApiDefinition("service", "http://service", "name", "description", context, versions.toList, None, None, None)
+    ApiDefinition("service", "http://service", "name", "description", context, versions.toList, false, false, None, List(ApiCategory.OTHER))
 
   trait Setup {
 
@@ -60,35 +60,35 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
 
     val applicationId = randomUUID()
 
-    val versionWithoutAccessDefined: ApiVersion         = aVersion(version = ApiVersionNbr("1.0"), access = None)
-    val publicVersion                                   = aVersion(version = ApiVersionNbr("2.0"), access = Some(ApiAccess.PUBLIC))
-    val privateVersionWithAppWhitelisted: ApiVersion    = aVersion(version = ApiVersionNbr("3.0"), access = Some(ApiAccess.Private(List(applicationId.toString))))
-    val privateVersionWithoutAppWhitelisted: ApiVersion = aVersion(version = ApiVersionNbr("3.1"), access = Some(ApiAccess.Private(List("OTHER_APP_ID"))))
-    val privateTrialVersionWithWhitelist                = aVersion(version = ApiVersionNbr("4.0"), access = Some(ApiAccess.Private(List(applicationId.toString), isTrial = Some(true))))
-    val privateTrialVersionWithoutWhitelist             = aVersion(version = ApiVersionNbr("4.1"), access = Some(ApiAccess.Private(Nil, isTrial = Some(true))))
+    val publicVersion1: ApiVersion                      = aVersion(version = ApiVersionNbr("1.0"), access = ApiAccess.PUBLIC)
+    val publicVersion2                                   = aVersion(version = ApiVersionNbr("2.0"), access = ApiAccess.PUBLIC)
+    val privateVersionWithAppWhitelisted: ApiVersion    = aVersion(version = ApiVersionNbr("3.0"), access = ApiAccess.Private(List(applicationId.toString)))
+    val privateVersionWithoutAppWhitelisted: ApiVersion = aVersion(version = ApiVersionNbr("3.1"), access = ApiAccess.Private(List("OTHER_APP_ID")))
+    val privateTrialVersionWithWhitelist                = aVersion(version = ApiVersionNbr("4.0"), access = ApiAccess.Private(List(applicationId.toString), isTrial = true))
+    val privateTrialVersionWithoutWhitelist             = aVersion(version = ApiVersionNbr("4.1"), access = ApiAccess.Private(Nil, isTrial = true))
 
     val allVersions = List(
-      versionWithoutAccessDefined,
-      publicVersion,
+      publicVersion1,
+      publicVersion2,
       privateVersionWithAppWhitelisted,
       privateVersionWithoutAppWhitelisted,
       privateTrialVersionWithWhitelist,
       privateTrialVersionWithoutWhitelist
     )
 
-    val versionWithoutAccessDefinedAvailability =
-      ApiAvailability(versionWithoutAccessDefined.endpointsEnabled.getOrElse(false), ApiAccess.PUBLIC, loggedIn = false, authorised = true)
+    val publicVersion1Availability =
+      ApiAvailability(publicVersion1.endpointsEnabled, ApiAccess.PUBLIC, loggedIn = false, authorised = true)
 
     val publicVersionAvailability = ApiAvailability(
-      publicVersion.endpointsEnabled.getOrElse(false),
-      publicVersion.access.get,
+      publicVersion2.endpointsEnabled,
+      publicVersion2.access,
       loggedIn = false,
       authorised = true
     )
 
     val privateVersionAvailability = ApiAvailability(
-      privateVersionWithAppWhitelisted.endpointsEnabled.getOrElse(false),
-      privateVersionWithAppWhitelisted.access.get,
+      privateVersionWithAppWhitelisted.endpointsEnabled,
+      privateVersionWithAppWhitelisted.access,
       loggedIn = false,
       authorised = false
     )
@@ -105,8 +105,8 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
   trait FetchSetup extends Setup {
 
     val versions   = Seq(
-      versionWithoutAccessDefined,
-      publicVersion,
+      publicVersion1,
+      publicVersion2,
       privateVersionWithAppWhitelisted,
       privateVersionWithoutAppWhitelisted,
       privateTrialVersionWithWhitelist,
@@ -161,8 +161,8 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
       val apiContext                                        = ApiContext("foo")
       val existingStatus: ApiStatus                         = ApiStatus.ALPHA
       val updatedStatus: ApiStatus                          = ApiStatus.BETA
-      val existingAPIDefinition: ApiDefinition              = anAPIDefinition(apiContext, aVersion(apiVersion, existingStatus, Some(ApiAccess.PUBLIC)))
-      val updatedAPIDefinition: ApiDefinition               = anAPIDefinition(apiContext, aVersion(apiVersion, updatedStatus, Some(ApiAccess.PUBLIC)))
+      val existingAPIDefinition: ApiDefinition              = anAPIDefinition(apiContext, aVersion(apiVersion, existingStatus, ApiAccess.PUBLIC))
+      val updatedAPIDefinition: ApiDefinition               = anAPIDefinition(apiContext, aVersion(apiVersion, updatedStatus, ApiAccess.PUBLIC))
       val updatedAPIDefinitionWithSavingTime: ApiDefinition = updatedAPIDefinition.copy(lastPublishedAt = Some(instant()))
 
       when(mockAPIDefinitionRepository.fetchByContext(apiContext)).thenReturn(successful(Some(existingAPIDefinition)))
@@ -215,8 +215,8 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
         "filter out versions which are private for which the application is not whitelisted" in new Setup {
           val api = anAPIDefinition(
             context,
-            publicVersion,
-            versionWithoutAccessDefined,
+            publicVersion2,
+            publicVersion1,
             privateTrialVersionWithoutWhitelist,
             privateVersionWithAppWhitelisted,
             privateVersionWithoutAppWhitelisted
@@ -226,7 +226,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
 
           val response = await(underTest.fetchAllAPIsForApplication(applicationId.toString, alsoIncludePrivateTrials))
 
-          response shouldBe Seq(anAPIDefinition(context, publicVersion, versionWithoutAccessDefined, privateVersionWithAppWhitelisted))
+          response shouldBe Seq(anAPIDefinition(context, publicVersion2, publicVersion1, privateVersionWithAppWhitelisted))
         }
       }
 
@@ -237,8 +237,8 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
         "filter out versions which are private for which the application is not whitelisted but include private trials" in new Setup {
           val api = anAPIDefinition(
             context,
-            publicVersion,
-            versionWithoutAccessDefined,
+            publicVersion2,
+            publicVersion1,
             privateTrialVersionWithoutWhitelist,
             privateVersionWithAppWhitelisted,
             privateVersionWithoutAppWhitelisted
@@ -249,7 +249,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
           val response = await(underTest.fetchAllAPIsForApplication(applicationId.toString, alsoIncludePrivateTrials))
 
           response shouldBe
-            Seq(anAPIDefinition(context, publicVersion, versionWithoutAccessDefined, privateTrialVersionWithoutWhitelist, privateVersionWithAppWhitelisted))
+            Seq(anAPIDefinition(context, publicVersion2, publicVersion1, privateTrialVersionWithoutWhitelist, privateVersionWithAppWhitelisted))
         }
       }
     }
@@ -267,7 +267,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
 
         val result = await(underTest.fetchAllPublicAPIs(alsoIncludePrivateTrials))
 
-        result shouldBe Seq(anAPIDefinition(context, versionWithoutAccessDefined, publicVersion))
+        result shouldBe Seq(anAPIDefinition(context, publicVersion1, publicVersion2))
       }
     }
 
@@ -283,8 +283,8 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
 
         result shouldBe Seq(anAPIDefinition(
           context,
-          versionWithoutAccessDefined,
-          publicVersion,
+          publicVersion1,
+          publicVersion2,
           privateTrialVersionWithWhitelist,
           privateTrialVersionWithoutWhitelist
         ))
@@ -309,8 +309,8 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
 
       val api = anAPIDefinition(
         context,
-        publicVersion,
-        versionWithoutAccessDefined,
+        publicVersion2,
+        publicVersion1,
         privateVersionWithAppWhitelisted,
         privateVersionWithoutAppWhitelisted,
         privateTrialVersionWithWhitelist,
@@ -375,7 +375,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
     }
   }
 
-  private def aVersion(version: ApiVersionNbr, status: ApiStatus = ApiStatus.BETA, access: Option[ApiAccess]) =
+  private def aVersion(version: ApiVersionNbr, status: ApiStatus = ApiStatus.BETA, access: ApiAccess) =
     ApiVersion(version, status, access, List(Endpoint("/test", "test", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)))
 
   private def someAPIDefinition: ApiDefinition =
@@ -389,21 +389,24 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
         ApiVersion(
           ApiVersionNbr("1.0"),
           ApiStatus.BETA,
-          Some(ApiAccess.PUBLIC),
+          ApiAccess.PUBLIC,
           List(
             Endpoint(
               "/today",
               "Get Today's Date",
               HttpMethod.GET,
               AuthType.NONE,
-              ResourceThrottlingTier.UNLIMITED
+              ResourceThrottlingTier.UNLIMITED,
+              None,
+              queryParameters = List.empty
             )
           )
         )
       ),
+      false,
+      false,
       None,
-      None,
-      None
+      List(ApiCategory.OTHER)
     )
 
 }

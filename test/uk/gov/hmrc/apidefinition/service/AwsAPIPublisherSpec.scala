@@ -37,7 +37,7 @@ class AwsAPIPublisherSpec extends AsyncHmrcSpec {
   private def anAPIVersion(version: String, status: ApiStatus = ApiStatus.BETA) = ApiVersion(
     ApiVersionNbr(version),
     status,
-    Some(ApiAccess.PUBLIC),
+    ApiAccess.PUBLIC,
     List(
       Endpoint(
         "/today",
@@ -64,7 +64,10 @@ class AwsAPIPublisherSpec extends AsyncHmrcSpec {
       UUID.randomUUID().toString,
       context,
       versions,
-      None
+      false,
+      false,
+      None,
+      List(ApiCategory.OTHER)
     )
   }
 

@@ -28,6 +28,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
+import uk.gov.hmrc.apidefinition.models.TolerantJsonApiDefinition
 
 object APIDefinitionService {
 
@@ -43,6 +44,8 @@ class APIDefinitionService @Inject() (
     playApplicationContext: AppConfig
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger with ClockNow {
+
+  implicit val useThisFormatter = TolerantJsonApiDefinition.tolerantFormatApiDefinition
 
   def createOrUpdate(apiDefinition: ApiDefinition)(implicit hc: HeaderCarrier): Future[Unit] = {
 
@@ -125,8 +128,8 @@ class APIDefinitionService @Inject() (
   def fetchAllPrivateAPIs(): Future[Seq[ApiDefinition]] = {
 
     def hasPrivateAccess(apiVersion: ApiVersion) = apiVersion.access match {
-      case Some(ApiAccess.Private(_, _)) => true
-      case _                             => false
+      case ApiAccess.Private(_, _) => true
+      case _                       => false
     }
 
     def removePublicVersions(api: ApiDefinition) =
@@ -150,9 +153,9 @@ class APIDefinitionService @Inject() (
   }
 
   private def filterAPIForApplications(alsoIncludePrivateTrials: Boolean, applicationIds: String*): ApiDefinition => Option[ApiDefinition] = { api =>
-    val filteredVersions = api.versions.filter(_.access.getOrElse(ApiAccess.PUBLIC) match {
-      case access: ApiAccess.Private =>
-        access.whitelistedApplicationIds.exists(s => applicationIds.contains(s)) || (access.isTrial.contains(true) && alsoIncludePrivateTrials)
+    val filteredVersions = api.versions.filter(_.access match {
+      case ApiAccess.Private(whitelistedApplicationIds, isTrial) =>
+        whitelistedApplicationIds.exists(s => applicationIds.contains(s)) || (isTrial && alsoIncludePrivateTrials)
       case _                         => true
     })
 
