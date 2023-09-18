@@ -20,7 +20,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{blocking, ExecutionContext, Future}
 
 import play.api.libs.json.{JsValue, Json}
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersionNbr
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiVersionNbr
 import uk.gov.hmrc.ramltools.domain.RamlNotFoundException
 import uk.gov.hmrc.ramltools.loaders.RamlLoader
 

@@ -33,6 +33,7 @@ import uk.gov.hmrc.mongo.play.json.{Codecs, CollectionFactory, PlayMongoReposito
 
 import uk.gov.hmrc.apidefinition.utils.IndexHelper.createUniqueBackgroundSingleFieldAscendingIndex
 import uk.gov.hmrc.apidefinition.models.TolerantJsonApiDefinition
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiContext
 
 @Singleton
 class APIDefinitionRepository @Inject() (mongoComponent: MongoComponent)(implicit val ec: ExecutionContext)

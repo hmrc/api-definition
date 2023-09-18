@@ -17,7 +17,7 @@
 package uk.gov.hmrc.apidefinition.controllers
 
 import play.api.mvc.{PathBindable, QueryStringBindable}
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 
 package object binders {
 

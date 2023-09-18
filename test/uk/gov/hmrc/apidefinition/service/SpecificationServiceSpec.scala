@@ -23,7 +23,7 @@ import akka.stream.Materializer
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 
 import play.api.libs.json.Json
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersionNbr
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiVersionNbr
 import uk.gov.hmrc.ramltools.domain.RamlNotFoundException
 import uk.gov.hmrc.ramltools.loaders.RamlLoader
 

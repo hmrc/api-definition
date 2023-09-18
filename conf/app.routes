@@ -2,9 +2,9 @@
 
 GET         /api-definition                                                      uk.gov.hmrc.apidefinition.controllers.APIDefinitionController.queryDispatcher()
 GET         /api-definition/:serviceName                                         uk.gov.hmrc.apidefinition.controllers.APIDefinitionController.fetch(serviceName)
-GET         /api-definition/:serviceName/:version/documentation/*resource        uk.gov.hmrc.apidefinition.controllers.DocumentationController.fetchApiDocumentationResource(serviceName: String, version: uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersionNbr, resource: String)
+GET         /api-definition/:serviceName/:version/documentation/*resource        uk.gov.hmrc.apidefinition.controllers.DocumentationController.fetchApiDocumentationResource(serviceName: String, version: uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiVersionNbr, resource: String)
 
-GET         /api-definition/:serviceName/:version/specification                  uk.gov.hmrc.apidefinition.controllers.SpecificationController.fetchApiSpecification(serviceName: String, version: uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersionNbr)
+GET         /api-definition/:serviceName/:version/specification                  uk.gov.hmrc.apidefinition.controllers.SpecificationController.fetchApiSpecification(serviceName: String, version: uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiVersionNbr)
 
 POST        /api-definition                                                      uk.gov.hmrc.apidefinition.controllers.APIDefinitionController.createOrUpdate()
 POST        /api-definition/validate                                             uk.gov.hmrc.apidefinition.controllers.APIDefinitionController.validate

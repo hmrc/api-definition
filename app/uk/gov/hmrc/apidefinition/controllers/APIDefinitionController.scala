@@ -35,6 +35,7 @@ import uk.gov.hmrc.apidefinition.services.APIDefinitionService
 import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
 import uk.gov.hmrc.apidefinition.validators.ApiDefinitionValidator
 import uk.gov.hmrc.apidefinition.models.TolerantJsonApiDefinition
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiContext
 
 @Singleton
 class APIDefinitionController @Inject() (

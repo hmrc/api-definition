@@ -18,6 +18,7 @@ package uk.gov.hmrc.apiplatform.modules.apis.domain.models
 
 import uk.gov.hmrc.apiplatform.modules.common.utils.BaseJsonFormattersSpec
 import uk.gov.hmrc.apidefinition.models.TolerantJsonApiVersion
+import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 
 class TolerantJsonApiVersionSpec extends BaseJsonFormattersSpec {
 

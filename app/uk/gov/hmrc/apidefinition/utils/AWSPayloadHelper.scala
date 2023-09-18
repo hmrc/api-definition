@@ -23,6 +23,7 @@ import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 
 import uk.gov.hmrc.apidefinition.models.AWSAPIDefinition._
 import uk.gov.hmrc.apidefinition.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiContext
 
 object AWSPayloadHelper {
 

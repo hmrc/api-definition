@@ -17,7 +17,7 @@
 package uk.gov.hmrc.apidefinition.models.apispecification
 
 import play.api.libs.json.Json
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersionNbr
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiVersionNbr
 
 import uk.gov.hmrc.apidefinition.models.apispecification.RamlSpecHelper.loadRaml
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec

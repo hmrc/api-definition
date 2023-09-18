@@ -19,6 +19,7 @@ package uk.gov.hmrc.apidefinition.models
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiDefinition, _}
 
 import uk.gov.hmrc.apidefinition.models.AWSParameterType.AWSParameterType
+import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 
 case class AWSAPIDefinition(name: String, context: ApiContext, version: ApiVersionNbr, subscribersCount: Int, endpointConfig: AWSEndpointConfig, swagger: Option[AWSSwaggerDetails])
 

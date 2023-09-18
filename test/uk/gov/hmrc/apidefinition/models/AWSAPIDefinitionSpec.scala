@@ -16,7 +16,8 @@
 
 package uk.gov.hmrc.apidefinition.models
 
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiContext, ApiDefinition, ApiVersionNbr}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiDefinition
 
 import uk.gov.hmrc.apidefinition.models.AWSAPIDefinition.awsApiGatewayName
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec

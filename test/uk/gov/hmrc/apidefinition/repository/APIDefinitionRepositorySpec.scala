@@ -36,6 +36,7 @@ import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 import org.mongodb.scala.bson.collection.immutable.Document
 import play.api.libs.json.Json
+import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 
 class APIDefinitionRepositorySpec extends AsyncHmrcSpec
     with DefaultPlayMongoRepositorySupport[ApiDefinition]
