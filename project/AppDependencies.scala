@@ -10,7 +10,7 @@ object AppDependencies {
   private lazy val dependencies = Seq(
     "uk.gov.hmrc"       %% "bootstrap-backend-play-28" % bootstrapVersion,
     "uk.gov.hmrc.mongo" %% "hmrc-mongo-play-28"        % mongoPlayVersion,
-    "uk.gov.hmrc"       %% "api-platform-api-domain"   % "0.1.9",
+    "uk.gov.hmrc"       %% "api-platform-api-domain"   % "0.1.10",
     "uk.gov.hmrc"       %% "raml-tools"                % "1.23.0",
     "org.typelevel"     %% "cats-core"                 % "2.9.0"
   )
