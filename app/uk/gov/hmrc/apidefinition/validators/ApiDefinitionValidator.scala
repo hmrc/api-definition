@@ -100,7 +100,7 @@ class ApiDefinitionValidator @Inject() (
   }
 
   private def uniqueVersionsPredicate(definition: ApiDefinition): Boolean = {
-    !definition.versions.map(_.version).groupBy(identity).view.mapValues(_.size).exists(_._2 > 1)
+    !definition.versions.map(_.versionNbr).groupBy(identity).view.mapValues(_.size).exists(_._2 > 1)
   }
 
   private def validateAllVersions(errorContext: String)(apiDefinition: ApiDefinition): HMRCValidated[List[ApiVersion]] = {

@@ -28,12 +28,12 @@ import org.mongodb.scala.model.{FindOneAndReplaceOptions, ReturnDocument}
 
 import play.api.Logging
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiContext
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, CollectionFactory, PlayMongoRepository}
 
-import uk.gov.hmrc.apidefinition.utils.IndexHelper.createUniqueBackgroundSingleFieldAscendingIndex
 import uk.gov.hmrc.apidefinition.models.TolerantJsonApiDefinition
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiContext
+import uk.gov.hmrc.apidefinition.utils.IndexHelper.createUniqueBackgroundSingleFieldAscendingIndex
 
 @Singleton
 class APIDefinitionRepository @Inject() (mongoComponent: MongoComponent)(implicit val ec: ExecutionContext)

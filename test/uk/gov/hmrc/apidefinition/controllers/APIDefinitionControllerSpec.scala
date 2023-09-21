@@ -42,6 +42,7 @@ import play.api.test.Helpers._
 import play.api.test.{FakeRequest, StubControllerComponentsFactory}
 import play.mvc.Http.HeaderNames
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.http.{BadRequestException, UnauthorizedException}
 
 import uk.gov.hmrc.apidefinition.config.AppConfig
@@ -51,7 +52,6 @@ import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.services.APIDefinitionService
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 import uk.gov.hmrc.apidefinition.validators._
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 
 class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFactory with TolerantJsonApiDefinition {
 
@@ -61,6 +61,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
 
     val serviceName = "calendar"
     val userEmail   = "user@email.com"
+    val appId       = ApplicationId.random
 
     val mockAPIDefinitionService: APIDefinitionService       = mock[APIDefinitionService]
     val mockApiDefinitionRepository: APIDefinitionRepository = mock[APIDefinitionRepository]
@@ -80,13 +81,15 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
   trait QueryDispatcherSetup extends Setup {
 
     val apiDefinitions: Seq[ApiDefinition] =
-      Array.fill(2)(ApiDefinition("MyApiDefinitionServiceName1", "MyUrl", "MyName", "My description", ApiContext("MyContext"), Nil, false, false, None, List(ApiCategory.AGENTS))).toIndexedSeq
+      Array.fill(2)(
+        ApiDefinition("MyApiDefinitionServiceName1", "MyUrl", "MyName", "My description", ApiContext("MyContext"), Nil, false, false, None, List(ApiCategory.AGENTS))
+      ).toIndexedSeq
 
     when(mockAPIDefinitionService.fetchByContext(*[ApiContext])).thenReturn(successful(Some(apiDefinitions.head)))
     when(mockAPIDefinitionService.fetchAllPublicAPIs(*)).thenReturn(successful(apiDefinitions))
     when(mockAPIDefinitionService.fetchAllPrivateAPIs()).thenReturn(successful(apiDefinitions))
     when(mockAPIDefinitionService.fetchAll).thenReturn(successful(apiDefinitions))
-    when(mockAPIDefinitionService.fetchAllAPIsForApplication(*, *)).thenReturn(successful(apiDefinitions))
+    when(mockAPIDefinitionService.fetchAllAPIsForApplication(*[ApplicationId], *)).thenReturn(successful(apiDefinitions))
 
     def verifyApiDefinitionsReturnedOkWithNoCacheControl(result: Future[Result]) = {
       status(result) shouldBe OK
@@ -377,36 +380,39 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
     }
 
     "parse an API definition with PRIVATE access type" in new ValidatorSetup {
+      val app1 = ApplicationId.random
+      val app2 = ApplicationId.random
+
       private val apiDefinitionJson =
-        """{
-          |  "serviceName": "calendar",
-          |  "name": "Calendar API",
-          |  "description": "My Calendar API",
-          |  "serviceBaseUrl": "http://calendar",
-          |  "context": "individuals/calendar",
-          |  "requiresTrust": true,
-          |  "categories" : ["OTHER"],
-          |  "versions": [
-          |  {
-          |    "version" : "1.0",
-          |    "status" : "STABLE",
-          |    "access" : {
-          |      "type" : "PRIVATE",
-          |      "whitelistedApplicationIds" : ["app-id-1","app-id-2"]
-          |    },
-          |    "endpoints": [
-          |    {
-          |      "uriPattern": "/today",
-          |      "endpointName":"Get Today's Date",
-          |      "method": "GET",
-          |      "authType": "NONE",
-          |      "throttlingTier": "UNLIMITED"
-          |    }
-          |    ],
-          |    "endpointsEnabled": true
-          |  }
-          |  ]
-          |}""".stripMargin.replaceAll("\n", " ")
+        s"""{
+           |  "serviceName": "calendar",
+           |  "name": "Calendar API",
+           |  "description": "My Calendar API",
+           |  "serviceBaseUrl": "http://calendar",
+           |  "context": "individuals/calendar",
+           |  "requiresTrust": true,
+           |  "categories" : ["OTHER"],
+           |  "versions": [
+           |  {
+           |    "version" : "1.0",
+           |    "status" : "STABLE",
+           |    "access" : {
+           |      "type" : "PRIVATE",
+           |      "whitelistedApplicationIds" : ["$app1","$app2"]
+           |    },
+           |    "endpoints": [
+           |    {
+           |      "uriPattern": "/today",
+           |      "endpointName":"Get Today's Date",
+           |      "method": "GET",
+           |      "authType": "NONE",
+           |      "throttlingTier": "UNLIMITED"
+           |    }
+           |    ],
+           |    "endpointsEnabled": true
+           |  }
+           |  ]
+           |}""".stripMargin.replaceAll("\n", " ")
 
       val apiDefinition = ApiDefinition(
         "calendar",
@@ -417,7 +423,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
         versions = List(ApiVersion(
           ApiVersionNbr("1.0"),
           ApiStatus.STABLE,
-          ApiAccess.Private(List("app-id-1", "app-id-2"), false),
+          ApiAccess.Private(List(app1, app2), false),
           List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
           true
         )),
@@ -608,10 +614,10 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
 
     "fail with a 500 (internal server error) when the applicationId is defined and the service throws an exception" in new QueryDispatcherSetup {
 
-      when(mockAPIDefinitionService.fetchAllAPIsForApplication(eqTo("APP_ID"), *))
+      when(mockAPIDefinitionService.fetchAllAPIsForApplication(eqTo(appId), *))
         .thenReturn(failed(new RuntimeException("Something went wrong")))
 
-      private val result = underTest.queryDispatcher()(FakeRequest("GET", s"?applicationId=APP_ID"))
+      private val result = underTest.queryDispatcher()(FakeRequest("GET", s"?applicationId=$appId"))
 
       status(result) shouldBe INTERNAL_SERVER_ERROR
       header(HeaderNames.CACHE_CONTROL, result) shouldBe None
@@ -655,11 +661,11 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
 
         "return all the APIs (without private trials) available for an applicationId" in new QueryDispatcherSetup {
 
-          private val result = underTest.queryDispatcher()(FakeRequest("GET", s"?applicationId=APP_ID"))
+          private val result = underTest.queryDispatcher()(FakeRequest("GET", s"?applicationId=$appId"))
 
           verifyApiDefinitionsReturnedOkWithNoCacheControl(result)
 
-          verify(mockAPIDefinitionService).fetchAllAPIsForApplication("APP_ID", alsoIncludePrivateTrials)
+          verify(mockAPIDefinitionService).fetchAllAPIsForApplication(appId, alsoIncludePrivateTrials)
         }
       }
 
@@ -702,11 +708,11 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
 
         "return all the APIs available for an applicationId (including private trials)" in new QueryDispatcherSetup {
 
-          private val result = underTest.queryDispatcher()(FakeRequest("GET", s"?applicationId=APP_ID&options=alsoIncludePrivateTrials"))
+          private val result = underTest.queryDispatcher()(FakeRequest("GET", s"?applicationId=$appId&options=alsoIncludePrivateTrials"))
 
           verifyApiDefinitionsReturnedOkWithNoCacheControl(result)
 
-          verify(mockAPIDefinitionService).fetchAllAPIsForApplication("APP_ID", alsoIncludePrivateTrials)
+          verify(mockAPIDefinitionService).fetchAllAPIsForApplication(appId, alsoIncludePrivateTrials)
         }
       }
     }

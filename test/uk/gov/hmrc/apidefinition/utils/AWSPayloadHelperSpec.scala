@@ -17,10 +17,10 @@
 package uk.gov.hmrc.apidefinition.utils
 
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 
 import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.utils.AWSPayloadHelper._
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 
 class AWSPayloadHelperSpec extends AsyncHmrcSpec {
 
@@ -55,7 +55,7 @@ class AWSPayloadHelperSpec extends AsyncHmrcSpec {
       )
 
       val apiVersion = ApiVersion(
-        version = ApiVersionNbr("1.0"),
+        versionNbr = ApiVersionNbr("1.0"),
         status = ApiStatus.STABLE,
         access = ApiAccess.PUBLIC,
         endpoints = List(populatedEndpoint),

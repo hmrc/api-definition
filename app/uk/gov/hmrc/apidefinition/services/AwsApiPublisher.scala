@@ -25,6 +25,7 @@ import scala.util.matching.Regex
 import com.google.inject.Singleton
 
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiDefinition, _}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiContext
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apidefinition.connector.AWSAPIPublisherConnector
@@ -32,7 +33,6 @@ import uk.gov.hmrc.apidefinition.models.AWSAPIDefinition.awsApiGatewayName
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.utils.AWSPayloadHelper.buildAWSSwaggerDetails
 import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiContext
 
 @Singleton
 class AwsApiPublisher @Inject() (val awsAPIPublisherConnector: AWSAPIPublisherConnector, val apiDefinitionRepository: APIDefinitionRepository)(implicit val ec: ExecutionContext)
@@ -48,7 +48,7 @@ class AwsApiPublisher @Inject() (val awsAPIPublisherConnector: AWSAPIPublisherCo
   def publish(apiDefinition: ApiDefinition)(implicit hc: HeaderCarrier): Future[Unit] = {
     sequence {
       apiDefinition.versions.map { apiVersion =>
-        val apiName = awsApiGatewayName(apiVersion.version, apiDefinition)
+        val apiName = awsApiGatewayName(apiVersion.versionNbr, apiDefinition)
 
         apiVersion.status match {
           case ApiStatus.RETIRED => deleteAPIVersion(apiName)
@@ -74,13 +74,13 @@ class AwsApiPublisher @Inject() (val awsAPIPublisherConnector: AWSAPIPublisherCo
     val hostRegex(host) = serviceBaseUrl
     val swagger         = buildAWSSwaggerDetails(apiDefinitionName, apiVersion, context, host)
     awsAPIPublisherConnector.createOrUpdateAPI(apiName, swagger)(hc)
-      .map(awsRequestId => logger.info(s"Successfully published API [$apiName] Version [${apiVersion.version}] under AWS Request Id [$awsRequestId]"))
+      .map(awsRequestId => logger.info(s"Successfully published API [$apiName] Version [${apiVersion.versionNbr}] under AWS Request Id [$awsRequestId]"))
   }
 
   def delete(apiDefinition: ApiDefinition)(implicit hc: HeaderCarrier): Future[Unit] = {
     sequence {
       apiDefinition.versions.map { apiVersion =>
-        deleteAPIVersion(awsApiGatewayName(apiVersion.version, apiDefinition))
+        deleteAPIVersion(awsApiGatewayName(apiVersion.versionNbr, apiDefinition))
       }
     } map { _ =>
       logger.info(s"Successfully deleted all versions for API '${apiDefinition.serviceName}' from AWS API Gateway")

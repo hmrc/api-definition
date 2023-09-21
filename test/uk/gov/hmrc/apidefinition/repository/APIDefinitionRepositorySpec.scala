@@ -22,6 +22,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 import com.mongodb.MongoWriteException
+import org.mongodb.scala.bson.collection.immutable.Document
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.{IndexModel, IndexOptions}
 import org.scalatest.concurrent.Eventually
@@ -30,13 +31,12 @@ import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.libs.json.Json
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiDefinition, _}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
-import org.mongodb.scala.bson.collection.immutable.Document
-import play.api.libs.json.Json
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 
 class APIDefinitionRepositorySpec extends AsyncHmrcSpec
     with DefaultPlayMongoRepositorySupport[ApiDefinition]
@@ -53,14 +53,14 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
   override implicit lazy val app: Application                                                 = appBuilder.build()
 
   private val helloApiVersion = ApiVersion(
-    version = ApiVersionNbr("1.0"),
+    versionNbr = ApiVersionNbr("1.0"),
     status = ApiStatus.BETA,
     access = ApiAccess.PUBLIC,
     endpoints = List(Endpoint("/world", "Say Hello to the World!", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
   )
 
   private val calendarApiVersion = ApiVersion(
-    version = ApiVersionNbr("2.0"),
+    versionNbr = ApiVersionNbr("2.0"),
     status = ApiStatus.STABLE,
     access = ApiAccess.PUBLIC,
     endpoints = List(Endpoint("/date", "Check current date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
@@ -89,10 +89,11 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
     requiresTrust = false,
     isTestSupport = false,
     lastPublishedAt = None,
-    categories = List(ApiCategory.AGENTS)  )
+    categories = List(ApiCategory.AGENTS)
+  )
 
   private val individualIncomeTaxApiVersion = ApiVersion(
-    version = ApiVersionNbr("1.0"),
+    versionNbr = ApiVersionNbr("1.0"),
     status = ApiStatus.STABLE,
     access = ApiAccess.PUBLIC,
     endpoints = List(Endpoint("/submit", "Submit Income Tax Return", HttpMethod.POST, AuthType.USER, ResourceThrottlingTier.UNLIMITED))
@@ -112,7 +113,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
   )
 
   private val individualNIApiVersion = ApiVersion(
-    version = ApiVersionNbr("1.0"),
+    versionNbr = ApiVersionNbr("1.0"),
     status = ApiStatus.STABLE,
     access = ApiAccess.PUBLIC,
     endpoints = List(Endpoint("/submit", "Submit National Insurance", HttpMethod.POST, AuthType.USER, ResourceThrottlingTier.UNLIMITED)),
@@ -388,32 +389,32 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
 
     "use the tolerant readers" in {
       val rawJson = Json.obj(
-        "serviceName" -> "calendar",
-        "name" -> "Calendar API",
-        "description" -> "My Calendar API",
+        "serviceName"    -> "calendar",
+        "name"           -> "Calendar API",
+        "description"    -> "My Calendar API",
         "serviceBaseUrl" -> "http://calendar",
-        "context" -> "individuals/calendar",
-        "requiresTrust" -> true,
-        "categories" -> Seq("OTHER"),
-        "versions" -> Seq(
+        "context"        -> "individuals/calendar",
+        "requiresTrust"  -> true,
+        "categories"     -> Seq("OTHER"),
+        "versions"       -> Seq(
           Json.obj(
-            "version" -> "1.0",
-            "status" -> "STABLE",
+            "version"   -> "1.0",
+            "status"    -> "STABLE",
             "endpoints" -> Seq(
               Json.obj(
-                "uriPattern" -> "/today",
-                "endpointName" -> "Get Today's Date",
-                "method" -> "GET",
-                "authType" -> "NONE",
+                "uriPattern"     -> "/today",
+                "endpointName"   -> "Get Today's Date",
+                "method"         -> "GET",
+                "authType"       -> "NONE",
                 "throttlingTier" -> "UNLIMITED"
               )
             )
           )
         )
       )
-      
-      await(mongoDatabase.getCollection("api").insertOne(Document(rawJson.toString())).toFuture())  
-      
+
+      await(mongoDatabase.getCollection("api").insertOne(Document(rawJson.toString())).toFuture())
+
       val records = await(repository.fetchAll())
 
       records.size shouldBe 1

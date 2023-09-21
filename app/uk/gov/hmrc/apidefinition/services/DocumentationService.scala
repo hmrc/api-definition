@@ -27,12 +27,12 @@ import play.api.libs.ws.WSResponse
 import play.api.mvc.Result
 import play.api.mvc.Results._
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiDefinition, _}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiVersionNbr
 import uk.gov.hmrc.http.{InternalServerException, NotFoundException}
 
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.connector.ApiMicroserviceConnector
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiVersionNbr
 
 object DocumentationService {
   val PROXY_SAFE_CONTENT_TYPE = "Proxy-Safe-Content-Type"
@@ -93,7 +93,7 @@ class DocumentationService @Inject() (
       version match {
         case ApiVersionNbr("common") => None.pure[Future]
         case v                       =>
-          val oVersion = apiDefinition.versions.find(_.version == version)
+          val oVersion = apiDefinition.versions.find(_.versionNbr == version)
           oVersion.fold(failure)(v => Some(v).pure[Future])
       }
     }

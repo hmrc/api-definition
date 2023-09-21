@@ -16,14 +16,18 @@
 
 package uk.gov.hmrc.apidefinition.models
 
-import play.api.libs.json._
 import play.api.libs.functional.syntax._
+import play.api.libs.json._
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiVersionNbr
 
 trait TolerantJsonApiVersion extends TolerantJsonApiAccess with TolerantJsonEndpoint {
-  private val apiVersionReads: Reads[ApiVersion] = (
-    (JsPath \ "version").read[ApiVersionNbr] and
+
+  private val readsApiVersion: Reads[ApiVersion] = (
+    (
+      (JsPath \ "version").read[ApiVersionNbr] or   // Existing field name
+        (JsPath \ "versionNbr").read[ApiVersionNbr] // TODO - Future aim to be this field name
+    ) and
       (JsPath \ "status").read[ApiStatus] and
       ((JsPath \ "access").readNullable[ApiAccess].map(_.getOrElse(ApiAccess.PUBLIC))) and
       (JsPath \ "endpoints").read[List[Endpoint]] and
@@ -32,9 +36,17 @@ trait TolerantJsonApiVersion extends TolerantJsonApiAccess with TolerantJsonEndp
       ((JsPath \ "versionSource").readNullable[ApiVersionSource].map(_.getOrElse(ApiVersionSource.UNKNOWN)))
   )(ApiVersion.apply _)
 
-  private val apiVersionWrites: OWrites[ApiVersion] = Json.writes[ApiVersion]
-  
-  implicit val tolerantFormatApiVersion = OFormat[ApiVersion](apiVersionReads, apiVersionWrites)
+  private val writesApiVersion: OWrites[ApiVersion] = (
+    (JsPath \ "version").write[ApiVersionNbr] and // TODO - change to versionNbr once all readers are safe
+      (JsPath \ "status").write[ApiStatus] and
+      (JsPath \ "access").write[ApiAccess] and
+      (JsPath \ "endpoints").write[List[Endpoint]] and
+      (JsPath \ "endpointsEnabled").write[Boolean] and
+      (JsPath \ "awsRequestId").writeNullable[String] and
+      (JsPath \ "versionSource").write[ApiVersionSource]
+  )(unlift(ApiVersion.unapply))
+
+  implicit val tolerantFormatApiVersion: OFormat[ApiVersion] = OFormat[ApiVersion](readsApiVersion, writesApiVersion)
 }
 
 object TolerantJsonApiVersion extends TolerantJsonApiVersion

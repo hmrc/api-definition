@@ -16,28 +16,30 @@
 
 package uk.gov.hmrc.apidefinition.models
 
-import uk.gov.hmrc.apiplatform.modules.common.utils.BaseJsonFormattersSpec
 import play.api.libs.json.Json
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.utils.BaseJsonFormattersSpec
 
 class TolerantJsonApiDefinitionSpec extends BaseJsonFormattersSpec {
   implicit val useMe = TolerantJsonApiDefinition.tolerantFormatApiDefinition
+  val appId          = ApplicationId.random
 
   "TolerantJsonApiDefinition" should {
     def anApiDefinition(
-      accessType: String = "PUBLIC",
-      whitelistedApplicationIds: Option[String] = None,
-      isTrial: Boolean = false,
-      requiresTrust: Option[Boolean] = None,
-      isTestSupport: Option[Boolean] = Some(false),
-      categories: Option[String] = None
-    ) = {
+        accessType: String = "PUBLIC",
+        whitelistedApplicationIds: Option[String] = None,
+        isTrial: Boolean = false,
+        requiresTrust: Option[Boolean] = None,
+        isTestSupport: Option[Boolean] = Some(false),
+        categories: Option[String] = None
+      ) = {
 
-      val whitelistText = whitelistedApplicationIds.fold("")(text => s""" "whitelistedApplicationIds": $text,""")
+      val whitelistText     = whitelistedApplicationIds.fold("")(text => s""" "whitelistedApplicationIds": $text,""")
       val isTestSupportText = isTestSupport.fold("")(x => s""" "isTestSupport": $x,""")
       val requiresTrustText = requiresTrust.fold("")(x => s""" "requiresTrust": $x,""")
-      val categoriesText = categories.fold("")(text => s""" "categories": $text,""")
-      
+      val categoriesText    = categories.fold("")(text => s""" "categories": $text,""")
+
       val body =
         s"""{
            |   "serviceName":"calendar",
@@ -107,9 +109,9 @@ class TolerantJsonApiDefinitionSpec extends BaseJsonFormattersSpec {
     }
 
     "read from JSON when the API access type is PRIVATE and there is a non-empty whitelist" in {
-      val apiDefinition = anApiDefinition(accessType = "PRIVATE", whitelistedApplicationIds = Some("[\"an-application-id\"]"))
+      val apiDefinition = anApiDefinition(accessType = "PRIVATE", whitelistedApplicationIds = Some(s"[\"$appId\"]"))
 
-      apiDefinition.versions.head.access shouldBe ApiAccess.Private(List("an-application-id"))
+      apiDefinition.versions.head.access shouldBe ApiAccess.Private(List(appId))
     }
 
     "no longer fail to read from JSON when the API access type is PRIVATE and there is no whitelist" in {

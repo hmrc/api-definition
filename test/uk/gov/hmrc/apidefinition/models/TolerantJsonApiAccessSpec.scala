@@ -16,12 +16,16 @@
 
 package uk.gov.hmrc.apiplatform.modules.apis.domain.models
 
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.utils.BaseJsonFormattersSpec
+
 import uk.gov.hmrc.apidefinition.models.TolerantJsonApiAccess
 
 class TolerantJsonApiAccessSpec extends BaseJsonFormattersSpec {
 
   implicit val useMe = TolerantJsonApiAccess.tolerantFormatApiAccess
+
+  val appId = ApplicationId.random
 
   "TolerantJsonApiAccess" should {
 
@@ -34,11 +38,21 @@ class TolerantJsonApiAccessSpec extends BaseJsonFormattersSpec {
     }
 
     "read private access from Json even without isPrivateTrial" in {
-      testFromJson[ApiAccess]("""{ "type": "PRIVATE",  "whitelistedApplicationIds": ["123"]}""")(ApiAccess.Private(List("123"), false))
+      testFromJson[ApiAccess](s"""{ "type": "PRIVATE",  "whitelistedApplicationIds": ["$appId"]}""")(ApiAccess.Private(List(appId), false))
     }
 
     "read private access with fields from Json" in {
-      testFromJson[ApiAccess]("""{ "type": "PRIVATE", "whitelistedApplicationIds": ["123"], "isTrial": true}""")(ApiAccess.Private(List("123"), true))
+      testFromJson[ApiAccess](s"""{ "type": "PRIVATE", "whitelistedApplicationIds": ["$appId"], "isTrial": true}""")(ApiAccess.Private(List(appId), true))
+    }
+
+    "read private access with fields from Json with newer field" in {
+      testFromJson[ApiAccess](s"""{ "type": "PRIVATE", "allowlistedApplicationIds": ["$appId"], "isTrial": true}""")(ApiAccess.Private(List(appId), true))
+    }
+
+    "fail to read private access with fields from Json with bad value newer field" in {
+      intercept[RuntimeException] {
+        testFromJson[ApiAccess](s"""{ "type": "PRIVATE", "allowlistedApplicationIds": [999], "isTrial": true}""")(ApiAccess.Private(List(appId), true))
+      }
     }
 
     "fail to read private access from Json when bad whitelist type" in {

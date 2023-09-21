@@ -24,6 +24,7 @@ import scala.jdk.CollectionConverters._
 import org.mockito.{ArgumentCaptor, ArgumentMatchers}
 
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiDefinition, ApiStatus, _}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apidefinition.connector.AWSAPIPublisherConnector
@@ -31,7 +32,6 @@ import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.services.AwsApiPublisher
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 
 class AwsAPIPublisherSpec extends AsyncHmrcSpec {
 

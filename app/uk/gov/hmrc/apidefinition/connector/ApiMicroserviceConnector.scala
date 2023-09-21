@@ -20,9 +20,9 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 import play.api.libs.ws.{WSClient, WSResponse}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiVersionNbr
 
 import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiVersionNbr
 
 @Singleton
 class ApiMicroserviceConnector @Inject() (ws: WSClient)(implicit val ec: ExecutionContext) extends ApplicationLogger {

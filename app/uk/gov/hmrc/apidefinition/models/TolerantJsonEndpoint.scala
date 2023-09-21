@@ -16,11 +16,12 @@
 
 package uk.gov.hmrc.apidefinition.models
 
-import play.api.libs.json._
 import play.api.libs.functional.syntax._
+import play.api.libs.json._
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 
 trait TolerantJsonEndpoint {
+
   private val endpointReads: Reads[Endpoint] = (
     (JsPath \ "uriPattern").read[String] and
       (JsPath \ "endpointName").read[String] and
@@ -32,7 +33,7 @@ trait TolerantJsonEndpoint {
   )(Endpoint.apply _)
 
   private val endpointWrites: OWrites[Endpoint] = Json.writes[Endpoint]
-  
+
   implicit val tolerantFormatEndpoint = OFormat[Endpoint](endpointReads, endpointWrites)
 }
 

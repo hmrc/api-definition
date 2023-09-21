@@ -24,8 +24,8 @@ import org.mockito.ArgumentCaptor
 
 import play.api.http.Status.{INTERNAL_SERVER_ERROR, NOT_FOUND, OK}
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiStatus
-import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpResponse}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpResponse}
 
 import uk.gov.hmrc.apidefinition.services.{EmailNotificationService, SendEmailRequest}
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec

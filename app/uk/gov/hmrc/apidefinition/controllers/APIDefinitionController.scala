@@ -25,17 +25,16 @@ import play.api.http.HeaderNames
 import play.api.libs.json._
 import play.api.mvc._
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiDefinition, _}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApiContext, ApplicationId}
 import uk.gov.hmrc.http.UnauthorizedException
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import uk.gov.hmrc.apidefinition.config.AppConfig
-import uk.gov.hmrc.apidefinition.models.ErrorCode
 import uk.gov.hmrc.apidefinition.models.ErrorCode._
+import uk.gov.hmrc.apidefinition.models.{ErrorCode, TolerantJsonApiDefinition}
 import uk.gov.hmrc.apidefinition.services.APIDefinitionService
 import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
 import uk.gov.hmrc.apidefinition.validators.ApiDefinitionValidator
-import uk.gov.hmrc.apidefinition.models.TolerantJsonApiDefinition
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiContext
 
 @Singleton
 class APIDefinitionController @Inject() (
@@ -90,15 +89,17 @@ class APIDefinitionController @Inject() (
   def queryDispatcher(): Action[AnyContent] = Action.async { implicit request =>
     val queryParameters: Seq[(String, String)] = request.queryString.toList.map { case (key, values) => (key, values.head) }.sorted
 
-    val options = extractQueryOptions(request)
+    val options                            = extractQueryOptions(request)
+    lazy val errorInParams: Future[Result] = successful(BadRequest("Invalid query parameter or parameters"))
 
     queryParameters match {
       case Nil | ("options", _) :: Nil                  => fetchAllPublicAPIs(options.alsoIncludePrivateTrials)
       case ("context", context) :: Nil                  => fetchByContext(ApiContext(context))
-      case ("applicationId", applicationId) :: _        => fetchAllForApplication(applicationId, options.alsoIncludePrivateTrials)
+      case ("applicationId", applicationId) :: _        =>
+        ApplicationId.apply(applicationId).fold(errorInParams)(appId => fetchAllForApplication(appId, options.alsoIncludePrivateTrials))
       case ("type", typeValue) :: Nil                   => fetchDefinitionsByType(typeValue, options.alsoIncludePrivateTrials)
       case ("options", _) :: ("type", typeValue) :: Nil => fetchDefinitionsByType(typeValue, options.alsoIncludePrivateTrials)
-      case _                                            => successful(BadRequest("Invalid query parameter or parameters"))
+      case _                                            => errorInParams
     }
   }
 
@@ -141,7 +142,7 @@ class APIDefinitionController @Inject() (
       } recover recovery
   }
 
-  private def fetchAllForApplication(applicationId: String, alsoIncludePrivateTrials: Boolean) = {
+  private def fetchAllForApplication(applicationId: ApplicationId, alsoIncludePrivateTrials: Boolean) = {
     apiDefinitionService
       .fetchAllAPIsForApplication(applicationId, alsoIncludePrivateTrials)
       .map(apiDefinitionToResult) recover recovery

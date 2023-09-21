@@ -22,14 +22,14 @@ import scala.concurrent.Future.{failed, successful}
 import scala.concurrent.{ExecutionContext, Future}
 
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apidefinition.config.AppConfig
+import uk.gov.hmrc.apidefinition.models.TolerantJsonApiDefinition
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
-import uk.gov.hmrc.apidefinition.models.TolerantJsonApiDefinition
-import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 
 object APIDefinitionService {
 
@@ -77,7 +77,7 @@ class APIDefinitionService @Inject() (
   private def checkAPIDefinitionForStatusChanges(apiDefinition: ApiDefinition)(implicit hc: HeaderCarrier): Future[Unit] = {
     def findStatusDifferences(existingAPIVersions: Seq[ApiVersion], newAPIVersions: Seq[ApiVersion]): Seq[(ApiVersionNbr, ApiStatus, ApiStatus)] =
       (existingAPIVersions ++ newAPIVersions)
-        .groupBy(_.version)
+        .groupBy(_.versionNbr)
         .filter(v => v._2.size == 2)
         .filterNot(v => v._2.head.status == v._2.last.status)
         .map(v => (v._1, v._2.head.status, v._2.last.status))
@@ -143,21 +143,21 @@ class APIDefinitionService @Inject() (
     } yield onlyPrivateApis
   }
 
-  def fetchAllAPIsForApplication(applicationId: String, alsoIncludePrivateTrials: Boolean): Future[Seq[ApiDefinition]] = {
+  def fetchAllAPIsForApplication(applicationId: ApplicationId, alsoIncludePrivateTrials: Boolean): Future[Seq[ApiDefinition]] = {
     apiDefinitionRepository.fetchAll().map(filterAPIsForApplications(alsoIncludePrivateTrials, applicationId))
   }
 
-  private def filterAPIsForApplications(alsoIncludePrivateTrials: Boolean, applicationIds: String*): Seq[ApiDefinition] => Seq[ApiDefinition] = {
+  private def filterAPIsForApplications(alsoIncludePrivateTrials: Boolean, applicationIds: ApplicationId*): Seq[ApiDefinition] => Seq[ApiDefinition] = {
     _ flatMap {
       filterAPIForApplications(alsoIncludePrivateTrials, applicationIds: _*)(_)
     }
   }
 
-  private def filterAPIForApplications(alsoIncludePrivateTrials: Boolean, applicationIds: String*): ApiDefinition => Option[ApiDefinition] = { api =>
+  private def filterAPIForApplications(alsoIncludePrivateTrials: Boolean, applicationIds: ApplicationId*): ApiDefinition => Option[ApiDefinition] = { api =>
     val filteredVersions = api.versions.filter(_.access match {
       case ApiAccess.Private(whitelistedApplicationIds, isTrial) =>
         whitelistedApplicationIds.exists(s => applicationIds.contains(s)) || (isTrial && alsoIncludePrivateTrials)
-      case _                         => true
+      case _                                                     => true
     })
 
     if (filteredVersions.isEmpty) None

@@ -10,16 +10,15 @@ object AppDependencies {
   private lazy val dependencies = Seq(
     "uk.gov.hmrc"       %% "bootstrap-backend-play-28" % bootstrapVersion,
     "uk.gov.hmrc.mongo" %% "hmrc-mongo-play-28"        % mongoPlayVersion,
-    "uk.gov.hmrc"       %% "api-platform-api-domain"   % "0.1.11",
-    "uk.gov.hmrc"       %% "raml-tools"                % "1.23.0",
-    "org.typelevel"     %% "cats-core"                 % "2.9.0"
+    "uk.gov.hmrc"       %% "api-platform-api-domain"   % "0.2.0",
+    "uk.gov.hmrc"       %% "raml-tools"                % "1.23.0"
   )
 
   private lazy val testDependencies = Seq(
     "uk.gov.hmrc"              %% "bootstrap-test-play-28"  % bootstrapVersion,
     "uk.gov.hmrc.mongo"        %% "hmrc-mongo-test-play-28" % mongoPlayVersion,
     "org.scalaj"               %% "scalaj-http"             % "2.4.2",
-    "org.mockito"              %% "mockito-scala-scalatest" % "1.17.7",
+    "org.mockito"              %% "mockito-scala-scalatest" % "1.17.22",
     "com.typesafe.play"        %% "play-test"               % PlayVersion.current,
     "de.leanovate.play-mockws" %% "play-mockws"             % "2.8.1"
   ).map(_ % "test, component")

@@ -27,9 +27,9 @@ import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 class ApiVersionValidator @Inject() (apiEndpointValidator: ApiEndpointValidator)(implicit override val ec: ExecutionContext) extends Validator[ApiVersion] {
 
   def validate(ec: String)(implicit version: ApiVersion): HMRCValidated[ApiVersion] = {
-    val errorContext: String = if (version.version.value.isEmpty) ec else s"$ec version '${version.version}'"
+    val errorContext: String = if (version.versionNbr.value.isEmpty) ec else s"$ec version '${version.versionNbr}'"
     (
-      validateThat(_.version.value.nonEmpty, _ => s"Field 'versions.version' is required $errorContext"),
+      validateThat(_.versionNbr.value.nonEmpty, _ => s"Field 'versions.version' is required $errorContext"),
       validateThat(_.endpoints.nonEmpty, _ => s"Field 'versions.endpoints' must not be empty $errorContext"),
       validateStatus(errorContext),
       validateAll[Endpoint](u => apiEndpointValidator.validate(errorContext)(u))(version.endpoints)

@@ -16,12 +16,12 @@
 
 package uk.gov.hmrc.apidefinition.service
 
-import java.util.UUID.randomUUID
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
 
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiStatus, _}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HeaderNames._
@@ -30,7 +30,6 @@ import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.services.{APIDefinitionService, AwsApiPublisher, NotificationService}
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 
 class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
 
@@ -59,13 +58,14 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
       mockAppContext
     )
 
-    val applicationId = randomUUID()
+    val applicationId = ApplicationId.random
+    val otherAppId    = ApplicationId.random
 
     val publicVersion1: ApiVersion                      = aVersion(version = ApiVersionNbr("1.0"), access = ApiAccess.PUBLIC)
-    val publicVersion2                                   = aVersion(version = ApiVersionNbr("2.0"), access = ApiAccess.PUBLIC)
-    val privateVersionWithAppWhitelisted: ApiVersion    = aVersion(version = ApiVersionNbr("3.0"), access = ApiAccess.Private(List(applicationId.toString)))
-    val privateVersionWithoutAppWhitelisted: ApiVersion = aVersion(version = ApiVersionNbr("3.1"), access = ApiAccess.Private(List("OTHER_APP_ID")))
-    val privateTrialVersionWithWhitelist                = aVersion(version = ApiVersionNbr("4.0"), access = ApiAccess.Private(List(applicationId.toString), isTrial = true))
+    val publicVersion2                                  = aVersion(version = ApiVersionNbr("2.0"), access = ApiAccess.PUBLIC)
+    val privateVersionWithAppWhitelisted: ApiVersion    = aVersion(version = ApiVersionNbr("3.0"), access = ApiAccess.Private(List(applicationId)))
+    val privateVersionWithoutAppWhitelisted: ApiVersion = aVersion(version = ApiVersionNbr("3.1"), access = ApiAccess.Private(List(otherAppId)))
+    val privateTrialVersionWithWhitelist                = aVersion(version = ApiVersionNbr("4.0"), access = ApiAccess.Private(List(applicationId), isTrial = true))
     val privateTrialVersionWithoutWhitelist             = aVersion(version = ApiVersionNbr("4.1"), access = ApiAccess.Private(Nil, isTrial = true))
 
     val allVersions = List(
@@ -202,7 +202,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
 
       when(mockAPIDefinitionRepository.fetchAll()).thenReturn(successful(Seq(api)))
 
-      val response = await(underTest.fetchAllAPIsForApplication(applicationId.toString, alsoIncludePrivateTrials = false))
+      val response = await(underTest.fetchAllAPIsForApplication(applicationId, alsoIncludePrivateTrials = false))
 
       response shouldBe Seq()
     }
@@ -225,7 +225,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
 
           when(mockAPIDefinitionRepository.fetchAll()).thenReturn(successful(Seq(api)))
 
-          val response = await(underTest.fetchAllAPIsForApplication(applicationId.toString, alsoIncludePrivateTrials))
+          val response = await(underTest.fetchAllAPIsForApplication(applicationId, alsoIncludePrivateTrials))
 
           response shouldBe Seq(anAPIDefinition(context, publicVersion2, publicVersion1, privateVersionWithAppWhitelisted))
         }
@@ -247,7 +247,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
 
           when(mockAPIDefinitionRepository.fetchAll()).thenReturn(successful(Seq(api)))
 
-          val response = await(underTest.fetchAllAPIsForApplication(applicationId.toString, alsoIncludePrivateTrials))
+          val response = await(underTest.fetchAllAPIsForApplication(applicationId, alsoIncludePrivateTrials))
 
           response shouldBe
             Seq(anAPIDefinition(context, publicVersion2, publicVersion1, privateTrialVersionWithoutWhitelist, privateVersionWithAppWhitelisted))

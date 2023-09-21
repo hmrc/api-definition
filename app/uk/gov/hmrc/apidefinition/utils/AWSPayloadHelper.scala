@@ -20,17 +20,17 @@ import scala.collection.immutable.TreeMap
 import scala.language.postfixOps
 
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiContext
 
 import uk.gov.hmrc.apidefinition.models.AWSAPIDefinition._
 import uk.gov.hmrc.apidefinition.models._
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiContext
 
 object AWSPayloadHelper {
 
   def buildAWSSwaggerDetails(apiName: String, apiVersion: ApiVersion, basePath: ApiContext, host: String): AWSSwaggerDetails = {
     AWSSwaggerDetails(
       paths = buildAWSPaths(apiVersion),
-      info = AWSAPIInfo(apiName, apiVersion.version),
+      info = AWSAPIInfo(apiName, apiVersion.versionNbr),
       basePath = Some(s"/${basePath.value}"),
       host = Some(host)
     )

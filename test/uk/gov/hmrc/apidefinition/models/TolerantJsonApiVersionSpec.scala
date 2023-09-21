@@ -16,23 +16,24 @@
 
 package uk.gov.hmrc.apiplatform.modules.apis.domain.models
 
-import uk.gov.hmrc.apiplatform.modules.common.utils.BaseJsonFormattersSpec
-import uk.gov.hmrc.apidefinition.models.TolerantJsonApiVersion
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.utils.BaseJsonFormattersSpec
+
+import uk.gov.hmrc.apidefinition.models.TolerantJsonApiVersion
 
 class TolerantJsonApiVersionSpec extends BaseJsonFormattersSpec {
 
   implicit val useMe = TolerantJsonApiVersion.tolerantFormatApiVersion
 
   val endpointsText = """ "endpoints": [
-      |  {
-      |    "uriPattern":"/today",
-      |    "endpointName":"Get Today's Date",
-      |    "method":"GET",
-      |    "authType":"NONE",
-      |    "throttlingTier":"UNLIMITED"
-      |  }
-      |]""".stripMargin
+                        |  {
+                        |    "uriPattern":"/today",
+                        |    "endpointName":"Get Today's Date",
+                        |    "method":"GET",
+                        |    "authType":"NONE",
+                        |    "throttlingTier":"UNLIMITED"
+                        |  }
+                        |]""".stripMargin
 
   val endpoints = List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED, None, List.empty))
 
@@ -42,24 +43,38 @@ class TolerantJsonApiVersionSpec extends BaseJsonFormattersSpec {
 
     "read api version from Json with all fields" in {
       val json = s"""{
-          |    "version" : "1.0",
-          |    "status" : "STABLE",
-          |    "acccess" : "PUBLIC",
-          |    ${endpointsText},
-          |    "endpointsEnabled": true,
-          |    "awsRequestId": "12345",
-          |    "versionSource": "OAS"
-          |}""".stripMargin
+                    |    "version" : "1.0",
+                    |    "status" : "STABLE",
+                    |    "acccess" : "PUBLIC",
+                    |    ${endpointsText},
+                    |    "endpointsEnabled": true,
+                    |    "awsRequestId": "12345",
+                    |    "versionSource": "OAS"
+                    |}""".stripMargin
+
+      testFromJson[ApiVersion](json)(baseApiVersion.copy(awsRequestId = Some("12345")))
+    }
+
+    "read api version from Json with all fields and newer name of versionNbr" in {
+      val json = s"""{
+                    |    "versionNbr" : "1.0",
+                    |    "status" : "STABLE",
+                    |    "acccess" : "PUBLIC",
+                    |    ${endpointsText},
+                    |    "endpointsEnabled": true,
+                    |    "awsRequestId": "12345",
+                    |    "versionSource": "OAS"
+                    |}""".stripMargin
 
       testFromJson[ApiVersion](json)(baseApiVersion.copy(awsRequestId = Some("12345")))
     }
 
     "read endpoint from Json with minimal fields" in {
-        val json = s"""{
-            |    "version" : "1.0",
-            |    "status" : "STABLE",
-            |    ${endpointsText}
-            |}""".stripMargin
+      val json = s"""{
+                    |    "version" : "1.0",
+                    |    "status" : "STABLE",
+                    |    ${endpointsText}
+                    |}""".stripMargin
 
       testFromJson[ApiVersion](json)(baseApiVersion.copy(versionSource = ApiVersionSource.UNKNOWN))
     }
@@ -68,12 +83,12 @@ class TolerantJsonApiVersionSpec extends BaseJsonFormattersSpec {
       val ignoreMe = baseApiVersion
 
       val json = s"""{
-          |    "version" : "1.0",
-          |    "status" : "STABLE",
-          |    "acccess" : "PUBLIC",
-          |    ${endpointsText},
-          |    "endpointsEnabled": "bob"
-          |}""".stripMargin
+                    |    "version" : "1.0",
+                    |    "status" : "STABLE",
+                    |    "acccess" : "PUBLIC",
+                    |    ${endpointsText},
+                    |    "endpointsEnabled": "bob"
+                    |}""".stripMargin
 
       intercept[RuntimeException] {
         testFromJson[ApiVersion](json)(ignoreMe)
@@ -84,12 +99,12 @@ class TolerantJsonApiVersionSpec extends BaseJsonFormattersSpec {
       val ignoreMe = baseApiVersion
 
       val json = s"""{
-          |    "version" : "1.0",
-          |    "status" : "STABLE",
-          |    "acccess" : "PUBLIC",
-          |    ${endpointsText},
-          |    "versionSource": 123
-          |}""".stripMargin
+                    |    "version" : "1.0",
+                    |    "status" : "STABLE",
+                    |    "acccess" : "PUBLIC",
+                    |    ${endpointsText},
+                    |    "versionSource": 123
+                    |}""".stripMargin
 
       intercept[RuntimeException] {
         testFromJson[ApiVersion](json)(ignoreMe)

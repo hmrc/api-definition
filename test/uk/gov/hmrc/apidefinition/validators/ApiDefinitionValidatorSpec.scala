@@ -24,6 +24,7 @@ import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.mvc.Results.{NoContent, UnprocessableEntity}
 import play.api.test.Helpers._
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiDefinition, Endpoint, QueryParameter, _}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApiContext, ApiVersionNbr}
 
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.models.ErrorCode.INVALID_REQUEST_PAYLOAD
@@ -31,8 +32,6 @@ import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.services.APIDefinitionService
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiContext
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiVersionNbr
 
 class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite {
 
@@ -228,7 +227,7 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
     )
 
     val moneyApiVersion = ApiVersion(
-      version = ApiVersionNbr("1.0"),
+      versionNbr = ApiVersionNbr("1.0"),
       status = ApiStatus.BETA,
       endpoints = List(moneyEndpoint),
       endpointsEnabled = true,
