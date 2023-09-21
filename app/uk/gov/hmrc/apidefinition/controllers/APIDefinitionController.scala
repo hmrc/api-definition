@@ -24,34 +24,34 @@ import scala.util.control.NonFatal
 import play.api.http.HeaderNames
 import play.api.libs.json._
 import play.api.mvc._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiDefinition, _}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApiContext, ApplicationId}
 import uk.gov.hmrc.http.UnauthorizedException
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.models.ErrorCode._
-import uk.gov.hmrc.apidefinition.models.JsonFormatters._
-import uk.gov.hmrc.apidefinition.models.{APICategory, APIDefinition, ErrorCode}
+import uk.gov.hmrc.apidefinition.models.{ErrorCode, TolerantJsonApiDefinition}
 import uk.gov.hmrc.apidefinition.services.APIDefinitionService
-import uk.gov.hmrc.apidefinition.utils.{APIDefinitionMapper, ApplicationLogger}
+import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
 import uk.gov.hmrc.apidefinition.validators.ApiDefinitionValidator
 
 @Singleton
 class APIDefinitionController @Inject() (
     apiDefinitionValidator: ApiDefinitionValidator,
     apiDefinitionService: APIDefinitionService,
-    apiDefinitionMapper: APIDefinitionMapper,
     appContext: AppConfig,
     cc: ControllerComponents
   )(implicit val ec: ExecutionContext
-  ) extends BackendController(cc) with ApplicationLogger {
+  ) extends BackendController(cc) with ApplicationLogger with TolerantJsonApiDefinition {
 
   val fetchByContextTtlInSeconds: String = appContext.fetchByContextTtlInSeconds
 
   def createOrUpdate(): Action[JsValue] = Action.async(parse.json) { implicit request =>
-    handleRequest[APIDefinition](request) { requestBody =>
+    handleRequest[ApiDefinition](request) { requestBody =>
       apiDefinitionValidator.validate(requestBody) { validatedDefinition =>
         logger.info(s"Create/Update API definition request: $validatedDefinition")
-        apiDefinitionService.createOrUpdate(apiDefinitionMapper.mapLegacyStatuses(validatedDefinition)).map { _ =>
+        apiDefinitionService.createOrUpdate(validatedDefinition).map { _ =>
           logger.info("API definition successfully created/updated")
           NoContent
         } recover recovery
@@ -79,7 +79,7 @@ class APIDefinitionController @Inject() (
   }
 
   def validate: Action[JsValue] = Action.async(parse.json) { implicit request =>
-    handleRequest[APIDefinition](request) { requestBody =>
+    handleRequest[ApiDefinition](request) { requestBody =>
       apiDefinitionValidator.validate(requestBody) { validatedDefinition =>
         successful(Accepted(Json.toJson(validatedDefinition)))
       }
@@ -89,15 +89,17 @@ class APIDefinitionController @Inject() (
   def queryDispatcher(): Action[AnyContent] = Action.async { implicit request =>
     val queryParameters: Seq[(String, String)] = request.queryString.toList.map { case (key, values) => (key, values.head) }.sorted
 
-    val options = extractQueryOptions(request)
+    val options                            = extractQueryOptions(request)
+    lazy val errorInParams: Future[Result] = successful(BadRequest("Invalid query parameter or parameters"))
 
     queryParameters match {
       case Nil | ("options", _) :: Nil                  => fetchAllPublicAPIs(options.alsoIncludePrivateTrials)
-      case ("context", context) :: Nil                  => fetchByContext(context)
-      case ("applicationId", applicationId) :: _        => fetchAllForApplication(applicationId, options.alsoIncludePrivateTrials)
+      case ("context", context) :: Nil                  => fetchByContext(ApiContext(context))
+      case ("applicationId", applicationId) :: _        =>
+        ApplicationId.apply(applicationId).fold(errorInParams)(appId => fetchAllForApplication(appId, options.alsoIncludePrivateTrials))
       case ("type", typeValue) :: Nil                   => fetchDefinitionsByType(typeValue, options.alsoIncludePrivateTrials)
       case ("options", _) :: ("type", typeValue) :: Nil => fetchDefinitionsByType(typeValue, options.alsoIncludePrivateTrials)
-      case _                                            => successful(BadRequest("Invalid query parameter or parameters"))
+      case _                                            => errorInParams
     }
   }
 
@@ -106,14 +108,14 @@ class APIDefinitionController @Inject() (
   }
 
   def fetchAllAPICategories: Action[AnyContent] = Action.async {
-    successful(Ok(Json.toJson(APICategory.allAPICategoryDetails)))
+    successful(Ok(Json.toJson(ApiCategory.values.map(c => Json.obj("category" -> c.toString, "name" -> c.displayText)))))
   }
 
   private def extractQueryOptions(request: Request[AnyContent]) = {
     QueryOptions(request.getQueryString("options"))
   }
 
-  private def apiDefinitionToResult(result: Seq[APIDefinition]) = {
+  private def apiDefinitionToResult(result: Seq[ApiDefinition]) = {
     Ok(Json.toJson(result))
   }
 
@@ -132,7 +134,7 @@ class APIDefinitionController @Inject() (
     apiDefinitionService.fetchAll.map(apiDefinitionToResult) recover recovery
   }
 
-  private def fetchByContext(context: String) = {
+  private def fetchByContext(context: ApiContext) = {
     apiDefinitionService
       .fetchByContext(context).map {
         case Some(api) => Ok(Json.toJson(api)).withHeaders(HeaderNames.CACHE_CONTROL -> s"max-age=$fetchByContextTtlInSeconds")
@@ -140,7 +142,7 @@ class APIDefinitionController @Inject() (
       } recover recovery
   }
 
-  private def fetchAllForApplication(applicationId: String, alsoIncludePrivateTrials: Boolean) = {
+  private def fetchAllForApplication(applicationId: ApplicationId, alsoIncludePrivateTrials: Boolean) = {
     apiDefinitionService
       .fetchAllAPIsForApplication(applicationId, alsoIncludePrivateTrials)
       .map(apiDefinitionToResult) recover recovery

@@ -40,6 +40,13 @@ lazy val microservice = Project(appName, file("."))
     Test / unmanagedResourceDirectories += baseDirectory.value / "test" / "resources",
     addTestReportOption(Test, "test-reports")
   )
+  .settings(
+      routesImport ++= Seq(
+      "uk.gov.hmrc.apidefinition.controllers.binders._",
+      "uk.gov.hmrc.apiplatform.modules.common.domain.models._",
+      "uk.gov.hmrc.apiplatform.modules.apis.domain.models._"
+    )
+  )
   .configs(ComponentTest)
   .settings(inConfig(ComponentTest)(Defaults.testSettings): _*)
   .settings(inConfig(ComponentTest)(BloopDefaults.configSettings))
@@ -54,3 +61,5 @@ lazy val microservice = Project(appName, file("."))
 def onPackageName(rootPackage: String): String => Boolean = {
   testName => testName startsWith rootPackage
 }
+
+Global / bloopAggregateSourceDependencies := true

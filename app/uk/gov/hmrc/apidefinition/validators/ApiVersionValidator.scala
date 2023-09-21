@@ -21,26 +21,25 @@ import scala.concurrent.ExecutionContext
 
 import cats.implicits._
 
-import uk.gov.hmrc.apidefinition.models.{APIStatus, APIVersion, Endpoint}
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 
 @Singleton
-class ApiVersionValidator @Inject() (apiEndpointValidator: ApiEndpointValidator)(implicit override val ec: ExecutionContext) extends Validator[APIVersion] {
+class ApiVersionValidator @Inject() (apiEndpointValidator: ApiEndpointValidator)(implicit override val ec: ExecutionContext) extends Validator[ApiVersion] {
 
-  def validate(ec: String)(implicit version: APIVersion): HMRCValidated[APIVersion] = {
-    val errorContext: String = if (version.version.isEmpty) ec else s"$ec version '${version.version}'"
+  def validate(ec: String)(implicit version: ApiVersion): HMRCValidated[ApiVersion] = {
+    val errorContext: String = if (version.versionNbr.value.isEmpty) ec else s"$ec version '${version.versionNbr}'"
     (
-      validateThat(_.version.nonEmpty, _ => s"Field 'versions.version' is required $errorContext"),
+      validateThat(_.versionNbr.value.nonEmpty, _ => s"Field 'versions.version' is required $errorContext"),
       validateThat(_.endpoints.nonEmpty, _ => s"Field 'versions.endpoints' must not be empty $errorContext"),
       validateStatus(errorContext),
       validateAll[Endpoint](u => apiEndpointValidator.validate(errorContext)(u))(version.endpoints)
     ).mapN((_, _, _, _) => version)
   }
 
-  private def validateStatus(errorContext: String)(implicit version: APIVersion): HMRCValidated[APIVersion] = {
+  private def validateStatus(errorContext: String)(implicit version: ApiVersion): HMRCValidated[ApiVersion] = {
     version.status match {
-      case APIStatus.ALPHA | APIStatus.BETA | APIStatus.STABLE =>
-        validateThat(_ => version.endpointsEnabled.nonEmpty, _ => s"Field 'versions.endpointsEnabled' is required $errorContext")
-      case _                                                   => version.validNel
+      case ApiStatus.ALPHA => validateThat(_ => version.endpointsEnabled == false, _ => s"Field 'versions.endpointsEnabled' must be false for ALPHA status")
+      case _               => version.validNel
     }
   }
 }

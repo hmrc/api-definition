@@ -16,11 +16,12 @@
 
 package uk.gov.hmrc.apidefinition.models
 
-import uk.gov.hmrc.apidefinition.models.AWSParameterType.AWSParameterType
-import uk.gov.hmrc.apidefinition.models.AuthType.AuthType
-import uk.gov.hmrc.apidefinition.models.ResourceThrottlingTier.ResourceThrottlingTier
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiDefinition, _}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 
-case class AWSAPIDefinition(name: String, context: String, version: String, subscribersCount: Int, endpointConfig: AWSEndpointConfig, swagger: Option[AWSSwaggerDetails])
+import uk.gov.hmrc.apidefinition.models.AWSParameterType.AWSParameterType
+
+case class AWSAPIDefinition(name: String, context: ApiContext, version: ApiVersionNbr, subscribersCount: Int, endpointConfig: AWSEndpointConfig, swagger: Option[AWSSwaggerDetails])
 
 case class AWSEndpointConfig(production_endpoints: Option[AWSEndpoint], sandbox_endpoints: AWSEndpoint, endpoint_type: String = "http")
 
@@ -34,7 +35,7 @@ case class AWSSwaggerDetails(
     host: Option[String] = None
   )
 
-case class AWSAPIInfo(title: String, version: String)
+case class AWSAPIInfo(title: String, version: ApiVersionNbr)
 
 case class AWSHttpVerbDetails(
     parameters: Option[Seq[AWSParameter]],
@@ -84,23 +85,21 @@ object AWSParameterType extends Enumeration {
 
 object AWSAPIDefinition {
 
-  private val statusMap = Map(
-    APIStatus.ALPHA      -> "PUBLISHED",
-    APIStatus.BETA       -> "PUBLISHED",
-    APIStatus.STABLE     -> "PUBLISHED",
-    APIStatus.PROTOTYPED -> "PUBLISHED",
-    APIStatus.PUBLISHED  -> "PUBLISHED",
-    APIStatus.DEPRECATED -> "DEPRECATED",
-    APIStatus.RETIRED    -> "RETIRED"
+  private val statusMap = Map[ApiStatus, String](
+    ApiStatus.ALPHA      -> "PUBLISHED",
+    ApiStatus.BETA       -> "PUBLISHED",
+    ApiStatus.STABLE     -> "PUBLISHED",
+    ApiStatus.DEPRECATED -> "DEPRECATED",
+    ApiStatus.RETIRED    -> "RETIRED"
   )
 
-  private val authTypeMap = Map(
+  private val authTypeMap = Map[AuthType, String](
     AuthType.NONE        -> "None",
     AuthType.APPLICATION -> "Application %26 Application User",
     AuthType.USER        -> "Application User"
   )
 
-  private val resourceThrottlingTierMap = Map(ResourceThrottlingTier.UNLIMITED -> "Unlimited")
+  private val resourceThrottlingTierMap = Map[ResourceThrottlingTier, String](ResourceThrottlingTier.UNLIMITED -> "Unlimited")
 
   def awsAuthType(authType: AuthType): String = {
     authTypeMap.getOrElse(authType, throw new IllegalArgumentException(s"Unknown Auth Type: $authType"))
@@ -110,11 +109,14 @@ object AWSAPIDefinition {
     resourceThrottlingTierMap.getOrElse(resourceThrottlingTier, throw new IllegalArgumentException(s"Unknown Throttling Tier: $resourceThrottlingTier"))
   }
 
-  def awsApiGatewayName(version: String, apiDefinition: APIDefinition): String =
-    s"${apiDefinition.context.replaceAll("/", "--")}--$version"
+  def awsApiGatewayName(version: ApiVersionNbr, apiDefinition: ApiDefinition): String = {
+    def asAwsSafeString(context: ApiContext): String = context.value.replaceAll("/", "--")
 
-  def awsApiStatus(apiDefinition: APIDefinition, awsAPIDefinition: AWSAPIDefinition): String = {
-    val status = apiDefinition.versions.filter(apiVersion => awsAPIDefinition.version.eq(apiVersion.version)).head.status
+    s"${asAwsSafeString(apiDefinition.context)}--$version"
+  }
+
+  def awsApiStatus(apiDefinition: ApiDefinition, awsAPIDefinition: AWSAPIDefinition): String = {
+    val status: ApiStatus = apiDefinition.versions.filter(apiVersion => awsAPIDefinition.version == apiVersion.versionNbr).head.status
     statusMap.getOrElse(status, throw new IllegalArgumentException(s"Unknown Status: $status"))
   }
 }

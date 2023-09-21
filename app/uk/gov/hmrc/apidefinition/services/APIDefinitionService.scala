@@ -16,36 +16,45 @@
 
 package uk.gov.hmrc.apidefinition.services
 
+import java.time.Clock
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future.{failed, successful}
 import scala.concurrent.{ExecutionContext, Future}
 
-import org.joda.time.{DateTime, DateTimeZone}
-
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apidefinition.config.AppConfig
-import uk.gov.hmrc.apidefinition.models.APIStatus.APIStatus
-import uk.gov.hmrc.apidefinition.models._
+import uk.gov.hmrc.apidefinition.models.TolerantJsonApiDefinition
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
 
+object APIDefinitionService {
+
+  case class PublishingException(message: String) extends Exception(message)
+}
+
 @Singleton
 class APIDefinitionService @Inject() (
+    val clock: Clock,
     awsApiPublisher: AwsApiPublisher,
     apiDefinitionRepository: APIDefinitionRepository,
     notificationService: NotificationService,
     playApplicationContext: AppConfig
   )(implicit val ec: ExecutionContext
-  ) extends ApplicationLogger {
+  ) extends ApplicationLogger with ClockNow {
 
-  def createOrUpdate(apiDefinition: APIDefinition)(implicit hc: HeaderCarrier): Future[Unit] = {
+  implicit val useThisFormatter = TolerantJsonApiDefinition.tolerantFormatApiDefinition
+
+  def createOrUpdate(apiDefinition: ApiDefinition)(implicit hc: HeaderCarrier): Future[Unit] = {
 
     def publish(): Future[Unit] = {
       (for {
         _ <- awsApiPublisher.publish(apiDefinition)
       } yield ()) recoverWith {
-        case e: PublishingException =>
+        case e: APIDefinitionService.PublishingException =>
           logger.error(s"Failed to create or update API [${apiDefinition.name}]", e)
           failed(new RuntimeException(s"Could not publish API: [${apiDefinition.name}]"))
       }
@@ -60,15 +69,15 @@ class APIDefinitionService @Inject() (
     for {
       _                        <- checkAPIDefinitionForStatusChanges(apiDefinition)
       _                        <- publish()
-      definitionWithPublishTime = apiDefinition.copy(lastPublishedAt = Some(DateTime.now(DateTimeZone.UTC)))
+      definitionWithPublishTime = apiDefinition.copy(lastPublishedAt = Some(instant()))
       _                        <- apiDefinitionRepository.save(definitionWithPublishTime) recoverWith recoverSave
     } yield ()
   }
 
-  private def checkAPIDefinitionForStatusChanges(apiDefinition: APIDefinition)(implicit hc: HeaderCarrier): Future[Unit] = {
-    def findStatusDifferences(existingAPIVersions: Seq[APIVersion], newAPIVersions: Seq[APIVersion]): Seq[(String, APIStatus, APIStatus)] =
+  private def checkAPIDefinitionForStatusChanges(apiDefinition: ApiDefinition)(implicit hc: HeaderCarrier): Future[Unit] = {
+    def findStatusDifferences(existingAPIVersions: Seq[ApiVersion], newAPIVersions: Seq[ApiVersion]): Seq[(ApiVersionNbr, ApiStatus, ApiStatus)] =
       (existingAPIVersions ++ newAPIVersions)
-        .groupBy(_.version)
+        .groupBy(_.versionNbr)
         .filter(v => v._2.size == 2)
         .filterNot(v => v._2.head.status == v._2.last.status)
         .map(v => (v._1, v._2.head.status, v._2.last.status))
@@ -82,19 +91,19 @@ class APIDefinitionService @Inject() (
       )
   }
 
-  def fetchByServiceName(serviceName: String): Future[Option[APIDefinition]] = {
+  def fetchByServiceName(serviceName: String): Future[Option[ApiDefinition]] = {
     apiDefinitionRepository.fetchByServiceName(serviceName)
   }
 
-  def fetchByName(name: String): Future[Option[APIDefinition]] = {
+  def fetchByName(name: String): Future[Option[ApiDefinition]] = {
     apiDefinitionRepository.fetchByName(name)
   }
 
-  def fetchByContext(context: String): Future[Option[APIDefinition]] = {
+  def fetchByContext(context: ApiContext): Future[Option[ApiDefinition]] = {
     apiDefinitionRepository.fetchByContext(context)
   }
 
-  def fetchByServiceBaseUrl(serviceBaseUrl: String): Future[Option[APIDefinition]] = {
+  def fetchByServiceBaseUrl(serviceBaseUrl: String): Future[Option[ApiDefinition]] = {
     apiDefinitionRepository.fetchByServiceBaseUrl(serviceBaseUrl)
   }
 
@@ -109,22 +118,22 @@ class APIDefinitionService @Inject() (
     }
   }
 
-  def fetchAllPublicAPIs(alsoIncludePrivateTrials: Boolean): Future[Seq[APIDefinition]] = {
+  def fetchAllPublicAPIs(alsoIncludePrivateTrials: Boolean): Future[Seq[ApiDefinition]] = {
     apiDefinitionRepository.fetchAll().map(filterAPIsForApplications(alsoIncludePrivateTrials))
   }
 
-  def fetchAll: Future[Seq[APIDefinition]] = {
+  def fetchAll: Future[Seq[ApiDefinition]] = {
     apiDefinitionRepository.fetchAll()
   }
 
-  def fetchAllPrivateAPIs(): Future[Seq[APIDefinition]] = {
+  def fetchAllPrivateAPIs(): Future[Seq[ApiDefinition]] = {
 
-    def hasPrivateAccess(apiVersion: APIVersion) = apiVersion.access match {
-      case Some(PrivateAPIAccess(_, _)) => true
-      case _                            => false
+    def hasPrivateAccess(apiVersion: ApiVersion) = apiVersion.access match {
+      case ApiAccess.Private(_, _) => true
+      case _                       => false
     }
 
-    def removePublicVersions(api: APIDefinition) =
+    def removePublicVersions(api: ApiDefinition) =
       api.copy(versions = api.versions.filter(hasPrivateAccess))
 
     for {
@@ -134,21 +143,21 @@ class APIDefinitionService @Inject() (
     } yield onlyPrivateApis
   }
 
-  def fetchAllAPIsForApplication(applicationId: String, alsoIncludePrivateTrials: Boolean): Future[Seq[APIDefinition]] = {
+  def fetchAllAPIsForApplication(applicationId: ApplicationId, alsoIncludePrivateTrials: Boolean): Future[Seq[ApiDefinition]] = {
     apiDefinitionRepository.fetchAll().map(filterAPIsForApplications(alsoIncludePrivateTrials, applicationId))
   }
 
-  private def filterAPIsForApplications(alsoIncludePrivateTrials: Boolean, applicationIds: String*): Seq[APIDefinition] => Seq[APIDefinition] = {
+  private def filterAPIsForApplications(alsoIncludePrivateTrials: Boolean, applicationIds: ApplicationId*): Seq[ApiDefinition] => Seq[ApiDefinition] = {
     _ flatMap {
       filterAPIForApplications(alsoIncludePrivateTrials, applicationIds: _*)(_)
     }
   }
 
-  private def filterAPIForApplications(alsoIncludePrivateTrials: Boolean, applicationIds: String*): APIDefinition => Option[APIDefinition] = { api =>
-    val filteredVersions = api.versions.filter(_.access.getOrElse(PublicAPIAccess) match {
-      case access: PrivateAPIAccess =>
-        access.whitelistedApplicationIds.exists(s => applicationIds.contains(s)) || (access.isTrial.contains(true) && alsoIncludePrivateTrials)
-      case _                        => true
+  private def filterAPIForApplications(alsoIncludePrivateTrials: Boolean, applicationIds: ApplicationId*): ApiDefinition => Option[ApiDefinition] = { api =>
+    val filteredVersions = api.versions.filter(_.access match {
+      case ApiAccess.Private(whitelistedApplicationIds, isTrial) =>
+        whitelistedApplicationIds.exists(s => applicationIds.contains(s)) || (isTrial && alsoIncludePrivateTrials)
+      case _                                                     => true
     })
 
     if (filteredVersions.isEmpty) None

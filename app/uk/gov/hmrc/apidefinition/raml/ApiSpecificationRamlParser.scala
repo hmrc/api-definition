@@ -23,6 +23,8 @@ import org.raml.v2.api.model.v10.datamodel.{ExampleSpec => RamlExampleSpec, Stri
 import org.raml.v2.api.model.v10.methods.{Method => RamlMethod}
 import org.raml.v2.api.model.v10.resources.{Resource => RamlResource}
 
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiVersionNbr
+
 import uk.gov.hmrc.apidefinition.models.apispecification._
 import uk.gov.hmrc.apidefinition.raml.RamlSyntax._
 import uk.gov.hmrc.apidefinition.services.SchemaService
@@ -34,7 +36,7 @@ class ApiSpecificationRamlParser @Inject() (schemaService: SchemaService) {
 
     def title: String = SafeValueAsString(raml.title)
 
-    def version: String = raml.version.value
+    def version: ApiVersionNbr = ApiVersionNbr(raml.version.value)
 
     def deprecationMessage: Option[String] = raml.annotation("(deprecationMessage)")
 

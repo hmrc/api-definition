@@ -23,6 +23,7 @@ import akka.stream.Materializer
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 
 import play.api.libs.json.Json
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiVersionNbr
 import uk.gov.hmrc.ramltools.domain.RamlNotFoundException
 import uk.gov.hmrc.ramltools.loaders.RamlLoader
 
@@ -53,7 +54,7 @@ class SpecificationServiceSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wi
     "fetch and parse raml" in new Setup {
       when(ramlLoader.load(any[String])).thenReturn(raml)
 
-      val ojs = await(specificationService.fetchApiSpecification("api-not-real", "1.0"))
+      val ojs = await(specificationService.fetchApiSpecification("api-not-real", ApiVersionNbr("1.0")))
 
       Json.stringify(ojs.value).contains(""""title":"My simple title"""") shouldBe true
     }
@@ -61,7 +62,7 @@ class SpecificationServiceSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wi
     "fetch and handle no raml found" in new Setup {
       when(ramlLoader.load(any[String])).thenReturn(Failure(new RamlNotFoundException("")))
 
-      val ojs = await(specificationService.fetchApiSpecification("api-not-real", "1.0"))
+      val ojs = await(specificationService.fetchApiSpecification("api-not-real", ApiVersionNbr("1.0")))
 
       ojs shouldBe None
     }

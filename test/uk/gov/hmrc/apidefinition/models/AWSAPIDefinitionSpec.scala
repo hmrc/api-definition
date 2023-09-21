@@ -16,6 +16,9 @@
 
 package uk.gov.hmrc.apidefinition.models
 
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiDefinition
+import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+
 import uk.gov.hmrc.apidefinition.models.AWSAPIDefinition.awsApiGatewayName
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 
@@ -25,10 +28,10 @@ class AWSAPIDefinitionSpec extends AsyncHmrcSpec {
 
     "replace '/' in context with '--'" in {
 
-      val apiDefinition = mock[APIDefinition]
-      when(apiDefinition.context).thenReturn("my/calendar")
+      val apiDefinition = mock[ApiDefinition]
+      when(apiDefinition.context).thenReturn(ApiContext("my/calendar"))
 
-      awsApiGatewayName("1.0", apiDefinition) shouldBe "my--calendar--1.0"
+      awsApiGatewayName(ApiVersionNbr("1.0"), apiDefinition) shouldBe "my--calendar--1.0"
     }
 
   }

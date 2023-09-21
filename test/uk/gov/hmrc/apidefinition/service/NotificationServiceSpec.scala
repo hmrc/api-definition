@@ -23,9 +23,10 @@ import scala.concurrent.Future._
 import org.mockito.ArgumentCaptor
 
 import play.api.http.Status.{INTERNAL_SERVER_ERROR, NOT_FOUND, OK}
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiStatus
+import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpResponse}
 
-import uk.gov.hmrc.apidefinition.models.APIStatus
 import uk.gov.hmrc.apidefinition.services.{EmailNotificationService, SendEmailRequest}
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 
@@ -74,23 +75,23 @@ class NotificationServiceSpec extends AsyncHmrcSpec {
 
   "Email Notification Service" should {
     val apiName    = "API"
-    val apiVersion = "1.0"
+    val apiVersion = ApiVersionNbr("1.0")
 
     "make appropriate HTTP call email service to send message" in new EmailNotificationSetup {
-      private val existingAPIStatus = APIStatus.ALPHA
-      private val newAPIStatus      = APIStatus.BETA
+      private val existingApiStatus = ApiStatus.ALPHA
+      private val newApiStatus      = ApiStatus.BETA
 
       private val requestCaptor: ArgumentCaptor[SendEmailRequest] = httpCallIsSuccessful()
 
-      await(underTest.notifyOfStatusChange(apiName, apiVersion, existingAPIStatus, newAPIStatus))
+      await(underTest.notifyOfStatusChange(apiName, apiVersion, existingApiStatus, newApiStatus))
 
       private val capturedRequest: SendEmailRequest = requestCaptor.getValue
       capturedRequest.to shouldBe emailAddresses
       capturedRequest.templateId shouldBe emailTemplateId
       capturedRequest.parameters.get("apiName") shouldBe Some(apiName)
-      capturedRequest.parameters.get("apiVersion") shouldBe Some(apiVersion)
-      capturedRequest.parameters.get("currentStatus") shouldBe Some(existingAPIStatus.toString)
-      capturedRequest.parameters.get("newStatus") shouldBe Some(newAPIStatus.toString)
+      capturedRequest.parameters.get("apiVersion") shouldBe Some(apiVersion.toString)
+      capturedRequest.parameters.get("currentStatus") shouldBe Some(existingApiStatus.toString)
+      capturedRequest.parameters.get("newStatus") shouldBe Some(newApiStatus.toString)
       capturedRequest.parameters.get("environmentName") shouldBe Some(environmentName)
     }
 
@@ -98,7 +99,7 @@ class NotificationServiceSpec extends AsyncHmrcSpec {
       emailServiceIsUnavailable()
 
       val err: RuntimeException = intercept[RuntimeException] {
-        await(underTest.notifyOfStatusChange(apiName, apiVersion, APIStatus.ALPHA, APIStatus.BETA))
+        await(underTest.notifyOfStatusChange(apiName, apiVersion, ApiStatus.ALPHA, ApiStatus.BETA))
       }
       err.getMessage shouldBe s"Unable to send email. Downstream endpoint not found: $emailServiceURL"
     }
@@ -107,7 +108,7 @@ class NotificationServiceSpec extends AsyncHmrcSpec {
       callToEmailServiceFails("""{"message":"Internal Error Occurred"}""")
 
       val err: RuntimeException = intercept[RuntimeException] {
-        await(underTest.notifyOfStatusChange(apiName, apiVersion, APIStatus.ALPHA, APIStatus.BETA))
+        await(underTest.notifyOfStatusChange(apiName, apiVersion, ApiStatus.ALPHA, ApiStatus.BETA))
       }
       err.getMessage shouldBe "Internal Error Occurred"
     }
@@ -116,7 +117,7 @@ class NotificationServiceSpec extends AsyncHmrcSpec {
       callToEmailServiceFails("This is some other error message")
 
       val err: RuntimeException = intercept[RuntimeException] {
-        await(underTest.notifyOfStatusChange(apiName, apiVersion, APIStatus.ALPHA, APIStatus.BETA))
+        await(underTest.notifyOfStatusChange(apiName, apiVersion, ApiStatus.ALPHA, ApiStatus.BETA))
       }
       err.getMessage shouldBe s"Unable send email. Unexpected error for url=$emailServiceURL status=500 response=This is some other error message"
     }

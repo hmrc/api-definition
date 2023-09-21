@@ -17,23 +17,28 @@
 package uk.gov.hmrc.apidefinition.models
 
 import play.api.libs.json.Json
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.common.utils.BaseJsonFormattersSpec
 
-import uk.gov.hmrc.apidefinition.models.APICategory._
-import uk.gov.hmrc.apidefinition.models.JsonFormatters._
-import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
+class TolerantJsonApiDefinitionSpec extends BaseJsonFormattersSpec {
+  implicit val useMe = TolerantJsonApiDefinition.tolerantFormatApiDefinition
+  val appId          = ApplicationId.random
 
-class APIDefinitionSpec extends AsyncHmrcSpec {
+  "TolerantJsonApiDefinition" should {
+    def anApiDefinition(
+        accessType: String = "PUBLIC",
+        whitelistedApplicationIds: Option[String] = None,
+        isTrial: Boolean = false,
+        requiresTrust: Option[Boolean] = None,
+        isTestSupport: Option[Boolean] = Some(false),
+        categories: Option[String] = None
+      ) = {
 
-  "APIAccess" should {
-    "marshall from json for private access without whitelistedApplicationIds" in {
-      val jsonText = """{"type": "PRIVATE"}"""
-
-      (Json.parse(jsonText)).as[APIAccess]
-    }
-  }
-
-  "APIDefinition" should {
-    def anApiDefinition(accessType: String = "PUBLIC", whitelistedApplicationIds: Option[String] = None, isTrial: Option[Boolean] = None, categories: Option[String] = None) = {
+      val whitelistText     = whitelistedApplicationIds.fold("")(text => s""" "whitelistedApplicationIds": $text,""")
+      val isTestSupportText = isTestSupport.fold("")(x => s""" "isTestSupport": $x,""")
+      val requiresTrustText = requiresTrust.fold("")(x => s""" "requiresTrust": $x,""")
+      val categoriesText    = categories.fold("")(text => s""" "categories": $text,""")
 
       val body =
         s"""{
@@ -42,15 +47,17 @@ class APIDefinitionSpec extends AsyncHmrcSpec {
            |   "description":"My Calendar API",
            |   "serviceBaseUrl":"http://calendar",
            |   "context":"calendar",
-           |   ${categories.fold("")(c => s""" "categories": $c,""")}
+           |   $categoriesText
+           |   $requiresTrustText
+           |   $isTestSupportText
            |   "versions":[
            |      {
            |         "version":"1.0",
-           |         "status":"PUBLISHED",
+           |         "status":"STABLE",
            |         "access": {
-           |           "type": "$accessType"
-           |            ${whitelistedApplicationIds.fold("")(w => s""" ,"whitelistedApplicationIds": $w""")}
-           |            ${isTrial.fold("")(t => s""","isTrial": $t""")}
+           |           "type": "$accessType",
+           |           $whitelistText
+           |           "isTrial": $isTrial
            |         },
            |         "endpoints":[
            |            {
@@ -65,25 +72,19 @@ class APIDefinitionSpec extends AsyncHmrcSpec {
            |   ]
            |}""".stripMargin.replaceAll("\n", " ")
 
-      Json.parse(body).as[APIDefinition]
+      Json.parse(body).as[ApiDefinition]
     }
 
     "read from JSON when the API access type is PUBLIC and there is no whitelist" in {
       val apiDefinition = anApiDefinition()
 
-      apiDefinition.versions.head.access shouldBe Some(PublicAPIAccess())
+      apiDefinition.versions.head.access shouldBe ApiAccess.PUBLIC
     }
 
     "read from JSON when the API access type is PUBLIC and there is an empty whitelist" in {
       val apiDefinition = anApiDefinition(whitelistedApplicationIds = Some("[]"))
 
-      apiDefinition.versions.head.access shouldBe Some(PublicAPIAccess())
-    }
-
-    "fail to read from JSON when the API access type is PUBLIC and there is a non-empty whitelist" in {
-      intercept[RuntimeException] {
-        anApiDefinition(whitelistedApplicationIds = Some("[\"an-application-id\"]"))
-      }
+      apiDefinition.versions.head.access shouldBe ApiAccess.PUBLIC
     }
 
     "read from JSON when the API access type is PRIVATE and there is an empty whitelist" in {
@@ -92,41 +93,49 @@ class APIDefinitionSpec extends AsyncHmrcSpec {
         whitelistedApplicationIds = Some("[]")
       )
 
-      apiDefinition.versions.head.access shouldBe Some(PrivateAPIAccess(Nil))
+      apiDefinition.versions.head.access shouldBe ApiAccess.Private(Nil)
     }
 
     "read from JSON when the API access type is PRIVATE and there is an empty whitelist and isTrial is true" in {
       val apiDefinition = anApiDefinition(
         accessType = "PRIVATE",
         whitelistedApplicationIds = Some("[]"),
-        isTrial = Some(true)
+        isTrial = true,
+        requiresTrust = Some(true)
       )
 
-      apiDefinition.versions.head.access shouldBe Some(PrivateAPIAccess(Nil, Some(true)))
+      apiDefinition.versions.head.access shouldBe ApiAccess.Private(Nil, true)
+      apiDefinition.requiresTrust shouldBe true
     }
 
     "read from JSON when the API access type is PRIVATE and there is a non-empty whitelist" in {
-      val apiDefinition = anApiDefinition(accessType = "PRIVATE", whitelistedApplicationIds = Some("[\"an-application-id\"]"))
+      val apiDefinition = anApiDefinition(accessType = "PRIVATE", whitelistedApplicationIds = Some(s"[\"$appId\"]"))
 
-      apiDefinition.versions.head.access shouldBe Some(PrivateAPIAccess(List("an-application-id")))
+      apiDefinition.versions.head.access shouldBe ApiAccess.Private(List(appId))
     }
 
     "no longer fail to read from JSON when the API access type is PRIVATE and there is no whitelist" in {
       val apiDefinition = anApiDefinition(accessType = "PRIVATE", whitelistedApplicationIds = None)
 
-      apiDefinition.versions.head.access shouldBe Some(PrivateAPIAccess(List.empty))
+      apiDefinition.versions.head.access shouldBe ApiAccess.Private(List.empty)
     }
 
     "read from JSON when the API categories are defined but empty" in {
       val apiDefinition = anApiDefinition(categories = Some("[]"))
 
-      apiDefinition.categories shouldBe Some(Nil)
+      apiDefinition.categories shouldBe Nil
     }
 
     "read from JSON when the API categories are defined with correct values" in {
       val apiDefinition = anApiDefinition(categories = Some("[\"CUSTOMS\", \"VAT\"]"))
 
-      apiDefinition.categories shouldBe Some(Seq(CUSTOMS, VAT))
+      apiDefinition.categories shouldBe Seq(ApiCategory.CUSTOMS, ApiCategory.VAT)
+    }
+
+    "read from JSON when there is no isTestSupport" in {
+      val apiDefinition = anApiDefinition(isTestSupport = None)
+
+      apiDefinition.isTestSupport shouldBe false
     }
 
     "fail to read from JSON when the API categories are defined with incorrect values" in {
@@ -136,19 +145,4 @@ class APIDefinitionSpec extends AsyncHmrcSpec {
     }
   }
 
-  "APICategory" should {
-    "return details for a given category" in {
-      val details = APICategory.toAPICategoryDetails(BUSINESS_RATES)
-
-      details.category shouldBe BUSINESS_RATES
-      details.name shouldBe "Business Rates"
-    }
-
-    "return appropriate APICategoryDetails objects for each APICategory" in {
-      APICategory.values.foreach { category =>
-        val details = APICategory.toAPICategoryDetails(category)
-        details.category shouldBe category
-      }
-    }
-  }
 }

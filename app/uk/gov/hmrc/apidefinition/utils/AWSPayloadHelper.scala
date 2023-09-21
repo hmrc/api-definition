@@ -17,22 +17,26 @@
 package uk.gov.hmrc.apidefinition.utils
 
 import scala.collection.immutable.TreeMap
+import scala.language.postfixOps
+
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiContext
+
 import uk.gov.hmrc.apidefinition.models.AWSAPIDefinition._
 import uk.gov.hmrc.apidefinition.models._
-import scala.language.postfixOps
 
 object AWSPayloadHelper {
 
-  def buildAWSSwaggerDetails(apiName: String, apiVersion: APIVersion, basePath: String, host: String): AWSSwaggerDetails = {
+  def buildAWSSwaggerDetails(apiName: String, apiVersion: ApiVersion, basePath: ApiContext, host: String): AWSSwaggerDetails = {
     AWSSwaggerDetails(
       paths = buildAWSPaths(apiVersion),
-      info = AWSAPIInfo(apiName, apiVersion.version),
-      basePath = Some(s"/$basePath"),
+      info = AWSAPIInfo(apiName, apiVersion.versionNbr),
+      basePath = Some(s"/${basePath.value}"),
       host = Some(host)
     )
   }
 
-  private def buildAWSPaths(apiVersion: APIVersion): Map[String, Map[String, AWSHttpVerbDetails]] = {
+  private def buildAWSPaths(apiVersion: ApiVersion): Map[String, Map[String, AWSHttpVerbDetails]] = {
 
     def buildAWSHttpVerbDetails(e: Endpoint): AWSHttpVerbDetails = {
       AWSHttpVerbDetails(
@@ -72,8 +76,8 @@ object AWSPayloadHelper {
   }
 
   def buildAWSQueryParameters(endpoint: Endpoint): Seq[AWSQueryParameter] = {
-    endpoint.queryParameters.getOrElse(Seq()).map {
-      p: Parameter => AWSQueryParameter(name = p.name, required = p.required)
+    endpoint.queryParameters.map {
+      p: QueryParameter => AWSQueryParameter(name = p.name, required = p.required)
     }.sortBy(_.name)
   }
 }

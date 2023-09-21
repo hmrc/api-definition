@@ -22,7 +22,7 @@ import scala.util.matching.Regex
 
 import cats.implicits._
 
-import uk.gov.hmrc.apidefinition.models.{AuthType, Endpoint, Parameter}
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 
 @Singleton
 class ApiEndpointValidator @Inject() (queryParameterValidator: QueryParameterValidator)(implicit override val ec: ExecutionContext) extends Validator[Endpoint] {
@@ -37,7 +37,7 @@ class ApiEndpointValidator @Inject() (queryParameterValidator: QueryParameterVal
       validateUriPattern(errorContext),
       validateScope(errorContext),
       validatePathParameters(errorContext, endpoint),
-      validateQueryParameters(errorContext, endpoint)
+      validateQueryParameters(errorContext, endpoint.queryParameters)
     ).mapN((_, _, _, _, _) => endpoint)
   }
 
@@ -71,8 +71,8 @@ class ApiEndpointValidator @Inject() (queryParameterValidator: QueryParameterVal
       .combineAll
   }
 
-  private def validateQueryParameters(errorContext: String, endpoint: Endpoint): HMRCValidated[List[Parameter]] = {
-    validateAll[Parameter](u => queryParameterValidator.validate(errorContext)(u))(endpoint.queryParameters.getOrElse(Seq()))
+  private def validateQueryParameters(errorContext: String, queryParameters: List[QueryParameter]): HMRCValidated[List[QueryParameter]] = {
+    validateAll[QueryParameter](u => queryParameterValidator.validate(errorContext)(u))(queryParameters)
   }
 
 }

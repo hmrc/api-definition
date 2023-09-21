@@ -17,6 +17,7 @@
 package uk.gov.hmrc.apidefinition.models.apispecification
 
 import play.api.libs.json.Json
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiVersionNbr
 
 import uk.gov.hmrc.apidefinition.models.apispecification.RamlSpecHelper.loadRaml
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
@@ -30,7 +31,7 @@ class ApiSpecificationRamlParserSpec extends AsyncHmrcSpec {
 
       val apiSpec = apiSpecificationRamlParser.toApiSpecification(basePath, raml)
       apiSpec.title shouldBe "My simple title"
-      apiSpec.version shouldBe "My version"
+      apiSpec.version shouldBe ApiVersionNbr("My version")
 
       apiSpec.documentationItems.size shouldBe 2
       apiSpec.documentationItems(0) shouldBe DocumentationItem("Overview", "Some overview")

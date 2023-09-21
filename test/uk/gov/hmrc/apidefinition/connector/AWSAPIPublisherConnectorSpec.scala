@@ -31,6 +31,7 @@ import play.api.http.ContentTypes.JSON
 import play.api.http.HeaderNames.{AUTHORIZATION, CONTENT_TYPE}
 import play.api.http.Status.{INTERNAL_SERVER_ERROR, OK}
 import play.api.{Configuration, Environment}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiVersionNbr
 import uk.gov.hmrc.http.{Authorization, HeaderCarrier, HttpClient, UpstreamErrorResponse}
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
@@ -58,7 +59,7 @@ class AWSAPIPublisherConnectorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuit
   private val swagger =
     AWSSwaggerDetails(
       paths = Map("/check-weather" -> Map("get" -> anAWSHttpVerbDetails)),
-      info = AWSAPIInfo("calendar", "1.0")
+      info = AWSAPIInfo("calendar", ApiVersionNbr("1.0"))
     )
 
   trait Setup {

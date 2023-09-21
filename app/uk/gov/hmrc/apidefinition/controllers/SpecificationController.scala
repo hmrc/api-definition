@@ -21,6 +21,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.{Action, AnyContent, ControllerComponents}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiVersionNbr
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import uk.gov.hmrc.apidefinition.config.AppConfig
@@ -37,7 +38,7 @@ class SpecificationController @Inject() (specificationService: SpecificationServ
     }
   }
 
-  def fetchApiSpecification(serviceName: String, version: String): Action[AnyContent] = Action.async {
+  def fetchApiSpecification(serviceName: String, version: ApiVersionNbr): Action[AnyContent] = Action.async {
     _ =>
       {
         formatSpecificationResponse(specificationService.fetchApiSpecification(serviceName, version))

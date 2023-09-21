@@ -20,14 +20,14 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 import scala.util.matching.Regex
 
-import uk.gov.hmrc.apidefinition.models.Parameter
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.QueryParameter
 
 @Singleton
-class QueryParameterValidator @Inject() (implicit override val ec: ExecutionContext) extends Validator[Parameter] {
+class QueryParameterValidator @Inject() (implicit override val ec: ExecutionContext) extends Validator[QueryParameter] {
 
   private val queryParameterNameRegex: Regex = "^[a-zA-Z0-9_\\-]+$".r
 
-  def validate(errorContext: String)(implicit queryParameter: Parameter): HMRCValidated[Parameter] = {
+  def validate(errorContext: String)(implicit queryParameter: QueryParameter): HMRCValidated[QueryParameter] = {
     validateThat(_.name.nonEmpty, _ => s"Field 'queryParameters.name' is required $errorContext").andThen {
       validateField(
         _.name.matches(queryParameterNameRegex),

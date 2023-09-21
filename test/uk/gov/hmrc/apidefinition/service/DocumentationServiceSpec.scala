@@ -34,11 +34,12 @@ import play.api.mvc.Result
 import play.shaded.ahc.io.netty.handler.codec.http.DefaultHttpHeaders
 import play.shaded.ahc.org.asynchttpclient.uri.Uri
 import play.shaded.ahc.org.asynchttpclient.{AsyncHttpClientConfig, DefaultAsyncHttpClientConfig}
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.http.{HeaderCarrier, InternalServerException, NotFoundException}
 
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.connector.ApiMicroserviceConnector
-import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.services.{DocumentationService, SpecificationService}
 import uk.gov.hmrc.apidefinition.utils.{AsyncHmrcSpec, Utils}
@@ -50,48 +51,49 @@ class DocumentationServiceSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wi
   val version     = "1.0"
   val serviceUrl  = "http://localhost"
 
-  val productionV1Availability: APIAvailability = APIAvailability(
+  val productionV1Availability: ApiAvailability = ApiAvailability(
     endpointsEnabled = true,
-    PrivateAPIAccess(Nil),
+    ApiAccess.Private(Nil),
     loggedIn = false,
     authorised = false
   )
 
-  val productionV2Availability: APIAvailability = APIAvailability(
+  val productionV2Availability: ApiAvailability = ApiAvailability(
     endpointsEnabled = true,
-    PrivateAPIAccess(Nil),
+    ApiAccess.Private(Nil),
     loggedIn = false,
     authorised = false
   )
 
-  val sandboxV2Availability: APIAvailability = APIAvailability(
+  val sandboxV2Availability: ApiAvailability = ApiAvailability(
     endpointsEnabled = true,
-    PublicAPIAccess(),
+    ApiAccess.PUBLIC,
     loggedIn = false,
     authorised = false
   )
 
-  val sandboxV3Availability: APIAvailability = APIAvailability(
+  val sandboxV3Availability: ApiAvailability = ApiAvailability(
     endpointsEnabled = false,
-    PublicAPIAccess(),
+    ApiAccess.PUBLIC,
     loggedIn = false,
     authorised = false
   )
 
-  val apiDefinition: APIDefinition = APIDefinition(
+  val apiDefinition: ApiDefinition = ApiDefinition(
     serviceName = serviceName,
     serviceBaseUrl = serviceUrl,
     name = "Hello World",
     description = "Example",
-    context = "hello",
-    requiresTrust = Some(false),
-    isTestSupport = Some(false),
+    context = ApiContext("hello"),
+    requiresTrust = false,
+    isTestSupport = false,
     versions = List(
-      APIVersion("1.0", APIStatus.STABLE, endpoints = Nil, endpointsEnabled = None),
-      APIVersion("2.0", APIStatus.BETA, endpoints = Nil),
-      APIVersion("3.0", APIStatus.ALPHA, endpoints = Nil)
+      ApiVersion(ApiVersionNbr("1.0"), ApiStatus.STABLE, endpoints = Nil, endpointsEnabled = false),
+      ApiVersion(ApiVersionNbr("2.0"), ApiStatus.BETA, endpoints = Nil),
+      ApiVersion(ApiVersionNbr("3.0"), ApiStatus.ALPHA, endpoints = Nil)
     ),
-    lastPublishedAt = None
+    lastPublishedAt = None,
+    categories = List(ApiCategory.OTHER)
   )
 
   private val sampleFileSource: Source[ByteString, _] = createSourceFrom("hello")
@@ -148,7 +150,7 @@ class DocumentationServiceSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wi
     }
 
     def theApiMicroserviceWillReturnTheResource(response: WSResponse) = {
-      when(mockApiMicroserviceConnector.fetchApiDocumentationResourceByUrl(*, *, *))
+      when(mockApiMicroserviceConnector.fetchApiDocumentationResourceByUrl(*, *[ApiVersionNbr], *))
         .thenReturn(successful(response))
     }
   }
@@ -159,17 +161,17 @@ class DocumentationServiceSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wi
       theApiDefinitionWillBeReturned()
       theApiMicroserviceWillReturnTheResource(streamedResource)
 
-      val result: Result = await(underTest.fetchApiDocumentationResource(serviceName, "1.0", "resource"))
+      val result: Result = await(underTest.fetchApiDocumentationResource(serviceName, ApiVersionNbr("1.0"), "resource"))
 
       result.header.status should be(Status.OK)
-      verify(mockApiMicroserviceConnector).fetchApiDocumentationResourceByUrl(*, eqTo("1.0"), eqTo("resource"))
+      verify(mockApiMicroserviceConnector).fetchApiDocumentationResourceByUrl(*, eqTo(ApiVersionNbr("1.0")), eqTo("resource"))
     }
 
     "return the resource with given Content-Type when header is present" in new Setup {
       theApiDefinitionWillBeReturned()
       theApiMicroserviceWillReturnTheResource(streamedResource)
 
-      val result: Result = await(underTest.fetchApiDocumentationResource(serviceName, "1.0", "resource"))
+      val result: Result = await(underTest.fetchApiDocumentationResource(serviceName, ApiVersionNbr("1.0"), "resource"))
 
       result.header.status should be(Status.OK)
       result.body.contentType should be(Some("application/text"))
@@ -179,7 +181,7 @@ class DocumentationServiceSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wi
       theApiDefinitionWillBeReturned()
       theApiMicroserviceWillReturnTheResource(streamedResource)
 
-      val result: Result = await(underTest.fetchApiDocumentationResource(serviceName, "1.0", "resource"))
+      val result: Result = await(underTest.fetchApiDocumentationResource(serviceName, ApiVersionNbr("1.0"), "resource"))
 
       result.header.status should be(Status.OK)
       result.header.headers.get(PROXY_SAFE_CONTENT_TYPE) should be(Some("application/text"))
@@ -189,7 +191,7 @@ class DocumentationServiceSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wi
       theApiDefinitionWillBeReturned()
       theApiMicroserviceWillReturnTheResource(chunkedResource)
 
-      val result: Result = await(underTest.fetchApiDocumentationResource(serviceName, "1.0", "resource"))
+      val result: Result = await(underTest.fetchApiDocumentationResource(serviceName, ApiVersionNbr("1.0"), "resource"))
 
       result.header.status should be(Status.OK)
       result.body.contentType should be(Some("application/octet-stream"))
@@ -201,7 +203,7 @@ class DocumentationServiceSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wi
       theApiMicroserviceWillReturnTheResource(notFoundResponse)
 
       intercept[NotFoundException] {
-        await(underTest.fetchApiDocumentationResource(serviceName, "1.0", "resourceNotThere"))
+        await(underTest.fetchApiDocumentationResource(serviceName, ApiVersionNbr("1.0"), "resourceNotThere"))
       }
     }
 
@@ -210,7 +212,7 @@ class DocumentationServiceSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wi
       theApiMicroserviceWillReturnTheResource(internalServerErrorResponse)
 
       intercept[InternalServerException] {
-        await(underTest.fetchApiDocumentationResource(serviceName, "1.0", "resourceNotThere"))
+        await(underTest.fetchApiDocumentationResource(serviceName, ApiVersionNbr("1.0"), "resourceNotThere"))
       }
     }
 
@@ -218,7 +220,7 @@ class DocumentationServiceSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wi
       noApiDefinitionWillBeReturned()
 
       intercept[NotFoundException] {
-        await(underTest.fetchApiDocumentationResource(serviceName, "1.0", "resource"))
+        await(underTest.fetchApiDocumentationResource(serviceName, ApiVersionNbr("1.0"), "resource"))
       }
     }
 
@@ -226,10 +228,10 @@ class DocumentationServiceSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wi
       theApiDefinitionWillBeReturned()
       theApiMicroserviceWillReturnTheResource(streamedResource)
 
-      val result: Result = await(underTest.fetchApiDocumentationResource(serviceName, "common", "resource"))
+      val result: Result = await(underTest.fetchApiDocumentationResource(serviceName, ApiVersionNbr("common"), "resource"))
 
       result.header.status should be(Status.OK)
-      verify(mockApiMicroserviceConnector).fetchApiDocumentationResourceByUrl(*, eqTo("common"), eqTo("resource"))
+      verify(mockApiMicroserviceConnector).fetchApiDocumentationResourceByUrl(*, eqTo(ApiVersionNbr("common")), eqTo("resource"))
     }
   }
 }

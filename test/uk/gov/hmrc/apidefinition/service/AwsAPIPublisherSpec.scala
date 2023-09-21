@@ -17,16 +17,17 @@
 package uk.gov.hmrc.apidefinition.service
 
 import java.util.UUID
-import scala.jdk.CollectionConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.{failed, successful}
+import scala.jdk.CollectionConverters._
 
 import org.mockito.{ArgumentCaptor, ArgumentMatchers}
 
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiDefinition, ApiStatus, _}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apidefinition.connector.AWSAPIPublisherConnector
-import uk.gov.hmrc.apidefinition.models.APIStatus.APIStatus
 import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.services.AwsApiPublisher
@@ -34,10 +35,10 @@ import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 
 class AwsAPIPublisherSpec extends AsyncHmrcSpec {
 
-  private def anAPIVersion(version: String, status: APIStatus = APIStatus.PROTOTYPED) = APIVersion(
-    version,
+  private def anAPIVersion(version: String, status: ApiStatus = ApiStatus.BETA) = ApiVersion(
+    ApiVersionNbr(version),
     status,
-    Some(PublicAPIAccess()),
+    ApiAccess.PUBLIC,
     List(
       Endpoint(
         "/today",
@@ -53,18 +54,21 @@ class AwsAPIPublisherSpec extends AsyncHmrcSpec {
 
   private def someAPIDefinition(
       name: String = UUID.randomUUID().toString,
-      context: String = UUID.randomUUID().toString,
+      context: ApiContext = ApiContext.random,
       serviceBaseUrl: String = s"https://$host",
-      versions: List[APIVersion] = List(anAPIVersion("2.0"))
-    ): APIDefinition = {
-    APIDefinition(
+      versions: List[ApiVersion] = List(anAPIVersion("2.0"))
+    ): ApiDefinition = {
+    ApiDefinition(
       UUID.randomUUID().toString,
       serviceBaseUrl,
       name,
       UUID.randomUUID().toString,
       context,
       versions,
-      None
+      false,
+      false,
+      None,
+      List(ApiCategory.OTHER)
     )
   }
 
@@ -80,8 +84,8 @@ class AwsAPIPublisherSpec extends AsyncHmrcSpec {
       val swaggerDetailsCaptor: ArgumentCaptor[AWSSwaggerDetails] = ArgumentCaptor.forClass(classOf[AWSSwaggerDetails])
       when(underTest.awsAPIPublisherConnector.createOrUpdateAPI(*, swaggerDetailsCaptor.capture())(*))
         .thenReturn(successful(UUID.randomUUID().toString))
-      val apiDefinition1: APIDefinition                           = someAPIDefinition("API 1")
-      val apiDefinition2: APIDefinition                           = someAPIDefinition("API 2")
+      val apiDefinition1: ApiDefinition                           = someAPIDefinition("API 1")
+      val apiDefinition2: ApiDefinition                           = someAPIDefinition("API 2")
 
       await(underTest.publishAll(List(apiDefinition1, apiDefinition2)))
 
@@ -97,7 +101,7 @@ class AwsAPIPublisherSpec extends AsyncHmrcSpec {
       val swaggerDetailsCaptor: ArgumentCaptor[AWSSwaggerDetails] = ArgumentCaptor.forClass(classOf[AWSSwaggerDetails])
       when(underTest.awsAPIPublisherConnector.createOrUpdateAPI(*, swaggerDetailsCaptor.capture())(*))
         .thenReturn(successful(UUID.randomUUID().toString))
-      val apiDefinition: APIDefinition                            = someAPIDefinition()
+      val apiDefinition: ApiDefinition                            = someAPIDefinition()
 
       await(underTest.publish(apiDefinition))
 
@@ -120,7 +124,7 @@ class AwsAPIPublisherSpec extends AsyncHmrcSpec {
     }
 
     "call delete endpoint for RETIRED versions" in new Setup {
-      val apiDefinition: APIDefinition = someAPIDefinition(versions = List(anAPIVersion("1.0", APIStatus.RETIRED), anAPIVersion("2.0")))
+      val apiDefinition: ApiDefinition = someAPIDefinition(versions = List(anAPIVersion("1.0", ApiStatus.RETIRED), anAPIVersion("2.0")))
 
       when(underTest.awsAPIPublisherConnector.deleteAPI(*)(*))
         .thenReturn(successful(UUID.randomUUID().toString))
@@ -138,7 +142,7 @@ class AwsAPIPublisherSpec extends AsyncHmrcSpec {
   "delete" should {
     "delete the API in AWS" in new Setup {
       when(underTest.awsAPIPublisherConnector.deleteAPI(*)(*)).thenReturn(successful(UUID.randomUUID().toString))
-      val apiDefinition: APIDefinition = someAPIDefinition()
+      val apiDefinition: ApiDefinition = someAPIDefinition()
 
       await(underTest.delete(apiDefinition))
 
@@ -147,7 +151,7 @@ class AwsAPIPublisherSpec extends AsyncHmrcSpec {
 
     "delete multiple versions of the API in AWS" in new Setup {
       when(underTest.awsAPIPublisherConnector.deleteAPI(*)(*)).thenReturn(successful(UUID.randomUUID().toString))
-      val apiDefinition: APIDefinition = someAPIDefinition(versions = List(anAPIVersion("1.0"), anAPIVersion("2.0")))
+      val apiDefinition: ApiDefinition = someAPIDefinition(versions = List(anAPIVersion("1.0"), anAPIVersion("2.0")))
 
       await(underTest.delete(apiDefinition))
 

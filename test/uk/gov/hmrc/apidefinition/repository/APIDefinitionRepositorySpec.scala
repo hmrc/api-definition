@@ -16,11 +16,13 @@
 
 package uk.gov.hmrc.apidefinition.repository
 
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 import com.mongodb.MongoWriteException
-import org.joda.time.{DateTime, DateTimeZone}
+import org.mongodb.scala.bson.collection.immutable.Document
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.{IndexModel, IndexOptions}
 import org.scalatest.concurrent.Eventually
@@ -29,96 +31,113 @@ import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.libs.json.Json
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiDefinition, _}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 
-import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 
 class APIDefinitionRepositorySpec extends AsyncHmrcSpec
-    with DefaultPlayMongoRepositorySupport[APIDefinition]
+    with DefaultPlayMongoRepositorySupport[ApiDefinition]
     with GuiceOneAppPerSuite with BeforeAndAfterEach
     with BeforeAndAfterAll with Eventually {
 
-  private def withSource(source: ApiVersionSource)(apiVersion: APIVersion): APIVersion = {
+  private def withSource(source: ApiVersionSource)(apiVersion: ApiVersion): ApiVersion = {
     apiVersion.copy(versionSource = source)
   }
 
-  private def defnWithSource(source: ApiVersionSource)(apiDefn: APIDefinition): APIDefinition = {
+  private def defnWithSource(source: ApiVersionSource)(apiDefn: ApiDefinition): ApiDefinition = {
     apiDefn.copy(versions = apiDefn.versions.map(withSource(source)(_)))
   }
   override implicit lazy val app: Application                                                 = appBuilder.build()
 
-  private val helloApiVersion = APIVersion(
-    version = "1.0",
-    status = APIStatus.PROTOTYPED,
-    access = None,
+  private val helloApiVersion = ApiVersion(
+    versionNbr = ApiVersionNbr("1.0"),
+    status = ApiStatus.BETA,
+    access = ApiAccess.PUBLIC,
     endpoints = List(Endpoint("/world", "Say Hello to the World!", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
   )
 
-  private val calendarApiVersion = APIVersion(
-    version = "2.0",
-    status = APIStatus.PUBLISHED,
-    access = None,
+  private val calendarApiVersion = ApiVersion(
+    versionNbr = ApiVersionNbr("2.0"),
+    status = ApiStatus.STABLE,
+    access = ApiAccess.PUBLIC,
     endpoints = List(Endpoint("/date", "Check current date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
   )
 
-  private val helloApiDefinition = APIDefinition(
+  private val helloApiDefinition = ApiDefinition(
     serviceName = "hello-service",
     serviceBaseUrl = "hello.com",
     name = "Hello",
     description = "This is the Hello API",
-    context = "hello",
+    context = ApiContext("hello"),
     versions = List(helloApiVersion),
-    requiresTrust = None
+    requiresTrust = false,
+    isTestSupport = false,
+    lastPublishedAt = None,
+    categories = List(ApiCategory.AGENTS)
   )
 
-  private val calendarApiDefinition = APIDefinition(
+  private val calendarApiDefinition = ApiDefinition(
     serviceName = "calendar-service",
     serviceBaseUrl = "calendar.com",
     name = "Calendar",
     description = "This is the Calendar API",
-    context = "calendar",
+    context = ApiContext("calendar"),
     versions = List(calendarApiVersion),
-    requiresTrust = None
+    requiresTrust = false,
+    isTestSupport = false,
+    lastPublishedAt = None,
+    categories = List(ApiCategory.AGENTS)
   )
 
-  private val individualIncomeTaxApiVersion = APIVersion(
-    version = "1.0",
-    status = APIStatus.PUBLISHED,
-    access = None,
+  private val individualIncomeTaxApiVersion = ApiVersion(
+    versionNbr = ApiVersionNbr("1.0"),
+    status = ApiStatus.STABLE,
+    access = ApiAccess.PUBLIC,
     endpoints = List(Endpoint("/submit", "Submit Income Tax Return", HttpMethod.POST, AuthType.USER, ResourceThrottlingTier.UNLIMITED))
   )
 
-  private val individualIncomeTaxApiDefinition = APIDefinition(
+  private val individualIncomeTaxApiDefinition = ApiDefinition(
     serviceName = "income-tax",
     serviceBaseUrl = "income-tax.protected.mdtp",
     name = "Individual Income Tax",
     description = "This is the Individual Income Tax API",
-    context = "individuals/income-tax",
+    context = ApiContext("individuals/income-tax"),
     versions = List(individualIncomeTaxApiVersion),
-    requiresTrust = None
+    requiresTrust = false,
+    isTestSupport = false,
+    lastPublishedAt = None,
+    categories = List(ApiCategory.AGENTS)
   )
 
-  private val individualNIApiVersion = APIVersion(
-    version = "1.0",
-    status = APIStatus.PUBLISHED,
-    access = None,
-    endpoints = List(Endpoint("/submit", "Submit National Insurance", HttpMethod.POST, AuthType.USER, ResourceThrottlingTier.UNLIMITED))
+  private val individualNIApiVersion = ApiVersion(
+    versionNbr = ApiVersionNbr("1.0"),
+    status = ApiStatus.STABLE,
+    access = ApiAccess.PUBLIC,
+    endpoints = List(Endpoint("/submit", "Submit National Insurance", HttpMethod.POST, AuthType.USER, ResourceThrottlingTier.UNLIMITED)),
+    endpointsEnabled = true,
+    awsRequestId = None,
+    versionSource = ApiVersionSource.UNKNOWN
   )
 
-  private val individualNIApiDefinition = APIDefinition(
+  private val individualNIApiDefinition = ApiDefinition(
     serviceName = "ni",
     serviceBaseUrl = "ni.protected.mdtp",
     name = "Individual National Insurance",
     description = "This is the Individual National Insurance API",
-    context = "individuals/ni",
+    context = ApiContext("individuals/ni"),
     versions = List(individualNIApiVersion),
-    requiresTrust = None
+    requiresTrust = false,
+    isTestSupport = false,
+    lastPublishedAt = None,
+    categories = List(ApiCategory.AGENTS)
   )
 
   override val repository: APIDefinitionRepository = app.injector.instanceOf[APIDefinitionRepository]
 
-  private def saveApi(repo: APIDefinitionRepository, apiDefinition: APIDefinition): Future[APIDefinition] = {
+  private def saveApi(repo: APIDefinitionRepository, apiDefinition: ApiDefinition): Future[ApiDefinition] = {
     repo.collection.insertOne(apiDefinition).toFuture().map(_ => apiDefinition)
   }
 
@@ -136,14 +155,13 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
 
     "create a new API definition in Mongo" in {
 
-      val aTime = DateTime.now(DateTimeZone.UTC)
+      val aTime = Instant.now().truncatedTo(ChronoUnit.MILLIS)
 
       val apiDefinition = calendarApiDefinition.copy(lastPublishedAt = Some(aTime))
       await(repository.save(apiDefinition))
 
       val retrieved = await(repository.fetchByServiceName(apiDefinition.serviceName))
       retrieved shouldBe Some(apiDefinition)
-
     }
 
     "update an existing API definition in Mongo" in {
@@ -240,7 +258,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
     }
 
     "return None when there are no APIs with that context" in {
-      await(repository.save(calendarApiDefinition.copy(context = "abc")))
+      await(repository.save(calendarApiDefinition.copy(context = ApiContext("abc"))))
 
       val retrieved = await(repository.fetchByContext(calendarApiDefinition.context))
       retrieved shouldBe None
@@ -253,7 +271,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
       await(repository.save(individualIncomeTaxApiDefinition))
       await(repository.save(individualNIApiDefinition))
 
-      val retrieved = await(repository.fetchAllByTopLevelContext("individuals"))
+      val retrieved = await(repository.fetchAllByTopLevelContext(ApiContext("individuals")))
 
       retrieved.size shouldBe 2
     }
@@ -262,7 +280,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
       await(repository.save(helloApiDefinition))
       await(repository.save(calendarApiDefinition))
 
-      val retrieved = await(repository.fetchAllByTopLevelContext("individuals"))
+      val retrieved = await(repository.fetchAllByTopLevelContext(ApiContext("individuals")))
 
       retrieved.size shouldBe 0
     }
@@ -277,7 +295,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
       await(repository.delete(calendarApiDefinition.serviceName))
 
       val retrieved = await(repository.fetchAll())
-      retrieved shouldBe List(defnWithSource(UNKNOWN)(helloApiDefinition))
+      retrieved shouldBe List(defnWithSource(ApiVersionSource.UNKNOWN)(helloApiDefinition))
     }
 
   }
@@ -306,7 +324,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
         val inError = saveApi(repository, helloApiDefinition.copy(serviceName = "newServiceName", name = "newName", serviceBaseUrl = "newServiceBaseUrl"))
         await(inError)
       }
-      assertMongoError(caught, "context", helloApiDefinition.context)
+      assertMongoError(caught, "context", helloApiDefinition.context.value)
 
       collectionSize shouldBe 1
     }
@@ -316,7 +334,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
       collectionSize shouldBe 1
 
       val caught = intercept[MongoWriteException] {
-        val inError = saveApi(repository, helloApiDefinition.copy(context = "newContext", serviceName = "newServiceName", serviceBaseUrl = "newServiceBaseUrl"))
+        val inError = saveApi(repository, helloApiDefinition.copy(context = ApiContext("newContext"), serviceName = "newServiceName", serviceBaseUrl = "newServiceBaseUrl"))
         await(inError)
       }
       assertMongoError(caught, "name", helloApiDefinition.name)
@@ -329,7 +347,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
       collectionSize shouldBe 1
 
       val caught = intercept[MongoWriteException] {
-        val inError = saveApi(repository, helloApiDefinition.copy(name = "newName", context = "newContext", serviceBaseUrl = "newServiceBaseUrl"))
+        val inError = saveApi(repository, helloApiDefinition.copy(name = "newName", context = ApiContext("newContext"), serviceBaseUrl = "newServiceBaseUrl"))
         await(inError)
       }
       assertMongoError(caught, "serviceName", helloApiDefinition.serviceName)
@@ -342,7 +360,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
       collectionSize shouldBe 1
 
       val caught = intercept[MongoWriteException] {
-        val inError = saveApi(repository, helloApiDefinition.copy(name = "newName", context = "newContext", serviceName = "newServiceName"))
+        val inError = saveApi(repository, helloApiDefinition.copy(name = "newName", context = ApiContext("newContext"), serviceName = "newServiceName"))
         await(inError)
       }
       assertMongoError(caught, "serviceBaseUrl", helloApiDefinition.serviceBaseUrl)
@@ -367,6 +385,50 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
       )
 
       indexes.toSet.toString shouldBe expectedIndexes.toSet.toString
+    }
+
+    "use the tolerant readers" in {
+      val rawJson = Json.obj(
+        "serviceName"    -> "calendar",
+        "name"           -> "Calendar API",
+        "description"    -> "My Calendar API",
+        "serviceBaseUrl" -> "http://calendar",
+        "context"        -> "individuals/calendar",
+        "requiresTrust"  -> true,
+        "categories"     -> Seq("OTHER"),
+        "versions"       -> Seq(
+          Json.obj(
+            "version"   -> "1.0",
+            "status"    -> "STABLE",
+            "endpoints" -> Seq(
+              Json.obj(
+                "uriPattern"     -> "/today",
+                "endpointName"   -> "Get Today's Date",
+                "method"         -> "GET",
+                "authType"       -> "NONE",
+                "throttlingTier" -> "UNLIMITED"
+              )
+            )
+          )
+        )
+      )
+
+      await(mongoDatabase.getCollection("api").insertOne(Document(rawJson.toString())).toFuture())
+
+      val records = await(repository.fetchAll())
+
+      records.size shouldBe 1
+
+      records.head.isTestSupport shouldBe false
+      records.head.lastPublishedAt shouldBe None
+
+      records.head.versions.head.access shouldBe ApiAccess.PUBLIC
+      records.head.versions.head.awsRequestId shouldBe None
+      records.head.versions.head.endpointsEnabled shouldBe true
+      records.head.versions.head.versionSource shouldBe ApiVersionSource.UNKNOWN
+
+      records.head.versions.head.endpoints.head.queryParameters shouldBe List.empty
+
     }
   }
 

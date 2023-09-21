@@ -17,12 +17,12 @@
 package uk.gov.hmrc.apidefinition.services
 
 import java.net.URI
-
 import javax.inject.Singleton
-
 import scala.collection.immutable.ListMap
 import scala.io.Source
+
 import play.api.libs.json.Json
+
 import uk.gov.hmrc.apidefinition.models.apispecification.JsonSchema
 import uk.gov.hmrc.apidefinition.models.apispecification.JsonSchema.JsonSchemaWithReference
 import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
@@ -31,14 +31,14 @@ import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
 class SchemaService extends ApplicationLogger {
 
   protected def fetchPlainTextSchema(uri: String): String = {
-    var source: Source = null   // scalastyle:ignore
+    var source: Source = null // scalastyle:ignore
     try {
       source = Source.fromURL(uri)
       source.mkString
     } finally {
       if (source != null) {
         source.close()
-        source = null           // scalastyle:ignore
+        source = null // scalastyle:ignore
       }
     }
   }

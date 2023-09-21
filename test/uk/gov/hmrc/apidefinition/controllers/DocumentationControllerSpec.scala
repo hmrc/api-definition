@@ -30,6 +30,7 @@ import play.api.mvc.AnyContentAsEmpty
 import play.api.mvc.Results._
 import play.api.test.Helpers._
 import play.api.test.{FakeRequest, StubControllerComponentsFactory}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiVersionNbr
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 
 import uk.gov.hmrc.apidefinition.services.DocumentationService
@@ -43,7 +44,7 @@ class DocumentationControllerSpec extends AsyncHmrcSpec with StubControllerCompo
     val documentationService: DocumentationService   = mock[DocumentationService]
     val hc: HeaderCarrier                            = HeaderCarrier()
     val serviceName: String                          = "api-example-microservice"
-    val version: String                              = "1.0"
+    val version: ApiVersionNbr                       = ApiVersionNbr("1.0")
     val resourceName: String                         = "application.raml"
     // scalastyle:off magic.number
     // val body: Array[Byte] = Array[Byte](0x1, 0x2, 0x3)
@@ -54,17 +55,17 @@ class DocumentationControllerSpec extends AsyncHmrcSpec with StubControllerCompo
     val underTest = new DocumentationController(documentationService, stubControllerComponents())
 
     def theDocumentationServiceWillReturnTheResource = {
-      when(documentationService.fetchApiDocumentationResource(*, *, *))
+      when(documentationService.fetchApiDocumentationResource(*, *[ApiVersionNbr], *))
         .thenReturn(successful(Ok(body).withHeaders(CONTENT_TYPE -> contentType)))
     }
 
     def theDocumentationServiceWillFailToReturnTheResource = {
-      when(documentationService.fetchApiDocumentationResource(*, *, *))
+      when(documentationService.fetchApiDocumentationResource(*, *[ApiVersionNbr], *))
         .thenReturn(failed(new RuntimeException("Some message")))
     }
 
     def theDocumentationServiceWillReturnNotFound = {
-      when(documentationService.fetchApiDocumentationResource(*, *, *))
+      when(documentationService.fetchApiDocumentationResource(*, *[ApiVersionNbr], *))
         .thenReturn(failed(new NotFoundException("some message")))
     }
   }

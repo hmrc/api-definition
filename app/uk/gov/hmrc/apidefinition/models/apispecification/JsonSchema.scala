@@ -16,10 +16,10 @@
 
 package uk.gov.hmrc.apidefinition.models.apispecification
 
+import scala.collection.immutable.ListMap
+
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
-
-import scala.collection.immutable.ListMap
 
 /*
  * ListMap is used instead of Map so that when iterating the entries are returned in insertion order. This means

@@ -21,6 +21,7 @@ import scala.concurrent.ExecutionContext
 import scala.util.control.NonFatal
 
 import play.api.mvc.{Action, AnyContent, ControllerComponents, Result}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiVersionNbr
 import uk.gov.hmrc.http.NotFoundException
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
@@ -32,7 +33,7 @@ import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
 class DocumentationController @Inject() (service: DocumentationService, cc: ControllerComponents)(implicit val ec: ExecutionContext)
     extends BackendController(cc) with ApplicationLogger {
 
-  def fetchApiDocumentationResource(serviceName: String, version: String, resource: String): Action[AnyContent] = Action.async {
+  def fetchApiDocumentationResource(serviceName: String, version: ApiVersionNbr, resource: String): Action[AnyContent] = Action.async {
     _ =>
       {
         logger.info(s"API Documentation received request for resource: $serviceName, $version, $resource")

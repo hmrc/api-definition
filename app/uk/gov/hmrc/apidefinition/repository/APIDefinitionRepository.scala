@@ -27,31 +27,32 @@ import org.mongodb.scala.model.Filters.{equal, regex}
 import org.mongodb.scala.model.{FindOneAndReplaceOptions, ReturnDocument}
 
 import play.api.Logging
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiContext
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, CollectionFactory, PlayMongoRepository}
 
-import uk.gov.hmrc.apidefinition.models.APIDefinition
-import uk.gov.hmrc.apidefinition.models.JsonFormatters._
+import uk.gov.hmrc.apidefinition.models.TolerantJsonApiDefinition
 import uk.gov.hmrc.apidefinition.utils.IndexHelper.createUniqueBackgroundSingleFieldAscendingIndex
 
 @Singleton
 class APIDefinitionRepository @Inject() (mongoComponent: MongoComponent)(implicit val ec: ExecutionContext)
-    extends PlayMongoRepository[APIDefinition](
+    extends PlayMongoRepository[ApiDefinition](
       collectionName = "api",
       mongoComponent = mongoComponent,
-      domainFormat = formatAPIDefinition,
+      domainFormat = TolerantJsonApiDefinition.tolerantFormatApiDefinition,
       indexes = Seq("context", "name", "serviceName", "serviceBaseUrl")
         .map(fieldName => createUniqueBackgroundSingleFieldAscendingIndex(fieldName, s"${fieldName}Index"))
     ) with Logging {
 
-  override lazy val collection: MongoCollection[APIDefinition] =
+  override lazy val collection: MongoCollection[ApiDefinition] =
     CollectionFactory
       .collection(mongoComponent.database, collectionName, domainFormat)
       .withCodecRegistry(
         fromRegistries(
           fromCodecs(
             Codecs.playFormatCodec(domainFormat),
-            Codecs.playFormatCodec(formatAPIDefinition)
+            Codecs.playFormatCodec(TolerantJsonApiDefinition.tolerantFormatApiDefinition)
           ),
           DEFAULT_CODEC_REGISTRY
         )
@@ -61,7 +62,7 @@ class APIDefinitionRepository @Inject() (mongoComponent: MongoComponent)(implici
     equal("serviceName", Codecs.toBson(serviceName))
   }
 
-  def save(apiDefinition: APIDefinition): Future[APIDefinition] = {
+  def save(apiDefinition: ApiDefinition): Future[ApiDefinition] = {
     collection.findOneAndReplace(
       serviceNameSelector(apiDefinition.serviceName),
       apiDefinition,
@@ -69,7 +70,7 @@ class APIDefinitionRepository @Inject() (mongoComponent: MongoComponent)(implici
     ).head()
   }
 
-  def fetchByServiceName(serviceName: String): Future[Option[APIDefinition]] = {
+  def fetchByServiceName(serviceName: String): Future[Option[ApiDefinition]] = {
     logger.info(s"Fetching API $serviceName in mongo")
     collection.find(serviceNameSelector(serviceName)).headOption().map { api =>
       logger.info(s"Retrieved API with service name '$serviceName' in mongo: $api")
@@ -81,7 +82,7 @@ class APIDefinitionRepository @Inject() (mongoComponent: MongoComponent)(implici
     }
   }
 
-  def fetchByServiceBaseUrl(serviceBaseUrl: String): Future[Option[APIDefinition]] = {
+  def fetchByServiceBaseUrl(serviceBaseUrl: String): Future[Option[ApiDefinition]] = {
     collection.find(equal("serviceBaseUrl", Codecs.toBson(serviceBaseUrl))).headOption().map { api =>
       logger.debug(s"Retrieved API with service base url '$serviceBaseUrl' in mongo: $api")
       api
@@ -92,7 +93,7 @@ class APIDefinitionRepository @Inject() (mongoComponent: MongoComponent)(implici
     }
   }
 
-  def fetchByName(name: String): Future[Option[APIDefinition]] = {
+  def fetchByName(name: String): Future[Option[ApiDefinition]] = {
     collection.find(equal("name", Codecs.toBson(name))).headOption().map { api =>
       logger.debug(s"Retrieved API with name '$name' in mongo: $api")
       api
@@ -103,23 +104,23 @@ class APIDefinitionRepository @Inject() (mongoComponent: MongoComponent)(implici
     }
   }
 
-  def fetchByContext(context: String): Future[Option[APIDefinition]] = {
-    collection.find(equal("context", Codecs.toBson(context))).headOption().map { api =>
-      logger.debug(s"Retrieved API with context '$context' in mongo: $api")
+  def fetchByContext(context: ApiContext): Future[Option[ApiDefinition]] = {
+    collection.find(equal("context", Codecs.toBson(context.value))).headOption().map { api =>
+      logger.debug(s"Retrieved API with context '${context.value}' in mongo: $api")
       api
     } recover {
       case e =>
-        logger.error(s"An error occurred while retrieving API with context '$context' in mongo", e)
+        logger.error(s"An error occurred while retrieving API with context '${context.value}' in mongo", e)
         throw e
     }
   }
 
-  def fetchAll(): Future[Seq[APIDefinition]] = {
+  def fetchAll(): Future[Seq[ApiDefinition]] = {
     collection.find().toFuture()
   }
 
-  def fetchAllByTopLevelContext(topLevelContext: String): Future[Seq[APIDefinition]] = {
-    collection.find(regex("context", f"^$topLevelContext\\/.*$$")).toFuture()
+  def fetchAllByTopLevelContext(topLevelContext: ApiContext): Future[Seq[ApiDefinition]] = {
+    collection.find(regex("context", f"^${topLevelContext.value}\\/.*$$")).toFuture()
   }
 
   def delete(serviceName: String): Future[Unit] = {

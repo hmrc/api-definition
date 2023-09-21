@@ -16,6 +16,9 @@
 
 package uk.gov.hmrc.apidefinition.utils
 
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+
 import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.utils.AWSPayloadHelper._
 
@@ -28,16 +31,16 @@ class AWSPayloadHelperSpec extends AsyncHmrcSpec {
     authType = AuthType.NONE,
     throttlingTier = ResourceThrottlingTier.UNLIMITED,
     scope = None,
-    queryParameters = None
+    queryParameters = List()
   )
 
-  private val queryParameters = List(
-    Parameter(name = "city"),
-    Parameter(name = "address", required = true),
-    Parameter(name = "postcode", required = true)
+  private val someQueryParameters = List(
+    QueryParameter(name = "city"),
+    QueryParameter(name = "address", required = true),
+    QueryParameter(name = "postcode", required = true)
   )
 
-  private val endpointWithQueryParameters = endpoint.copy(queryParameters = Some(queryParameters))
+  private val endpointWithQueryParameters = endpoint.copy(queryParameters = someQueryParameters)
 
   "buildAWSSwaggerDetails" should {
     "correctly construct an AWSSwaggerDetails object" in {
@@ -48,21 +51,23 @@ class AWSPayloadHelperSpec extends AsyncHmrcSpec {
         authType = AuthType.USER,
         throttlingTier = ResourceThrottlingTier.UNLIMITED,
         scope = Some("read:user"),
-        queryParameters = Some(List(Parameter(name = "surname", required = true)))
+        queryParameters = List(QueryParameter(name = "surname", required = true))
       )
 
-      val apiVersion = APIVersion(
-        version = "1.0",
-        status = APIStatus.PUBLISHED,
-        access = Some(PublicAPIAccess()),
+      val apiVersion = ApiVersion(
+        versionNbr = ApiVersionNbr("1.0"),
+        status = ApiStatus.STABLE,
+        access = ApiAccess.PUBLIC,
         endpoints = List(populatedEndpoint),
-        endpointsEnabled = Some(true)
+        endpointsEnabled = true,
+        awsRequestId = None,
+        versionSource = ApiVersionSource.OAS
       )
 
-      val constructedSwaggerDetails: AWSSwaggerDetails = buildAWSSwaggerDetails("new-api", apiVersion, "foo/bar", "https://test.mdtp")
+      val constructedSwaggerDetails: AWSSwaggerDetails = buildAWSSwaggerDetails("new-api", apiVersion, ApiContext("foo/bar"), "https://test.mdtp")
 
       constructedSwaggerDetails.info.title should be("new-api")
-      constructedSwaggerDetails.info.version should be("1.0")
+      constructedSwaggerDetails.info.version should be(ApiVersionNbr("1.0"))
       constructedSwaggerDetails.basePath should be(Some("/foo/bar"))
       constructedSwaggerDetails.host should be(Some("https://test.mdtp"))
       constructedSwaggerDetails.paths.size should be(1)
