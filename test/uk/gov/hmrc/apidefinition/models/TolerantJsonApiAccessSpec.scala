@@ -34,35 +34,20 @@ class TolerantJsonApiAccessSpec extends BaseJsonFormattersSpec {
     }
 
     "read private access from Json even without any fields" in {
-      testFromJson[ApiAccess]("""{ "type": "PRIVATE"}""")(ApiAccess.Private(List(), false))
-    }
-
-    "read private access from Json even without isPrivateTrial" in {
-      testFromJson[ApiAccess](s"""{ "type": "PRIVATE",  "whitelistedApplicationIds": ["$appId"]}""")(ApiAccess.Private(List(appId), false))
+      testFromJson[ApiAccess]("""{ "type": "PRIVATE"}""")(ApiAccess.Private(false))
     }
 
     "read private access with fields from Json" in {
-      testFromJson[ApiAccess](s"""{ "type": "PRIVATE", "whitelistedApplicationIds": ["$appId"], "isTrial": true}""")(ApiAccess.Private(List(appId), true))
+      testFromJson[ApiAccess](s"""{ "type": "PRIVATE", "isTrial": true}""")(ApiAccess.Private(true))
     }
 
-    "read private access with fields from Json with newer field" in {
-      testFromJson[ApiAccess](s"""{ "type": "PRIVATE", "allowlistedApplicationIds": ["$appId"], "isTrial": true}""")(ApiAccess.Private(List(appId), true))
+    "read private access with fields from Json with false" in {
+      testFromJson[ApiAccess](s"""{ "type": "PRIVATE", "isTrial": false}""")(ApiAccess.Private(false))
     }
 
-    "fail to read private access with fields from Json with bad value newer field" in {
-      intercept[RuntimeException] {
-        testFromJson[ApiAccess](s"""{ "type": "PRIVATE", "allowlistedApplicationIds": [999], "isTrial": true}""")(ApiAccess.Private(List(appId), true))
-      }
-    }
-
-    "fail to read private access from Json when bad whitelist type" in {
-      intercept[RuntimeException] {
-        testFromJson[ApiAccess]("""{ "type": "PRIVATE",  "whitelistedApplicationIds": [999]}""")(ApiAccess.Private(List(), false))
-      }
-    }
     "fail to read private access from Json when bad isTrial type" in {
       intercept[RuntimeException] {
-        testFromJson[ApiAccess]("""{ "type": "PRIVATE",  "isTrial": "bob" }""")(ApiAccess.Private(List(), false))
+        testFromJson[ApiAccess]("""{ "type": "PRIVATE",  "isTrial": "bob" }""")(ApiAccess.Private(false))
       }
     }
   }

@@ -61,7 +61,6 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
 
     val serviceName = "calendar"
     val userEmail   = "user@email.com"
-    val appId       = ApplicationId.random
 
     val mockAPIDefinitionService: APIDefinitionService       = mock[APIDefinitionService]
     val mockApiDefinitionRepository: APIDefinitionRepository = mock[APIDefinitionRepository]
@@ -89,7 +88,6 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
     when(mockAPIDefinitionService.fetchAllPublicAPIs(*)).thenReturn(successful(apiDefinitions))
     when(mockAPIDefinitionService.fetchAllPrivateAPIs()).thenReturn(successful(apiDefinitions))
     when(mockAPIDefinitionService.fetchAll).thenReturn(successful(apiDefinitions))
-    when(mockAPIDefinitionService.fetchAllAPIsForApplication(*[ApplicationId], *)).thenReturn(successful(apiDefinitions))
 
     def verifyApiDefinitionsReturnedOkWithNoCacheControl(result: Future[Result]) = {
       status(result) shouldBe OK
@@ -380,9 +378,6 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
     }
 
     "parse an API definition with PRIVATE access type" in new ValidatorSetup {
-      val app1 = ApplicationId.random
-      val app2 = ApplicationId.random
-
       private val apiDefinitionJson =
         s"""{
            |  "serviceName": "calendar",
@@ -397,8 +392,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
            |    "version" : "1.0",
            |    "status" : "STABLE",
            |    "access" : {
-           |      "type" : "PRIVATE",
-           |      "whitelistedApplicationIds" : ["$app1","$app2"]
+           |      "type" : "PRIVATE"
            |    },
            |    "endpoints": [
            |    {
@@ -423,7 +417,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
         versions = List(ApiVersion(
           ApiVersionNbr("1.0"),
           ApiStatus.STABLE,
-          ApiAccess.Private(List(app1, app2), false),
+          ApiAccess.Private(false),
           List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
           true
         )),
@@ -612,17 +606,6 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
       status(result) shouldBe INTERNAL_SERVER_ERROR
     }
 
-    "fail with a 500 (internal server error) when the applicationId is defined and the service throws an exception" in new QueryDispatcherSetup {
-
-      when(mockAPIDefinitionService.fetchAllAPIsForApplication(eqTo(appId), *))
-        .thenReturn(failed(new RuntimeException("Something went wrong")))
-
-      private val result = underTest.queryDispatcher()(FakeRequest("GET", s"?applicationId=$appId"))
-
-      status(result) shouldBe INTERNAL_SERVER_ERROR
-      header(HeaderNames.CACHE_CONTROL, result) shouldBe None
-    }
-
     "return the API when the context is defined and an API exists for the context" in new QueryDispatcherSetup {
       private val context = "my-context"
 
@@ -657,15 +640,6 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
           verifyApiDefinitionsReturnedOkWithNoCacheControl(result)
 
           verify(mockAPIDefinitionService).fetchAllPublicAPIs(alsoIncludePrivateTrials)
-        }
-
-        "return all the APIs (without private trials) available for an applicationId" in new QueryDispatcherSetup {
-
-          private val result = underTest.queryDispatcher()(FakeRequest("GET", s"?applicationId=$appId"))
-
-          verifyApiDefinitionsReturnedOkWithNoCacheControl(result)
-
-          verify(mockAPIDefinitionService).fetchAllAPIsForApplication(appId, alsoIncludePrivateTrials)
         }
       }
 
@@ -704,15 +678,6 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
           verifyApiDefinitionsReturnedOkWithNoCacheControl(result)
 
           verify(mockAPIDefinitionService).fetchAllPublicAPIs(alsoIncludePrivateTrials)
-        }
-
-        "return all the APIs available for an applicationId (including private trials)" in new QueryDispatcherSetup {
-
-          private val result = underTest.queryDispatcher()(FakeRequest("GET", s"?applicationId=$appId&options=alsoIncludePrivateTrials"))
-
-          verifyApiDefinitionsReturnedOkWithNoCacheControl(result)
-
-          verify(mockAPIDefinitionService).fetchAllAPIsForApplication(appId, alsoIncludePrivateTrials)
         }
       }
     }

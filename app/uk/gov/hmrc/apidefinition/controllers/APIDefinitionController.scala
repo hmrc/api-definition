@@ -95,8 +95,6 @@ class APIDefinitionController @Inject() (
     queryParameters match {
       case Nil | ("options", _) :: Nil                  => fetchAllPublicAPIs(options.alsoIncludePrivateTrials)
       case ("context", context) :: Nil                  => fetchByContext(ApiContext(context))
-      case ("applicationId", applicationId) :: _        =>
-        ApplicationId.apply(applicationId).fold(errorInParams)(appId => fetchAllForApplication(appId, options.alsoIncludePrivateTrials))
       case ("type", typeValue) :: Nil                   => fetchDefinitionsByType(typeValue, options.alsoIncludePrivateTrials)
       case ("options", _) :: ("type", typeValue) :: Nil => fetchDefinitionsByType(typeValue, options.alsoIncludePrivateTrials)
       case _                                            => errorInParams
@@ -140,12 +138,6 @@ class APIDefinitionController @Inject() (
         case Some(api) => Ok(Json.toJson(api)).withHeaders(HeaderNames.CACHE_CONTROL -> s"max-age=$fetchByContextTtlInSeconds")
         case _         => NotFound(error(API_DEFINITION_NOT_FOUND, "No API Definition was found"))
       } recover recovery
-  }
-
-  private def fetchAllForApplication(applicationId: ApplicationId, alsoIncludePrivateTrials: Boolean) = {
-    apiDefinitionService
-      .fetchAllAPIsForApplication(applicationId, alsoIncludePrivateTrials)
-      .map(apiDefinitionToResult) recover recovery
   }
 
   private def fetchDefinitionsByType(typeParam: String, alsoIncludePrivateTrials: Boolean) = {
