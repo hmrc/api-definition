@@ -16,29 +16,14 @@
 
 package uk.gov.hmrc.apidefinition.models
 
-import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiAccess
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.play.json.Union
 
 trait TolerantJsonApiAccess {
 
-  private val readsPrivateApiAccess: Reads[ApiAccess.Private] = (
-    (
-      (
-        (JsPath \ "allowlistedApplicationIds").read[List[ApplicationId]].orElse(
-          (JsPath \ "whitelistedApplicationIds").readNullable[List[ApplicationId]].map(_.getOrElse(List.empty))
-        )
-      )
-    ) and
-      ((JsPath \ "isTrial").readNullable[Boolean].map(_.getOrElse(false)))
-  )(ApiAccess.Private.apply _)
-
-  private val writesPrivateApiAccess: OWrites[ApiAccess.Private] = (
-    (JsPath \ "whitelistedApplicationIds").write[List[ApplicationId]] and // TODO - change to allowlisted once all readers are safe
-      (JsPath \ "isTrial").write[Boolean]
-  )(unlift(ApiAccess.Private.unapply))
+  private val readsPrivateApiAccess: Reads[ApiAccess.Private] = ((JsPath \ "isTrial").readNullable[Boolean]).map(_.fold(ApiAccess.Private(false))(b => ApiAccess.Private(b)))
+  private val writesPrivateApiAccess: OWrites[ApiAccess.Private] = Json.writes[ApiAccess.Private]
 
   private implicit val formatPrivateApiAccess: OFormat[ApiAccess.Private]    = OFormat[ApiAccess.Private](readsPrivateApiAccess, writesPrivateApiAccess)
   private implicit val formatPublicApiAccess: OFormat[ApiAccess.PUBLIC.type] = Json.format[ApiAccess.PUBLIC.type]

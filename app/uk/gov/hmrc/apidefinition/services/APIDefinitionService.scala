@@ -119,7 +119,7 @@ class APIDefinitionService @Inject() (
   }
 
   def fetchAllPublicAPIs(alsoIncludePrivateTrials: Boolean): Future[Seq[ApiDefinition]] = {
-    apiDefinitionRepository.fetchAll().map(filterAPIsForApplications(alsoIncludePrivateTrials))
+    apiDefinitionRepository.fetchAll().map(filterApisExcludingPrivate(alsoIncludePrivateTrials))
   }
 
   def fetchAll: Future[Seq[ApiDefinition]] = {
@@ -129,8 +129,8 @@ class APIDefinitionService @Inject() (
   def fetchAllPrivateAPIs(): Future[Seq[ApiDefinition]] = {
 
     def hasPrivateAccess(apiVersion: ApiVersion) = apiVersion.access match {
-      case ApiAccess.Private(_, _) => true
-      case _                       => false
+      case ApiAccess.Private(_) => true
+      case _                    => false
     }
 
     def removePublicVersions(api: ApiDefinition) =
@@ -143,26 +143,22 @@ class APIDefinitionService @Inject() (
     } yield onlyPrivateApis
   }
 
-  def fetchAllAPIsForApplication(applicationId: ApplicationId, alsoIncludePrivateTrials: Boolean): Future[Seq[ApiDefinition]] = {
-    apiDefinitionRepository.fetchAll().map(filterAPIsForApplications(alsoIncludePrivateTrials, applicationId))
-  }
+  private def filterApisExcludingPrivate(alsoIncludePrivateTrials: Boolean): Seq[ApiDefinition] => Seq[ApiDefinition] = apis => {
+    val innerFilter: ApiDefinition => Option[ApiDefinition] = api => {
+      val filteredVersions = api.versions.filter(_.access match {
+        case ApiAccess.Private(isTrial) => (isTrial && alsoIncludePrivateTrials)
+        case _                          => true
+      })
 
-  private def filterAPIsForApplications(alsoIncludePrivateTrials: Boolean, applicationIds: ApplicationId*): Seq[ApiDefinition] => Seq[ApiDefinition] = {
-    _ flatMap {
-      filterAPIForApplications(alsoIncludePrivateTrials, applicationIds: _*)(_)
+      if (filteredVersions.isEmpty) None
+      else Some(api.copy(versions = filteredVersions))
+    }
+
+    apis flatMap {
+      innerFilter(_)
     }
   }
 
-  private def filterAPIForApplications(alsoIncludePrivateTrials: Boolean, applicationIds: ApplicationId*): ApiDefinition => Option[ApiDefinition] = { api =>
-    val filteredVersions = api.versions.filter(_.access match {
-      case ApiAccess.Private(whitelistedApplicationIds, isTrial) =>
-        whitelistedApplicationIds.exists(s => applicationIds.contains(s)) || (isTrial && alsoIncludePrivateTrials)
-      case _                                                     => true
-    })
-
-    if (filteredVersions.isEmpty) None
-    else Some(api.copy(versions = filteredVersions))
-  }
 
   def publishAllToAws()(implicit hc: HeaderCarrier): Future[Unit] = {
     apiDefinitionRepository.fetchAll().map(awsApiPublisher.publishAll)

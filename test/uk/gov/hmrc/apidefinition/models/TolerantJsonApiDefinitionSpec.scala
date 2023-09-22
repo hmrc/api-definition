@@ -28,14 +28,12 @@ class TolerantJsonApiDefinitionSpec extends BaseJsonFormattersSpec {
   "TolerantJsonApiDefinition" should {
     def anApiDefinition(
         accessType: String = "PUBLIC",
-        whitelistedApplicationIds: Option[String] = None,
         isTrial: Boolean = false,
         requiresTrust: Option[Boolean] = None,
         isTestSupport: Option[Boolean] = Some(false),
         categories: Option[String] = None
       ) = {
 
-      val whitelistText     = whitelistedApplicationIds.fold("")(text => s""" "whitelistedApplicationIds": $text,""")
       val isTestSupportText = isTestSupport.fold("")(x => s""" "isTestSupport": $x,""")
       val requiresTrustText = requiresTrust.fold("")(x => s""" "requiresTrust": $x,""")
       val categoriesText    = categories.fold("")(text => s""" "categories": $text,""")
@@ -56,7 +54,6 @@ class TolerantJsonApiDefinitionSpec extends BaseJsonFormattersSpec {
            |         "status":"STABLE",
            |         "access": {
            |           "type": "$accessType",
-           |           $whitelistText
            |           "isTrial": $isTrial
            |         },
            |         "endpoints":[
@@ -81,43 +78,15 @@ class TolerantJsonApiDefinitionSpec extends BaseJsonFormattersSpec {
       apiDefinition.versions.head.access shouldBe ApiAccess.PUBLIC
     }
 
-    "read from JSON when the API access type is PUBLIC and there is an empty whitelist" in {
-      val apiDefinition = anApiDefinition(whitelistedApplicationIds = Some("[]"))
-
-      apiDefinition.versions.head.access shouldBe ApiAccess.PUBLIC
-    }
-
-    "read from JSON when the API access type is PRIVATE and there is an empty whitelist" in {
+    "read from JSON when the API access type is PRIVATE and isTrial is true" in {
       val apiDefinition = anApiDefinition(
         accessType = "PRIVATE",
-        whitelistedApplicationIds = Some("[]")
-      )
-
-      apiDefinition.versions.head.access shouldBe ApiAccess.Private(Nil)
-    }
-
-    "read from JSON when the API access type is PRIVATE and there is an empty whitelist and isTrial is true" in {
-      val apiDefinition = anApiDefinition(
-        accessType = "PRIVATE",
-        whitelistedApplicationIds = Some("[]"),
         isTrial = true,
         requiresTrust = Some(true)
       )
 
-      apiDefinition.versions.head.access shouldBe ApiAccess.Private(Nil, true)
+      apiDefinition.versions.head.access shouldBe ApiAccess.Private(true)
       apiDefinition.requiresTrust shouldBe true
-    }
-
-    "read from JSON when the API access type is PRIVATE and there is a non-empty whitelist" in {
-      val apiDefinition = anApiDefinition(accessType = "PRIVATE", whitelistedApplicationIds = Some(s"[\"$appId\"]"))
-
-      apiDefinition.versions.head.access shouldBe ApiAccess.Private(List(appId))
-    }
-
-    "no longer fail to read from JSON when the API access type is PRIVATE and there is no whitelist" in {
-      val apiDefinition = anApiDefinition(accessType = "PRIVATE", whitelistedApplicationIds = None)
-
-      apiDefinition.versions.head.access shouldBe ApiAccess.Private(List.empty)
     }
 
     "read from JSON when the API categories are defined but empty" in {

@@ -63,18 +63,14 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
 
     val publicVersion1: ApiVersion                      = aVersion(version = ApiVersionNbr("1.0"), access = ApiAccess.PUBLIC)
     val publicVersion2                                  = aVersion(version = ApiVersionNbr("2.0"), access = ApiAccess.PUBLIC)
-    val privateVersionWithAppWhitelisted: ApiVersion    = aVersion(version = ApiVersionNbr("3.0"), access = ApiAccess.Private(List(applicationId)))
-    val privateVersionWithoutAppWhitelisted: ApiVersion = aVersion(version = ApiVersionNbr("3.1"), access = ApiAccess.Private(List(otherAppId)))
-    val privateTrialVersionWithWhitelist                = aVersion(version = ApiVersionNbr("4.0"), access = ApiAccess.Private(List(applicationId), isTrial = true))
-    val privateTrialVersionWithoutWhitelist             = aVersion(version = ApiVersionNbr("4.1"), access = ApiAccess.Private(Nil, isTrial = true))
+    val privateVersion: ApiVersion = aVersion(version = ApiVersionNbr("3.1"), access = ApiAccess.Private())
+    val privateTrialVersion                = aVersion(version = ApiVersionNbr("4.0"), access = ApiAccess.Private(isTrial = true))
 
     val allVersions = List(
       publicVersion1,
       publicVersion2,
-      privateVersionWithAppWhitelisted,
-      privateVersionWithoutAppWhitelisted,
-      privateTrialVersionWithWhitelist,
-      privateTrialVersionWithoutWhitelist
+      privateVersion,
+      privateTrialVersion
     )
 
     val publicVersion1Availability =
@@ -88,8 +84,8 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
     )
 
     val privateVersionAvailability = ApiAvailability(
-      privateVersionWithAppWhitelisted.endpointsEnabled,
-      privateVersionWithAppWhitelisted.access,
+      privateVersion.endpointsEnabled,
+      privateVersion.access,
       loggedIn = false,
       authorised = false
     )
@@ -108,10 +104,8 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
     val versions   = Seq(
       publicVersion1,
       publicVersion2,
-      privateVersionWithAppWhitelisted,
-      privateVersionWithoutAppWhitelisted,
-      privateTrialVersionWithWhitelist,
-      privateTrialVersionWithoutWhitelist
+      privateVersion,
+      privateTrialVersion
     )
     val definition = anAPIDefinition(context, versions: _*)
 
@@ -195,67 +189,6 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
     }
   }
 
-  "fetchAllAPIsForApplication" should {
-
-    "filter out API Definition which do not have any version available for the application" in new Setup {
-      val api = anAPIDefinition(context, privateVersionWithoutAppWhitelisted, privateTrialVersionWithoutWhitelist)
-
-      when(mockAPIDefinitionRepository.fetchAll()).thenReturn(successful(Seq(api)))
-
-      val response = await(underTest.fetchAllAPIsForApplication(applicationId, alsoIncludePrivateTrials = false))
-
-      response shouldBe Seq()
-    }
-
-    "allow the option of specifying alsoIncludePrivateTrials" when {
-
-      "the alsoIncludePrivateTrials option is false" should {
-
-        val alsoIncludePrivateTrials = false
-
-        "filter out versions which are private for which the application is not whitelisted" in new Setup {
-          val api = anAPIDefinition(
-            context,
-            publicVersion2,
-            publicVersion1,
-            privateTrialVersionWithoutWhitelist,
-            privateVersionWithAppWhitelisted,
-            privateVersionWithoutAppWhitelisted
-          )
-
-          when(mockAPIDefinitionRepository.fetchAll()).thenReturn(successful(Seq(api)))
-
-          val response = await(underTest.fetchAllAPIsForApplication(applicationId, alsoIncludePrivateTrials))
-
-          response shouldBe Seq(anAPIDefinition(context, publicVersion2, publicVersion1, privateVersionWithAppWhitelisted))
-        }
-      }
-
-      "the alsoIncludePrivateTrials option is true" should {
-
-        val alsoIncludePrivateTrials = true
-
-        "filter out versions which are private for which the application is not whitelisted but include private trials" in new Setup {
-          val api = anAPIDefinition(
-            context,
-            publicVersion2,
-            publicVersion1,
-            privateTrialVersionWithoutWhitelist,
-            privateVersionWithAppWhitelisted,
-            privateVersionWithoutAppWhitelisted
-          )
-
-          when(mockAPIDefinitionRepository.fetchAll()).thenReturn(successful(Seq(api)))
-
-          val response = await(underTest.fetchAllAPIsForApplication(applicationId, alsoIncludePrivateTrials))
-
-          response shouldBe
-            Seq(anAPIDefinition(context, publicVersion2, publicVersion1, privateTrialVersionWithoutWhitelist, privateVersionWithAppWhitelisted))
-        }
-      }
-    }
-  }
-
   "fetchAllPublicAPIs" when {
 
     "the alsoIncludePrivateTrials option is false" should {
@@ -286,8 +219,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
           context,
           publicVersion1,
           publicVersion2,
-          privateTrialVersionWithWhitelist,
-          privateTrialVersionWithoutWhitelist
+          privateTrialVersion
         ))
       }
     }
@@ -312,10 +244,8 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
         context,
         publicVersion2,
         publicVersion1,
-        privateVersionWithAppWhitelisted,
-        privateVersionWithoutAppWhitelisted,
-        privateTrialVersionWithWhitelist,
-        privateTrialVersionWithoutWhitelist
+        privateVersion,
+        privateTrialVersion
       )
 
       when(mockAPIDefinitionRepository.fetchAll()).thenReturn(successful(Seq(api)))
@@ -324,10 +254,8 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
 
       result shouldBe Seq(anAPIDefinition(
         context,
-        privateVersionWithAppWhitelisted,
-        privateVersionWithoutAppWhitelisted,
-        privateTrialVersionWithWhitelist,
-        privateTrialVersionWithoutWhitelist
+        privateVersion,
+        privateTrialVersion
       ))
     }
   }
