@@ -32,7 +32,6 @@ lazy val microservice = Project(appName, file("."))
     libraryDependencies ++= AppDependencies(),
     retrieveManaged := true
     )
-  .settings(inConfig(Test)(BloopDefaults.configSettings))
   .settings(
     Test / testOptions := Seq(Tests.Argument(TestFrameworks.ScalaTest, "-oDT")),
     Test / unmanagedSourceDirectories += baseDirectory.value / "test",
