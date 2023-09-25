@@ -25,7 +25,7 @@ import play.api.http.HeaderNames
 import play.api.libs.json._
 import play.api.mvc._
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiDefinition, _}
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApiContext, ApplicationId}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiContext
 import uk.gov.hmrc.http.UnauthorizedException
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
@@ -43,11 +43,15 @@ class APIDefinitionController @Inject() (
     appContext: AppConfig,
     cc: ControllerComponents
   )(implicit val ec: ExecutionContext
-  ) extends BackendController(cc) with ApplicationLogger with TolerantJsonApiDefinition {
+  ) extends BackendController(cc) with ApplicationLogger {
+
+  implicit val useTolerantReaders = TolerantJsonApiDefinition.tolerantFormatApiDefinition
 
   val fetchByContextTtlInSeconds: String = appContext.fetchByContextTtlInSeconds
 
   def createOrUpdate(): Action[JsValue] = Action.async(parse.json) { implicit request =>
+    implicit val useTolerantReaders = TolerantJsonApiDefinition.tolerantFormatApiDefinition
+
     handleRequest[ApiDefinition](request) { requestBody =>
       apiDefinitionValidator.validate(requestBody) { validatedDefinition =>
         logger.info(s"Create/Update API definition request: $validatedDefinition")

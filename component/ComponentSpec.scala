@@ -16,7 +16,6 @@
 
 package component
 
-import org.scalatest.BeforeAndAfterAll
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.ws.{WSClient, WSResponse}
@@ -27,17 +26,34 @@ import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 
 trait ComponentSpec extends AsyncHmrcSpec
-  with DefaultPlayMongoRepositorySupport[ApiDefinition] with BeforeAndAfterAll with GuiceOneServerPerSuite {
+  with DefaultPlayMongoRepositorySupport[ApiDefinition] with WireMockSupport with GuiceOneServerPerSuite  {
 
   override def repository: APIDefinitionRepository = app.injector.instanceOf[APIDefinitionRepository]
 
+   override def commonStubs(): Unit = {}
+
   override def fakeApplication(): Application = new GuiceApplicationBuilder()
     .in(Mode.Test)
-    .configure("mongodb.uri" -> mongoUri)
+    .configure(
+      "mongodb.uri" -> mongoUri,
+      "microservice.services.aws-gateway.host" -> wireMockHost,
+      "microservice.services.aws-gateway.port" -> wireMockPort
+    )
     .build()
 
+  val wsClient = app.injector.instanceOf[WSClient]
+
   def get(endpoint: String): WSResponse = {
-    val wsClient = app.injector.instanceOf[WSClient]
     await(wsClient.url(s"http://localhost:$port$endpoint").get())
+  }
+
+  def post(endpoint: String, body: String, headers: List[(String, String)]): WSResponse = {
+      await(
+        wsClient
+      .url(s"http://localhost:$port$endpoint")
+      .withHttpHeaders(headers: _*)
+      .withFollowRedirects(false)
+      .post(body)
+      )
   }
 }

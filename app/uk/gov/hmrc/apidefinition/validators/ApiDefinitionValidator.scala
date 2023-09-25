@@ -31,6 +31,7 @@ import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiDefinition, _}
 import uk.gov.hmrc.apidefinition.models.ErrorCode.INVALID_REQUEST_PAYLOAD
 import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.services.APIDefinitionService
+import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
 
 @Singleton
 class ApiDefinitionValidator @Inject() (
@@ -38,13 +39,15 @@ class ApiDefinitionValidator @Inject() (
     apiContextValidator: ApiContextValidator,
     apiVersionValidator: ApiVersionValidator
   )(implicit override val ec: ExecutionContext
-  ) extends Validator[ApiDefinition] {
+  ) extends Validator[ApiDefinition] with ApplicationLogger {
 
   def validate(apiDefinition: ApiDefinition)(f: ApiDefinition => Future[Result]): Future[Result] = {
     validateDefinition(apiDefinition).flatMap {
       _ match {
         case Valid(validDefinition) => f(validDefinition)
-        case Invalid(errors)        => successful(UnprocessableEntity(toJson(ValidationErrors(INVALID_REQUEST_PAYLOAD, errors.toList))))
+        case Invalid(errors)        => 
+          logger.warn(s"Failed to validate tolerant read of ApiDefinition ${apiDefinition.name} - ${errors.toList}")
+          successful(UnprocessableEntity(toJson(ValidationErrors(INVALID_REQUEST_PAYLOAD, errors.toList))))
       }
     }
   }

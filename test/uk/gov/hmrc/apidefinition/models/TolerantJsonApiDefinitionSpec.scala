@@ -95,6 +95,12 @@ class TolerantJsonApiDefinitionSpec extends BaseJsonFormattersSpec {
       apiDefinition.categories shouldBe Nil
     }
 
+    "read from JSON when the API categories are missing" in {
+      val apiDefinition = anApiDefinition(categories = None)
+
+      apiDefinition.categories shouldBe Nil
+    }
+
     "read from JSON when the API categories are defined with correct values" in {
       val apiDefinition = anApiDefinition(categories = Some("[\"CUSTOMS\", \"VAT\"]"))
 
