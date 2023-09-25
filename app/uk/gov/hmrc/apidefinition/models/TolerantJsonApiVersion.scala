@@ -21,7 +21,7 @@ import play.api.libs.json._
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiVersionNbr
 
-trait TolerantJsonApiVersion extends TolerantJsonApiAccess with TolerantJsonEndpoint {
+trait TolerantJsonApiVersion extends TolerantJsonApiAccess with TolerantJsonEndpoint with TolerantJsonApiStatus {
 
   private val readsApiVersion: Reads[ApiVersion] = (
     (
