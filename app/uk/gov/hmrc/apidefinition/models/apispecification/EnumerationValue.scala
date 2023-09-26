@@ -32,6 +32,7 @@ object EnumerationValue {
       case JsObject(_)      => JsError("Unsupported enum format (Json object): use NUMBER, BOOLEAN OR STRING")
       case JsArray(_)       => JsError("Unsupported enum format (Json array): use NUMBER, BOOLEAN OR STRING")
       case JsNull           => JsError("Unsupported enum format (Json null): use NUMBER, BOOLEAN OR STRING")
+      case _                => JsError("Unsupported enum format: use NUMBER, BOOLEAN OR STRING")
     }
   }
 }
