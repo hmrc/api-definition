@@ -22,6 +22,7 @@ import net.ceedubs.ficus.Ficus._
 
 import play.api.{Configuration, Environment, Mode}
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ServiceName
 
 @Singleton
 class AppConfig @Inject() (val runModeConfiguration: Configuration, environment: Environment, servicesConfig: ServicesConfig) {
@@ -36,7 +37,7 @@ class AppConfig @Inject() (val runModeConfiguration: Configuration, environment:
 
   lazy val serviceBaseUrl = runModeConfiguration.getOptional[String]("serviceBaseUrl").getOrElse("http://localhost")
 
-  lazy val skipContextValidationAllowlist: List[String] = runModeConfiguration.underlying.as[List[String]]("skipContextValidationAllowlist")
+  lazy val skipContextValidationAllowlist: List[ServiceName] = runModeConfiguration.underlying.as[List[String]]("skipContextValidationAllowlist").map(ServiceName(_))
 
   def baseUrl(serviceName: String): String = {
     val context = runModeConfiguration.getOptional[String](s"$serviceName.context").getOrElse("")

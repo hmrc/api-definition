@@ -23,9 +23,9 @@ trait TolerantJsonApiStatus {
   private val readsApiStatus: Reads[ApiStatus] = Reads.JsStringReads.preprocess {
     case JsString("PUBLISHED") => JsString("STABLE")
     case JsString("PROTOTYPE") => JsString("BETA")
-  }.andThen(ApiStatus.formatApiStatus)
+  }.andThen(ApiStatus.format)
   
-  private val writesApiStatus: Writes[ApiStatus] = ApiStatus.formatApiStatus
+  private val writesApiStatus: Writes[ApiStatus] = ApiStatus.format
   
   implicit val tolerantFormatApiStatus: Format[ApiStatus] = Format[ApiStatus](readsApiStatus, writesApiStatus)
 

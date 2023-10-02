@@ -59,7 +59,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
 
     implicit lazy val request = FakeRequest()
 
-    val serviceName = "calendar"
+    val serviceName = ServiceName("calendar")
     val userEmail   = "user@email.com"
 
     val mockAPIDefinitionService: APIDefinitionService       = mock[APIDefinitionService]
@@ -81,7 +81,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
 
     val apiDefinitions: Seq[ApiDefinition] =
       Array.fill(2)(
-        ApiDefinition("MyApiDefinitionServiceName1", "MyUrl", "MyName", "My description", ApiContext("MyContext"), Nil, false, false, None, List(ApiCategory.AGENTS))
+        ApiDefinition(ServiceName("MyApiDefinitionServiceName1"), "MyUrl", "MyName", "My description", ApiContext("MyContext"), Nil, false, false, None, List(ApiCategory.AGENTS))
       ).toIndexedSeq
 
     when(mockAPIDefinitionService.fetchByContext(*[ApiContext])).thenReturn(successful(Some(apiDefinitions.head)))
@@ -100,7 +100,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
     when(mockAPIDefinitionService.fetchByContext(*[ApiContext])).thenReturn(successful(None))
     when(mockAPIDefinitionService.fetchByName(*)).thenReturn(successful(None))
     when(mockAPIDefinitionService.fetchByServiceBaseUrl(*)).thenReturn(successful(None))
-    when(mockApiDefinitionRepository.fetchByServiceName(*)).thenReturn(successful(None))
+    when(mockApiDefinitionRepository.fetchByServiceName(*[ServiceName])).thenReturn(successful(None))
 
     def theServiceWillCreateOrUpdateTheAPIDefinition = {
       when(mockAPIDefinitionService.createOrUpdate(*)(*)).thenReturn(successful(()))
@@ -116,7 +116,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
 
       val apiDefinition =
         ApiDefinition(
-          "calendar",
+          ServiceName("calendar"),
           "http://calendar",
           "Calendar API",
           "My Calendar API",
@@ -291,7 +291,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
           |}""".stripMargin.replaceAll("\n", " ")
 
       val apiDefinition = ApiDefinition(
-        "calendar",
+       ServiceName( "calendar"),
         "http://calendar",
         "Calendar API",
         "My Calendar API",
@@ -348,7 +348,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
           |}""".stripMargin.replaceAll("\n", " ")
 
       val apiDefinition = ApiDefinition(
-        "calendar",
+        ServiceName("calendar"),
         "http://calendar",
         "Calendar API",
         "My Calendar API",
@@ -409,7 +409,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
            |}""".stripMargin.replaceAll("\n", " ")
 
       val apiDefinition = ApiDefinition(
-        "calendar",
+        ServiceName("calendar"),
         "http://calendar",
         "Calendar API",
         "My Calendar API",
@@ -715,30 +715,30 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
   "delete" should {
     "succeed with status 204 (NoContent) when the deletion succeeds" in new Setup {
 
-      when(mockAPIDefinitionService.delete(eqTo("service-name"))(*))
+      when(mockAPIDefinitionService.delete(eqTo(ServiceName("service-name")))(*))
         .thenReturn(successful(()))
 
-      private val result = underTest.delete("service-name")(request)
+      private val result = underTest.delete(ServiceName("service-name"))(request)
 
       status(result) shouldBe NO_CONTENT
     }
 
     "fail with status 500 when the deletion fails" in new Setup {
 
-      when(mockAPIDefinitionService.delete(eqTo("service-name"))(*))
+      when(mockAPIDefinitionService.delete(eqTo(ServiceName("service-name")))(*))
         .thenReturn(failed(new RuntimeException("Something went wrong")))
 
-      private val result = underTest.delete("service-name")(request)
+      private val result = underTest.delete(ServiceName("service-name"))(request)
 
       status(result) shouldBe INTERNAL_SERVER_ERROR
     }
 
     "fail with status 403 when the deletion is unauthorized" in new Setup {
 
-      when(mockAPIDefinitionService.delete(eqTo("service-name"))(*))
+      when(mockAPIDefinitionService.delete(eqTo(ServiceName("service-name")))(*))
         .thenReturn(failed(new UnauthorizedException("Unauthorized")))
 
-      private val result = underTest.delete("service-name")(request)
+      private val result = underTest.delete(ServiceName("service-name"))(request)
 
       status(result) shouldBe FORBIDDEN
     }

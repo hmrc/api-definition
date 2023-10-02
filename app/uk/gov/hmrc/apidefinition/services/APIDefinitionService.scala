@@ -91,7 +91,7 @@ class APIDefinitionService @Inject() (
       )
   }
 
-  def fetchByServiceName(serviceName: String): Future[Option[ApiDefinition]] = {
+  def fetchByServiceName(serviceName: ServiceName): Future[Option[ApiDefinition]] = {
     apiDefinitionRepository.fetchByServiceName(serviceName)
   }
 
@@ -107,7 +107,7 @@ class APIDefinitionService @Inject() (
     apiDefinitionRepository.fetchByServiceBaseUrl(serviceBaseUrl)
   }
 
-  def delete(serviceName: String)(implicit hc: HeaderCarrier): Future[Unit] = {
+  def delete(serviceName: ServiceName)(implicit hc: HeaderCarrier): Future[Unit] = {
     apiDefinitionRepository.fetchByServiceName(serviceName) flatMap {
       case None             => successful(())
       case Some(definition) =>

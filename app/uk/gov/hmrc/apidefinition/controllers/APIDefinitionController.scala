@@ -63,13 +63,13 @@ class APIDefinitionController @Inject() (
     }
   }
 
-  def delete(serviceName: String): Action[AnyContent] = Action.async { implicit request =>
+  def delete(serviceName: ServiceName): Action[AnyContent] = Action.async { implicit request =>
     apiDefinitionService.delete(serviceName).map { _ => NoContent } recover {
       case e: UnauthorizedException => Forbidden(e.getMessage)
     } recover recovery
   }
 
-  def fetch(serviceName: String): Action[AnyContent] = Action.async { _ =>
+  def fetch(serviceName: ServiceName): Action[AnyContent] = Action.async { _ =>
     apiDefinitionService.fetchByServiceName(serviceName) map {
       case Some(apiDefinition) => Ok(Json.toJson(apiDefinition))
       case _                   => NotFound(error(API_DEFINITION_NOT_FOUND, "No API Definition was found"))

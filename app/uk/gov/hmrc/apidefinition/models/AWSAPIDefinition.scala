@@ -18,8 +18,8 @@ package uk.gov.hmrc.apidefinition.models
 
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiDefinition, _}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
-
-import uk.gov.hmrc.apidefinition.models.AWSParameterType.AWSParameterType
+import play.api.libs.json.Format
+import uk.gov.hmrc.apiplatform.modules.common.domain.services.SealedTraitJsonFormatting
 
 case class AWSAPIDefinition(name: String, context: ApiContext, version: ApiVersionNbr, subscribersCount: Int, endpointConfig: AWSEndpointConfig, swagger: Option[AWSSwaggerDetails])
 
@@ -44,6 +44,21 @@ case class AWSHttpVerbDetails(
     `x-throttling-tier`: String,
     `x-scope`: Option[String]
   )
+  
+sealed trait AWSParameterType
+
+object AWSParameterType {
+  case object QUERY extends AWSParameterType
+  case object PATH extends AWSParameterType
+
+  val values = Set[AWSParameterType](QUERY, PATH)
+
+  def apply(text: String): Option[AWSParameterType] = AWSParameterType.values.find(_.toString() == text.toUpperCase)
+
+  def unsafeApply(text: String): AWSParameterType = apply(text).getOrElse(throw new RuntimeException(s"$text is not a valid AWS Parameter Type"))
+
+  implicit val format: Format[AWSParameterType] = SealedTraitJsonFormatting.createFormatFor[AWSParameterType]("AWS Parameter Type", apply)
+}
 
 case class AWSResponse(description: String)
 
@@ -75,13 +90,6 @@ case class AWSPathParameter(
     override val `type`: String = AWSParameter.defaultParameterType,
     override val description: String = AWSParameter.defaultParameterDescription
   ) extends AWSParameter(name, required, in, `type`, description) {}
-
-object AWSParameterType extends Enumeration {
-  type AWSParameterType = Value
-
-  val QUERY = Value("query")
-  val PATH  = Value("path")
-}
 
 object AWSAPIDefinition {
 

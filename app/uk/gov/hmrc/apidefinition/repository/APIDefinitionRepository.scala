@@ -58,8 +58,8 @@ class APIDefinitionRepository @Inject() (mongoComponent: MongoComponent)(implici
         )
       )
 
-  private def serviceNameSelector(serviceName: String): Bson = {
-    equal("serviceName", Codecs.toBson(serviceName))
+  private def serviceNameSelector(serviceName: ServiceName): Bson = {
+    equal("serviceName", Codecs.toBson(serviceName.value))
   }
 
   def save(apiDefinition: ApiDefinition): Future[ApiDefinition] = {
@@ -70,7 +70,7 @@ class APIDefinitionRepository @Inject() (mongoComponent: MongoComponent)(implici
     ).head()
   }
 
-  def fetchByServiceName(serviceName: String): Future[Option[ApiDefinition]] = {
+  def fetchByServiceName(serviceName: ServiceName): Future[Option[ApiDefinition]] = {
     logger.info(s"Fetching API $serviceName in mongo")
     collection.find(serviceNameSelector(serviceName)).headOption().map { api =>
       logger.info(s"Retrieved API with service name '$serviceName' in mongo: $api")
@@ -123,7 +123,7 @@ class APIDefinitionRepository @Inject() (mongoComponent: MongoComponent)(implici
     collection.find(regex("context", f"^${topLevelContext.value}\\/.*$$")).toFuture()
   }
 
-  def delete(serviceName: String): Future[Unit] = {
+  def delete(serviceName: ServiceName): Future[Unit] = {
     collection.deleteOne(serviceNameSelector(serviceName))
       .toFuture()
       .map(_ => logger.info(s"API with service name '$serviceName' has been deleted successfully"))

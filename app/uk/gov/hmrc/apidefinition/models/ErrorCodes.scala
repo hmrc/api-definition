@@ -17,31 +17,37 @@
 package uk.gov.hmrc.apidefinition.models
 
 import play.api.libs.json.{Format, Json, OFormat}
+import uk.gov.hmrc.apiplatform.modules.common.domain.services.SealedTraitJsonFormatting
 
-object ErrorCode extends Enumeration {
+sealed trait ErrorCode
 
-  type ErrorCode = Value
+object ErrorCode {
+  case object INVALID_REQUEST_PAYLOAD  extends ErrorCode
+  case object INTERNAL_SERVER_ERROR    extends ErrorCode
+  case object API_DEFINITION_NOT_FOUND extends ErrorCode
+  case object API_INVALID_JSON         extends ErrorCode
+  case object CONTEXT_ALREADY_DEFINED  extends ErrorCode
+  case object UNSUPPORTED_ACCESS_TYPE  extends ErrorCode
 
-  val INVALID_REQUEST_PAYLOAD  = Value("INVALID_REQUEST_PAYLOAD")
-  val INTERNAL_SERVER_ERROR    = Value("INTERNAL_SERVER_ERROR")
-  val API_DEFINITION_NOT_FOUND = Value("API_DEFINITION_NOT_FOUND")
-  val API_INVALID_JSON         = Value("API_INVALID_JSON")
-  val CONTEXT_ALREADY_DEFINED  = Value("CONTEXT_ALREADY_DEFINED")
-  val UNSUPPORTED_ACCESS_TYPE  = Value("UNSUPPORTED_ACCESS_TYPE")
+  val values = Set(INTERNAL_SERVER_ERROR, INVALID_REQUEST_PAYLOAD, API_DEFINITION_NOT_FOUND, API_INVALID_JSON, CONTEXT_ALREADY_DEFINED, UNSUPPORTED_ACCESS_TYPE)
+
+  def apply(text: String): Option[ErrorCode] = ErrorCode.values.find(_.toString() == text.toUpperCase)
+
+  def unsafeApply(text: String): ErrorCode = apply(text).getOrElse(throw new RuntimeException(s"$text is not a valid Error Code"))
+
+  implicit val format: Format[ErrorCode] = SealedTraitJsonFormatting.createFormatFor[ErrorCode]("Error Code", apply)
 }
 
-case class ValidationErrors(code: ErrorCode.Value, messages: Seq[String])
+case class ValidationErrors(code: ErrorCode, messages: Seq[String])
 
 object ValidationErrors {
-  implicit val format1: Format[ErrorCode.Value]   = EnumJson.enumFormat(ErrorCode)
   implicit val format2: OFormat[ValidationErrors] = Json.format[ValidationErrors]
 }
 
-case class ErrorResponse(code: ErrorCode.Value, message: String, details: Option[Seq[FieldErrorDescription]] = None)
+case class ErrorResponse(code: ErrorCode, message: String, details: Option[Seq[FieldErrorDescription]] = None)
 
 object ErrorResponse {
   implicit val format1 = Json.format[FieldErrorDescription]
-  implicit val format2 = EnumJson.enumFormat(ErrorCode)
   implicit val format3 = Json.format[ErrorResponse]
 }
 

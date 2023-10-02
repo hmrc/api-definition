@@ -26,7 +26,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiContext
 trait TolerantJsonApiDefinition extends TolerantJsonApiVersion {
 
   private val apiDefinitionReads: Reads[ApiDefinition] = (
-    (JsPath \ "serviceName").read[String] and
+    (JsPath \ "serviceName").read[ServiceName] and
       (JsPath \ "serviceBaseUrl").read[String] and
       (JsPath \ "name").read[String] and
       (JsPath \ "description").read[String] and

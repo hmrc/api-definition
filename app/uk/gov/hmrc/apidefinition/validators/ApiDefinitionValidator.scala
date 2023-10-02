@@ -63,7 +63,7 @@ class ApiDefinitionValidator @Inject() (
       serviceBaseUrlValidated <- validateServiceBaseUrl(errorContext)
 
       validated: HMRCValidated[ApiDefinition] = (
-                                                  validateThat(_.serviceName.nonEmpty, _ => s"Field 'serviceName' should not be empty $errorContext"),
+                                                  validateThat(_.serviceName.value.nonEmpty, _ => s"Field 'serviceName' should not be empty $errorContext"),
                                                   validateThat(_.description.nonEmpty, _ => s"Field 'description' should not be empty $errorContext"),
                                                   validateThat(_.categories.nonEmpty, _ => s"Field 'categories' should not be empty $errorContext"),
                                                   contextValidated,

@@ -23,7 +23,6 @@ import uk.gov.hmrc.apidefinition.models.AWSParameterType._
 
 object JsonFormatters {
 
-  implicit val formatAWSParameterType  = EnumJson.enumFormat(AWSParameterType)
   implicit val formatAWSQueryParameter = Json.format[AWSQueryParameter]
   implicit val formatAWSPathParameter  = Json.format[AWSPathParameter]
 

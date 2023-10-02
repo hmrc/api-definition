@@ -66,7 +66,7 @@ package object controllers {
     toJson(ErrorResponse(ErrorCode.API_INVALID_JSON, "Json cannot be converted to API Definition", Some(errs)))
   }
 
-  def error(code: ErrorCode.Value, message: String): JsValue = {
+  def error(code: ErrorCode, message: String): JsValue = {
     toJson(ErrorResponse(code, message))
   }
 

@@ -26,6 +26,7 @@ import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.services.SpecificationService
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ServiceName
 
 @Singleton
 class SpecificationController @Inject() (specificationService: SpecificationService, config: AppConfig, cc: ControllerComponents)(implicit val ec: ExecutionContext)
@@ -38,7 +39,7 @@ class SpecificationController @Inject() (specificationService: SpecificationServ
     }
   }
 
-  def fetchApiSpecification(serviceName: String, version: ApiVersionNbr): Action[AnyContent] = Action.async {
+  def fetchApiSpecification(serviceName: ServiceName, version: ApiVersionNbr): Action[AnyContent] = Action.async {
     _ =>
       {
         formatSpecificationResponse(specificationService.fetchApiSpecification(serviceName, version))
