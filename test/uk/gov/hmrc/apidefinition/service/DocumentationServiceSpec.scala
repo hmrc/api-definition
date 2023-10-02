@@ -47,7 +47,7 @@ import uk.gov.hmrc.apidefinition.utils.{AsyncHmrcSpec, Utils}
 class DocumentationServiceSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite with Utils {
   import DocumentationService.PROXY_SAFE_CONTENT_TYPE
 
-  val serviceName = "hello-world"
+  val serviceName = ServiceName("hello-world")
   val version     = "1.0"
   val serviceUrl  = "http://localhost"
 
@@ -140,12 +140,12 @@ class DocumentationServiceSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wi
     def theServiceIsRunningInSandboxMode() = when(mockServiceConfig.isSandbox).thenReturn(true)
 
     def theApiDefinitionWillBeReturned() = {
-      when(mockAPIDefinitionRepository.fetchByServiceName(*))
+      when(mockAPIDefinitionRepository.fetchByServiceName(*[ServiceName]))
         .thenReturn(successful(Some(apiDefinition)))
     }
 
     def noApiDefinitionWillBeReturned() = {
-      when(mockAPIDefinitionRepository.fetchByServiceName(*))
+      when(mockAPIDefinitionRepository.fetchByServiceName(*[ServiceName]))
         .thenReturn(successful(None))
     }
 

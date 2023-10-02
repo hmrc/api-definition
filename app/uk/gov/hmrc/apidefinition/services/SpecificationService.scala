@@ -28,11 +28,12 @@ import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.controllers.routes
 import uk.gov.hmrc.apidefinition.models.apispecification.ApiSpecificationFormatters._
 import uk.gov.hmrc.apidefinition.raml.ApiSpecificationRamlParser
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ServiceName
 
 @Singleton
 class SpecificationService @Inject() (config: AppConfig, ramlLoader: RamlLoader, apiSpecificationRamlParser: ApiSpecificationRamlParser)(implicit ec: ExecutionContext) {
 
-  def fetchApiSpecification(serviceName: String, version: ApiVersionNbr): Future[Option[JsValue]] = {
+  def fetchApiSpecification(serviceName: ServiceName, version: ApiVersionNbr): Future[Option[JsValue]] = {
     val rootRamlUrl = config.serviceBaseUrl + routes.DocumentationController.fetchApiDocumentationResource(serviceName, version, "application.raml").url
     fetchApiSpecificationAtUrl(rootRamlUrl)
   }

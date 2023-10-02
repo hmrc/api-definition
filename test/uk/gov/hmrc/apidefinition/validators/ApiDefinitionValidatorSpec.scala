@@ -51,7 +51,7 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
     when(mockAPIDefinitionService.fetchByContext(*[ApiContext])).thenReturn(successful(None))
     when(mockAPIDefinitionService.fetchByName(*[String])).thenReturn(successful(None))
     when(mockAPIDefinitionService.fetchByServiceBaseUrl(*[String])).thenReturn(successful(None))
-    when(mockApiDefinitionRepository.fetchByServiceName(*[String])).thenReturn(successful(None))
+    when(mockApiDefinitionRepository.fetchByServiceName(*[ServiceName])).thenReturn(successful(None))
     when(mockApiDefinitionRepository.fetchAllByTopLevelContext(*[ApiContext])).thenReturn(successful(Seq.empty))
 
     def assertValidationSuccess(apiDefinition: => ApiDefinition): Unit = {
@@ -72,7 +72,7 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
     }
 
     val calendarApi = ApiDefinition(
-      "calendar",
+      ServiceName("calendar"),
       "http://calendar",
       "Calendar API",
       "My Calendar API",
@@ -99,7 +99,7 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
     }
 
     "fail validation if an empty serviceName is provided" in new Setup {
-      lazy val apiDefinition: ApiDefinition = calendarApi.copy(serviceName = "")
+      lazy val apiDefinition: ApiDefinition = calendarApi.copy(serviceName = ServiceName(""))
 
       assertValidationFailure(apiDefinition, List("Field 'serviceName' should not be empty for API 'Calendar API'"))
     }
@@ -236,7 +236,7 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
     )
 
     lazy val moneyApiDefinition = ApiDefinition(
-      serviceName = "money",
+      serviceName = ServiceName("money"),
       serviceBaseUrl = "http://www.money.com",
       name = "Money API",
       description = "API for checking payments",
@@ -255,14 +255,14 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
 
     "fail validation when name already exist for another API" in new Setup {
       when(mockAPIDefinitionService.fetchByName("Money API"))
-        .thenReturn(successful(Some(moneyApiDefinition.copy(serviceName = "anotherService"))))
+        .thenReturn(successful(Some(moneyApiDefinition.copy(serviceName = ServiceName("anotherService")))))
 
       assertValidationFailure(moneyApiDefinition, List("Field 'name' must be unique for API 'Money API'"))
     }
 
     "fail validation when serviceBaseUrl already exists for another API" in new Setup {
       when(mockAPIDefinitionService.fetchByServiceBaseUrl("http://www.money.com"))
-        .thenReturn(successful(Some(moneyApiDefinition.copy(serviceName = "anotherService"))))
+        .thenReturn(successful(Some(moneyApiDefinition.copy(serviceName = ServiceName("anotherService")))))
 
       assertValidationFailure(moneyApiDefinition, List("Field 'serviceBaseUrl' must be unique for API 'Money API'"))
     }
@@ -407,11 +407,11 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
         versions = List(moneyApiVersion.copy(endpoints = List(moneyEndpoint.copy(uriPattern = ""))))
       )
       when(mockAPIDefinitionService.fetchByContext(ApiContext("individuals/money")))
-        .thenReturn(successful(Some(moneyApiDefinition.copy(serviceName = "anotherService"))))
+        .thenReturn(successful(Some(moneyApiDefinition.copy(serviceName = ServiceName("anotherService")))))
       when(mockAPIDefinitionService.fetchByName("Money API"))
-        .thenReturn(successful(Some(moneyApiDefinition.copy(serviceName = "anotherService"))))
+        .thenReturn(successful(Some(moneyApiDefinition.copy(serviceName = ServiceName("anotherService")))))
       when(mockAPIDefinitionService.fetchByServiceBaseUrl("http://www.money.com"))
-        .thenReturn(successful(Some(moneyApiDefinition.copy(serviceName = "anotherService"))))
+        .thenReturn(successful(Some(moneyApiDefinition.copy(serviceName = ServiceName("anotherService")))))
 
       assertValidationFailure(
         apiDefinition,

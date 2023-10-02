@@ -31,6 +31,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiVersionNbr
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.services.SpecificationService
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ServiceName
 
 class SpecificationControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite with StubControllerComponentsFactory with StubPlayBodyParsersFactory {
 
@@ -46,11 +47,11 @@ class SpecificationControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite
   }
 
   "fetchApiSpecification action should return json specification" in new Setup {
-    val serviceName       = "my-service-name"
+    val serviceName       = ServiceName("my-service-name")
     val version           = ApiVersionNbr("1.0")
     val specificationJson = Json.toJson("some" -> "stuff")
 
-    when(mockSpecificationService.fetchApiSpecification(*, *[ApiVersionNbr])).thenReturn(successful(Some(specificationJson)))
+    when(mockSpecificationService.fetchApiSpecification(*[ServiceName], *[ApiVersionNbr])).thenReturn(successful(Some(specificationJson)))
 
     private val result = underTest.fetchApiSpecification(serviceName, version)(request)
 

@@ -50,7 +50,7 @@ class DocumentationService @Inject() (
 
   import DocumentationService._
 
-  def fetchApiDocumentationResource(serviceName: String, version: ApiVersionNbr, resource: String): Future[Result] = {
+  def fetchApiDocumentationResource(serviceName: ServiceName, version: ApiVersionNbr, resource: String): Future[Result] = {
     def createProxySafeContentType(contentType: String): (String, String) = ((PROXY_SAFE_CONTENT_TYPE, contentType))
 
     for {
@@ -66,13 +66,13 @@ class DocumentationService @Inject() (
           case _ => Ok.chunked(streamedResponse.bodyAsSource).as(contentType)
               .withHeaders(createProxySafeContentType(contentType))
         }
-      case NOT_FOUND => throw newNotFoundException(serviceName, version, resource)
-      case status    => throw newInternalServerException(serviceName, version, resource, status)
+      case NOT_FOUND => throw newNotFoundException(serviceName.value, version, resource)
+      case status    => throw newInternalServerException(serviceName.value, version, resource, status)
     }
   }
 
   // noinspection ScalaStyle
-  private def fetchResource(serviceName: String, version: ApiVersionNbr, resource: String): Future[WSResponse] = {
+  private def fetchResource(serviceName: ServiceName, version: ApiVersionNbr, resource: String): Future[WSResponse] = {
 
     def fetchResourceFromMicroservice(serviceBaseUrl: String): Future[WSResponse] =
       apiMicroserviceConnector.fetchApiDocumentationResourceByUrl(serviceBaseUrl, version, resource)

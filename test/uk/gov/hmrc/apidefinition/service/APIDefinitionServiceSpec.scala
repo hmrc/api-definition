@@ -34,12 +34,12 @@ import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
 
   private val context     = ApiContext("calendar")
-  private val serviceName = "calendar-service"
+  private val serviceName = ServiceName("calendar-service")
 
   def unitSuccess: Future[Unit] = successful { () }
 
   private def anAPIDefinition(context: ApiContext, versions: ApiVersion*) =
-    ApiDefinition("service", "http://service", "name", "description", context, versions.toList, false, false, None, List(ApiCategory.OTHER))
+    ApiDefinition(ServiceName("service"), "http://service", "name", "description", context, versions.toList, false, false, None, List(ApiCategory.OTHER))
 
   trait Setup {
 
@@ -270,9 +270,9 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
     }
 
     "return success when the API doesnt exist" in new Setup {
-      when(mockAPIDefinitionRepository.fetchByServiceName("service")).thenReturn(successful(None))
+      when(mockAPIDefinitionRepository.fetchByServiceName(ServiceName("service"))).thenReturn(successful(None))
 
-      await(underTest.delete("service"))
+      await(underTest.delete(ServiceName("service")))
     }
 
     "fail when AWS delete fails" in new Setup {

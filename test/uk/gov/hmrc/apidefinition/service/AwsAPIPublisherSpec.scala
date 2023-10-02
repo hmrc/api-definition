@@ -59,7 +59,7 @@ class AwsAPIPublisherSpec extends AsyncHmrcSpec {
       versions: List[ApiVersion] = List(anAPIVersion("2.0"))
     ): ApiDefinition = {
     ApiDefinition(
-      UUID.randomUUID().toString,
+      ServiceName(UUID.randomUUID().toString),
       serviceBaseUrl,
       name,
       UUID.randomUUID().toString,
@@ -76,7 +76,7 @@ class AwsAPIPublisherSpec extends AsyncHmrcSpec {
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
     val underTest = new AwsApiPublisher(mock[AWSAPIPublisherConnector], mock[APIDefinitionRepository])
-    when(underTest.apiDefinitionRepository.fetchByServiceName(*)).thenReturn(successful(None))
+    when(underTest.apiDefinitionRepository.fetchByServiceName(*[ServiceName])).thenReturn(successful(None))
   }
 
   "publishAll" should {

@@ -1,10 +1,10 @@
 # microservice specific routes
 
 GET         /api-definition                                                      uk.gov.hmrc.apidefinition.controllers.APIDefinitionController.queryDispatcher()
-GET         /api-definition/:serviceName                                         uk.gov.hmrc.apidefinition.controllers.APIDefinitionController.fetch(serviceName)
-GET         /api-definition/:serviceName/:version/documentation/*resource        uk.gov.hmrc.apidefinition.controllers.DocumentationController.fetchApiDocumentationResource(serviceName: String, version: uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiVersionNbr, resource: String)
+GET         /api-definition/:serviceName                                         uk.gov.hmrc.apidefinition.controllers.APIDefinitionController.fetch(serviceName: ServiceName)
+GET         /api-definition/:serviceName/:version/documentation/*resource        uk.gov.hmrc.apidefinition.controllers.DocumentationController.fetchApiDocumentationResource(serviceName: ServiceName, version: uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiVersionNbr, resource: String)
 
-GET         /api-definition/:serviceName/:version/specification                  uk.gov.hmrc.apidefinition.controllers.SpecificationController.fetchApiSpecification(serviceName: String, version: uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiVersionNbr)
+GET         /api-definition/:serviceName/:version/specification                  uk.gov.hmrc.apidefinition.controllers.SpecificationController.fetchApiSpecification(serviceName: ServiceName, version: uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiVersionNbr)
 
 POST        /api-definition                                                      uk.gov.hmrc.apidefinition.controllers.APIDefinitionController.createOrUpdate()
 POST        /api-definition/validate                                             uk.gov.hmrc.apidefinition.controllers.APIDefinitionController.validate
@@ -12,7 +12,7 @@ POST        /api-definition/validate                                            
 POST        /api-definition/republish-all                                        uk.gov.hmrc.apidefinition.controllers.APIDefinitionController.publishAllToAws()
 POST        /api-definition/republish-all-aws                                    uk.gov.hmrc.apidefinition.controllers.APIDefinitionController.publishAllToAws()
 
-DELETE      /api-definition/:serviceName                                         uk.gov.hmrc.apidefinition.controllers.APIDefinitionController.delete(serviceName)
+DELETE      /api-definition/:serviceName                                         uk.gov.hmrc.apidefinition.controllers.APIDefinitionController.delete(serviceName: ServiceName)
 
 GET         /api-categories                                                      uk.gov.hmrc.apidefinition.controllers.APIDefinitionController.fetchAllAPICategories
 

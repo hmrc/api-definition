@@ -67,7 +67,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
   )
 
   private val helloApiDefinition = ApiDefinition(
-    serviceName = "hello-service",
+    serviceName = ServiceName("hello-service"),
     serviceBaseUrl = "hello.com",
     name = "Hello",
     description = "This is the Hello API",
@@ -80,7 +80,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
   )
 
   private val calendarApiDefinition = ApiDefinition(
-    serviceName = "calendar-service",
+    serviceName = ServiceName("calendar-service"),
     serviceBaseUrl = "calendar.com",
     name = "Calendar",
     description = "This is the Calendar API",
@@ -100,7 +100,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
   )
 
   private val individualIncomeTaxApiDefinition = ApiDefinition(
-    serviceName = "income-tax",
+    serviceName = ServiceName("income-tax"),
     serviceBaseUrl = "income-tax.protected.mdtp",
     name = "Individual Income Tax",
     description = "This is the Individual Income Tax API",
@@ -123,7 +123,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
   )
 
   private val individualNIApiDefinition = ApiDefinition(
-    serviceName = "ni",
+    serviceName = ServiceName("ni"),
     serviceBaseUrl = "ni.protected.mdtp",
     name = "Individual National Insurance",
     description = "This is the Individual National Insurance API",
@@ -203,7 +203,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
     }
 
     "return None when there are no APIs with that service name" in {
-      await(repository.save(calendarApiDefinition.copy(serviceName = "abc")))
+      await(repository.save(calendarApiDefinition.copy(serviceName = ServiceName("abc"))))
 
       val retrieved = await(repository.fetchByServiceName(calendarApiDefinition.serviceName))
       retrieved shouldBe None
@@ -321,7 +321,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
       collectionSize shouldBe 1
 
       val caught = intercept[MongoWriteException] {
-        val inError = saveApi(repository, helloApiDefinition.copy(serviceName = "newServiceName", name = "newName", serviceBaseUrl = "newServiceBaseUrl"))
+        val inError = saveApi(repository, helloApiDefinition.copy(serviceName = ServiceName("newServiceName"), name = "newName", serviceBaseUrl = "newServiceBaseUrl"))
         await(inError)
       }
       assertMongoError(caught, "context", helloApiDefinition.context.value)
@@ -334,7 +334,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
       collectionSize shouldBe 1
 
       val caught = intercept[MongoWriteException] {
-        val inError = saveApi(repository, helloApiDefinition.copy(context = ApiContext("newContext"), serviceName = "newServiceName", serviceBaseUrl = "newServiceBaseUrl"))
+        val inError = saveApi(repository, helloApiDefinition.copy(context = ApiContext("newContext"), serviceName = ServiceName("newServiceName"), serviceBaseUrl = "newServiceBaseUrl"))
         await(inError)
       }
       assertMongoError(caught, "name", helloApiDefinition.name)
@@ -350,7 +350,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
         val inError = saveApi(repository, helloApiDefinition.copy(name = "newName", context = ApiContext("newContext"), serviceBaseUrl = "newServiceBaseUrl"))
         await(inError)
       }
-      assertMongoError(caught, "serviceName", helloApiDefinition.serviceName)
+      assertMongoError(caught, "serviceName", helloApiDefinition.serviceName.value)
 
       collectionSize shouldBe 1
     }
@@ -360,7 +360,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
       collectionSize shouldBe 1
 
       val caught = intercept[MongoWriteException] {
-        val inError = saveApi(repository, helloApiDefinition.copy(name = "newName", context = ApiContext("newContext"), serviceName = "newServiceName"))
+        val inError = saveApi(repository, helloApiDefinition.copy(name = "newName", context = ApiContext("newContext"), serviceName = ServiceName("newServiceName")))
         await(inError)
       }
       assertMongoError(caught, "serviceBaseUrl", helloApiDefinition.serviceBaseUrl)
