@@ -77,7 +77,7 @@ class AWSParameterTypeSpec extends BaseJsonFormattersSpec with TableDrivenProper
 
     "write to Json" in {
       forAll(values) { (s, t) =>
-        Json.toJson[AWSParameterType](s) shouldBe JsString(t.toUpperCase())
+        Json.toJson[AWSParameterType](s) shouldBe JsString(t)
       }
     }
   }

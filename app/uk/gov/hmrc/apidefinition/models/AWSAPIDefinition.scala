@@ -57,7 +57,7 @@ object AWSParameterType {
 
   def unsafeApply(text: String): AWSParameterType = apply(text).getOrElse(throw new RuntimeException(s"$text is not a valid AWS Parameter Type"))
 
-  implicit val format: Format[AWSParameterType] = SealedTraitJsonFormatting.createFormatFor[AWSParameterType]("AWS Parameter Type", apply)
+  implicit val format: Format[AWSParameterType] = SealedTraitJsonFormatting.createFormatFor[AWSParameterType]("AWS Parameter Type", apply, (t) => t.toString().toLowerCase())
 }
 
 case class AWSResponse(description: String)
