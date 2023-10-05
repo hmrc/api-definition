@@ -51,7 +51,30 @@ class APIDefinitionToAWSJsonSpec extends AsyncHmrcSpec {
     "write to Json Correctly" in new Setup {
       val version = anAPIVersion("1.0")
       val swaggerDetails = AWSPayloadHelper.buildAWSSwaggerDetails("anApi", version, ApiContext("/my-path"), "host")
-      println(Json.prettyPrint(Json.toJson(swaggerDetails)))
+    
+      val expectedJsonText = """{
+          |  "paths" : {
+          |    "/today/{id}" : {
+          |      "get" : {
+          |        "parameters" : [ {
+          |          "name" : "id",
+          |          "required" : true,
+          |          "type" : "string",
+          |          "description" : "",
+          |          "in" : "path"
+          |        } ],
+          |        "responses":{"200":{"description":"OK"}},
+          |        "x-auth-type":"None",
+          |        "x-throttling-tier":"Unlimited"
+          |      }
+          |    }
+          |  },
+          |  "info":{"title":"anApi","version":"1.0"},
+          |  "swagger":"2.0",
+          |  "basePath":"//my-path",
+          |  "host":"host"
+          |}""".stripMargin
+      Json.toJson(swaggerDetails) shouldBe Json.parse(expectedJsonText)
     }
   }
 }
