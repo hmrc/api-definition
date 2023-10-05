@@ -54,11 +54,14 @@ class APIDefinitionSpec extends AsyncHmrcSpec {
            |         },
            |         "endpoints":[
            |            {
-           |               "uriPattern":"/today",
+           |               "uriPattern":"/today/{id}",
            |               "endpointName":"Get Today's Date",
            |               "method":"GET",
            |               "authType":"NONE",
-           |               "throttlingTier":"UNLIMITED"
+           |               "throttlingTier":"UNLIMITED",
+           |               "queryParameters": [
+           |                  { "name":"flag", "required": true }
+           |               ]
            |            }
            |         ]
            |      }
@@ -127,6 +130,12 @@ class APIDefinitionSpec extends AsyncHmrcSpec {
       val apiDefinition = anApiDefinition(categories = Some("[\"CUSTOMS\", \"VAT\"]"))
 
       apiDefinition.categories shouldBe Some(Seq(CUSTOMS, VAT))
+    }
+
+    "read from JSON getting query params" in {
+      val apiDefinition = anApiDefinition()
+
+      apiDefinition.versions.head.endpoints.head.queryParameters shouldBe Some(List(Parameter("flag", true)))
     }
 
     "fail to read from JSON when the API categories are defined with incorrect values" in {
