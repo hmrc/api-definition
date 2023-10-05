@@ -35,17 +35,18 @@ import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 
 class AwsAPIPublisherSpec extends AsyncHmrcSpec {
 
-  private def anAPIVersion(version: String, status: ApiStatus = ApiStatus.BETA) = ApiVersion(
+  private def anAPIVersion(version: String, status: ApiStatus = ApiStatus.BETA, queryParams: List[QueryParameter] = Nil) = ApiVersion(
     ApiVersionNbr(version),
     status,
     ApiAccess.PUBLIC,
     List(
       Endpoint(
-        "/today",
+        "/today/{id}",
         "Get Today's Date",
         HttpMethod.GET,
         AuthType.NONE,
-        ResourceThrottlingTier.UNLIMITED
+        ResourceThrottlingTier.UNLIMITED,
+        queryParameters = queryParams
       )
     )
   )
@@ -110,6 +111,22 @@ class AwsAPIPublisherSpec extends AsyncHmrcSpec {
       val swaggerDetails: AWSSwaggerDetails = swaggerDetailsCaptor.getValue
       swaggerDetails.host shouldBe Some(host)
       swaggerDetails.info.title shouldBe apiDefinition.name
+      swaggerDetails.paths.head._2.apply("get").parameters shouldBe Some(List(AWSPathParameter("id")))
+    }
+
+    "create or update the API in AWS with path and query params" in new Setup {
+      val swaggerDetailsCaptor: ArgumentCaptor[AWSSwaggerDetails] = ArgumentCaptor.forClass(classOf[AWSSwaggerDetails])
+      when(underTest.awsAPIPublisherConnector.createOrUpdateAPI(*, swaggerDetailsCaptor.capture())(*))
+        .thenReturn(successful(UUID.randomUUID().toString))
+      val apiDefinition: ApiDefinition                            = someAPIDefinition(versions = List(anAPIVersion("2.0", ApiStatus.STABLE, List(QueryParameter("flag",true)))))
+
+      await(underTest.publish(apiDefinition))
+
+      verify(underTest.awsAPIPublisherConnector).createOrUpdateAPI(ArgumentMatchers.eq(s"${apiDefinition.context}--2.0"), *)(*)
+      val swaggerDetails: AWSSwaggerDetails = swaggerDetailsCaptor.getValue
+      swaggerDetails.host shouldBe Some(host)
+      swaggerDetails.info.title shouldBe apiDefinition.name
+      swaggerDetails.paths.head._2.apply("get").parameters shouldBe Some((List(AWSPathParameter("id", true, "string"), AWSQueryParameter("flag", true, "string"))))
     }
 
     "populate correctly the host from service base URLs using HTTP" in new Setup {
