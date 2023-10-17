@@ -130,7 +130,7 @@ class AWSAPIPublisherConnectorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuit
             .withBody(s"""{ "RequestId" : "$expectedRequestId" }""")
         ))
 
-      val result: String = await(underTest.deleteAPI(apiName)(hc))
+      val result: String = await(underTest.deleteAPI(apiName))
 
       result shouldBe expectedRequestId
       wireMockServer.verify(deleteRequestedFor(urlEqualTo(s"/api/$apiName"))
@@ -146,7 +146,7 @@ class AWSAPIPublisherConnectorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuit
         ))
 
       intercept[UpstreamErrorResponse] {
-        await(underTest.deleteAPI(apiName)(hc))
+        await(underTest.deleteAPI(apiName))
       }.statusCode shouldBe INTERNAL_SERVER_ERROR
     }
   }

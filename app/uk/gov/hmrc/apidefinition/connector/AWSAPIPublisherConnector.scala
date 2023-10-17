@@ -27,6 +27,7 @@ import play.api.{Configuration, Environment, Mode}
 import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, UpstreamErrorResponse}
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+import uk.gov.hmrc.http.HttpReads
 
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.models.AWSSwaggerDetails
@@ -64,12 +65,14 @@ class AWSAPIPublisherConnector @Inject() (
     }
   }
 
-  def deleteAPI(apiName: String)(hc: HeaderCarrier): Future[String] = {
-    implicit val headersWithoutAuthorization: HeaderCarrier = hc
+  def deleteAPI(apiName: String)(implicit hc: HeaderCarrier): Future[String] = {
+    val headersWithoutAuthorization: HeaderCarrier = hc
       .copy(authorization = None)
       .withExtraHeaders(apiKeyHeaderName -> awsApiKey)
 
-    http.DELETE[Either[UpstreamErrorResponse, RequestId]](s"$serviceBaseUrl/$apiName") flatMap {
+    val rds = implicitly[HttpReads[Either[UpstreamErrorResponse, RequestId]]]
+
+    http.DELETE[Either[UpstreamErrorResponse, RequestId]](s"$serviceBaseUrl/$apiName")(rds, headersWithoutAuthorization, ec) flatMap {
       case Right(RequestId(value)) => successful(value)
       case Left(err)               => failed(err)
     }
