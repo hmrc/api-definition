@@ -98,7 +98,7 @@ class AWSAPIPublisherConnectorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuit
             .withBody(s"""{ "RequestId" : "$expectedRequestId" }""")
         ))
 
-      val result: String = await(underTest.createOrUpdateAPI(apiName, swagger)(hc))
+      val result: String = await(underTest.createOrUpdateAPI(apiName, swagger))
 
       result shouldBe expectedRequestId
       wireMockServer.verify(putRequestedFor(urlEqualTo(s"/api/$apiName"))
@@ -115,7 +115,7 @@ class AWSAPIPublisherConnectorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuit
         ))
 
       intercept[UpstreamErrorResponse] {
-        await(underTest.createOrUpdateAPI(apiName, swagger)(hc))
+        await(underTest.createOrUpdateAPI(apiName, swagger))
       }.statusCode shouldBe INTERNAL_SERVER_ERROR
     }
   }

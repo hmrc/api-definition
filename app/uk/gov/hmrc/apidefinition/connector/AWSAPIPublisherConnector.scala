@@ -22,12 +22,11 @@ import scala.concurrent.{ExecutionContext, Future}
 
 import play.api.http.ContentTypes.JSON
 import play.api.http.HeaderNames.CONTENT_TYPE
-import play.api.libs.json.Json
+import play.api.libs.json.{Json, Writes}
 import play.api.{Configuration, Environment, Mode}
 import uk.gov.hmrc.http.HttpReads.Implicits._
-import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, UpstreamErrorResponse}
+import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpReads, UpstreamErrorResponse}
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
-import uk.gov.hmrc.http.HttpReads
 
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.models.AWSSwaggerDetails
@@ -57,9 +56,12 @@ class AWSAPIPublisherConnector @Inject() (
   val apiKeyHeaderName               = "x-api-key"
   val headers: Seq[(String, String)] = Seq(CONTENT_TYPE -> JSON, apiKeyHeaderName -> awsApiKey)
 
-  def createOrUpdateAPI(apiName: String, awsSwaggerDetails: AWSSwaggerDetails)(hc: HeaderCarrier): Future[String] = {
-    implicit val headersWithoutAuthorization: HeaderCarrier = hc.copy(authorization = None)
-    http.PUT[AWSSwaggerDetails, Either[UpstreamErrorResponse, RequestId]](s"$serviceBaseUrl/$apiName", awsSwaggerDetails, headers) flatMap {
+  def createOrUpdateAPI(apiName: String, awsSwaggerDetails: AWSSwaggerDetails)(implicit hc: HeaderCarrier): Future[String] = {
+    val headersWithoutAuthorization: HeaderCarrier = hc.copy(authorization = None)
+    val wts = implicitly[Writes[AWSSwaggerDetails]]
+    val rds = implicitly[HttpReads[Either[UpstreamErrorResponse, RequestId]]]
+
+    http.PUT[AWSSwaggerDetails, Either[UpstreamErrorResponse, RequestId]](s"$serviceBaseUrl/$apiName", awsSwaggerDetails, headers)(wts, rds, headersWithoutAuthorization, ec) flatMap {
       case Right(RequestId(value)) => successful(value)
       case Left(err)               => failed(err)
     }
@@ -69,7 +71,6 @@ class AWSAPIPublisherConnector @Inject() (
     val headersWithoutAuthorization: HeaderCarrier = hc
       .copy(authorization = None)
       .withExtraHeaders(apiKeyHeaderName -> awsApiKey)
-
     val rds = implicitly[HttpReads[Either[UpstreamErrorResponse, RequestId]]]
 
     http.DELETE[Either[UpstreamErrorResponse, RequestId]](s"$serviceBaseUrl/$apiName")(rds, headersWithoutAuthorization, ec) flatMap {

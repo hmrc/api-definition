@@ -73,7 +73,7 @@ class AwsApiPublisher @Inject() (val awsAPIPublisherConnector: AWSAPIPublisherCo
     ): Future[Unit] = {
     val hostRegex(host) = serviceBaseUrl
     val swagger         = buildAWSSwaggerDetails(apiDefinitionName, apiVersion, context, host)
-    awsAPIPublisherConnector.createOrUpdateAPI(apiName, swagger)(hc)
+    awsAPIPublisherConnector.createOrUpdateAPI(apiName, swagger)
       .map(awsRequestId => logger.info(s"Successfully published API [$apiName] Version [${apiVersion.versionNbr}] under AWS Request Id [$awsRequestId]"))
   }
 
