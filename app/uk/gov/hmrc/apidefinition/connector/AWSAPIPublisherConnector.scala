@@ -58,10 +58,8 @@ class AWSAPIPublisherConnector @Inject() (
 
   def createOrUpdateAPI(apiName: String, awsSwaggerDetails: AWSSwaggerDetails)(implicit hc: HeaderCarrier): Future[String] = {
     val headersWithoutAuthorization: HeaderCarrier = hc.copy(authorization = None)
-    val wts = implicitly[Writes[AWSSwaggerDetails]]
-    val rds = implicitly[HttpReads[Either[UpstreamErrorResponse, RequestId]]]
 
-    http.PUT[AWSSwaggerDetails, Either[UpstreamErrorResponse, RequestId]](s"$serviceBaseUrl/$apiName", awsSwaggerDetails, headers)(wts, rds, headersWithoutAuthorization, ec) flatMap {
+    http.PUT[AWSSwaggerDetails, Either[UpstreamErrorResponse, RequestId]](s"$serviceBaseUrl/$apiName", awsSwaggerDetails, headers)(implicitly, implicitly, headersWithoutAuthorization, implicitly) flatMap {
       case Right(RequestId(value)) => successful(value)
       case Left(err)               => failed(err)
     }
@@ -71,9 +69,8 @@ class AWSAPIPublisherConnector @Inject() (
     val headersWithoutAuthorization: HeaderCarrier = hc
       .copy(authorization = None)
       .withExtraHeaders(apiKeyHeaderName -> awsApiKey)
-    val rds = implicitly[HttpReads[Either[UpstreamErrorResponse, RequestId]]]
 
-    http.DELETE[Either[UpstreamErrorResponse, RequestId]](s"$serviceBaseUrl/$apiName")(rds, headersWithoutAuthorization, ec) flatMap {
+    http.DELETE[Either[UpstreamErrorResponse, RequestId]](s"$serviceBaseUrl/$apiName")(implicitly, headersWithoutAuthorization, implicitly) flatMap {
       case Right(RequestId(value)) => successful(value)
       case Left(err)               => failed(err)
     }
