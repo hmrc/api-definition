@@ -22,10 +22,10 @@ import scala.concurrent.{ExecutionContext, Future}
 
 import play.api.http.ContentTypes.JSON
 import play.api.http.HeaderNames.CONTENT_TYPE
-import play.api.libs.json.Json
+import play.api.libs.json.{Json, Writes}
 import play.api.{Configuration, Environment, Mode}
 import uk.gov.hmrc.http.HttpReads.Implicits._
-import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, UpstreamErrorResponse}
+import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpReads, UpstreamErrorResponse}
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 import uk.gov.hmrc.apidefinition.config.AppConfig
@@ -56,20 +56,21 @@ class AWSAPIPublisherConnector @Inject() (
   val apiKeyHeaderName               = "x-api-key"
   val headers: Seq[(String, String)] = Seq(CONTENT_TYPE -> JSON, apiKeyHeaderName -> awsApiKey)
 
-  def createOrUpdateAPI(apiName: String, awsSwaggerDetails: AWSSwaggerDetails)(hc: HeaderCarrier): Future[String] = {
-    implicit val headersWithoutAuthorization: HeaderCarrier = hc.copy(authorization = None)
-    http.PUT[AWSSwaggerDetails, Either[UpstreamErrorResponse, RequestId]](s"$serviceBaseUrl/$apiName", awsSwaggerDetails, headers) flatMap {
+  def createOrUpdateAPI(apiName: String, awsSwaggerDetails: AWSSwaggerDetails)(implicit hc: HeaderCarrier): Future[String] = {
+    val headersWithoutAuthorization: HeaderCarrier = hc.copy(authorization = None)
+
+    http.PUT[AWSSwaggerDetails, Either[UpstreamErrorResponse, RequestId]](s"$serviceBaseUrl/$apiName", awsSwaggerDetails, headers)(implicitly, implicitly, headersWithoutAuthorization, implicitly) flatMap {
       case Right(RequestId(value)) => successful(value)
       case Left(err)               => failed(err)
     }
   }
 
-  def deleteAPI(apiName: String)(hc: HeaderCarrier): Future[String] = {
-    implicit val headersWithoutAuthorization: HeaderCarrier = hc
+  def deleteAPI(apiName: String)(implicit hc: HeaderCarrier): Future[String] = {
+    val headersWithoutAuthorization: HeaderCarrier = hc
       .copy(authorization = None)
       .withExtraHeaders(apiKeyHeaderName -> awsApiKey)
 
-    http.DELETE[Either[UpstreamErrorResponse, RequestId]](s"$serviceBaseUrl/$apiName") flatMap {
+    http.DELETE[Either[UpstreamErrorResponse, RequestId]](s"$serviceBaseUrl/$apiName")(implicitly, headersWithoutAuthorization, implicitly) flatMap {
       case Right(RequestId(value)) => successful(value)
       case Left(err)               => failed(err)
     }

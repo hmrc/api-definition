@@ -73,7 +73,7 @@ class AwsApiPublisher @Inject() (val awsAPIPublisherConnector: AWSAPIPublisherCo
     ): Future[Unit] = {
     val hostRegex(host) = serviceBaseUrl
     val swagger         = buildAWSSwaggerDetails(apiDefinitionName, apiVersion, context, host)
-    awsAPIPublisherConnector.createOrUpdateAPI(apiName, swagger)(hc)
+    awsAPIPublisherConnector.createOrUpdateAPI(apiName, swagger)
       .map(awsRequestId => logger.info(s"Successfully published API [$apiName] Version [${apiVersion.versionNbr}] under AWS Request Id [$awsRequestId]"))
   }
 
@@ -90,7 +90,7 @@ class AwsApiPublisher @Inject() (val awsAPIPublisherConnector: AWSAPIPublisherCo
   }
 
   private def deleteAPIVersion(apiName: String)(implicit hc: HeaderCarrier): Future[Unit] = {
-    awsAPIPublisherConnector.deleteAPI(apiName)(hc) map { requestId =>
+    awsAPIPublisherConnector.deleteAPI(apiName) map { requestId =>
       logger.info(s"Successfully deleted API '$apiName' from AWS API Gateway with request ID $requestId")
     }
   }
