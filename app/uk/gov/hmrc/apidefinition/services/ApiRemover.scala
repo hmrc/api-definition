@@ -8,27 +8,20 @@ import uk.gov.hmrc.apidefinition.connector.AWSAPIPublisherConnector
 import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
 import scala.util.Success
 import scala.util.Failure
+import scala.concurrent.ExecutionContext
 
 class ApiRemover(awsApiPublisherConnector: AWSAPIPublisherConnector) extends ApplicationLogger {
     
-
     def deleteUnusedApis()(implicit hc: HeaderCarrier, ec: ExecutionContext) : Unit = {
         val unusedApis = List("api1", "api2", "api3")
-        logger.warn("Some message")
 
-        def deleteUnusedApisHelper(api: String)(implicit hc: HeaderCarrier) : Future[String] = {
-            awsApiPublisherConnector.deleteAPI(api)
+        def deleteUnusedApisHelper(api: String)(implicit hc: HeaderCarrier) : Unit = {
+            awsApiPublisherConnector.deleteAPI(api).onComplete({
+                case Success(requestId) => logger.info(s"$api successfully deleted. (Request ID: $requestId)")
+                case Failure(exception) => logger.warn(s"$api delete failed.", exception)
+            })
         }
 
-        // unusedApis.map{deleteUnusedApisHelper}.foreach(f => f.onComplete({
-        //     case Success(value) => //log it
-        //     case Failure(exception) => //log failure
-        // }))
-
-        // awsApiPublisherConnector.deleteAPI("api1")
-        // Load unused-apis-to-be-deleted from config List[String]
-        // Iterate through each one and call AWSAPIPublisherConnector.deleteAPI
-        // Log success or failure
+        unusedApis.map{api => deleteUnusedApisHelper(api)}
     }
-  
 }
