@@ -8,31 +8,25 @@ import uk.gov.hmrc.apidefinition.connector.AWSAPIPublisherConnector
 import uk.gov.hmrc.http.HeaderCarrier
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.{failed, successful}
+import uk.gov.hmrc.apidefinition.config.AppConfig
 
 class ApiRemoverSpec extends AsyncHmrcSpec {
 
   implicit val hc = HeaderCarrier()
 
   trait Setup {
-    val mockLogger: Logger = mock[Logger]
-    val publisherConnector = mock[AWSAPIPublisherConnector]
+    val mockLogger: Logger       = mock[Logger]
+    val publisherConnector       = mock[AWSAPIPublisherConnector]
+    val mockAppConfig: AppConfig = mock[AppConfig]
 
-    val unit = new ApiRemover(publisherConnector) {
+    val unit = new ApiRemover(publisherConnector, mockAppConfig) {
       override val logger: Logger = mockLogger
     }
   }
 
   "deleteUnusedApis" should {
-    "call AWSAPIPublisherConnector.deleteAPI for each unused API" in new Setup {
-
-      unit.deleteUnusedApis()
-
-      verify(publisherConnector, times(3)).deleteAPI(any[String])(*)
-      verifyNoMoreInteractions(publisherConnector)
-      verify(mockLogger).warn(s"Some message")
-    }
-
-    "log message on success" in new Setup {
+    "call AWSAPIPublisherConnector.deleteAPI for each unused API and log message on success" in new Setup {
+      when(mockAppConfig.apisToRemove).thenReturn(List("api1", "api2", "api3"))
       when(publisherConnector.deleteAPI("api1")(hc))
         .thenReturn(successful("api1 request ID"))
       when(publisherConnector.deleteAPI("api2")(hc))
@@ -50,10 +44,11 @@ class ApiRemoverSpec extends AsyncHmrcSpec {
       verifyNoMoreInteractions(mockLogger)
     }
 
-    "log message on failure" in new Setup {
-        val err1 = new RuntimeException()
-        val err2 = new RuntimeException()
-        val err3 = new RuntimeException()
+    "call AWSAPIPublisherConnector.deleteAPI for each unused API and log message on failure" in new Setup {
+      when(mockAppConfig.apisToRemove).thenReturn(List("api1", "api2", "api3"))
+      val err1 = new RuntimeException()
+      val err2 = new RuntimeException()
+      val err3 = new RuntimeException()
       when(publisherConnector.deleteAPI("api1")(hc))
         .thenReturn(failed(err1))
       when(publisherConnector.deleteAPI("api2")(hc))
@@ -70,6 +65,14 @@ class ApiRemoverSpec extends AsyncHmrcSpec {
       verify(mockLogger).warn(s"api3 delete failed.", err3)
       verifyNoMoreInteractions(mockLogger)
     }
-  }
 
+    "do nothing when the list of api's to remove is empty" in new Setup {
+      when(mockAppConfig.apisToRemove).thenReturn(List())
+
+      unit.deleteUnusedApis()
+
+      verify(publisherConnector, times(0)).deleteAPI(any[String])(*)
+      verify(mockLogger).info(s"list of api's to remove is empty")
+    }
+  }
 }
