@@ -52,10 +52,15 @@ trait Validator[T] {
     }
   }
 
-  def validateFieldNotAlreadyUsed(fetchApi: => Future[Option[StoredApiDefinition]], errorMessage: String)(implicit t: T, apiDefinition: StoredApiDefinition): Future[HMRCValidated[T]] = {
+  def validateFieldNotAlreadyUsed(
+      fetchApi: => Future[Option[StoredApiDefinition]],
+      errorMessage: String
+    )(implicit t: T,
+      apiDefinition: StoredApiDefinition
+    ): Future[HMRCValidated[T]] = {
     fetchApi.map {
       case Some(found: StoredApiDefinition) => found.serviceName != apiDefinition.serviceName
-      case _                          => false
+      case _                                => false
     }.map(alreadyUsed => validateThat(_ => !alreadyUsed, _ => errorMessage))
   }
 

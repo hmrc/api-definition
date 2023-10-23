@@ -81,7 +81,18 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
 
     val apiDefinitions: Seq[StoredApiDefinition] =
       Array.fill(2)(
-        StoredApiDefinition(ServiceName("MyApiDefinitionServiceName1"), "MyUrl", "MyName", "My description", ApiContext("MyContext"), Nil, false, false, None, List(ApiCategory.AGENTS))
+        StoredApiDefinition(
+          ServiceName("MyApiDefinitionServiceName1"),
+          "MyUrl",
+          "MyName",
+          "My description",
+          ApiContext("MyContext"),
+          Nil,
+          false,
+          false,
+          None,
+          List(ApiCategory.AGENTS)
+        )
       ).toIndexedSeq
 
     when(mockAPIDefinitionService.fetchByContext(*[ApiContext])).thenReturn(successful(Some(apiDefinitions.head)))
@@ -291,7 +302,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
           |}""".stripMargin.replaceAll("\n", " ")
 
       val apiDefinition = StoredApiDefinition(
-       ServiceName( "calendar"),
+        ServiceName("calendar"),
         "http://calendar",
         "Calendar API",
         "My Calendar API",

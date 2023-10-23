@@ -85,7 +85,7 @@ class ApiContextValidator @Inject() (
     apiDefinitionRepository.fetchByServiceName(apiDefinition.serviceName)
       .map {
         case Some(found: StoredApiDefinition) => found.context != apiDefinition.context
-        case _                          => false
+        case _                                => false
       }.map(contextChanged => validateThat(_ => !contextChanged, _ => s"Field 'context' must not be changed $errorContext"))
   }
 

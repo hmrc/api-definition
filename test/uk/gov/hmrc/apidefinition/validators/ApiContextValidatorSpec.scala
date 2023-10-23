@@ -97,8 +97,8 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
     lazy val errorContext: String = "for API"
 
     "skip context validation for APIs in the skip context validation allowlist" in new Setup {
-      val context: ApiContext               = ApiContext("/totally//inv@lid/context!!")
-      val allowedApi                        = ServiceName("some-important-api")
+      val context: ApiContext                     = ApiContext("/totally//inv@lid/context!!")
+      val allowedApi                              = ServiceName("some-important-api")
       lazy val apiDefinition: StoredApiDefinition = testAPIDefinition(serviceName = allowedApi, context = context)
       when(mockAppConfig.skipContextValidationAllowlist).thenReturn(List(allowedApi))
 
@@ -108,8 +108,8 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
     }
 
     "pass validation for new API with legitimate context" in new Setup {
-      lazy val context: ApiContext          = ApiContext("individuals/money")
-      lazy val serviceName: ServiceName          = ServiceName("money-service")
+      lazy val context: ApiContext                = ApiContext("individuals/money")
+      lazy val serviceName: ServiceName           = ServiceName("money-service")
       lazy val apiDefinition: StoredApiDefinition = testAPIDefinition(serviceName, context)
 
       thereAreNoOverlappingAPIContexts
@@ -122,8 +122,8 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
     }
 
     "pass validation for existing API with legitimate context" in new Setup {
-      lazy val context: ApiContext          = ApiContext("money")
-      lazy val serviceName: ServiceName          = ServiceName("money-service")
+      lazy val context: ApiContext                = ApiContext("money")
+      lazy val serviceName: ServiceName           = ServiceName("money-service")
       lazy val apiDefinition: StoredApiDefinition = testAPIDefinition(serviceName, context)
 
       fetchByContextWillReturn(context, Some(apiDefinition))
@@ -135,8 +135,8 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
     }
 
     "pass validation for new version of existing API with legacy context" in new Setup {
-      lazy val context: ApiContext                        = ApiContext("money")
-      lazy val serviceName: ServiceName          = ServiceName("money-service")
+      lazy val context: ApiContext                              = ApiContext("money")
+      lazy val serviceName: ServiceName                         = ServiceName("money-service")
       lazy val apiDefinition: StoredApiDefinition               = testAPIDefinition(serviceName, context, List("1.0", "2.0"))
       lazy val apiDefinitionWithNewVersion: StoredApiDefinition = testAPIDefinition(serviceName, context, List("1.0", "2.0", "3.0"))
 
@@ -150,9 +150,9 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
     }
 
     "fail if new version of existing API has different context" in new Setup {
-      lazy val oldContext: ApiContext                     = ApiContext("money")
-      lazy val newContext: ApiContext                     = ApiContext("new-money")
-      lazy val serviceName: ServiceName          = ServiceName("money-service")
+      lazy val oldContext: ApiContext                           = ApiContext("money")
+      lazy val newContext: ApiContext                           = ApiContext("new-money")
+      lazy val serviceName: ServiceName                         = ServiceName("money-service")
       lazy val apiDefinition: StoredApiDefinition               = testAPIDefinition(serviceName, oldContext, List("1.0", "2.0"))
       lazy val apiDefinitionWithNewVersion: StoredApiDefinition = testAPIDefinition(serviceName, newContext, List("1.0", "2.0", "3.0"))
 
@@ -167,7 +167,7 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
     }
 
     "fail if context is empty" in new Setup {
-      lazy val context: ApiContext          = ApiContext("")
+      lazy val context: ApiContext                = ApiContext("")
       lazy val apiDefinition: StoredApiDefinition = testAPIDefinition(context = context)
 
       val result: validatorUnderTest.HMRCValidated[ApiContext] = await(validatorUnderTest.validate(errorContext, apiDefinition)(context))
@@ -177,7 +177,7 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
     }
 
     "fail validation when the context starts with '/' " in new Setup {
-      lazy val context: ApiContext          = ApiContext("/hi")
+      lazy val context: ApiContext                = ApiContext("/hi")
       lazy val apiDefinition: StoredApiDefinition = testAPIDefinition(context = context)
 
       val result: validatorUnderTest.HMRCValidated[ApiContext] = await(validatorUnderTest.validate(errorContext, apiDefinition)(context))
@@ -187,7 +187,7 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
     }
 
     "fail validation when the context ends with '/' " in new Setup {
-      lazy val context: ApiContext          = ApiContext("hi/")
+      lazy val context: ApiContext                = ApiContext("hi/")
       lazy val apiDefinition: StoredApiDefinition = testAPIDefinition(context = context)
 
       val result: validatorUnderTest.HMRCValidated[ApiContext] = await(validatorUnderTest.validate(errorContext, apiDefinition)(context))
@@ -197,7 +197,7 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
     }
 
     "fail validation when the context contains '//' " in new Setup {
-      val context: ApiContext               = ApiContext("hi//aloha")
+      val context: ApiContext                     = ApiContext("hi//aloha")
       lazy val apiDefinition: StoredApiDefinition = testAPIDefinition(context = context)
 
       val result: validatorUnderTest.HMRCValidated[ApiContext] = await(validatorUnderTest.validate(errorContext, apiDefinition)(context))
@@ -212,7 +212,7 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
     )
     ('{' :: '}' :: prohibitedChars).foreach { char: Char =>
       s"fail validation if the API contains '$char' in the context" in new Setup {
-        lazy val badContext                   = ApiContext(s"my-context_$char")
+        lazy val badContext                         = ApiContext(s"my-context_$char")
         lazy val apiDefinition: StoredApiDefinition = testAPIDefinition(context = badContext)
 
         val result: validatorUnderTest.HMRCValidated[ApiContext] = await(validatorUnderTest.validate(errorContext, apiDefinition)(badContext))
@@ -223,9 +223,9 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
     }
 
     "fail validation when context has been changed" in new Setup {
-      lazy val context: ApiContext        = ApiContext("individuals/money")
-      lazy val oldContext: ApiContext     = ApiContext("individuals/old-money")
-      lazy val serviceName: ServiceName          = ServiceName("money-service")
+      lazy val context: ApiContext              = ApiContext("individuals/money")
+      lazy val oldContext: ApiContext           = ApiContext("individuals/old-money")
+      lazy val serviceName: ServiceName         = ServiceName("money-service")
       val apiDefinition: StoredApiDefinition    = testAPIDefinition(serviceName, context)
       val oldAPIDefinition: StoredApiDefinition = testAPIDefinition(serviceName, oldContext)
 
@@ -239,8 +239,8 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
     }
 
     "fail validation when context already exist for another API" in new Setup {
-      lazy val context: ApiContext      = ApiContext("money")
-      lazy val serviceName: ServiceName          = ServiceName("money-service")
+      lazy val context: ApiContext           = ApiContext("money")
+      lazy val serviceName: ServiceName      = ServiceName("money-service")
       lazy val otherServiceName: ServiceName = ServiceName("other-service")
 
       val apiDefinition: StoredApiDefinition      = testAPIDefinition(serviceName, context)
@@ -255,7 +255,7 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
     }
 
     "accumulate multiple validation errors together" in new Setup {
-      lazy val context: ApiContext          = ApiContext("/hi//there/")
+      lazy val context: ApiContext                = ApiContext("/hi//there/")
       lazy val apiDefinition: StoredApiDefinition = testAPIDefinition(context = context)
 
       val result: validatorUnderTest.HMRCValidated[ApiContext] = await(validatorUnderTest.validate(errorContext, apiDefinition)(context))
@@ -275,8 +275,8 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
     val permittedTopLevelContexts = List("accounts", "agents", "customs", "mobile", "individuals", "obligations", "organisations", "test", "payments", "misc")
     permittedTopLevelContexts.foreach(topLevelContext =>
       s"pass validation with a top level context of $topLevelContext" in new Setup {
-        lazy val context: ApiContext          = ApiContext(s"$topLevelContext/foo")
-        lazy val serviceName: ServiceName          = ServiceName("money-service")
+        lazy val context: ApiContext                = ApiContext(s"$topLevelContext/foo")
+        lazy val serviceName: ServiceName           = ServiceName("money-service")
         lazy val apiDefinition: StoredApiDefinition = testAPIDefinition(serviceName, context)
 
         thereAreNoOverlappingAPIContexts
@@ -290,8 +290,8 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
     )
 
     "fail validation when new API does not use correct top level context" in new Setup {
-      lazy val context: ApiContext          = ApiContext("foo/bar")
-      lazy val serviceName: ServiceName          = ServiceName("money-service")
+      lazy val context: ApiContext                = ApiContext("foo/bar")
+      lazy val serviceName: ServiceName           = ServiceName("money-service")
       lazy val apiDefinition: StoredApiDefinition = testAPIDefinition(serviceName, context)
 
       val formattedTopLevelContexts: String = permittedTopLevelContexts.sorted.mkString("'", "', '", "'")
@@ -306,8 +306,8 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
     }
 
     "fail validation when a new API does not have a multilevel context" in new Setup {
-      lazy val context: ApiContext          = ApiContext(permittedTopLevelContexts.head)
-      lazy val serviceName: ServiceName          = ServiceName("money-service")
+      lazy val context: ApiContext                = ApiContext(permittedTopLevelContexts.head)
+      lazy val serviceName: ServiceName           = ServiceName("money-service")
       lazy val apiDefinition: StoredApiDefinition = testAPIDefinition(serviceName, context)
 
       thereAreNoOverlappingAPIContexts
@@ -320,10 +320,10 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
     }
 
     "fail validation when new API context is subset of existing" in new Setup {
-      lazy val supersetContext: ApiContext = ApiContext("individuals/foo/bar")
-      lazy val newContext: ApiContext      = ApiContext("individuals/foo")
-      lazy val existingAPI: StoredApiDefinition  = testAPIDefinition(ServiceName("existing-service"), supersetContext)
-      lazy val newAPI: StoredApiDefinition       = testAPIDefinition(ServiceName("new-service"), newContext)
+      lazy val supersetContext: ApiContext      = ApiContext("individuals/foo/bar")
+      lazy val newContext: ApiContext           = ApiContext("individuals/foo")
+      lazy val existingAPI: StoredApiDefinition = testAPIDefinition(ServiceName("existing-service"), supersetContext)
+      lazy val newAPI: StoredApiDefinition      = testAPIDefinition(ServiceName("new-service"), newContext)
 
       fetchByTopLevelContextWillReturn(List(existingAPI))
       fetchByContextWillReturn(newContext, None)
@@ -335,8 +335,8 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
     }
 
     "fail validation when new API context is superset of existing" in new Setup {
-      lazy val subsetContext: ApiContext  = ApiContext("individuals/foo")
-      lazy val newContext: ApiContext     = ApiContext("individuals/foo/bar")
+      lazy val subsetContext: ApiContext        = ApiContext("individuals/foo")
+      lazy val newContext: ApiContext           = ApiContext("individuals/foo/bar")
       lazy val existingAPI: StoredApiDefinition = testAPIDefinition(ServiceName("existing-service"), subsetContext)
       lazy val newAPI: StoredApiDefinition      = testAPIDefinition(ServiceName("new-service"), newContext)
 
@@ -350,7 +350,7 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
     }
 
     "pass validation when new API context does not overlap multiple other APIs in same top level context" in new Setup {
-      lazy val newContext: ApiContext      = ApiContext("individuals/baz")
+      lazy val newContext: ApiContext            = ApiContext("individuals/baz")
       lazy val newAPI: StoredApiDefinition       = testAPIDefinition(ServiceName("new-service"), newContext)
       lazy val existingAPI1: StoredApiDefinition = testAPIDefinition(ServiceName("existing-service-1"), ApiContext("individuals/foo"))
       lazy val existingAPI2: StoredApiDefinition = testAPIDefinition(ServiceName("existing-service-2"), ApiContext("individuals/bar"))
@@ -365,7 +365,7 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
     }
 
     "pass validation when new API context string overlaps but does not path overlap" in new Setup {
-      lazy val newContext: ApiContext      = ApiContext("individuals/baz")
+      lazy val newContext: ApiContext            = ApiContext("individuals/baz")
       lazy val newAPI: StoredApiDefinition       = testAPIDefinition(ServiceName("new-service"), newContext)
       lazy val existingAPI1: StoredApiDefinition = testAPIDefinition(ServiceName("existing-service-1"), ApiContext("individuals/ba"))
       lazy val existingAPI2: StoredApiDefinition = testAPIDefinition(ServiceName("existing-service-2"), ApiContext("individuals/baz2"))

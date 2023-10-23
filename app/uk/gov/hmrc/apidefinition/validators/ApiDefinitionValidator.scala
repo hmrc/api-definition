@@ -45,7 +45,7 @@ class ApiDefinitionValidator @Inject() (
     validateDefinition(apiDefinition).flatMap {
       _ match {
         case Valid(validDefinition) => f(validDefinition)
-        case Invalid(errors)        => 
+        case Invalid(errors)        =>
           logger.warn(s"Failed to validate tolerant read of StoredApiDefinition ${apiDefinition.name} - ${errors.toList}")
           successful(UnprocessableEntity(toJson(ValidationErrors(INVALID_REQUEST_PAYLOAD, errors.toList))))
       }
@@ -63,14 +63,14 @@ class ApiDefinitionValidator @Inject() (
       serviceBaseUrlValidated <- validateServiceBaseUrl(errorContext)
 
       validated: HMRCValidated[StoredApiDefinition] = (
-                                                  validateThat(_.serviceName.value.nonEmpty, _ => s"Field 'serviceName' should not be empty $errorContext"),
-                                                  validateThat(_.description.nonEmpty, _ => s"Field 'description' should not be empty $errorContext"),
-                                                  validateThat(_.categories.nonEmpty, _ => s"Field 'categories' should not be empty $errorContext"),
-                                                  contextValidated,
-                                                  nameValidated,
-                                                  serviceBaseUrlValidated,
-                                                  validateVersions(errorContext)
-                                                ).mapN((_, _, _, _, _, _, _) => apiDefinition)
+                                                        validateThat(_.serviceName.value.nonEmpty, _ => s"Field 'serviceName' should not be empty $errorContext"),
+                                                        validateThat(_.description.nonEmpty, _ => s"Field 'description' should not be empty $errorContext"),
+                                                        validateThat(_.categories.nonEmpty, _ => s"Field 'categories' should not be empty $errorContext"),
+                                                        contextValidated,
+                                                        nameValidated,
+                                                        serviceBaseUrlValidated,
+                                                        validateVersions(errorContext)
+                                                      ).mapN((_, _, _, _, _, _, _) => apiDefinition)
 
     } yield validated
   }

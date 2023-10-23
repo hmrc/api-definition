@@ -50,7 +50,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
   private def defnWithSource(source: ApiVersionSource)(apiDefn: StoredApiDefinition): StoredApiDefinition = {
     apiDefn.copy(versions = apiDefn.versions.map(withSource(source)(_)))
   }
-  override implicit lazy val app: Application                                                 = appBuilder.build()
+  override implicit lazy val app: Application                                                             = appBuilder.build()
 
   private val helloApiVersion = ApiVersion(
     versionNbr = ApiVersionNbr("1.0"),
@@ -334,7 +334,8 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
       collectionSize shouldBe 1
 
       val caught = intercept[MongoWriteException] {
-        val inError = saveApi(repository, helloApiDefinition.copy(context = ApiContext("newContext"), serviceName = ServiceName("newServiceName"), serviceBaseUrl = "newServiceBaseUrl"))
+        val inError =
+          saveApi(repository, helloApiDefinition.copy(context = ApiContext("newContext"), serviceName = ServiceName("newServiceName"), serviceBaseUrl = "newServiceBaseUrl"))
         await(inError)
       }
       assertMongoError(caught, "name", helloApiDefinition.name)

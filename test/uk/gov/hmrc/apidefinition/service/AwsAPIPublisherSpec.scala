@@ -23,7 +23,7 @@ import scala.jdk.CollectionConverters._
 
 import org.mockito.{ArgumentCaptor, ArgumentMatchers}
 
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{StoredApiDefinition, ApiStatus, _}
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiStatus, StoredApiDefinition, _}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -85,8 +85,8 @@ class AwsAPIPublisherSpec extends AsyncHmrcSpec {
       val swaggerDetailsCaptor: ArgumentCaptor[AWSSwaggerDetails] = ArgumentCaptor.forClass(classOf[AWSSwaggerDetails])
       when(underTest.awsAPIPublisherConnector.createOrUpdateAPI(*, swaggerDetailsCaptor.capture())(*))
         .thenReturn(successful(UUID.randomUUID().toString))
-      val apiDefinition1: StoredApiDefinition                           = someAPIDefinition("API 1")
-      val apiDefinition2: StoredApiDefinition                           = someAPIDefinition("API 2")
+      val apiDefinition1: StoredApiDefinition                     = someAPIDefinition("API 1")
+      val apiDefinition2: StoredApiDefinition                     = someAPIDefinition("API 2")
 
       await(underTest.publishAll(List(apiDefinition1, apiDefinition2)))
 
@@ -102,7 +102,7 @@ class AwsAPIPublisherSpec extends AsyncHmrcSpec {
       val swaggerDetailsCaptor: ArgumentCaptor[AWSSwaggerDetails] = ArgumentCaptor.forClass(classOf[AWSSwaggerDetails])
       when(underTest.awsAPIPublisherConnector.createOrUpdateAPI(*, swaggerDetailsCaptor.capture())(*))
         .thenReturn(successful(UUID.randomUUID().toString))
-      val apiDefinition: StoredApiDefinition                            = someAPIDefinition()
+      val apiDefinition: StoredApiDefinition                      = someAPIDefinition()
 
       await(underTest.publish(apiDefinition))
 
@@ -118,7 +118,7 @@ class AwsAPIPublisherSpec extends AsyncHmrcSpec {
       val swaggerDetailsCaptor: ArgumentCaptor[AWSSwaggerDetails] = ArgumentCaptor.forClass(classOf[AWSSwaggerDetails])
       when(underTest.awsAPIPublisherConnector.createOrUpdateAPI(*, swaggerDetailsCaptor.capture())(*))
         .thenReturn(successful(UUID.randomUUID().toString))
-      val apiDefinition: StoredApiDefinition                            = someAPIDefinition(versions = List(anAPIVersion("2.0", ApiStatus.STABLE, List(QueryParameter("flag",true)))))
+      val apiDefinition: StoredApiDefinition                      = someAPIDefinition(versions = List(anAPIVersion("2.0", ApiStatus.STABLE, List(QueryParameter("flag", true)))))
 
       await(underTest.publish(apiDefinition))
 

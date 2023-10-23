@@ -61,10 +61,10 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
     val applicationId = ApplicationId.random
     val otherAppId    = ApplicationId.random
 
-    val publicVersion1: ApiVersion                      = aVersion(version = ApiVersionNbr("1.0"), access = ApiAccess.PUBLIC)
-    val publicVersion2                                  = aVersion(version = ApiVersionNbr("2.0"), access = ApiAccess.PUBLIC)
+    val publicVersion1: ApiVersion = aVersion(version = ApiVersionNbr("1.0"), access = ApiAccess.PUBLIC)
+    val publicVersion2             = aVersion(version = ApiVersionNbr("2.0"), access = ApiAccess.PUBLIC)
     val privateVersion: ApiVersion = aVersion(version = ApiVersionNbr("3.1"), access = ApiAccess.Private())
-    val privateTrialVersion                = aVersion(version = ApiVersionNbr("4.0"), access = ApiAccess.Private(isTrial = true))
+    val privateTrialVersion        = aVersion(version = ApiVersionNbr("4.0"), access = ApiAccess.Private(isTrial = true))
 
     val allVersions = List(
       publicVersion1,
@@ -152,10 +152,10 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
     }
 
     "send notifications when version of API has changed status" in new Setup {
-      val apiVersion                                        = ApiVersionNbr("1.0")
-      val apiContext                                        = ApiContext("foo")
-      val existingStatus: ApiStatus                         = ApiStatus.ALPHA
-      val updatedStatus: ApiStatus                          = ApiStatus.BETA
+      val apiVersion                                              = ApiVersionNbr("1.0")
+      val apiContext                                              = ApiContext("foo")
+      val existingStatus: ApiStatus                               = ApiStatus.ALPHA
+      val updatedStatus: ApiStatus                                = ApiStatus.BETA
       val existingAPIDefinition: StoredApiDefinition              = anAPIDefinition(apiContext, aVersion(apiVersion, existingStatus, ApiAccess.PUBLIC))
       val updatedAPIDefinition: StoredApiDefinition               = anAPIDefinition(apiContext, aVersion(apiVersion, updatedStatus, ApiAccess.PUBLIC))
       val updatedAPIDefinitionWithSavingTime: StoredApiDefinition = updatedAPIDefinition.copy(lastPublishedAt = Some(instant()))

@@ -23,7 +23,7 @@ import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 
 import play.api.mvc.Results.{NoContent, UnprocessableEntity}
 import play.api.test.Helpers._
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{StoredApiDefinition, Endpoint, QueryParameter, _}
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{Endpoint, QueryParameter, StoredApiDefinition, _}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApiContext, ApiVersionNbr}
 
 import uk.gov.hmrc.apidefinition.config.AppConfig
@@ -166,7 +166,7 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
     }
 
     "fail validation when if there is an API version without version number" in new Setup {
-      lazy val versions: List[ApiVersion]   =
+      lazy val versions: List[ApiVersion]         =
         List(
           ApiVersion(
             ApiVersionNbr("1.0"),
@@ -193,7 +193,7 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
     }
 
     "fail validation when if there is an ALPHA API version with endpoints enabled" in new Setup {
-      lazy val versions: List[ApiVersion]   =
+      lazy val versions: List[ApiVersion]         =
         List(
           ApiVersion(
             ApiVersionNbr("1.0"),
@@ -278,7 +278,7 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
 
     specialChars.foreach { char: Char =>
       s"fail validation if the endpoint contains $char in the URI" in new Setup {
-        lazy val endpointUri                  = s"/payments$char"
+        lazy val endpointUri                        = s"/payments$char"
         lazy val apiDefinition: StoredApiDefinition = moneyApiDefinition.copy(
           versions = List(moneyApiVersion.copy(endpoints = List(moneyEndpoint.copy(uriPattern = endpointUri))))
         )
@@ -299,7 +299,7 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
     }
 
     "fail validation if the endpoint has no name" in new Setup {
-      val endpoint                          = "/hello/friend"
+      val endpoint                                = "/hello/friend"
       lazy val apiDefinition: StoredApiDefinition = moneyApiDefinition.copy(
         versions = List(moneyApiVersion.copy(endpoints = List(moneyEndpoint.copy(uriPattern = endpoint, endpointName = ""))))
       )
@@ -308,7 +308,7 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
     }
 
     "fail validation if the endpoint defines path parameters with ':'" in new Setup {
-      val endpoint                          = "/hello/:friend"
+      val endpoint                                = "/hello/:friend"
       lazy val apiDefinition: StoredApiDefinition = moneyApiDefinition.copy(
         versions = List(moneyApiVersion.copy(endpoints = List(moneyEndpoint.copy(uriPattern = endpoint))))
       )
@@ -368,7 +368,7 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
     ('/' :: '{' :: '}' :: specialChars).foreach { char =>
       s"fail validation when a query parameter name contains '$char' in the name" in new Setup {
 
-        val queryParamName                    = s"param$char"
+        val queryParamName                          = s"param$char"
         lazy val apiDefinition: StoredApiDefinition = moneyApiDefinition.copy(
           versions = List(moneyApiVersion.copy(endpoints = List(moneyEndpoint.copy(queryParameters = List(moneyQueryParameter.copy(name = queryParamName))))))
         )

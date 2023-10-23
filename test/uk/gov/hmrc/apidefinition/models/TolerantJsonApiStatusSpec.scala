@@ -19,8 +19,8 @@ package uk.gov.hmrc.apiplatform.modules.apis.domain.models
 import org.scalatest.prop.TableDrivenPropertyChecks
 
 import play.api.libs.json.{JsString, Json}
-
 import uk.gov.hmrc.apiplatform.modules.common.utils._
+
 import uk.gov.hmrc.apidefinition.models.TolerantJsonApiStatus
 
 class TolerantJsonApiStatusSpec extends BaseJsonFormattersSpec with TableDrivenPropertyChecks with TolerantJsonApiStatus {

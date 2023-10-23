@@ -22,7 +22,7 @@ import uk.gov.hmrc.play.json.Union
 
 trait TolerantJsonApiAccess {
 
-  private val readsPrivateApiAccess: Reads[ApiAccess.Private] = ((JsPath \ "isTrial").readNullable[Boolean]).map(_.fold(ApiAccess.Private(false))(b => ApiAccess.Private(b)))
+  private val readsPrivateApiAccess: Reads[ApiAccess.Private]    = ((JsPath \ "isTrial").readNullable[Boolean]).map(_.fold(ApiAccess.Private(false))(b => ApiAccess.Private(b)))
   private val writesPrivateApiAccess: OWrites[ApiAccess.Private] = Json.writes[ApiAccess.Private]
 
   private implicit val formatPrivateApiAccess: OFormat[ApiAccess.Private]    = OFormat[ApiAccess.Private](readsPrivateApiAccess, writesPrivateApiAccess)

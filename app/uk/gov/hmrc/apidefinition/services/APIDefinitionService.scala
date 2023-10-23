@@ -159,7 +159,6 @@ class APIDefinitionService @Inject() (
     }
   }
 
-
   def publishAllToAws()(implicit hc: HeaderCarrier): Future[Unit] = {
     apiDefinitionRepository.fetchAll().map(awsApiPublisher.publishAll)
   }
