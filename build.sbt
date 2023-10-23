@@ -62,3 +62,12 @@ def onPackageName(rootPackage: String): String => Boolean = {
 }
 
 Global / bloopAggregateSourceDependencies := true
+
+commands ++= Seq(
+  Command.command("run-all-tests") { state => "test" :: "component:test" :: state },
+
+  Command.command("clean-and-test") { state => "clean" :: "compile" :: "run-all-tests" :: state },
+
+  // Coverage does not need compile !
+  Command.command("pre-commit") { state => "scalafmtAll" :: "scalafixAll" :: "clean" :: "coverage" :: "run-all-tests" :: "coverageReport" :: state }
+)

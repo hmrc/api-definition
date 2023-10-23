@@ -79,7 +79,7 @@ class DocumentationServiceSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wi
     authorised = false
   )
 
-  val apiDefinition: ApiDefinition = ApiDefinition(
+  val apiDefinition: StoredApiDefinition = StoredApiDefinition(
     serviceName = serviceName,
     serviceBaseUrl = serviceUrl,
     name = "Hello World",

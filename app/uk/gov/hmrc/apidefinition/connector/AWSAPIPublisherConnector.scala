@@ -22,10 +22,10 @@ import scala.concurrent.{ExecutionContext, Future}
 
 import play.api.http.ContentTypes.JSON
 import play.api.http.HeaderNames.CONTENT_TYPE
-import play.api.libs.json.{Json, Writes}
+import play.api.libs.json.Json
 import play.api.{Configuration, Environment, Mode}
 import uk.gov.hmrc.http.HttpReads.Implicits._
-import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpReads, UpstreamErrorResponse}
+import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, UpstreamErrorResponse}
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 import uk.gov.hmrc.apidefinition.config.AppConfig

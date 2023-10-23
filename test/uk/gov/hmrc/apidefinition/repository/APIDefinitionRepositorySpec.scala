@@ -32,14 +32,14 @@ import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiDefinition, _}
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{StoredApiDefinition, _}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 
 class APIDefinitionRepositorySpec extends AsyncHmrcSpec
-    with DefaultPlayMongoRepositorySupport[ApiDefinition]
+    with DefaultPlayMongoRepositorySupport[StoredApiDefinition]
     with GuiceOneAppPerSuite with BeforeAndAfterEach
     with BeforeAndAfterAll with Eventually {
 
@@ -47,7 +47,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
     apiVersion.copy(versionSource = source)
   }
 
-  private def defnWithSource(source: ApiVersionSource)(apiDefn: ApiDefinition): ApiDefinition = {
+  private def defnWithSource(source: ApiVersionSource)(apiDefn: StoredApiDefinition): StoredApiDefinition = {
     apiDefn.copy(versions = apiDefn.versions.map(withSource(source)(_)))
   }
   override implicit lazy val app: Application                                                 = appBuilder.build()
@@ -66,7 +66,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
     endpoints = List(Endpoint("/date", "Check current date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
   )
 
-  private val helloApiDefinition = ApiDefinition(
+  private val helloApiDefinition = StoredApiDefinition(
     serviceName = ServiceName("hello-service"),
     serviceBaseUrl = "hello.com",
     name = "Hello",
@@ -79,7 +79,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
     categories = List(ApiCategory.AGENTS)
   )
 
-  private val calendarApiDefinition = ApiDefinition(
+  private val calendarApiDefinition = StoredApiDefinition(
     serviceName = ServiceName("calendar-service"),
     serviceBaseUrl = "calendar.com",
     name = "Calendar",
@@ -99,7 +99,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
     endpoints = List(Endpoint("/submit", "Submit Income Tax Return", HttpMethod.POST, AuthType.USER, ResourceThrottlingTier.UNLIMITED))
   )
 
-  private val individualIncomeTaxApiDefinition = ApiDefinition(
+  private val individualIncomeTaxApiDefinition = StoredApiDefinition(
     serviceName = ServiceName("income-tax"),
     serviceBaseUrl = "income-tax.protected.mdtp",
     name = "Individual Income Tax",
@@ -122,7 +122,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
     versionSource = ApiVersionSource.UNKNOWN
   )
 
-  private val individualNIApiDefinition = ApiDefinition(
+  private val individualNIApiDefinition = StoredApiDefinition(
     serviceName = ServiceName("ni"),
     serviceBaseUrl = "ni.protected.mdtp",
     name = "Individual National Insurance",
@@ -137,7 +137,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
 
   override val repository: APIDefinitionRepository = app.injector.instanceOf[APIDefinitionRepository]
 
-  private def saveApi(repo: APIDefinitionRepository, apiDefinition: ApiDefinition): Future[ApiDefinition] = {
+  private def saveApi(repo: APIDefinitionRepository, apiDefinition: StoredApiDefinition): Future[StoredApiDefinition] = {
     repo.collection.insertOne(apiDefinition).toFuture().map(_ => apiDefinition)
   }
 
