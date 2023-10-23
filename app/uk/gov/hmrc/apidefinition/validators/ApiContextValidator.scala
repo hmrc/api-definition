@@ -33,6 +33,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiContext
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.services.APIDefinitionService
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiDefinition
 
 @Singleton
 class ApiContextValidator @Inject() (
@@ -68,7 +69,7 @@ class ApiContextValidator @Inject() (
   }
 
   private def validateAgainstDatabase(errorContext: String, apiDefinition: StoredApiDefinition)(implicit context: ApiContext): Future[HMRCValidated[ApiContext]] = {
-    val existingAPIDefinitionFuture: Future[Option[StoredApiDefinition]] = apiDefinitionService.fetchByContext(apiDefinition.context)
+    val existingAPIDefinitionFuture: Future[Option[ApiDefinition]] = apiDefinitionService.fetchByContext(apiDefinition.context)
     for {
       contextUniqueValidated         <- validateFieldNotAlreadyUsed(existingAPIDefinitionFuture, s"Field 'context' must be unique $errorContext")(context, apiDefinition)
       contextNotChangedValidated     <- validateContextNotChanged(errorContext, apiDefinition)

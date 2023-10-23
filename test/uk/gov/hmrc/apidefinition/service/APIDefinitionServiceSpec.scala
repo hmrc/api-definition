@@ -38,8 +38,11 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
 
   def unitSuccess: Future[Unit] = successful { () }
 
-  private def anAPIDefinition(context: ApiContext, versions: ApiVersion*) =
+  private def aStoredApiDefinition(context: ApiContext, versions: ApiVersion*) =
     StoredApiDefinition(ServiceName("service"), "http://service", "name", "description", context, versions.toList, false, false, None, List(ApiCategory.OTHER))
+  
+  private def anApiDefinition(context: ApiContext, versions: ApiVersion*) =
+    ApiDefinition(ServiceName("service"), "http://service", "name", "description", context, versions.map(v => v.versionNbr -> v).toMap, false, false, None, List(ApiCategory.OTHER))
 
   trait Setup {
 
@@ -90,7 +93,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
       authorised = false
     )
 
-    val apiDefinitionWithAllVersions = anAPIDefinition(context, allVersions: _*)
+    val apiDefinitionWithAllVersions = aStoredApiDefinition(context, allVersions: _*)
     val apiDefinition                = someAPIDefinition
     val apiDefinitionWithSavingTime  = apiDefinition.copy(lastPublishedAt = Some(instant()))
 
@@ -107,9 +110,10 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
       privateVersion,
       privateTrialVersion
     )
-    val definition = anAPIDefinition(context, versions: _*)
+    val storedDefinition = aStoredApiDefinition(context, versions: _*)
+    val definition = anApiDefinition(context, versions: _*)
 
-    when(mockAPIDefinitionRepository.fetchByServiceName(serviceName)).thenReturn(successful(Some(definition)))
+    when(mockAPIDefinitionRepository.fetchByServiceName(serviceName)).thenReturn(successful(Some(storedDefinition)))
   }
 
   "createOrUpdate" should {
@@ -156,8 +160,8 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
       val apiContext                                              = ApiContext("foo")
       val existingStatus: ApiStatus                               = ApiStatus.ALPHA
       val updatedStatus: ApiStatus                                = ApiStatus.BETA
-      val existingAPIDefinition: StoredApiDefinition              = anAPIDefinition(apiContext, aVersion(apiVersion, existingStatus, ApiAccess.PUBLIC))
-      val updatedAPIDefinition: StoredApiDefinition               = anAPIDefinition(apiContext, aVersion(apiVersion, updatedStatus, ApiAccess.PUBLIC))
+      val existingAPIDefinition: StoredApiDefinition              = aStoredApiDefinition(apiContext, aVersion(apiVersion, existingStatus, ApiAccess.PUBLIC))
+      val updatedAPIDefinition: StoredApiDefinition               = aStoredApiDefinition(apiContext, aVersion(apiVersion, updatedStatus, ApiAccess.PUBLIC))
       val updatedAPIDefinitionWithSavingTime: StoredApiDefinition = updatedAPIDefinition.copy(lastPublishedAt = Some(instant()))
 
       when(mockAPIDefinitionRepository.fetchByContext(apiContext)).thenReturn(successful(Some(existingAPIDefinition)))
@@ -201,7 +205,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
 
         val result = await(underTest.fetchAllPublicAPIs(alsoIncludePrivateTrials))
 
-        result shouldBe Seq(anAPIDefinition(context, publicVersion1, publicVersion2))
+        result shouldBe List(anApiDefinition(context, publicVersion1, publicVersion2))
       }
     }
 
@@ -215,7 +219,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
 
         val result = await(underTest.fetchAllPublicAPIs(alsoIncludePrivateTrials))
 
-        result shouldBe Seq(anAPIDefinition(
+        result shouldBe List(anApiDefinition(
           context,
           publicVersion1,
           publicVersion2,
@@ -227,11 +231,11 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
 
   "fetchAll" should {
     "return all APIs" in new Setup {
-      val expectedApiDefinitions = Seq(apiDefinitionWithAllVersions, apiDefinition)
-      when(mockAPIDefinitionRepository.fetchAll()).thenReturn(successful(expectedApiDefinitions))
-
-      val result: Seq[StoredApiDefinition] = await(underTest.fetchAll)
-
+      when(mockAPIDefinitionRepository.fetchAll()).thenReturn(successful(List(apiDefinitionWithAllVersions, apiDefinition)))
+      
+      val result: List[ApiDefinition] = await(underTest.fetchAll)
+      
+      val expectedApiDefinitions = List(apiDefinitionWithAllVersions, apiDefinition).map(ApiDefinition.fromStored)
       result shouldBe expectedApiDefinitions
     }
   }
@@ -240,7 +244,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
 
     "return all Private API Definitions" in new Setup {
 
-      val api = anAPIDefinition(
+      val api = aStoredApiDefinition(
         context,
         publicVersion2,
         publicVersion1,
@@ -252,7 +256,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
 
       val result = await(underTest.fetchAllPrivateAPIs())
 
-      result shouldBe Seq(anAPIDefinition(
+      result shouldBe List(anApiDefinition(
         context,
         privateVersion,
         privateTrialVersion

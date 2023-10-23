@@ -117,7 +117,7 @@ class APIDefinitionController @Inject() (
     QueryOptions(request.getQueryString("options"))
   }
 
-  private def apiDefinitionToResult(result: Seq[StoredApiDefinition]) = {
+  private def apiDefinitionToResult(result: List[ApiDefinition]) = {
     Ok(Json.toJson(result))
   }
 

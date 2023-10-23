@@ -79,21 +79,21 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
 
   trait QueryDispatcherSetup extends Setup {
 
-    val apiDefinitions: Seq[StoredApiDefinition] =
+    val apiDefinitions: List[ApiDefinition] =
       Array.fill(2)(
-        StoredApiDefinition(
+        ApiDefinition(
           ServiceName("MyApiDefinitionServiceName1"),
           "MyUrl",
           "MyName",
           "My description",
           ApiContext("MyContext"),
-          Nil,
+          Map.empty,
           false,
           false,
           None,
           List(ApiCategory.AGENTS)
         )
-      ).toIndexedSeq
+      ).toList
 
     when(mockAPIDefinitionService.fetchByContext(*[ApiContext])).thenReturn(successful(Some(apiDefinitions.head)))
     when(mockAPIDefinitionService.fetchAllPublicAPIs(*)).thenReturn(successful(apiDefinitions))
@@ -489,13 +489,13 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
 
   "fetch" should {
     "succeed with a 200 (ok) when a public API exists for the given serviceName" in new Setup {
-      val apiDefinition = StoredApiDefinition(
+      val apiDefinition = ApiDefinition(
         serviceName,
         "http://calendar",
         "Calendar API",
         "My Calendar API",
         ApiContext("calendar"),
-        versions = List(ApiVersion(
+        versions = Map(ApiVersionNbr("1.0") -> ApiVersion(
           ApiVersionNbr("1.0"),
           ApiStatus.BETA,
           ApiAccess.PUBLIC,

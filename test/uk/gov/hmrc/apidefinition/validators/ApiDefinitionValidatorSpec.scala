@@ -255,14 +255,14 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
 
     "fail validation when name already exist for another API" in new Setup {
       when(mockAPIDefinitionService.fetchByName("Money API"))
-        .thenReturn(successful(Some(moneyApiDefinition.copy(serviceName = ServiceName("anotherService")))))
+        .thenReturn(successful(Some(ApiDefinition.fromStored(moneyApiDefinition.copy(serviceName = ServiceName("anotherService"))))))
 
       assertValidationFailure(moneyApiDefinition, List("Field 'name' must be unique for API 'Money API'"))
     }
 
     "fail validation when serviceBaseUrl already exists for another API" in new Setup {
       when(mockAPIDefinitionService.fetchByServiceBaseUrl("http://www.money.com"))
-        .thenReturn(successful(Some(moneyApiDefinition.copy(serviceName = ServiceName("anotherService")))))
+        .thenReturn(successful(Some(ApiDefinition.fromStored(moneyApiDefinition.copy(serviceName = ServiceName("anotherService"))))))
 
       assertValidationFailure(moneyApiDefinition, List("Field 'serviceBaseUrl' must be unique for API 'Money API'"))
     }
@@ -407,11 +407,11 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
         versions = List(moneyApiVersion.copy(endpoints = List(moneyEndpoint.copy(uriPattern = ""))))
       )
       when(mockAPIDefinitionService.fetchByContext(ApiContext("individuals/money")))
-        .thenReturn(successful(Some(moneyApiDefinition.copy(serviceName = ServiceName("anotherService")))))
+        .thenReturn(successful(Some(ApiDefinition.fromStored(moneyApiDefinition.copy(serviceName = ServiceName("anotherService"))))))
       when(mockAPIDefinitionService.fetchByName("Money API"))
-        .thenReturn(successful(Some(moneyApiDefinition.copy(serviceName = ServiceName("anotherService")))))
+        .thenReturn(successful(Some(ApiDefinition.fromStored(moneyApiDefinition.copy(serviceName = ServiceName("anotherService"))))))
       when(mockAPIDefinitionService.fetchByServiceBaseUrl("http://www.money.com"))
-        .thenReturn(successful(Some(moneyApiDefinition.copy(serviceName = ServiceName("anotherService")))))
+        .thenReturn(successful(Some(ApiDefinition.fromStored(moneyApiDefinition.copy(serviceName = ServiceName("anotherService"))))))
 
       assertValidationFailure(
         apiDefinition,

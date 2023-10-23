@@ -33,7 +33,7 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
 
   trait Setup {
 
-    def testAPIDefinition(serviceName: ServiceName = ServiceName("money-service"), context: ApiContext = ApiContext("money"), versions: List[String] = List("1.0")) =
+    def testAPIDefinition(serviceName: ServiceName = ServiceName("money-service"), context: ApiContext = ApiContext("money"), versions: List[String] = List("1.0")): StoredApiDefinition =
       StoredApiDefinition(
         serviceName = serviceName,
         serviceBaseUrl = "http://www.money.com",
@@ -60,7 +60,7 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
       })
     }
 
-    def fetchByContextWillReturn(context: ApiContext, apiDefinitionToReturn: Option[StoredApiDefinition]) =
+    def fetchByContextWillReturn(context: ApiContext, apiDefinitionToReturn: Option[ApiDefinition]) =
       when(mockAPIDefinitionService.fetchByContext(context)).thenReturn(successful(apiDefinitionToReturn))
 
     def fetchByServiceNameWillReturn(serviceName: ServiceName, apiDefinitionToReturn: Option[StoredApiDefinition]) =
@@ -126,7 +126,7 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
       lazy val serviceName: ServiceName           = ServiceName("money-service")
       lazy val apiDefinition: StoredApiDefinition = testAPIDefinition(serviceName, context)
 
-      fetchByContextWillReturn(context, Some(apiDefinition))
+      fetchByContextWillReturn(context, Some(ApiDefinition.fromStored(apiDefinition)))
       fetchByServiceNameWillReturn(serviceName, Some(apiDefinition))
 
       val result: validatorUnderTest.HMRCValidated[ApiContext] = await(validatorUnderTest.validate(errorContext, apiDefinition)(context))
@@ -141,7 +141,7 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
       lazy val apiDefinitionWithNewVersion: StoredApiDefinition = testAPIDefinition(serviceName, context, List("1.0", "2.0", "3.0"))
 
       fetchByTopLevelContextWillReturn(List(apiDefinition))
-      fetchByContextWillReturn(context, Some(apiDefinition))
+      fetchByContextWillReturn(context, Some(ApiDefinition.fromStored(apiDefinition)))
       fetchByServiceNameWillReturn(serviceName, Some(apiDefinition))
 
       val result: validatorUnderTest.HMRCValidated[ApiContext] = await(validatorUnderTest.validate(errorContext, apiDefinitionWithNewVersion)(context))
@@ -246,7 +246,7 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
       val apiDefinition: StoredApiDefinition      = testAPIDefinition(serviceName, context)
       val otherAPIDefinition: StoredApiDefinition = testAPIDefinition(otherServiceName, context)
 
-      fetchByContextWillReturn(context, Some(otherAPIDefinition))
+      fetchByContextWillReturn(context, Some(ApiDefinition.fromStored(otherAPIDefinition)))
       fetchByServiceNameWillReturn(serviceName, None)
 
       val result: validatorUnderTest.HMRCValidated[ApiContext] = await(validatorUnderTest.validate(errorContext, apiDefinition)(context))

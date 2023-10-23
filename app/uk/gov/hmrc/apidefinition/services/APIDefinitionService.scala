@@ -48,6 +48,12 @@ class APIDefinitionService @Inject() (
 
   implicit val useThisFormatter = TolerantJsonApiDefinition.tolerantFormatApiDefinition
 
+  private def convertOne(stored: StoredApiDefinition): ApiDefinition = {
+    ApiDefinition.fromStored(stored)
+  }
+  
+  private def convertMany(storeds: Iterable[StoredApiDefinition]): List[ApiDefinition] = storeds.map(convertOne).toList
+  
   def createOrUpdate(apiDefinition: StoredApiDefinition)(implicit hc: HeaderCarrier): Future[Unit] = {
 
     def publish(): Future[Unit] = {
@@ -91,20 +97,20 @@ class APIDefinitionService @Inject() (
       )
   }
 
-  def fetchByServiceName(serviceName: ServiceName): Future[Option[StoredApiDefinition]] = {
-    apiDefinitionRepository.fetchByServiceName(serviceName)
+  def fetchByServiceName(serviceName: ServiceName): Future[Option[ApiDefinition]] = {
+    apiDefinitionRepository.fetchByServiceName(serviceName).map(_.map(convertOne))
   }
 
-  def fetchByName(name: String): Future[Option[StoredApiDefinition]] = {
-    apiDefinitionRepository.fetchByName(name)
+  def fetchByName(name: String): Future[Option[ApiDefinition]] = {
+    apiDefinitionRepository.fetchByName(name).map(_.map(convertOne))
   }
 
-  def fetchByContext(context: ApiContext): Future[Option[StoredApiDefinition]] = {
-    apiDefinitionRepository.fetchByContext(context)
+  def fetchByContext(context: ApiContext): Future[Option[ApiDefinition]] = {
+    apiDefinitionRepository.fetchByContext(context).map(_.map(convertOne))
   }
 
-  def fetchByServiceBaseUrl(serviceBaseUrl: String): Future[Option[StoredApiDefinition]] = {
-    apiDefinitionRepository.fetchByServiceBaseUrl(serviceBaseUrl)
+  def fetchByServiceBaseUrl(serviceBaseUrl: String): Future[Option[ApiDefinition]] = {
+    apiDefinitionRepository.fetchByServiceBaseUrl(serviceBaseUrl).map(_.map(convertOne))
   }
 
   def delete(serviceName: ServiceName)(implicit hc: HeaderCarrier): Future[Unit] = {
@@ -118,15 +124,17 @@ class APIDefinitionService @Inject() (
     }
   }
 
-  def fetchAllPublicAPIs(alsoIncludePrivateTrials: Boolean): Future[Seq[StoredApiDefinition]] = {
-    apiDefinitionRepository.fetchAll().map(filterApisExcludingPrivate(alsoIncludePrivateTrials))
-  }
-
-  def fetchAll: Future[Seq[StoredApiDefinition]] = {
+  def fetchAllPublicAPIs(alsoIncludePrivateTrials: Boolean): Future[List[ApiDefinition]] = {
     apiDefinitionRepository.fetchAll()
+    .map(filterApisExcludingPrivate(alsoIncludePrivateTrials))
+    .map(convertMany)
   }
 
-  def fetchAllPrivateAPIs(): Future[Seq[StoredApiDefinition]] = {
+  def fetchAll: Future[List[ApiDefinition]] = {
+    apiDefinitionRepository.fetchAll().map(convertMany)
+  }
+
+  def fetchAllPrivateAPIs(): Future[List[ApiDefinition]] = {
 
     def hasPrivateAccess(apiVersion: ApiVersion) = apiVersion.access match {
       case ApiAccess.Private(_) => true
@@ -140,7 +148,7 @@ class APIDefinitionService @Inject() (
       apiDefinitions     <- apiDefinitionRepository.fetchAll()
       includesPrivateApis = apiDefinitions.filter(d => d.versions.exists(hasPrivateAccess))
       onlyPrivateApis     = includesPrivateApis.map(removePublicVersions)
-    } yield onlyPrivateApis
+    } yield onlyPrivateApis.toList.map(convertOne)
   }
 
   private def filterApisExcludingPrivate(alsoIncludePrivateTrials: Boolean): Seq[StoredApiDefinition] => Seq[StoredApiDefinition] = apis => {
