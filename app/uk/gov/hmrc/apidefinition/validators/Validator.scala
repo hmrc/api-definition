@@ -23,8 +23,7 @@ import scala.util.matching.Regex
 import cats.data.ValidatedNel
 import cats.implicits._
 
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.StoredApiDefinition
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiDefinition
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiDefinition, StoredApiDefinition}
 
 trait Validator[T] {
 
@@ -61,7 +60,7 @@ trait Validator[T] {
     ): Future[HMRCValidated[T]] = {
     fetchApi.map {
       case Some(found: ApiDefinition) => found.serviceName != apiDefinition.serviceName
-      case _                                => false
+      case _                          => false
     }.map(alreadyUsed => validateThat(_ => !alreadyUsed, _ => errorMessage))
   }
 

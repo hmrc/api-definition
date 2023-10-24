@@ -33,7 +33,11 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
 
   trait Setup {
 
-    def testAPIDefinition(serviceName: ServiceName = ServiceName("money-service"), context: ApiContext = ApiContext("money"), versions: List[String] = List("1.0")): StoredApiDefinition =
+    def testAPIDefinition(
+        serviceName: ServiceName = ServiceName("money-service"),
+        context: ApiContext = ApiContext("money"),
+        versions: List[String] = List("1.0")
+      ): StoredApiDefinition =
       StoredApiDefinition(
         serviceName = serviceName,
         serviceBaseUrl = "http://www.money.com",

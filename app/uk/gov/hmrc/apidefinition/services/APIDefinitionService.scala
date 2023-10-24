@@ -51,9 +51,9 @@ class APIDefinitionService @Inject() (
   private def convertOne(stored: StoredApiDefinition): ApiDefinition = {
     ApiDefinition.fromStored(stored)
   }
-  
+
   private def convertMany(storeds: Iterable[StoredApiDefinition]): List[ApiDefinition] = storeds.map(convertOne).toList
-  
+
   def createOrUpdate(apiDefinition: StoredApiDefinition)(implicit hc: HeaderCarrier): Future[Unit] = {
 
     def publish(): Future[Unit] = {
@@ -126,8 +126,8 @@ class APIDefinitionService @Inject() (
 
   def fetchAllPublicAPIs(alsoIncludePrivateTrials: Boolean): Future[List[ApiDefinition]] = {
     apiDefinitionRepository.fetchAll()
-    .map(filterApisExcludingPrivate(alsoIncludePrivateTrials))
-    .map(convertMany)
+      .map(filterApisExcludingPrivate(alsoIncludePrivateTrials))
+      .map(convertMany)
   }
 
   def fetchAll: Future[List[ApiDefinition]] = {

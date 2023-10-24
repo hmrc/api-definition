@@ -27,13 +27,12 @@ import cats.data.Validated.Invalid
 import cats.implicits._
 import cats.kernel.Monoid
 
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.StoredApiDefinition
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiDefinition, StoredApiDefinition}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiContext
 
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.services.APIDefinitionService
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiDefinition
 
 @Singleton
 class ApiContextValidator @Inject() (
