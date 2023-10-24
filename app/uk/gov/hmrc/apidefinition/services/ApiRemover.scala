@@ -16,30 +16,26 @@
 
 package uk.gov.hmrc.apidefinition.services
 
+import scala.concurrent.ExecutionContext
+import scala.util.{Failure, Success}
+
 import uk.gov.hmrc.http.HeaderCarrier
 
+import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.connector.AWSAPIPublisherConnector
 import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
-import scala.util.Success
-import scala.util.Failure
-import scala.concurrent.ExecutionContext
-import uk.gov.hmrc.apidefinition.config.AppConfig
 
 class ApiRemover(awsApiPublisherConnector: AWSAPIPublisherConnector, config: AppConfig) extends ApplicationLogger {
     
     def deleteUnusedApis()(implicit hc: HeaderCarrier, ec: ExecutionContext) : Unit = {
+        logger.info(s"Attempting to delete ${config.apisToRemove.length} unused APIs.")
+        config.apisToRemove.map{api => deleteApi(api)}
+    }
 
-        def deleteUnusedApisHelper(api: String)(implicit hc: HeaderCarrier) : Unit = {
-            awsApiPublisherConnector.deleteAPI(api).onComplete({
-                case Success(requestId) => logger.info(s"$api successfully deleted. (Request ID: $requestId)")
-                case Failure(exception) => logger.warn(s"$api delete failed.", exception)
-            })
-        }
-
-        if(config.apisToRemove.isEmpty == false) {
-            config.apisToRemove.map{api => deleteUnusedApisHelper(api)}
-        } else { 
-            logger.info(s"list of api's to remove is empty")
-        }
+    private def deleteApi(api: String)(implicit hc: HeaderCarrier, ec: ExecutionContext) : Unit = {
+        awsApiPublisherConnector.deleteAPI(api).onComplete({
+            case Success(requestId) => logger.info(s"$api successfully deleted. (Request ID: $requestId)")
+            case Failure(exception) => logger.warn(s"$api delete failed.", exception)
+        })
     }
 }
