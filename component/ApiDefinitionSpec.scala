@@ -60,9 +60,8 @@ class ApiDefinitionSpec extends ComponentSpec{
     "return No Content and be tolerant for json missing values" in {
       stubAWSGateway()
      val response =  post("/api-definition", validDefinition2AsString, validHeaders)
-     
-     println(response.body)
+
      response.status shouldBe NO_CONTENT
     }
-  }   
+  }
 }

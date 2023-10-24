@@ -77,4 +77,18 @@ class SpecificationControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite
     verify(mockSpecificationService).fetchPreviewApiSpecification(eqTo(rootRamlUrl))
   }
 
+  "fetchApiSpecification action should return not found when no specification returned" in new Setup {
+    val serviceName = ServiceName("my-service-name")
+    val version     = ApiVersionNbr("1.0")
+
+    when(mockSpecificationService.fetchApiSpecification(*[ServiceName], *[ApiVersionNbr])).thenReturn(successful(None))
+
+    private val result = underTest.fetchApiSpecification(serviceName, version)(request)
+
+    status(result) should be(NOT_FOUND)
+
+    contentAsString(result) shouldEqual "RAML not found in this environment"
+
+    verify(mockSpecificationService).fetchApiSpecification(eqTo(serviceName), eqTo(version))
+  }
 }

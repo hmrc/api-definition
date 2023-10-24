@@ -14,6 +14,4 @@ POST        /api-definition/republish-all-aws                                   
 
 DELETE      /api-definition/:serviceName                                         uk.gov.hmrc.apidefinition.controllers.APIDefinitionController.delete(serviceName: ServiceName)
 
-GET         /api-categories                                                      uk.gov.hmrc.apidefinition.controllers.APIDefinitionController.fetchAllAPICategories
-
 GET         /preview                                                             uk.gov.hmrc.apidefinition.controllers.SpecificationController.fetchPreviewApiSpecification(ramlUrl)
