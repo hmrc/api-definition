@@ -28,7 +28,7 @@ import uk.gov.hmrc.http.HeaderNames._
 
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
-import uk.gov.hmrc.apidefinition.services.{APIDefinitionService, AwsApiPublisher, NotificationService}
+import uk.gov.hmrc.apidefinition.services.{APIDefinitionService, ApiRemover, AwsApiPublisher, NotificationService}
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 
 class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
@@ -49,11 +49,13 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
     val mockAPIDefinitionRepository: APIDefinitionRepository = mock[APIDefinitionRepository]
     val mockNotificationService: NotificationService         = mock[NotificationService]
     val mockAppContext: AppConfig                            = mock[AppConfig]
+    val mockApiRemover: ApiRemover                           = mock[ApiRemover]
 
     val underTest = new APIDefinitionService(
       FixedClock.clock,
       mockAwsApiPublisher,
       mockAPIDefinitionRepository,
+      mockApiRemover,
       mockNotificationService,
       mockAppContext
     )
@@ -61,10 +63,10 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
     val applicationId = ApplicationId.random
     val otherAppId    = ApplicationId.random
 
-    val publicVersion1: ApiVersion                      = aVersion(version = ApiVersionNbr("1.0"), access = ApiAccess.PUBLIC)
-    val publicVersion2                                  = aVersion(version = ApiVersionNbr("2.0"), access = ApiAccess.PUBLIC)
+    val publicVersion1: ApiVersion = aVersion(version = ApiVersionNbr("1.0"), access = ApiAccess.PUBLIC)
+    val publicVersion2             = aVersion(version = ApiVersionNbr("2.0"), access = ApiAccess.PUBLIC)
     val privateVersion: ApiVersion = aVersion(version = ApiVersionNbr("3.1"), access = ApiAccess.Private())
-    val privateTrialVersion                = aVersion(version = ApiVersionNbr("4.0"), access = ApiAccess.Private(isTrial = true))
+    val privateTrialVersion        = aVersion(version = ApiVersionNbr("4.0"), access = ApiAccess.Private(isTrial = true))
 
     val allVersions = List(
       publicVersion1,
@@ -293,10 +295,12 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
   }
 
   "publishAllToAws" should {
-    "publish all APIs" in new Setup {
+    "publish all APIs and remove unused APIs" in new Setup {
       val apiDefinition1: ApiDefinition = someAPIDefinition
       val apiDefinition2: ApiDefinition = someAPIDefinition
+      when(mockApiRemover.deleteUnusedApis()).thenReturn(successful(()))
       when(mockAPIDefinitionRepository.fetchAll()).thenReturn(successful(Seq(apiDefinition1, apiDefinition2)))
+      when(mockAwsApiPublisher.publishAll(*)(*)).thenReturn(successful(()))
 
       await(underTest.publishAllToAws())
 

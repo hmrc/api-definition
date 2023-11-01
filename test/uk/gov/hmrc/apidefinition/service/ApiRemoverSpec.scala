@@ -16,23 +16,24 @@
 
 package uk.gov.hmrc.apidefinition.service
 
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future.{failed, successful}
+
 import play.api.Logger
+import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
+
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.connector.AWSAPIPublisherConnector
 import uk.gov.hmrc.apidefinition.services.ApiRemover
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
-import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
-
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future.{failed, successful}
 
 class ApiRemoverSpec extends AsyncHmrcSpec {
 
   trait Setup {
     implicit val hc: HeaderCarrier = HeaderCarrier()
-    
+
     val mockLogger: Logger       = mock[Logger]
-    val mockPublisherConnector       = mock[AWSAPIPublisherConnector]
+    val mockPublisherConnector   = mock[AWSAPIPublisherConnector]
     val mockAppConfig: AppConfig = mock[AppConfig]
 
     val underTest = new ApiRemover(mockPublisherConnector, mockAppConfig) {
@@ -52,7 +53,7 @@ class ApiRemoverSpec extends AsyncHmrcSpec {
       verify(mockPublisherConnector).deleteAPI("api2")(hc)
       verify(mockPublisherConnector).deleteAPI("api3")(hc)
       verifyNoMoreInteractions(mockPublisherConnector)
-      
+
       verify(mockLogger).info(s"Attempting to delete 3 unused APIs.")
       verify(mockLogger).info(s"api1 successfully deleted. (Request ID: request ID)")
       verify(mockLogger).info(s"api2 successfully deleted. (Request ID: request ID)")

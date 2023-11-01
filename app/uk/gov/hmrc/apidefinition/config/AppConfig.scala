@@ -21,8 +21,8 @@ import javax.inject.{Inject, Singleton}
 import net.ceedubs.ficus.Ficus._
 
 import play.api.{Configuration, Environment, Mode}
-import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ServiceName
+import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 @Singleton
 class AppConfig @Inject() (val runModeConfiguration: Configuration, environment: Environment, servicesConfig: ServicesConfig) {

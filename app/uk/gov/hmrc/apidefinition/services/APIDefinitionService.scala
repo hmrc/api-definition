@@ -160,12 +160,15 @@ class APIDefinitionService @Inject() (
     }
   }
 
-
   def publishAllToAws()(implicit hc: HeaderCarrier): Future[Unit] = {
     // Must be a better way
     // Test publish all is calling api remover
-    Future.sequence(List(apiRemover.deleteUnusedApis(),
-    apiDefinitionRepository.fetchAll().map(awsApiPublisher.publishAll))).map(_ => ())
+
+    for {
+      _                <- apiRemover.deleteUnusedApis() // We log success or failure so can dis-regard the return value
+      publishApiResult <- apiDefinitionRepository.fetchAll().flatMap(awsApiPublisher.publishAll)
+    } yield publishApiResult
+
   }
 
 }

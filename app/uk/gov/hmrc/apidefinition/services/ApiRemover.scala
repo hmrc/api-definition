@@ -16,15 +16,20 @@
 
 package uk.gov.hmrc.apidefinition.services
 
-import uk.gov.hmrc.apidefinition.config.AppConfig
-import uk.gov.hmrc.apidefinition.connector.AWSAPIPublisherConnector
-import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
-import uk.gov.hmrc.http.HeaderCarrier
-
+import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
-class ApiRemover(awsApiPublisherConnector: AWSAPIPublisherConnector, config: AppConfig) extends ApplicationLogger {
+import com.google.inject.Singleton
+
+import uk.gov.hmrc.http.HeaderCarrier
+
+import uk.gov.hmrc.apidefinition.config.AppConfig
+import uk.gov.hmrc.apidefinition.connector.AWSAPIPublisherConnector
+import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
+
+@Singleton
+class ApiRemover @Inject() (awsApiPublisherConnector: AWSAPIPublisherConnector, config: AppConfig) extends ApplicationLogger {
 
   def deleteUnusedApis()(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] = {
     logger.info(s"Attempting to delete ${config.apisToRemove.length} unused APIs.")
@@ -32,11 +37,11 @@ class ApiRemover(awsApiPublisherConnector: AWSAPIPublisherConnector, config: App
       .map(_ => ())
   }
 
-    private def deleteApi(api: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] = {
-        awsApiPublisherConnector.deleteAPI(api) map { requestId =>
-            logger.info(s"$api successfully deleted. (Request ID: $requestId)")
-        } recover {
-          case NonFatal(e) => logger.warn(s"$api delete failed.", e)
-        }
+  private def deleteApi(api: String)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[Unit] = {
+    awsApiPublisherConnector.deleteAPI(api) map { requestId =>
+      logger.info(s"$api successfully deleted. (Request ID: $requestId)")
+    } recover {
+      case NonFatal(e) => logger.warn(s"$api delete failed.", e)
     }
+  }
 }
