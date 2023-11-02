@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.apiplatform.modules.apis.domain.models
+package uk.gov.hmrc.apidefinition.models
 
 import org.scalatest.prop.TableDrivenPropertyChecks
 
@@ -84,7 +84,7 @@ class TolerantJsonApiStatusSpec extends BaseJsonFormattersSpec with TableDrivenP
     }
 
     "read PROTOTYPE from Json" in {
-      testFromJson[ApiStatus](""" "PROTOTYPE" """)(ApiStatus.BETA)
+      testFromJson[ApiStatus](""" "PROTOTYPED" """)(ApiStatus.BETA)
     }
 
     "write to Json" in {
