@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.apiplatform.modules.apis.domain.models
+package uk.gov.hmrc.apidefinition.models
 
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.utils.BaseJsonFormattersSpec
-
-import uk.gov.hmrc.apidefinition.models.TolerantJsonApiVersion
 
 class TolerantJsonApiVersionSpec extends BaseJsonFormattersSpec {
 
