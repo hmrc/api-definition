@@ -41,6 +41,7 @@ class APIDefinitionService @Inject() (
     val clock: Clock,
     awsApiPublisher: AwsApiPublisher,
     apiDefinitionRepository: APIDefinitionRepository,
+    apiRemover: ApiRemover,
     notificationService: NotificationService,
     playApplicationContext: AppConfig
   )(implicit val ec: ExecutionContext
@@ -168,7 +169,11 @@ class APIDefinitionService @Inject() (
   }
 
   def publishAllToAws()(implicit hc: HeaderCarrier): Future[Unit] = {
-    apiDefinitionRepository.fetchAll().map(awsApiPublisher.publishAll)
+    for {
+      _                <- apiRemover.deleteUnusedApis()
+      publishApiResult <- apiDefinitionRepository.fetchAll().flatMap(awsApiPublisher.publishAll)
+    } yield publishApiResult
+
   }
 
 }

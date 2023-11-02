@@ -37,6 +37,8 @@ class AppConfig @Inject() (val runModeConfiguration: Configuration, environment:
 
   lazy val serviceBaseUrl = runModeConfiguration.getOptional[String]("serviceBaseUrl").getOrElse("http://localhost")
 
+  lazy val apisToRemove = runModeConfiguration.underlying.as[List[String]]("apisToRemove")
+
   lazy val skipContextValidationAllowlist: List[ServiceName] = runModeConfiguration.underlying.as[List[String]]("skipContextValidationAllowlist").map(ServiceName(_))
 
   def baseUrl(serviceName: String): String = {
