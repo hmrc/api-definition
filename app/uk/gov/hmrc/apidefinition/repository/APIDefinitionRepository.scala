@@ -37,7 +37,7 @@ import uk.gov.hmrc.apidefinition.utils.IndexHelper.createUniqueBackgroundSingleF
 
 @Singleton
 class APIDefinitionRepository @Inject() (mongoComponent: MongoComponent)(implicit val ec: ExecutionContext)
-    extends PlayMongoRepository[ApiDefinition](
+    extends PlayMongoRepository[StoredApiDefinition](
       collectionName = "api",
       mongoComponent = mongoComponent,
       domainFormat = TolerantJsonApiDefinition.tolerantFormatApiDefinition,
@@ -45,7 +45,7 @@ class APIDefinitionRepository @Inject() (mongoComponent: MongoComponent)(implici
         .map(fieldName => createUniqueBackgroundSingleFieldAscendingIndex(fieldName, s"${fieldName}Index"))
     ) with Logging {
 
-  override lazy val collection: MongoCollection[ApiDefinition] =
+  override lazy val collection: MongoCollection[StoredApiDefinition] =
     CollectionFactory
       .collection(mongoComponent.database, collectionName, domainFormat)
       .withCodecRegistry(
@@ -62,7 +62,7 @@ class APIDefinitionRepository @Inject() (mongoComponent: MongoComponent)(implici
     equal("serviceName", Codecs.toBson(serviceName.value))
   }
 
-  def save(apiDefinition: ApiDefinition): Future[ApiDefinition] = {
+  def save(apiDefinition: StoredApiDefinition): Future[StoredApiDefinition] = {
     collection.findOneAndReplace(
       serviceNameSelector(apiDefinition.serviceName),
       apiDefinition,
@@ -70,7 +70,7 @@ class APIDefinitionRepository @Inject() (mongoComponent: MongoComponent)(implici
     ).head()
   }
 
-  def fetchByServiceName(serviceName: ServiceName): Future[Option[ApiDefinition]] = {
+  def fetchByServiceName(serviceName: ServiceName): Future[Option[StoredApiDefinition]] = {
     logger.info(s"Fetching API $serviceName in mongo")
     collection.find(serviceNameSelector(serviceName)).headOption().map { api =>
       logger.info(s"Retrieved API with service name '$serviceName' in mongo: $api")
@@ -82,7 +82,7 @@ class APIDefinitionRepository @Inject() (mongoComponent: MongoComponent)(implici
     }
   }
 
-  def fetchByServiceBaseUrl(serviceBaseUrl: String): Future[Option[ApiDefinition]] = {
+  def fetchByServiceBaseUrl(serviceBaseUrl: String): Future[Option[StoredApiDefinition]] = {
     collection.find(equal("serviceBaseUrl", Codecs.toBson(serviceBaseUrl))).headOption().map { api =>
       logger.debug(s"Retrieved API with service base url '$serviceBaseUrl' in mongo: $api")
       api
@@ -93,7 +93,7 @@ class APIDefinitionRepository @Inject() (mongoComponent: MongoComponent)(implici
     }
   }
 
-  def fetchByName(name: String): Future[Option[ApiDefinition]] = {
+  def fetchByName(name: String): Future[Option[StoredApiDefinition]] = {
     collection.find(equal("name", Codecs.toBson(name))).headOption().map { api =>
       logger.debug(s"Retrieved API with name '$name' in mongo: $api")
       api
@@ -104,7 +104,7 @@ class APIDefinitionRepository @Inject() (mongoComponent: MongoComponent)(implici
     }
   }
 
-  def fetchByContext(context: ApiContext): Future[Option[ApiDefinition]] = {
+  def fetchByContext(context: ApiContext): Future[Option[StoredApiDefinition]] = {
     collection.find(equal("context", Codecs.toBson(context.value))).headOption().map { api =>
       logger.debug(s"Retrieved API with context '${context.value}' in mongo: $api")
       api
@@ -115,11 +115,11 @@ class APIDefinitionRepository @Inject() (mongoComponent: MongoComponent)(implici
     }
   }
 
-  def fetchAll(): Future[Seq[ApiDefinition]] = {
+  def fetchAll(): Future[Seq[StoredApiDefinition]] = {
     collection.find().toFuture()
   }
 
-  def fetchAllByTopLevelContext(topLevelContext: ApiContext): Future[Seq[ApiDefinition]] = {
+  def fetchAllByTopLevelContext(topLevelContext: ApiContext): Future[Seq[StoredApiDefinition]] = {
     collection.find(regex("context", f"^${topLevelContext.value}\\/.*$$")).toFuture()
   }
 

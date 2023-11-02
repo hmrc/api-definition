@@ -69,7 +69,7 @@ class TolerantJsonApiDefinitionSpec extends BaseJsonFormattersSpec {
            |   ]
            |}""".stripMargin.replaceAll("\n", " ")
 
-      Json.parse(body).as[ApiDefinition]
+      Json.parse(body).as[StoredApiDefinition]
     }
 
     "read from JSON when the API access type is PUBLIC and there is no whitelist" in {

@@ -23,7 +23,7 @@ import scala.jdk.CollectionConverters._
 
 import org.mockito.{ArgumentCaptor, ArgumentMatchers}
 
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiDefinition, ApiStatus, _}
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiStatus, StoredApiDefinition, _}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -53,13 +53,13 @@ class AwsAPIPublisherSpec extends AsyncHmrcSpec {
 
   private val host = UUID.randomUUID().toString
 
-  private def someAPIDefinition(
+  private def aStoredApiDefinition(
       name: String = UUID.randomUUID().toString,
       context: ApiContext = ApiContext.random,
       serviceBaseUrl: String = s"https://$host",
       versions: List[ApiVersion] = List(anAPIVersion("2.0"))
-    ): ApiDefinition = {
-    ApiDefinition(
+    ): StoredApiDefinition = {
+    StoredApiDefinition(
       ServiceName(UUID.randomUUID().toString),
       serviceBaseUrl,
       name,
@@ -85,8 +85,8 @@ class AwsAPIPublisherSpec extends AsyncHmrcSpec {
       val swaggerDetailsCaptor: ArgumentCaptor[AWSSwaggerDetails] = ArgumentCaptor.forClass(classOf[AWSSwaggerDetails])
       when(underTest.awsAPIPublisherConnector.createOrUpdateAPI(*, swaggerDetailsCaptor.capture())(*))
         .thenReturn(successful(UUID.randomUUID().toString))
-      val apiDefinition1: ApiDefinition                           = someAPIDefinition("API 1")
-      val apiDefinition2: ApiDefinition                           = someAPIDefinition("API 2")
+      val apiDefinition1: StoredApiDefinition                     = aStoredApiDefinition("API 1")
+      val apiDefinition2: StoredApiDefinition                     = aStoredApiDefinition("API 2")
 
       await(underTest.publishAll(List(apiDefinition1, apiDefinition2)))
 
@@ -102,7 +102,7 @@ class AwsAPIPublisherSpec extends AsyncHmrcSpec {
       val swaggerDetailsCaptor: ArgumentCaptor[AWSSwaggerDetails] = ArgumentCaptor.forClass(classOf[AWSSwaggerDetails])
       when(underTest.awsAPIPublisherConnector.createOrUpdateAPI(*, swaggerDetailsCaptor.capture())(*))
         .thenReturn(successful(UUID.randomUUID().toString))
-      val apiDefinition: ApiDefinition                            = someAPIDefinition()
+      val apiDefinition: StoredApiDefinition                      = aStoredApiDefinition()
 
       await(underTest.publish(apiDefinition))
 
@@ -118,7 +118,7 @@ class AwsAPIPublisherSpec extends AsyncHmrcSpec {
       val swaggerDetailsCaptor: ArgumentCaptor[AWSSwaggerDetails] = ArgumentCaptor.forClass(classOf[AWSSwaggerDetails])
       when(underTest.awsAPIPublisherConnector.createOrUpdateAPI(*, swaggerDetailsCaptor.capture())(*))
         .thenReturn(successful(UUID.randomUUID().toString))
-      val apiDefinition: ApiDefinition                            = someAPIDefinition(versions = List(anAPIVersion("2.0", ApiStatus.STABLE, List(QueryParameter("flag",true)))))
+      val apiDefinition: StoredApiDefinition                      = aStoredApiDefinition(versions = List(anAPIVersion("2.0", ApiStatus.STABLE, List(QueryParameter("flag", true)))))
 
       await(underTest.publish(apiDefinition))
 
@@ -134,14 +134,14 @@ class AwsAPIPublisherSpec extends AsyncHmrcSpec {
       when(underTest.awsAPIPublisherConnector.createOrUpdateAPI(*, swaggerDetailsCaptor.capture())(*))
         .thenReturn(successful(UUID.randomUUID().toString))
 
-      await(underTest.publish(someAPIDefinition(serviceBaseUrl = s"http://$host")))
+      await(underTest.publish(aStoredApiDefinition(serviceBaseUrl = s"http://$host")))
 
       val swaggerDetails: AWSSwaggerDetails = swaggerDetailsCaptor.getValue
       swaggerDetails.host shouldBe Some(host)
     }
 
     "call delete endpoint for RETIRED versions" in new Setup {
-      val apiDefinition: ApiDefinition = someAPIDefinition(versions = List(anAPIVersion("1.0", ApiStatus.RETIRED), anAPIVersion("2.0")))
+      val apiDefinition: StoredApiDefinition = aStoredApiDefinition(versions = List(anAPIVersion("1.0", ApiStatus.RETIRED), anAPIVersion("2.0")))
 
       when(underTest.awsAPIPublisherConnector.deleteAPI(*)(*))
         .thenReturn(successful(UUID.randomUUID().toString))
@@ -159,7 +159,7 @@ class AwsAPIPublisherSpec extends AsyncHmrcSpec {
   "delete" should {
     "delete the API in AWS" in new Setup {
       when(underTest.awsAPIPublisherConnector.deleteAPI(*)(*)).thenReturn(successful(UUID.randomUUID().toString))
-      val apiDefinition: ApiDefinition = someAPIDefinition()
+      val apiDefinition: StoredApiDefinition = aStoredApiDefinition()
 
       await(underTest.delete(apiDefinition))
 
@@ -168,7 +168,7 @@ class AwsAPIPublisherSpec extends AsyncHmrcSpec {
 
     "delete multiple versions of the API in AWS" in new Setup {
       when(underTest.awsAPIPublisherConnector.deleteAPI(*)(*)).thenReturn(successful(UUID.randomUUID().toString))
-      val apiDefinition: ApiDefinition = someAPIDefinition(versions = List(anAPIVersion("1.0"), anAPIVersion("2.0")))
+      val apiDefinition: StoredApiDefinition = aStoredApiDefinition(versions = List(anAPIVersion("1.0"), anAPIVersion("2.0")))
 
       await(underTest.delete(apiDefinition))
 
@@ -179,7 +179,7 @@ class AwsAPIPublisherSpec extends AsyncHmrcSpec {
     "return unit if deletion fails" in new Setup {
       when(underTest.awsAPIPublisherConnector.deleteAPI(*)(*)).thenReturn(failed(new RuntimeException()))
 
-      val result: Unit = await(underTest.delete(someAPIDefinition()))
+      val result: Unit = await(underTest.delete(aStoredApiDefinition()))
 
       result shouldBe (())
     }

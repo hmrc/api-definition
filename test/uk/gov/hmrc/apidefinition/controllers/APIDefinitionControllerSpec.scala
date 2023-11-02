@@ -79,10 +79,21 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
 
   trait QueryDispatcherSetup extends Setup {
 
-    val apiDefinitions: Seq[ApiDefinition] =
+    val apiDefinitions: List[ApiDefinition] =
       Array.fill(2)(
-        ApiDefinition(ServiceName("MyApiDefinitionServiceName1"), "MyUrl", "MyName", "My description", ApiContext("MyContext"), Nil, false, false, None, List(ApiCategory.AGENTS))
-      ).toIndexedSeq
+        ApiDefinition(
+          ServiceName("MyApiDefinitionServiceName1"),
+          "MyUrl",
+          "MyName",
+          "My description",
+          ApiContext("MyContext"),
+          Map.empty,
+          false,
+          false,
+          None,
+          List(ApiCategory.AGENTS)
+        )
+      ).toList
 
     when(mockAPIDefinitionService.fetchByContext(*[ApiContext])).thenReturn(successful(Some(apiDefinitions.head)))
     when(mockAPIDefinitionService.fetchAllPublicAPIs(*)).thenReturn(successful(apiDefinitions))
@@ -115,7 +126,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
     "succeed with a 204 (NO CONTENT) when payload is valid and service responds successfully" in new ValidatorSetup {
 
       val apiDefinition =
-        ApiDefinition(
+        StoredApiDefinition(
           ServiceName("calendar"),
           "http://calendar",
           "Calendar API",
@@ -290,8 +301,8 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
           |  ]
           |}""".stripMargin.replaceAll("\n", " ")
 
-      val apiDefinition = ApiDefinition(
-       ServiceName( "calendar"),
+      val apiDefinition = StoredApiDefinition(
+        ServiceName("calendar"),
         "http://calendar",
         "Calendar API",
         "My Calendar API",
@@ -347,7 +358,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
           |  ]
           |}""".stripMargin.replaceAll("\n", " ")
 
-      val apiDefinition = ApiDefinition(
+      val apiDefinition = StoredApiDefinition(
         ServiceName("calendar"),
         "http://calendar",
         "Calendar API",
@@ -408,7 +419,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
            |  ]
            |}""".stripMargin.replaceAll("\n", " ")
 
-      val apiDefinition = ApiDefinition(
+      val apiDefinition = StoredApiDefinition(
         ServiceName("calendar"),
         "http://calendar",
         "Calendar API",
@@ -484,7 +495,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
         "Calendar API",
         "My Calendar API",
         ApiContext("calendar"),
-        versions = List(ApiVersion(
+        versions = Map(ApiVersionNbr("1.0") -> ApiVersion(
           ApiVersionNbr("1.0"),
           ApiStatus.BETA,
           ApiAccess.PUBLIC,

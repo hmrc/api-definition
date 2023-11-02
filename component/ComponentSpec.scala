@@ -20,13 +20,13 @@ import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.ws.{WSClient, WSResponse}
 import play.api.{Application, Mode}
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiDefinition
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.StoredApiDefinition
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 
 trait ComponentSpec extends AsyncHmrcSpec
-  with DefaultPlayMongoRepositorySupport[ApiDefinition] with WireMockSupport with GuiceOneServerPerSuite  {
+  with DefaultPlayMongoRepositorySupport[StoredApiDefinition] with WireMockSupport with GuiceOneServerPerSuite  {
 
   override def repository: APIDefinitionRepository = app.injector.instanceOf[APIDefinitionRepository]
 

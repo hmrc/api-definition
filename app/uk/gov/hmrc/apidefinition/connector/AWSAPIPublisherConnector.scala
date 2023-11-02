@@ -22,10 +22,10 @@ import scala.concurrent.{ExecutionContext, Future}
 
 import play.api.http.ContentTypes.JSON
 import play.api.http.HeaderNames.CONTENT_TYPE
-import play.api.libs.json.{Json, Writes}
+import play.api.libs.json.Json
 import play.api.{Configuration, Environment, Mode}
 import uk.gov.hmrc.http.HttpReads.Implicits._
-import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpReads, UpstreamErrorResponse}
+import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, UpstreamErrorResponse}
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 import uk.gov.hmrc.apidefinition.config.AppConfig
@@ -59,7 +59,12 @@ class AWSAPIPublisherConnector @Inject() (
   def createOrUpdateAPI(apiName: String, awsSwaggerDetails: AWSSwaggerDetails)(implicit hc: HeaderCarrier): Future[String] = {
     val headersWithoutAuthorization: HeaderCarrier = hc.copy(authorization = None)
 
-    http.PUT[AWSSwaggerDetails, Either[UpstreamErrorResponse, RequestId]](s"$serviceBaseUrl/$apiName", awsSwaggerDetails, headers)(implicitly, implicitly, headersWithoutAuthorization, implicitly) flatMap {
+    http.PUT[AWSSwaggerDetails, Either[UpstreamErrorResponse, RequestId]](s"$serviceBaseUrl/$apiName", awsSwaggerDetails, headers)(
+      implicitly,
+      implicitly,
+      headersWithoutAuthorization,
+      implicitly
+    ) flatMap {
       case Right(RequestId(value)) => successful(value)
       case Left(err)               => failed(err)
     }

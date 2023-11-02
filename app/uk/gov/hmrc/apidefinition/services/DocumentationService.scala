@@ -26,7 +26,7 @@ import play.api.http.Status._
 import play.api.libs.ws.WSResponse
 import play.api.mvc.Result
 import play.api.mvc.Results._
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiDefinition, _}
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{StoredApiDefinition, _}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiVersionNbr
 import uk.gov.hmrc.http.{InternalServerException, NotFoundException}
 
@@ -77,15 +77,15 @@ class DocumentationService @Inject() (
     def fetchResourceFromMicroservice(serviceBaseUrl: String): Future[WSResponse] =
       apiMicroserviceConnector.fetchApiDocumentationResourceByUrl(serviceBaseUrl, version, resource)
 
-    def getApiDefinitionOrThrow: Future[ApiDefinition] = {
+    def getApiDefinitionOrThrow: Future[StoredApiDefinition] = {
       import cats.implicits._
 
-      lazy val failure = Future.failed[ApiDefinition](new NotFoundException(s"$serviceName not found"))
+      lazy val failure = Future.failed[StoredApiDefinition](new NotFoundException(s"$serviceName not found"))
 
       apiDefinitionRepository.fetchByServiceName(serviceName).flatMap(_.fold(failure)(_.pure[Future]))
     }
 
-    def getApiVersionOrThrow(apiDefinition: ApiDefinition): Future[Option[ApiVersion]] = {
+    def getApiVersionOrThrow(apiDefinition: StoredApiDefinition): Future[Option[ApiVersion]] = {
       import cats.implicits._
 
       val failure = Future.failed[Option[ApiVersion]](new NotFoundException(s"Version $version of $serviceName not found"))

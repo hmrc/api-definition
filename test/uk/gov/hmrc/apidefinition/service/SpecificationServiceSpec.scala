@@ -23,6 +23,7 @@ import akka.stream.Materializer
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 
 import play.api.libs.json.Json
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ServiceName
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiVersionNbr
 import uk.gov.hmrc.ramltools.domain.RamlNotFoundException
 import uk.gov.hmrc.ramltools.loaders.RamlLoader
@@ -32,7 +33,6 @@ import uk.gov.hmrc.apidefinition.models.apispecification.RamlSpecHelper
 import uk.gov.hmrc.apidefinition.raml.{ApiSpecificationRamlParser, RAML}
 import uk.gov.hmrc.apidefinition.services.{SchemaService, SpecificationService}
 import uk.gov.hmrc.apidefinition.utils.{AsyncHmrcSpec, Utils}
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ServiceName
 
 class SpecificationServiceSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite with Utils {
 
