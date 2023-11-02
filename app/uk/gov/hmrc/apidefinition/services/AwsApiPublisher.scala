@@ -24,7 +24,7 @@ import scala.util.matching.Regex
 
 import com.google.inject.Singleton
 
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiDefinition, _}
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{StoredApiDefinition, _}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiContext
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -40,12 +40,12 @@ class AwsApiPublisher @Inject() (val awsAPIPublisherConnector: AWSAPIPublisherCo
 
   val hostRegex: Regex = "https?://(.+)".r
 
-  def publishAll(apiDefinitions: Seq[ApiDefinition])(implicit hc: HeaderCarrier): Future[Unit] = {
+  def publishAll(apiDefinitions: Seq[StoredApiDefinition])(implicit hc: HeaderCarrier): Future[Unit] = {
     Future.sequence(apiDefinitions.map(publish))
       .map(_ => (()))
   }
 
-  def publish(apiDefinition: ApiDefinition)(implicit hc: HeaderCarrier): Future[Unit] = {
+  def publish(apiDefinition: StoredApiDefinition)(implicit hc: HeaderCarrier): Future[Unit] = {
     sequence {
       apiDefinition.versions.map { apiVersion =>
         val apiName = awsApiGatewayName(apiVersion.versionNbr, apiDefinition)
@@ -77,7 +77,7 @@ class AwsApiPublisher @Inject() (val awsAPIPublisherConnector: AWSAPIPublisherCo
       .map(awsRequestId => logger.info(s"Successfully published API [$apiName] Version [${apiVersion.versionNbr}] under AWS Request Id [$awsRequestId]"))
   }
 
-  def delete(apiDefinition: ApiDefinition)(implicit hc: HeaderCarrier): Future[Unit] = {
+  def delete(apiDefinition: StoredApiDefinition)(implicit hc: HeaderCarrier): Future[Unit] = {
     sequence {
       apiDefinition.versions.map { apiVersion =>
         deleteAPIVersion(awsApiGatewayName(apiVersion.versionNbr, apiDefinition))

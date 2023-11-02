@@ -49,7 +49,13 @@ class APIDefinitionService @Inject() (
 
   implicit val useThisFormatter = TolerantJsonApiDefinition.tolerantFormatApiDefinition
 
-  def createOrUpdate(apiDefinition: ApiDefinition)(implicit hc: HeaderCarrier): Future[Unit] = {
+  private def convertOne(stored: StoredApiDefinition): ApiDefinition = {
+    ApiDefinition.fromStored(stored)
+  }
+
+  private def convertMany(storeds: Iterable[StoredApiDefinition]): List[ApiDefinition] = storeds.map(convertOne).toList
+
+  def createOrUpdate(apiDefinition: StoredApiDefinition)(implicit hc: HeaderCarrier): Future[Unit] = {
 
     def publish(): Future[Unit] = {
       (for {
@@ -75,7 +81,7 @@ class APIDefinitionService @Inject() (
     } yield ()
   }
 
-  private def checkAPIDefinitionForStatusChanges(apiDefinition: ApiDefinition)(implicit hc: HeaderCarrier): Future[Unit] = {
+  private def checkAPIDefinitionForStatusChanges(apiDefinition: StoredApiDefinition)(implicit hc: HeaderCarrier): Future[Unit] = {
     def findStatusDifferences(existingAPIVersions: Seq[ApiVersion], newAPIVersions: Seq[ApiVersion]): Seq[(ApiVersionNbr, ApiStatus, ApiStatus)] =
       (existingAPIVersions ++ newAPIVersions)
         .groupBy(_.versionNbr)
@@ -93,19 +99,19 @@ class APIDefinitionService @Inject() (
   }
 
   def fetchByServiceName(serviceName: ServiceName): Future[Option[ApiDefinition]] = {
-    apiDefinitionRepository.fetchByServiceName(serviceName)
+    apiDefinitionRepository.fetchByServiceName(serviceName).map(_.map(convertOne))
   }
 
   def fetchByName(name: String): Future[Option[ApiDefinition]] = {
-    apiDefinitionRepository.fetchByName(name)
+    apiDefinitionRepository.fetchByName(name).map(_.map(convertOne))
   }
 
   def fetchByContext(context: ApiContext): Future[Option[ApiDefinition]] = {
-    apiDefinitionRepository.fetchByContext(context)
+    apiDefinitionRepository.fetchByContext(context).map(_.map(convertOne))
   }
 
   def fetchByServiceBaseUrl(serviceBaseUrl: String): Future[Option[ApiDefinition]] = {
-    apiDefinitionRepository.fetchByServiceBaseUrl(serviceBaseUrl)
+    apiDefinitionRepository.fetchByServiceBaseUrl(serviceBaseUrl).map(_.map(convertOne))
   }
 
   def delete(serviceName: ServiceName)(implicit hc: HeaderCarrier): Future[Unit] = {
@@ -119,33 +125,35 @@ class APIDefinitionService @Inject() (
     }
   }
 
-  def fetchAllPublicAPIs(alsoIncludePrivateTrials: Boolean): Future[Seq[ApiDefinition]] = {
-    apiDefinitionRepository.fetchAll().map(filterApisExcludingPrivate(alsoIncludePrivateTrials))
-  }
-
-  def fetchAll: Future[Seq[ApiDefinition]] = {
+  def fetchAllPublicAPIs(alsoIncludePrivateTrials: Boolean): Future[List[ApiDefinition]] = {
     apiDefinitionRepository.fetchAll()
+      .map(filterApisExcludingPrivate(alsoIncludePrivateTrials))
+      .map(convertMany)
   }
 
-  def fetchAllPrivateAPIs(): Future[Seq[ApiDefinition]] = {
+  def fetchAll: Future[List[ApiDefinition]] = {
+    apiDefinitionRepository.fetchAll().map(convertMany)
+  }
+
+  def fetchAllPrivateAPIs(): Future[List[ApiDefinition]] = {
 
     def hasPrivateAccess(apiVersion: ApiVersion) = apiVersion.access match {
       case ApiAccess.Private(_) => true
       case _                    => false
     }
 
-    def removePublicVersions(api: ApiDefinition) =
+    def removePublicVersions(api: StoredApiDefinition) =
       api.copy(versions = api.versions.filter(hasPrivateAccess))
 
     for {
       apiDefinitions     <- apiDefinitionRepository.fetchAll()
       includesPrivateApis = apiDefinitions.filter(d => d.versions.exists(hasPrivateAccess))
       onlyPrivateApis     = includesPrivateApis.map(removePublicVersions)
-    } yield onlyPrivateApis
+    } yield onlyPrivateApis.toList.map(convertOne)
   }
 
-  private def filterApisExcludingPrivate(alsoIncludePrivateTrials: Boolean): Seq[ApiDefinition] => Seq[ApiDefinition] = apis => {
-    val innerFilter: ApiDefinition => Option[ApiDefinition] = api => {
+  private def filterApisExcludingPrivate(alsoIncludePrivateTrials: Boolean): Seq[StoredApiDefinition] => Seq[StoredApiDefinition] = apis => {
+    val innerFilter: StoredApiDefinition => Option[StoredApiDefinition] = api => {
       val filteredVersions = api.versions.filter(_.access match {
         case ApiAccess.Private(isTrial) => (isTrial && alsoIncludePrivateTrials)
         case _                          => true

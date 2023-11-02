@@ -24,7 +24,7 @@ import scala.util.control.NonFatal
 import play.api.http.HeaderNames
 import play.api.libs.json._
 import play.api.mvc._
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiDefinition, _}
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{StoredApiDefinition, _}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiContext
 import uk.gov.hmrc.http.UnauthorizedException
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
@@ -52,7 +52,7 @@ class APIDefinitionController @Inject() (
   def createOrUpdate(): Action[JsValue] = Action.async(parse.json) { implicit request =>
     implicit val useTolerantReaders = TolerantJsonApiDefinition.tolerantFormatApiDefinition
 
-    handleRequest[ApiDefinition](request) { requestBody =>
+    handleRequest[StoredApiDefinition](request) { requestBody =>
       apiDefinitionValidator.validate(requestBody) { validatedDefinition =>
         logger.info(s"Create/Update API definition request: $validatedDefinition")
         apiDefinitionService.createOrUpdate(validatedDefinition).map { _ =>
@@ -83,7 +83,7 @@ class APIDefinitionController @Inject() (
   }
 
   def validate: Action[JsValue] = Action.async(parse.json) { implicit request =>
-    handleRequest[ApiDefinition](request) { requestBody =>
+    handleRequest[StoredApiDefinition](request) { requestBody =>
       apiDefinitionValidator.validate(requestBody) { validatedDefinition =>
         successful(Accepted(Json.toJson(validatedDefinition)))
       }
@@ -117,7 +117,7 @@ class APIDefinitionController @Inject() (
     QueryOptions(request.getQueryString("options"))
   }
 
-  private def apiDefinitionToResult(result: Seq[ApiDefinition]) = {
+  private def apiDefinitionToResult(result: List[ApiDefinition]) = {
     Ok(Json.toJson(result))
   }
 

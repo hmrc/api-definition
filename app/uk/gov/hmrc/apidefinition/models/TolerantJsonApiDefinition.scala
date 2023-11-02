@@ -25,7 +25,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiContext
 
 trait TolerantJsonApiDefinition extends TolerantJsonApiVersion {
 
-  private val apiDefinitionReads: Reads[ApiDefinition] = (
+  private val apiDefinitionReads: Reads[StoredApiDefinition] = (
     (JsPath \ "serviceName").read[ServiceName] and
       (JsPath \ "serviceBaseUrl").read[String] and
       (JsPath \ "name").read[String] and
@@ -36,11 +36,11 @@ trait TolerantJsonApiDefinition extends TolerantJsonApiVersion {
       ((JsPath \ "isTestSupport").readNullable[Boolean].map(_.getOrElse(false))) and
       (JsPath \ "lastPublishedAt").readNullable[Instant] and
       ((JsPath \ "categories").readNullable[List[ApiCategory]].map(_.getOrElse(List.empty)))
-  )(ApiDefinition.apply _)
+  )(StoredApiDefinition.apply _)
 
-  private val apiDefinitionWrites: OWrites[ApiDefinition] = Json.writes[ApiDefinition]
+  private val apiDefinitionWrites: OWrites[StoredApiDefinition] = Json.writes[StoredApiDefinition]
 
-  implicit val tolerantFormatApiDefinition: OFormat[ApiDefinition] = OFormat[ApiDefinition](apiDefinitionReads, apiDefinitionWrites)
+  implicit val tolerantFormatApiDefinition: OFormat[StoredApiDefinition] = OFormat[StoredApiDefinition](apiDefinitionReads, apiDefinitionWrites)
 }
 
 object TolerantJsonApiDefinition extends TolerantJsonApiDefinition

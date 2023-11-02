@@ -17,9 +17,10 @@
 package uk.gov.hmrc.apidefinition.services
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.{blocking, ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future, blocking}
 
 import play.api.libs.json.{JsValue, Json}
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ServiceName
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiVersionNbr
 import uk.gov.hmrc.ramltools.domain.RamlNotFoundException
 import uk.gov.hmrc.ramltools.loaders.RamlLoader
@@ -28,7 +29,6 @@ import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.controllers.routes
 import uk.gov.hmrc.apidefinition.models.apispecification.ApiSpecificationFormatters._
 import uk.gov.hmrc.apidefinition.raml.ApiSpecificationRamlParser
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ServiceName
 
 @Singleton
 class SpecificationService @Inject() (config: AppConfig, ramlLoader: RamlLoader, apiSpecificationRamlParser: ApiSpecificationRamlParser)(implicit ec: ExecutionContext) {

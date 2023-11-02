@@ -19,24 +19,23 @@ package uk.gov.hmrc.apidefinition.models
 import org.scalatest.prop.TableDrivenPropertyChecks
 
 import play.api.libs.json.{JsString, Json}
-
 import uk.gov.hmrc.apiplatform.modules.common.utils.BaseJsonFormattersSpec
 
 class ErrorCodeSpec extends BaseJsonFormattersSpec with TableDrivenPropertyChecks {
 
   // Simpler than most tests - no real toString overriding or displayText
-  
+
   "ErrorCode" should {
     import ErrorCode._
     val values =
       Table(
         ("Type"),
-        (INVALID_REQUEST_PAYLOAD ),
-        (INTERNAL_SERVER_ERROR   ),   
+        (INVALID_REQUEST_PAYLOAD),
+        (INTERNAL_SERVER_ERROR),
         (API_DEFINITION_NOT_FOUND),
-        (API_INVALID_JSON        ),  
-        (CONTEXT_ALREADY_DEFINED ),
-        (UNSUPPORTED_ACCESS_TYPE )
+        (API_INVALID_JSON),
+        (CONTEXT_ALREADY_DEFINED),
+        (UNSUPPORTED_ACCESS_TYPE)
       )
 
     "convert lower case string to case object" in {
