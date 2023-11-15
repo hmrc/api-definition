@@ -755,19 +755,6 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
     }
   }
 
-  "fetchAllAPICategories" should {
-    "return details of all current API Categories" in new Setup {
-      val result = underTest.fetchAllAPICategories()(request)
-
-      status(result) shouldBe OK
-      val body: String = contentAsString(result)
-
-      ApiCategory.values.foreach { category =>
-        body.contains(s""""category":"${category.toString()}"""")
-      }
-    }
-  }
-
   "publishAllToAws" should {
     "succeed with status 204 when all APIs are republished" in new Setup {
       when(mockAPIDefinitionService.publishAllToAws()(*)).thenReturn(successful(()))

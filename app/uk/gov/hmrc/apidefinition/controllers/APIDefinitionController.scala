@@ -109,10 +109,6 @@ class APIDefinitionController @Inject() (
     apiDefinitionService.publishAllToAws().map { _ => NoContent } recover recovery
   }
 
-  def fetchAllAPICategories: Action[AnyContent] = Action.async {
-    successful(Ok(Json.toJson(ApiCategory.values.map(c => Json.obj("category" -> c.toString, "name" -> c.displayText)))))
-  }
-
   private def extractQueryOptions(request: Request[AnyContent]) = {
     QueryOptions(request.getQueryString("options"))
   }

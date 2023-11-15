@@ -18,6 +18,7 @@ package uk.gov.hmrc.apidefinition.repository
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.control.NonFatal
 
 import org.bson.codecs.configuration.CodecRegistries.{fromCodecs, fromRegistries}
 import org.mongodb.scala.MongoClient.DEFAULT_CODEC_REGISTRY
@@ -75,44 +76,32 @@ class APIDefinitionRepository @Inject() (mongoComponent: MongoComponent)(implici
     collection.find(serviceNameSelector(serviceName)).headOption().map { api =>
       logger.info(s"Retrieved API with service name '$serviceName' in mongo: $api")
       api
-    } recover {
-      case e =>
-        logger.error(s"An error occurred while retrieving API with service name '$serviceName' in mongo", e)
-        throw e
-    }
+    } recover
+      logExceptionAndThrow(s"An error occurred while retrieving API with service name '$serviceName' in mongo")
   }
 
   def fetchByServiceBaseUrl(serviceBaseUrl: String): Future[Option[StoredApiDefinition]] = {
     collection.find(equal("serviceBaseUrl", Codecs.toBson(serviceBaseUrl))).headOption().map { api =>
       logger.debug(s"Retrieved API with service base url '$serviceBaseUrl' in mongo: $api")
       api
-    } recover {
-      case e =>
-        logger.error(s"An error occurred while retrieving API with service base url '$serviceBaseUrl' in mongo", e)
-        throw e
-    }
+    } recover
+      logExceptionAndThrow(s"An error occurred while retrieving API with service base url '$serviceBaseUrl' in mongo")
   }
 
   def fetchByName(name: String): Future[Option[StoredApiDefinition]] = {
     collection.find(equal("name", Codecs.toBson(name))).headOption().map { api =>
       logger.debug(s"Retrieved API with name '$name' in mongo: $api")
       api
-    } recover {
-      case e =>
-        logger.error(s"An error occurred while retrieving API with name '$name' in mongo", e)
-        throw e
-    }
+    } recover
+      logExceptionAndThrow(s"An error occurred while retrieving API with name '$name' in mongo")
   }
 
   def fetchByContext(context: ApiContext): Future[Option[StoredApiDefinition]] = {
     collection.find(equal("context", Codecs.toBson(context.value))).headOption().map { api =>
       logger.debug(s"Retrieved API with context '${context.value}' in mongo: $api")
       api
-    } recover {
-      case e =>
-        logger.error(s"An error occurred while retrieving API with context '${context.value}' in mongo", e)
-        throw e
-    }
+    } recover
+      logExceptionAndThrow(s"An error occurred while retrieving API with context '${context.value}' in mongo")
   }
 
   def fetchAll(): Future[Seq[StoredApiDefinition]] = {
@@ -123,9 +112,15 @@ class APIDefinitionRepository @Inject() (mongoComponent: MongoComponent)(implici
     collection.find(regex("context", f"^${topLevelContext.value}\\/.*$$")).toFuture()
   }
 
-  def delete(serviceName: ServiceName): Future[Unit] = {
+  def delete(serviceName: ServiceName): Future[Unit]                                       = {
     collection.deleteOne(serviceNameSelector(serviceName))
       .toFuture()
       .map(_ => logger.info(s"API with service name '$serviceName' has been deleted successfully"))
+  }
+
+  private def logExceptionAndThrow[U](errorMessage: String): PartialFunction[Throwable, U] = {
+    case NonFatal(e) =>
+      logger.error(errorMessage, e)
+      throw e
   }
 }
