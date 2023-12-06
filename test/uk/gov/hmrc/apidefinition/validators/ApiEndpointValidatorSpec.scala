@@ -34,49 +34,40 @@ class ApiEndpointValidatorSpec extends AsyncHmrcSpec {
     val queryParameterValidator: QueryParameterValidator     = new QueryParameterValidator()
     val validator = new ApiEndpointValidator(queryParameterValidator)
 
-    val endpointWithDot: Endpoint  = Endpoint("/.well-known/openid-configuration", "Test Endpoint", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)
-    val endpointWithoutDot: Endpoint  = Endpoint("/well-known/openid-configuration", "Test Endpoint", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)
-    val existingValidEndpoint: Endpoint  = Endpoint("/paye/{nino}/eligibility-check-digitally-excluded", "Test Endpoint", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)
+    val endpoint: Endpoint  = Endpoint("/", "Test Endpoint", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)
   }
 
 
 
   "ApiEndpointValidator" should {
-    "allow dots in endpoints" in new Setup {
+    "allow dots at start of endpoints" in new Setup {
 
-      val x = validator.validate("Error Message")(endpointWithDot)
+      val x = validator.validate("Error Message")(endpoint.copy("/.well-known/openid-configuration"))
 
       x match {
         case Validated.Valid(_) => succeed
         case Validated.Invalid(errors) => fail(s"endpoint validation failed ${errors.toList.mkString}")
+      }
+    }
+
+   "not allow dots in middle of endpoints" in new Setup {
+      validator.validate("Error Message")(endpoint.copy(uriPattern = "/well.known")) match {
+        case Validated.Valid(_) => fail()
+        case Validated.Invalid(errors) => succeed
       }
     }
     
     "allow endpoints without dots" in new Setup {
 
-      val x = validator.validate("Error Message")(endpointWithoutDot)
-
-      x match {
+      validator.validate("Error Message")(endpoint.copy(uriPattern = "/well-known/openid-configuration")) match {
         case Validated.Valid(_) => succeed
         case Validated.Invalid(errors) => fail(s"endpoint validation failed ${errors.toList.mkString}")
       }
     }
 
-   "stop invalid endpoints" ignore new Setup {
-
-      val x = validator.validate("Error Message")(endpointWithDot.copy(uriPattern = "/IAMINVALID£££"))
-
-      x match {
-        case Validated.Valid(_) => fail()
-        case Validated.Invalid(errors) => errors.toList.mkString shouldBe "hello"
-      }
-    }
-
     "allow valid endpoints" in new Setup {
 
-      val x = validator.validate("Error Message")(existingValidEndpoint)
-
-      x match {
+     validator.validate("Error Message")(endpoint.copy(uriPattern = "/paye/{nino}/eligibility-check-digitally-excluded")) match {
         case Validated.Valid(_) => succeed
         case Validated.Invalid(errors) => fail(s"endpoint validation failed ${errors.toList.mkString}")
       }
@@ -86,9 +77,7 @@ class ApiEndpointValidatorSpec extends AsyncHmrcSpec {
     "fail validation if the endpoint contains in the URI" in new Setup {
        specialChars.foreach { char: Char =>
         val endpointUri                        = s"/payments$char"
-         val x  =  validator.validate("Error Message")(existingValidEndpoint.copy(uriPattern = endpointUri))
-        
-        x match {
+         validator.validate("Error Message")(endpoint.copy(uriPattern = endpointUri)) match {
           case Validated.Valid(_) => fail(s"$char should fail validation")
           case Validated.Invalid(errors) => {
             println(errors.toList.mkString)
