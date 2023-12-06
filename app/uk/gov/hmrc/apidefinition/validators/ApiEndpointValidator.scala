@@ -27,8 +27,8 @@ import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 @Singleton
 class ApiEndpointValidator @Inject() (queryParameterValidator: QueryParameterValidator)(implicit override val ec: ExecutionContext) extends Validator[Endpoint] {
 
-  private val uriRegex: Regex           = "^/[a-zA-Z0-9_\\-\\/{}]*$".r
-  private val pathParameterRegex: Regex = "^\\{[a-zA-Z]+[a-zA-Z0-9_\\-]*\\}$".r
+  private val uriRegex: Regex           = """^/[.]?[a-zA-Z0-9_\-\/{}]*$""".r
+  private val pathParameterRegex: Regex = """^\{[a-zA-Z]+[a-zA-Z0-9_\-]*\}$""".r
 
   def validate(ec: String)(implicit endpoint: Endpoint): HMRCValidated[Endpoint] = {
     val errorContext: String = if (endpoint.endpointName.isEmpty) ec else s"$ec endpoint '${endpoint.endpointName}'"

@@ -112,7 +112,7 @@ class APIDefinitionRepository @Inject() (mongoComponent: MongoComponent)(implici
     collection.find(regex("context", f"^${topLevelContext.value}\\/.*$$")).toFuture()
   }
 
-  def delete(serviceName: ServiceName): Future[Unit]                                       = {
+  def delete(serviceName: ServiceName): Future[Unit] = {
     collection.deleteOne(serviceNameSelector(serviceName))
       .toFuture()
       .map(_ => logger.info(s"API with service name '$serviceName' has been deleted successfully"))
