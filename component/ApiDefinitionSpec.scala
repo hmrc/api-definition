@@ -16,11 +16,13 @@
 
 package component
 
-import com.github.tomakehurst.wiremock.client.WireMock._
-import play.api.http.Status.{NO_CONTENT, OK}
-import play.api.http.HeaderNames.CONTENT_TYPE
-import com.github.tomakehurst.wiremock.client.WireMock
 import java.util.UUID
+
+import com.github.tomakehurst.wiremock.client.WireMock
+import com.github.tomakehurst.wiremock.client.WireMock._
+
+import play.api.http.HeaderNames.CONTENT_TYPE
+import play.api.http.Status.{NO_CONTENT, OK}
 
 class ApiDefinitionSpec extends ComponentSpec{
 

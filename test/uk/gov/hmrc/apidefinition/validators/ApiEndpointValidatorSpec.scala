@@ -16,28 +16,28 @@
 
 package uk.gov.hmrc.apidefinition.validators
 
-
 import scala.concurrent.ExecutionContext.Implicits.global
 
-import uk.gov.hmrc.apidefinition.validators.ApiEndpointValidator
-import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{AuthType, Endpoint, HttpMethod, ResourceThrottlingTier}
 import cats.data.Validated
+
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{AuthType, Endpoint, HttpMethod, ResourceThrottlingTier}
+
+import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
+import uk.gov.hmrc.apidefinition.validators.ApiEndpointValidator
 
 class ApiEndpointValidatorSpec extends AsyncHmrcSpec {
 
   trait Setup {
-    val specialChars = List(
+
+    val specialChars                                     = List(
       ' ', '@', '%', '£', '*', '\\', '|', '$', '~', '^', ';', '=', '\'',
       '<', '>', '"', '?', '!', ',', '.', ':', '&', '[', ']', '(', ')'
     )
-    val queryParameterValidator: QueryParameterValidator     = new QueryParameterValidator()
-    val validator = new ApiEndpointValidator(queryParameterValidator)
+    val queryParameterValidator: QueryParameterValidator = new QueryParameterValidator()
+    val validator                                        = new ApiEndpointValidator(queryParameterValidator)
 
-    val endpoint: Endpoint  = Endpoint("/", "Test Endpoint", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)
+    val endpoint: Endpoint = Endpoint("/", "Test Endpoint", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)
   }
-
-
 
   "ApiEndpointValidator" should {
     "allow dots at start of endpoints" in new Setup {
@@ -45,40 +45,39 @@ class ApiEndpointValidatorSpec extends AsyncHmrcSpec {
       val x = validator.validate("Error Message")(endpoint.copy("/.well-known/openid-configuration"))
 
       x match {
-        case Validated.Valid(_) => succeed
+        case Validated.Valid(_)        => succeed
         case Validated.Invalid(errors) => fail(s"endpoint validation failed ${errors.toList.mkString}")
       }
     }
 
-   "not allow dots in middle of endpoints" in new Setup {
+    "not allow dots in middle of endpoints" in new Setup {
       validator.validate("Error Message")(endpoint.copy(uriPattern = "/well.known")) match {
-        case Validated.Valid(_) => fail()
+        case Validated.Valid(_)        => fail()
         case Validated.Invalid(errors) => succeed
       }
     }
-    
+
     "allow endpoints without dots" in new Setup {
 
       validator.validate("Error Message")(endpoint.copy(uriPattern = "/well-known/openid-configuration")) match {
-        case Validated.Valid(_) => succeed
+        case Validated.Valid(_)        => succeed
         case Validated.Invalid(errors) => fail(s"endpoint validation failed ${errors.toList.mkString}")
       }
     }
 
     "allow valid endpoints" in new Setup {
 
-     validator.validate("Error Message")(endpoint.copy(uriPattern = "/paye/{nino}/eligibility-check-digitally-excluded")) match {
-        case Validated.Valid(_) => succeed
+      validator.validate("Error Message")(endpoint.copy(uriPattern = "/paye/{nino}/eligibility-check-digitally-excluded")) match {
+        case Validated.Valid(_)        => succeed
         case Validated.Invalid(errors) => fail(s"endpoint validation failed ${errors.toList.mkString}")
       }
     }
 
- 
     "fail validation if the endpoint contains in the URI" in new Setup {
-       specialChars.foreach { char: Char =>
-        val endpointUri                        = s"/payments$char"
-         validator.validate("Error Message")(endpoint.copy(uriPattern = endpointUri)) match {
-          case Validated.Valid(_) => fail(s"$char should fail validation")
+      specialChars.foreach { char: Char =>
+        val endpointUri = s"/payments$char"
+        validator.validate("Error Message")(endpoint.copy(uriPattern = endpointUri)) match {
+          case Validated.Valid(_)        => fail(s"$char should fail validation")
           case Validated.Invalid(errors) => {
             println(errors.toList.mkString)
             succeed

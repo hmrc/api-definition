@@ -48,6 +48,7 @@ lazy val microservice = Project(appName, file("."))
   )
   .configs(ComponentTest)
   .settings(inConfig(ComponentTest)(Defaults.testSettings): _*)
+  .settings(inConfig(ComponentTest)(scalafixConfigSettings(ComponentTest)))
   .settings(inConfig(ComponentTest)(BloopDefaults.configSettings))
   .settings(
     ComponentTest / testOptions := Seq(Tests.Argument(TestFrameworks.ScalaTest, "-oDT")),
