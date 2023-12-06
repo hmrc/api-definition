@@ -286,7 +286,7 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
         assertValidationFailure(
           apiDefinition,
           List(s"Field 'endpoints.uriPattern' with value '$endpointUri' should" +
-            " match regular expression '^/[a-zA-Z0-9_\\-\\/{}]*$' for API 'Money API' version '1.0' endpoint 'Check Payments'")
+            " match regular expression '^/[.]?[a-zA-Z0-9_\\-\\/{}]*$' for API 'Money API' version '1.0' endpoint 'Check Payments'")
         )
       }
     }
@@ -315,7 +315,7 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
 
       assertValidationFailure(
         apiDefinition,
-        List(s"Field 'endpoints.uriPattern' with value '$endpoint' should match regular expression '^/[a-zA-Z0-9_\\-\\/{}]*$$' for API 'Money API' version '1.0' endpoint 'Check Payments'")
+        List(s"Field 'endpoints.uriPattern' with value '$endpoint' should match regular expression '^/[.]?[a-zA-Z0-9_\\-\\/{}]*$$' for API 'Money API' version '1.0' endpoint 'Check Payments'")
       )
     }
 
