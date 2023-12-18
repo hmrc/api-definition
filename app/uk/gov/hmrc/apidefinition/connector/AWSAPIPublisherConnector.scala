@@ -22,7 +22,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 import play.api.http.ContentTypes.JSON
 import play.api.http.HeaderNames.CONTENT_TYPE
-import play.api.libs.json.Json
+import play.api.libs.json.{Json, Reads}
 import play.api.{Configuration, Environment, Mode}
 import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, UpstreamErrorResponse}
@@ -36,7 +36,7 @@ object AWSAPIPublisherConnector {
   // Deliberately upper case RequestId !
   case class RequestId(RequestId: String)
 
-  implicit val requestIdReads = Json.reads[RequestId]
+  implicit val requestIdReads: Reads[RequestId] = Json.reads[RequestId]
 }
 
 class AWSAPIPublisherConnector @Inject() (
