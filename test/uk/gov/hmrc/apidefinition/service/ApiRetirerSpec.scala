@@ -25,37 +25,37 @@ class ApiRetirerSpec extends AsyncHmrcSpec {
 
     val mockAppConfig: AppConfig = mock[AppConfig]
     val mockAPIDefinitionRepository: APIDefinitionRepository = mock[APIDefinitionRepository]
-    val underTest = new ApiRetirer(mockAppConfig)
+    val underTest = new ApiRetirer(mockAppConfig, mockAPIDefinitionRepository)
   }
 
-  private val calendarApiVersion = ApiVersion(
+  private val testApiVersion1 = ApiVersion(
     versionNbr = ApiVersionNbr("1.0"),
     status = ApiStatus.STABLE,
     access = ApiAccess.PUBLIC,
     endpoints = List(Endpoint("/date", "Check current date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
   )
 
-  private val calendarApiVersion2 = ApiVersion(
+  private val testApiVersion2 = ApiVersion(
     versionNbr = ApiVersionNbr("2.0"),
     status = ApiStatus.STABLE,
     access = ApiAccess.PUBLIC,
     endpoints = List(Endpoint("/date", "Check current date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
   )
 
-  private val calendarApiVersion3 = ApiVersion(
+  private val testApiVersion3 = ApiVersion(
     versionNbr = ApiVersionNbr("3.0"),
     status = ApiStatus.STABLE,
     access = ApiAccess.PUBLIC,
     endpoints = List(Endpoint("/date", "Check current date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
   )
 
-  private val calendarApiDefinition = StoredApiDefinition(
-    serviceName = ServiceName("calendar-service"),
-    serviceBaseUrl = "calendar.com",
-    name = "Calendar",
-    description = "This is the Calendar API",
-    context = ApiContext("calendar"),
-    versions = List(calendarApiVersion, calendarApiVersion2, calendarApiVersion3),
+  private val testApiDefinition = StoredApiDefinition(
+    serviceName = ServiceName("api1"),
+    serviceBaseUrl = "test.com",
+    name = "Test",
+    description = "This is the Test API",
+    context = ApiContext("test"),
+    versions = List(testApiVersion1, testApiVersion2, testApiVersion3),
     requiresTrust = false,
     isTestSupport = false,
     lastPublishedAt = None,
@@ -65,14 +65,12 @@ class ApiRetirerSpec extends AsyncHmrcSpec {
 "retireApis" should {
     "fetch apis to retire and set them to retired" in new Setup {
       when(mockAppConfig.apisToRetire).thenReturn(List("api1,2.0"))
-      print(calendarApiDefinition)
-      when(mockAPIDefinitionRepository.fetchByServiceName(*)).thenReturn(successful(Some(calendarApiDefinition)))
+      when(mockAPIDefinitionRepository.fetchByServiceName(ServiceName("api1"))).thenReturn(successful(Some(testApiDefinition)))
 
-      // val result: Unit = await(underTest.retireApis())
-      // calendarApiVersion2.status shouldBe(ApiStatus.RETIRED)
-
+      await(underTest.retireApis())
+      
+      val expectedApiDefinition
+      mockAPIDefinitionRepository.save(expectedApiDefinition)
     }
-  
   }
-
 }
