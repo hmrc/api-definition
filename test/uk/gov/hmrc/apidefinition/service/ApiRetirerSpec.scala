@@ -1,22 +1,15 @@
-import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
-import uk.gov.hmrc.apidefinition.config.AppConfig
-import uk.gov.hmrc.apidefinition.services.ApiRetirer
-import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import scala.concurrent.ExecutionContext
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.StoredApiDefinition
-import scala.concurrent.Future.{failed, successful}
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ServiceName
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiContext
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiCategory
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersion
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiVersionNbr
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiStatus
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiAccess
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.Endpoint
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.HttpMethod
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.AuthType
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ResourceThrottlingTier
+import scala.concurrent.Future.successful
+
+import play.api.Logger
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApiContext, ApiVersionNbr}
 import uk.gov.hmrc.http.HeaderCarrier
+
+import uk.gov.hmrc.apidefinition.config.AppConfig
+import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
+import uk.gov.hmrc.apidefinition.services.ApiRetirer
+import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 
 
 class ApiRetirerSpec extends AsyncHmrcSpec {
@@ -26,8 +19,11 @@ class ApiRetirerSpec extends AsyncHmrcSpec {
     implicit val hc = HeaderCarrier()
 
     val mockAppConfig: AppConfig = mock[AppConfig]
+    val mockLogger: Logger       = mock[Logger]
     val mockAPIDefinitionRepository: APIDefinitionRepository = mock[APIDefinitionRepository]
-    val underTest = new ApiRetirer(mockAppConfig, mockAPIDefinitionRepository)
+    val underTest = new ApiRetirer(mockAppConfig, mockAPIDefinitionRepository) {
+      override val logger: Logger = mockLogger
+    }
   }
 
   private val testApiVersion1 = ApiVersion(
@@ -143,22 +139,33 @@ class ApiRetirerSpec extends AsyncHmrcSpec {
       when(mockAPIDefinitionRepository.fetchByServiceName(ServiceName("api1"))).thenReturn(successful(Some(testApiDefinition)))
 
       await(underTest.retireApis())
+      verify(mockLogger).info(s"Attempting to retire 1 API versions.")
+      verifyNoMoreInteractions(mockLogger)
       
       verify(mockAPIDefinitionRepository, times(1)).save(expectedApiDefinition)
+    
     }
-  }
 
-"retireApis" should {
     "fetch multiple apis and versions and set them to retired" in new Setup {
       when(mockAppConfig.apisToRetire).thenReturn(List("api1,2.0", "api2,3.0", "api2,1.0"))
       when(mockAPIDefinitionRepository.fetchByServiceName(ServiceName("api1"))).thenReturn(successful(Some(testApiDefinition)))
       when(mockAPIDefinitionRepository.fetchByServiceName(ServiceName("api2"))).thenReturn(successful(Some(testApiDefinition2)))
 
       await(underTest.retireApis())
+      verify(mockLogger).info(s"Attempting to retire 3 API versions.")
+      verifyNoMoreInteractions(mockLogger)
       
       verify(mockAPIDefinitionRepository, times(1)).save(expectedApiDefinition)
       verify(mockAPIDefinitionRepository, times(1)).save(expectedApiDefinition2)
       verify(mockAPIDefinitionRepository, times(1)).save(expectedApiDefinition3)
+    }
+
+    "Do nothing when the list is empty" in new Setup {
+      when(mockAppConfig.apisToRetire).thenReturn(List())
+
+      await(underTest.retireApis())
+      verifyZeroInteractions(mockLogger)
+      verifyZeroInteractions(mockAPIDefinitionRepository)
     }
   }
 }

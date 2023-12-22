@@ -1,25 +1,23 @@
 package uk.gov.hmrc.apidefinition.services
 
-import uk.gov.hmrc.apidefinition.config.AppConfig
-import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
 import javax.inject.Inject
-import scala.concurrent.Future
-import scala.concurrent.Future._
-import scala.concurrent.ExecutionContext
-import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ServiceName
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiVersionNbr
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.StoredApiDefinition
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiStatus
 import scala.collection.mutable.ListBuffer
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiVersion
+import scala.concurrent.{ExecutionContext, Future}
+
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiStatus, ApiVersion, ServiceName}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiVersionNbr
+
+import uk.gov.hmrc.apidefinition.config.AppConfig
+import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
+import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
 
 class ApiRetirer @Inject() (config: AppConfig, apiDefinitionRepository: APIDefinitionRepository)
     extends ApplicationLogger {
 
   def retireApis()(implicit ec: ExecutionContext): Future[Unit] = {
-    logger.info(s"Attempting to retire ${config.apisToRetire.length} APIs.")
+    if (config.apisToRetire.length != 0) {
+      logger.info(s"Attempting to retire ${config.apisToRetire.length} API versions.")
+    }
     Future.sequence(config.apisToRetire.map { api => findAndRetireApi(api) })
       .map(_ => ())
   }
