@@ -168,14 +168,13 @@ class ApiRetirerSpec extends AsyncHmrcSpec {
       verifyZeroInteractions(mockAPIDefinitionRepository)
     }
 
-    // "Do nothing when the list is doesn't exist" in new Setup {
+    "Do nothing when the list is doesn't exist" in new Setup {
+      when(mockAppConfig.apisToRetire).thenReturn(null)
 
-    //   await(underTest.retireApis())
-    //   verifyZeroInteractions(mockLogger)
-    //   verifyZeroInteractions(mockAPIDefinitionRepository)
-    // }
-
-    // Can we do a check to make sure that the list exists and has at least 1 item in APIDefinitionService.scala
+      await(underTest.retireApis())
+      verifyZeroInteractions(mockLogger)
+      verifyZeroInteractions(mockAPIDefinitionRepository)
+    }
 
     "log an appropriate message when the api can not be found in the collection" in new Setup {
       when(mockAppConfig.apisToRetire).thenReturn(List("api6,2.0"))
@@ -186,8 +185,11 @@ class ApiRetirerSpec extends AsyncHmrcSpec {
     }
 
     "log an error when the list includes data in the wrong format" in new Setup {
-      when(mockAppConfig.apisToRetire).thenReturn(List("1", "2"))
+      when(mockAppConfig.apisToRetire).thenReturn(List("someInvalidFormat"))
+
       await(underTest.retireApis())
+      verify(mockLogger).warn("Expected api,version but got someInvalidFormat")
+      verifyZeroInteractions(mockAPIDefinitionRepository)
     }
 
   }

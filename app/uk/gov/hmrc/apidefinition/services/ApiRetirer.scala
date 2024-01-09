@@ -15,17 +15,18 @@ class ApiRetirer @Inject() (config: AppConfig, apiDefinitionRepository: APIDefin
     extends ApplicationLogger {
 
   def retireApis()(implicit ec: ExecutionContext): Future[Unit] = {
-    if (config.apisToRetire.length != 0) {
+    if (config.apisToRetire != null && config.apisToRetire.length != 0) {
       logger.info(s"Attempting to retire ${config.apisToRetire.length} API versions.")
+      return Future.sequence(config.apisToRetire.map { api => findAndRetireApi(api) })
+        .map(_ => ())
     }
-    Future.sequence(config.apisToRetire.map { api => findAndRetireApi(api) })
-      .map(_ => ())
+    else {
+      return Future.successful(())
+    }
   }
 
   private def findAndRetireApi(apiAndVersion: String)(implicit ec: ExecutionContext): Future[Unit] = {
-    val splitString = apiAndVersion.split(",")
-    val api = splitString(0)
-    val versionToRetire = splitString(1)
+    val (api, versionToRetire) = getApiVersion(apiAndVersion)
     val listOfVersions = ListBuffer[ApiVersion]()
 
     apiDefinitionRepository.fetchByServiceName(ServiceName(api)) map {
@@ -44,5 +45,12 @@ class ApiRetirer @Inject() (config: AppConfig, apiDefinitionRepository: APIDefin
       } 
       case _ => logger.warn(s"$api version $versionToRetire can not be found")
     }
+  }
+
+  private def getApiVersion(apiAndVersion: String): (String, String) = {
+    val splitString = apiAndVersion.split(",")
+    val api = splitString(0)
+    val versionToRetire = splitString(1)
+    return (api, versionToRetire)
   }
 }
