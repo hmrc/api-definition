@@ -167,5 +167,28 @@ class ApiRetirerSpec extends AsyncHmrcSpec {
       verifyZeroInteractions(mockLogger)
       verifyZeroInteractions(mockAPIDefinitionRepository)
     }
+
+    // "Do nothing when the list is doesn't exist" in new Setup {
+
+    //   await(underTest.retireApis())
+    //   verifyZeroInteractions(mockLogger)
+    //   verifyZeroInteractions(mockAPIDefinitionRepository)
+    // }
+
+    // Can we do a check to make sure that the list exists and has at least 1 item in APIDefinitionService.scala
+
+    "log an appropriate message when the api can not be found in the collection" in new Setup {
+      when(mockAppConfig.apisToRetire).thenReturn(List("api6,2.0"))
+      when(mockAPIDefinitionRepository.fetchByServiceName(ServiceName("api6"))).thenReturn(successful(None))
+
+      await(underTest.retireApis())
+      verify(mockLogger).warn(s"api6 version 2.0 can not be found")
+    }
+
+    "log an error when the list includes data in the wrong format" in new Setup {
+      when(mockAppConfig.apisToRetire).thenReturn(List("1", "2"))
+      await(underTest.retireApis())
+    }
+
   }
 }

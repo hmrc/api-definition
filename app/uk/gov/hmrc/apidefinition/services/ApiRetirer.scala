@@ -42,6 +42,7 @@ class ApiRetirer @Inject() (config: AppConfig, apiDefinitionRepository: APIDefin
         val updatedDefinition = definition.copy(versions = listOfVersions.toList)
         apiDefinitionRepository.save(updatedDefinition)
       } 
+      case _ => logger.warn(s"$api version $versionToRetire can not be found")
     }
   }
 }
