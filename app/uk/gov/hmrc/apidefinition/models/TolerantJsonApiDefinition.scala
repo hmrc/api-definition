@@ -32,7 +32,6 @@ trait TolerantJsonApiDefinition extends TolerantJsonApiVersion {
       (JsPath \ "description").read[String] and
       (JsPath \ "context").read[ApiContext] and
       (JsPath \ "versions").read[List[ApiVersion]] and
-      ((JsPath \ "requiresTrust").readNullable[Boolean].map(_.getOrElse(false))) and
       ((JsPath \ "isTestSupport").readNullable[Boolean].map(_.getOrElse(false))) and
       (JsPath \ "lastPublishedAt").readNullable[Instant] and
       ((JsPath \ "categories").readNullable[List[ApiCategory]].map(_.getOrElse(List.empty)))

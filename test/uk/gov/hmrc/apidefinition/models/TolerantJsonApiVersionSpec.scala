@@ -16,13 +16,14 @@
 
 package uk.gov.hmrc.apidefinition.models
 
+import play.api.libs.json.OFormat
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.utils.BaseJsonFormattersSpec
 
 class TolerantJsonApiVersionSpec extends BaseJsonFormattersSpec {
 
-  implicit val useMe = TolerantJsonApiVersion.tolerantFormatApiVersion
+  implicit val useMe: OFormat[ApiVersion] = TolerantJsonApiVersion.tolerantFormatApiVersion
 
   val endpointsText = """ "endpoints": [
                         |  {

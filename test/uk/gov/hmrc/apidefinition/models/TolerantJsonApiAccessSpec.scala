@@ -16,13 +16,14 @@
 
 package uk.gov.hmrc.apidefinition.models
 
+import play.api.libs.json.Format
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.utils.BaseJsonFormattersSpec
 
 class TolerantJsonApiAccessSpec extends BaseJsonFormattersSpec {
 
-  implicit val useMe = TolerantJsonApiAccess.tolerantFormatApiAccess
+  implicit val useMe: Format[ApiAccess] = TolerantJsonApiAccess.tolerantFormatApiAccess
 
   val appId = ApplicationId.random
 

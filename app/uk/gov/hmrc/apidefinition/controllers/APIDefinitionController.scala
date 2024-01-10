@@ -45,7 +45,7 @@ class APIDefinitionController @Inject() (
   )(implicit val ec: ExecutionContext
   ) extends BackendController(cc) with ApplicationLogger {
 
-  implicit val useTolerantReaders = TolerantJsonApiDefinition.tolerantFormatApiDefinition
+  implicit val useTolerantReaders: Format[StoredApiDefinition] = TolerantJsonApiDefinition.tolerantFormatApiDefinition
 
   val fetchByContextTtlInSeconds: String = appContext.fetchByContextTtlInSeconds
 

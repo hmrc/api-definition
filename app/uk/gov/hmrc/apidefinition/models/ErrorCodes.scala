@@ -47,12 +47,12 @@ object ValidationErrors {
 case class ErrorResponse(code: ErrorCode, message: String, details: Option[Seq[FieldErrorDescription]] = None)
 
 object ErrorResponse {
-  implicit val format1 = Json.format[FieldErrorDescription]
-  implicit val format3 = Json.format[ErrorResponse]
+  implicit val format1: Format[FieldErrorDescription] = Json.format[FieldErrorDescription]
+  implicit val format3: Format[ErrorResponse]         = Json.format[ErrorResponse]
 }
 
 case class FieldErrorDescription(field: String, message: String)
 
 object FieldErrorDescription {
-  implicit val format = Json.format[FieldErrorDescription]
+  implicit val format: Format[FieldErrorDescription] = Json.format[FieldErrorDescription]
 }

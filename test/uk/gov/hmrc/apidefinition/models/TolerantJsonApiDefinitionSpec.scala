@@ -16,14 +16,14 @@
 
 package uk.gov.hmrc.apidefinition.models
 
-import play.api.libs.json.Json
+import play.api.libs.json.{Json, OFormat}
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.utils.BaseJsonFormattersSpec
 
 class TolerantJsonApiDefinitionSpec extends BaseJsonFormattersSpec {
-  implicit val useMe = TolerantJsonApiDefinition.tolerantFormatApiDefinition
-  val appId          = ApplicationId.random
+  implicit val useMe: OFormat[StoredApiDefinition] = TolerantJsonApiDefinition.tolerantFormatApiDefinition
+  val appId                                        = ApplicationId.random
 
   "TolerantJsonApiDefinition" should {
     def anApiDefinition(
@@ -86,7 +86,6 @@ class TolerantJsonApiDefinitionSpec extends BaseJsonFormattersSpec {
       )
 
       apiDefinition.versions.head.access shouldBe ApiAccess.Private(true)
-      apiDefinition.requiresTrust shouldBe true
     }
 
     "read from JSON when the API categories are defined but empty" in {

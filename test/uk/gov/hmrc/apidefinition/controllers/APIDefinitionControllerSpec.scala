@@ -37,7 +37,7 @@ import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
 
 import play.api.libs.json.Json
-import play.api.mvc.Result
+import play.api.mvc.{AnyContentAsEmpty, Request, Result}
 import play.api.test.Helpers._
 import play.api.test.{FakeRequest, StubControllerComponentsFactory}
 import play.mvc.Http.HeaderNames
@@ -57,7 +57,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
 
   trait Setup {
 
-    implicit lazy val request = FakeRequest()
+    implicit lazy val request: Request[AnyContentAsEmpty.type] = FakeRequest()
 
     val serviceName = ServiceName("calendar")
     val userEmail   = "user@email.com"
@@ -88,7 +88,6 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
           "My description",
           ApiContext("MyContext"),
           Map.empty,
-          false,
           false,
           None,
           List(ApiCategory.AGENTS)
@@ -142,7 +141,6 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
                 true
               )
             ),
-          requiresTrust = true,
           isTestSupport = false,
           lastPublishedAt = None,
           List(ApiCategory.OTHER)
@@ -314,7 +312,6 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
           List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
           true
         )),
-        requiresTrust = true,
         isTestSupport = false,
         lastPublishedAt = None,
         List(ApiCategory.OTHER)
@@ -372,7 +369,6 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
             List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
             true
           )),
-        requiresTrust = true,
         false,
         None,
         List(ApiCategory.OTHER)
@@ -432,7 +428,6 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
           List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
           true
         )),
-        requiresTrust = true,
         false,
         None,
         List(ApiCategory.OTHER)
@@ -502,7 +497,6 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
           List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
           true
         )),
-        requiresTrust = false,
         false,
         None,
         List(ApiCategory.AGENTS)
