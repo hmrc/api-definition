@@ -24,6 +24,7 @@ import play.api.libs.json._
 trait CommonJsonFormatters {
 
   implicit def listMapReads[V](implicit formatV: Reads[V]): Reads[ListMap[String, V]] = new Reads[ListMap[String, V]] {
+    import scala.language.postfixOps
 
     def reads(json: JsValue) = json match {
       case JsObject(m) =>

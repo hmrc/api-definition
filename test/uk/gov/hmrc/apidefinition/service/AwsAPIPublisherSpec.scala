@@ -67,7 +67,6 @@ class AwsAPIPublisherSpec extends AsyncHmrcSpec {
       context,
       versions,
       false,
-      false,
       None,
       List(ApiCategory.OTHER)
     )

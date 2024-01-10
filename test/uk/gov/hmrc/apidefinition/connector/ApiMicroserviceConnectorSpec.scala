@@ -59,8 +59,8 @@ class ApiMicroserviceConnectorSpec extends AsyncHmrcSpec with Utils with MockWSH
   trait Setup {
     import scala.concurrent.ExecutionContext.Implicits.global
 
-    implicit val hc = HeaderCarrier()
-    val underTest   = new ApiMicroserviceConnector(mockWS)
+    implicit val hc: HeaderCarrier = HeaderCarrier()
+    val underTest                  = new ApiMicroserviceConnector(mockWS)
   }
 
   "fetchApiDocumentationResourceByUrl" should {

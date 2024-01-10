@@ -45,7 +45,6 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
         description = "API for checking payments",
         context = context,
         versions = generateApiVersions(versions),
-        requiresTrust = false,
         isTestSupport = false,
         categories = List(ApiCategory.OTHER)
       )

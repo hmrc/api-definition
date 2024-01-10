@@ -18,10 +18,10 @@ package uk.gov.hmrc.apidefinition.models
 
 import java.util.UUID
 
-import play.api.libs.json.Json
+import play.api.libs.json.{Format, Json}
 
 case class Application(id: UUID, name: String)
 
 object Application {
-  implicit val format = Json.format[Application]
+  implicit val format: Format[Application] = Json.format[Application]
 }

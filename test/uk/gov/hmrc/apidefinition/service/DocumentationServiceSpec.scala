@@ -85,7 +85,6 @@ class DocumentationServiceSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wi
     name = "Hello World",
     description = "Example",
     context = ApiContext("hello"),
-    requiresTrust = false,
     isTestSupport = false,
     versions = List(
       ApiVersion(ApiVersionNbr("1.0"), ApiStatus.STABLE, endpoints = Nil, endpointsEnabled = false),

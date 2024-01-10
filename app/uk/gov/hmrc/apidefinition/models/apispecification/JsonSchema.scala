@@ -98,7 +98,7 @@ object JsonSchema {
   def notIfEmpty[A](seq: Seq[A]): Option[Seq[A]]  = if (seq.isEmpty) None else Some(seq)
   def notIfEmpty(xs: ListMap[String, JsonSchema]) = if (xs.isEmpty) None else Some(xs)
 
-  implicit val jsonSchemaW: OWrites[JsonSchema] = (
+  implicit lazy val jsonSchemaW: OWrites[JsonSchema] = (
     (__ \ "description").writeNullable[String] and
       (__ \ "id").writeNullable[String] and
       (__ \ "type").writeNullable[String] and

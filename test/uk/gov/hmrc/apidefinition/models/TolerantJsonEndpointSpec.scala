@@ -16,12 +16,13 @@
 
 package uk.gov.hmrc.apidefinition.models
 
+import play.api.libs.json.Format
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.utils.BaseJsonFormattersSpec
 
 class TolerantJsonEndpointSpec extends BaseJsonFormattersSpec {
 
-  implicit val useMe = TolerantJsonEndpoint.tolerantFormatEndpoint
+  implicit val useMe: Format[Endpoint] = TolerantJsonEndpoint.tolerantFormatEndpoint
   "TolerantJsonEndpoint" should {
 
     "read endpoint from Json" in {
