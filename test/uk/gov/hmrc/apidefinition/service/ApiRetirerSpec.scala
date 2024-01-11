@@ -142,8 +142,9 @@ class ApiRetirerSpec extends AsyncHmrcSpec {
       verify(mockLogger).info(s"Attempting to retire 1 API versions.")
       verifyNoMoreInteractions(mockLogger)
       
+      verify(mockAPIDefinitionRepository, times(1)).fetchByServiceName(ServiceName("api1"))
       verify(mockAPIDefinitionRepository, times(1)).save(expectedApiDefinition)
-    
+      verifyNoMoreInteractions(mockAPIDefinitionRepository)
     }
 
     "fetch multiple apis and versions and set them to retired" in new Setup {
@@ -154,10 +155,14 @@ class ApiRetirerSpec extends AsyncHmrcSpec {
       await(underTest.retireApis())
       verify(mockLogger).info(s"Attempting to retire 3 API versions.")
       verifyNoMoreInteractions(mockLogger)
+
+      verify(mockAPIDefinitionRepository, times(1)).fetchByServiceName(ServiceName("api1"))
+      verify(mockAPIDefinitionRepository, times(2)).fetchByServiceName(ServiceName("api2"))
       
       verify(mockAPIDefinitionRepository, times(1)).save(expectedApiDefinition)
       verify(mockAPIDefinitionRepository, times(1)).save(expectedApiDefinition2)
       verify(mockAPIDefinitionRepository, times(1)).save(expectedApiDefinition3)
+      verifyNoMoreInteractions(mockAPIDefinitionRepository)
     }
 
     "Do nothing when the list is empty" in new Setup {
@@ -184,12 +189,14 @@ class ApiRetirerSpec extends AsyncHmrcSpec {
       verify(mockLogger).warn(s"api6 version 2.0 can not be found")
     }
 
-    "log an error when the list includes data in the wrong format" in new Setup {
-      when(mockAppConfig.apisToRetire).thenReturn(List("someInvalidFormat"))
+    "ignore when api name is invalid" in new Setup {
+      when(mockAppConfig.apisToRetire).thenReturn(List("api1,2.0", "someInvalidFormat,", ",anotherInvalidFormat", "yetanotherInvalidFormat"))
+      when(mockAPIDefinitionRepository.fetchByServiceName(ServiceName("api1"))).thenReturn(successful(Some(testApiDefinition)))
 
       await(underTest.retireApis())
-      verify(mockLogger).warn("Expected api,version but got someInvalidFormat")
-      verifyZeroInteractions(mockAPIDefinitionRepository)
+      verify(mockAPIDefinitionRepository, times(1)).fetchByServiceName(ServiceName("api1"))
+      verify(mockAPIDefinitionRepository, times(1)).save(expectedApiDefinition)
+      verifyNoMoreInteractions(mockAPIDefinitionRepository)
     }
 
   }
