@@ -198,6 +198,5 @@ class ApiRetirerSpec extends AsyncHmrcSpec {
       verify(mockAPIDefinitionRepository, times(1)).save(expectedApiDefinition)
       verifyNoMoreInteractions(mockAPIDefinitionRepository)
     }
-
   }
 }

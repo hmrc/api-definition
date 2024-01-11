@@ -17,9 +17,7 @@ class ApiRetirer @Inject() (config: AppConfig, apiDefinitionRepository: APIDefin
   def retireApis()(implicit ec: ExecutionContext): Future[Unit] = {
     if (config.apisToRetire != null && config.apisToRetire.length != 0) {
       logger.info(s"Attempting to retire ${config.apisToRetire.length} API versions.")
-      val filtered = config.apisToRetire.filter(isValid)
-      println("************" + filtered + "*******************")
-      return Future.sequence(filtered.map { api => findAndRetireApi(api) })
+      return Future.sequence(config.apisToRetire.filter(isValid).map { api => findAndRetireApi(api) })
         .map(_ => ())
     }
     else {
@@ -28,7 +26,6 @@ class ApiRetirer @Inject() (config: AppConfig, apiDefinitionRepository: APIDefin
   }
 
   private def findAndRetireApi(apiAndVersion: String)(implicit ec: ExecutionContext): Future[Unit] = {
-    println("********************** findAndRetireApi called with " + apiAndVersion + "***************************" )
     val (api, versionToRetire) = getApiVersion(apiAndVersion)
     val listOfVersions = ListBuffer[ApiVersion]()
 
@@ -58,7 +55,7 @@ class ApiRetirer @Inject() (config: AppConfig, apiDefinitionRepository: APIDefin
   }
 
   private def isValid(apiAndVersion: String): Boolean = {
-    val pattern = """[A-Za-z0-9]+,[0-9]*\.[0-9]+"""
+    val pattern = ".+,.+"
     apiAndVersion.matches(pattern)
   }
 }
