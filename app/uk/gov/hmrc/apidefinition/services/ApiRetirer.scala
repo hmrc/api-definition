@@ -1,3 +1,19 @@
+/*
+ * Copyright 2024 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package uk.gov.hmrc.apidefinition.services
 
 import javax.inject.Inject
@@ -17,39 +33,40 @@ class ApiRetirer @Inject() (config: AppConfig, apiDefinitionRepository: APIDefin
   def retireApis()(implicit ec: ExecutionContext): Future[Unit] = {
     if (config.apisToRetire != null && config.apisToRetire.length != 0) {
       logger.info(s"Attempting to retire ${config.apisToRetire.length} API versions.")
-      return Future.sequence(config.apisToRetire.filter(isValid).map { api => findAndRetireApi(api) })
+      return Future.sequence(config.apisToRetire.filter(isValid).map { apiAndVersion => findAndRetireApi(apiAndVersion) })
         .map(_ => ())
-    }
-    else {
+    } else {
       return Future.successful(())
     }
   }
 
   private def findAndRetireApi(apiAndVersion: String)(implicit ec: ExecutionContext): Future[Unit] = {
     val (api, versionToRetire) = getApiVersion(apiAndVersion)
-    val listOfVersions = ListBuffer[ApiVersion]()
+    val listOfVersions         = ListBuffer[ApiVersion]()
 
     apiDefinitionRepository.fetchByServiceName(ServiceName(api)) map {
-      case Some(definition) => definition.versions.foreach {
-        version => {
-          if (version.versionNbr == ApiVersionNbr(versionToRetire)) {
-            val updatedVersion = version.copy(status = ApiStatus.RETIRED)
-            listOfVersions += updatedVersion
-          }
-          else {
-            listOfVersions += version
-          }
+      case Some(definition) => {
+        definition.versions.foreach {
+          version =>
+            {
+              if (version.versionNbr == ApiVersionNbr(versionToRetire)) {
+                val updatedVersion = version.copy(status = ApiStatus.RETIRED)
+                listOfVersions += updatedVersion
+              } else {
+                listOfVersions += version
+              }
+            }
         }
-      } 
-      val updatedDefinition = definition.copy(versions = listOfVersions.toList)
-      apiDefinitionRepository.save(updatedDefinition)
-      case _ => logger.warn(s"$api version $versionToRetire can not be found")
+        val updatedDefinition = definition.copy(versions = listOfVersions.toList)
+        apiDefinitionRepository.save(updatedDefinition)
+      }
+      case _                => logger.warn(s"$api version $versionToRetire can not be found")
     }
   }
 
   private def getApiVersion(apiAndVersion: String): (String, String) = {
-    val splitString = apiAndVersion.split(",")
-    val api = splitString(0)
+    val splitString     = apiAndVersion.split(",")
+    val api             = splitString(0)
     val versionToRetire = splitString(1)
     return (api, versionToRetire)
   }
