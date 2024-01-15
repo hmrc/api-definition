@@ -150,12 +150,13 @@ class ApiRetirerSpec extends AsyncHmrcSpec {
   )
 
   "retireApis" should {
-    "fetch apis to retire and set them to retired" in new Setup {
+    "fetch a single api to retire and set it to retired" in new Setup {
       when(mockAppConfig.apisToRetire).thenReturn(List("api1,2.0"))
       when(mockAPIDefinitionRepository.fetchByServiceName(ServiceName("api1"))).thenReturn(successful(Some(testApiDefinition)))
 
       await(underTest.retireApis())
       verify(mockLogger).info(s"Attempting to retire 1 API versions.")
+      verify(mockLogger).debug(s"api1 version 2.0 saved.")
       verifyNoMoreInteractions(mockLogger)
 
       verify(mockAPIDefinitionRepository, times(1)).fetchByServiceName(ServiceName("api1"))
@@ -170,7 +171,10 @@ class ApiRetirerSpec extends AsyncHmrcSpec {
 
       await(underTest.retireApis())
       verify(mockLogger).info(s"Attempting to retire 3 API versions.")
-      verifyNoMoreInteractions(mockLogger)
+      verify(mockLogger).debug(s"api1 version 2.0 saved.")
+      verify(mockLogger).debug(s"api2 version 3.0 saved.")
+      verify(mockLogger).debug(s"api2 version 1.0 saved.")
+
 
       verify(mockAPIDefinitionRepository, times(1)).fetchByServiceName(ServiceName("api1"))
       verify(mockAPIDefinitionRepository, times(2)).fetchByServiceName(ServiceName("api2"))
@@ -207,6 +211,16 @@ class ApiRetirerSpec extends AsyncHmrcSpec {
 
     "ignore when api name is invalid" in new Setup {
       when(mockAppConfig.apisToRetire).thenReturn(List("api1,2.0", "someInvalidFormat,", ",anotherInvalidFormat", "yetanotherInvalidFormat"))
+      when(mockAPIDefinitionRepository.fetchByServiceName(ServiceName("api1"))).thenReturn(successful(Some(testApiDefinition)))
+
+      await(underTest.retireApis())
+      verify(mockAPIDefinitionRepository, times(1)).fetchByServiceName(ServiceName("api1"))
+      verify(mockAPIDefinitionRepository, times(1)).save(expectedApiDefinition)
+      verifyNoMoreInteractions(mockAPIDefinitionRepository)
+    }
+
+    "save unchanged api versions" in new Setup {
+      when(mockAppConfig.apisToRetire).thenReturn(List("api1,2.0"))
       when(mockAPIDefinitionRepository.fetchByServiceName(ServiceName("api1"))).thenReturn(successful(Some(testApiDefinition)))
 
       await(underTest.retireApis())

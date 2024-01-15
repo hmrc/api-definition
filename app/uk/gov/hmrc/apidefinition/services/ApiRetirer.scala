@@ -34,10 +34,10 @@ class ApiRetirer @Inject() (config: AppConfig, apiDefinitionRepository: APIDefin
   def retireApis()(implicit ec: ExecutionContext): Future[Unit] = {
     if (config.apisToRetire != null && config.apisToRetire.length != 0) {
       logger.info(s"Attempting to retire ${config.apisToRetire.length} API versions.")
-      return Future.sequence(config.apisToRetire.filter(isValid).map { apiAndVersion => findAndRetireApi(apiAndVersion) })
+      Future.sequence(config.apisToRetire.filter(isValid).map { apiAndVersion => findAndRetireApi(apiAndVersion) })
         .map(_ => ())
     } else {
-      return Future.successful(())
+      Future.successful(())
     }
   }
 
@@ -53,16 +53,16 @@ class ApiRetirer @Inject() (config: AppConfig, apiDefinitionRepository: APIDefin
               if (version.versionNbr == ApiVersionNbr(versionToRetire)) {
                 val updatedVersion = version.copy(status = ApiStatus.RETIRED)
                 listOfVersions += updatedVersion
-              } else {
-                listOfVersions += version
               }
             }
         }
         val updatedDefinition = definition.copy(versions = listOfVersions.toList)
-        apiDefinitionRepository.save(updatedDefinition) // Error handling? Map the save to return unit?
-        // logger.warn(s"$api Saved.")
+        apiDefinitionRepository.save(updatedDefinition) // Error handling? Map the save to return
+        logger.debug(s"$api version $versionToRetire saved.")
       }
       case _                => logger.warn(s"$api version $versionToRetire can not be found")
+    } recover {
+      case NonFatal(e) => logger.warn(s"$api delete failed.", e)
     }
   }
   
@@ -71,7 +71,7 @@ class ApiRetirer @Inject() (config: AppConfig, apiDefinitionRepository: APIDefin
     val splitString     = apiAndVersion.split(",")
     val api             = splitString(0)
     val versionToRetire = splitString(1)
-    return (api, versionToRetire)
+    (api, versionToRetire)
   }
 
   private def isValid(apiAndVersion: String): Boolean = {
