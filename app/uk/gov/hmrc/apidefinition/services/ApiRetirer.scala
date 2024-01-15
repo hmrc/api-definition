@@ -26,6 +26,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiVersionNbr
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
+import scala.util.control.NonFatal
 
 class ApiRetirer @Inject() (config: AppConfig, apiDefinitionRepository: APIDefinitionRepository)
     extends ApplicationLogger {
@@ -58,11 +59,13 @@ class ApiRetirer @Inject() (config: AppConfig, apiDefinitionRepository: APIDefin
             }
         }
         val updatedDefinition = definition.copy(versions = listOfVersions.toList)
-        apiDefinitionRepository.save(updatedDefinition)
+        apiDefinitionRepository.save(updatedDefinition) // Error handling? Map the save to return unit?
+        // logger.warn(s"$api Saved.")
       }
       case _                => logger.warn(s"$api version $versionToRetire can not be found")
     }
   }
+  
 
   private def getApiVersion(apiAndVersion: String): (String, String) = {
     val splitString     = apiAndVersion.split(",")

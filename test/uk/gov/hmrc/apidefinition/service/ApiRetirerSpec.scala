@@ -1,3 +1,19 @@
+/*
+ * Copyright 2024 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future.successful
 
@@ -11,16 +27,16 @@ import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.services.ApiRetirer
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 
-
 class ApiRetirerSpec extends AsyncHmrcSpec {
 
   trait Setup {
     implicit val ec: ExecutionContext = ExecutionContext.global
-    implicit val hc = HeaderCarrier()
+    implicit val hc                   = HeaderCarrier()
 
-    val mockAppConfig: AppConfig = mock[AppConfig]
-    val mockLogger: Logger       = mock[Logger]
+    val mockAppConfig: AppConfig                             = mock[AppConfig]
+    val mockLogger: Logger                                   = mock[Logger]
     val mockAPIDefinitionRepository: APIDefinitionRepository = mock[APIDefinitionRepository]
+
     val underTest = new ApiRetirer(mockAppConfig, mockAPIDefinitionRepository) {
       override val logger: Logger = mockLogger
     }
@@ -133,7 +149,7 @@ class ApiRetirerSpec extends AsyncHmrcSpec {
     categories = List(ApiCategory.AGENTS)
   )
 
-"retireApis" should {
+  "retireApis" should {
     "fetch apis to retire and set them to retired" in new Setup {
       when(mockAppConfig.apisToRetire).thenReturn(List("api1,2.0"))
       when(mockAPIDefinitionRepository.fetchByServiceName(ServiceName("api1"))).thenReturn(successful(Some(testApiDefinition)))
@@ -141,7 +157,7 @@ class ApiRetirerSpec extends AsyncHmrcSpec {
       await(underTest.retireApis())
       verify(mockLogger).info(s"Attempting to retire 1 API versions.")
       verifyNoMoreInteractions(mockLogger)
-      
+
       verify(mockAPIDefinitionRepository, times(1)).fetchByServiceName(ServiceName("api1"))
       verify(mockAPIDefinitionRepository, times(1)).save(expectedApiDefinition)
       verifyNoMoreInteractions(mockAPIDefinitionRepository)
@@ -158,7 +174,7 @@ class ApiRetirerSpec extends AsyncHmrcSpec {
 
       verify(mockAPIDefinitionRepository, times(1)).fetchByServiceName(ServiceName("api1"))
       verify(mockAPIDefinitionRepository, times(2)).fetchByServiceName(ServiceName("api2"))
-      
+
       verify(mockAPIDefinitionRepository, times(1)).save(expectedApiDefinition)
       verify(mockAPIDefinitionRepository, times(1)).save(expectedApiDefinition2)
       verify(mockAPIDefinitionRepository, times(1)).save(expectedApiDefinition3)
