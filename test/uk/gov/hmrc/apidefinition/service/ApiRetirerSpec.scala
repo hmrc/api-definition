@@ -185,16 +185,8 @@ class ApiRetirerSpec extends AsyncHmrcSpec {
       verifyNoMoreInteractions(mockAPIDefinitionRepository)
     }
 
-    "Do nothing when the list is empty" in new Setup {
-      when(mockAppConfig.apisToRetire).thenReturn(List())
-
-      await(underTest.retireApis())
-      verifyZeroInteractions(mockLogger)
-      verifyZeroInteractions(mockAPIDefinitionRepository)
-    }
-
-    "Do nothing when the list is doesn't exist" in new Setup {
-      when(mockAppConfig.apisToRetire).thenReturn(null)
+    "Do nothing when the config list of Apis to retire is empty" in new Setup {
+      when(mockAppConfig.apisToRetire).thenReturn(List.empty)
 
       await(underTest.retireApis())
       verifyZeroInteractions(mockLogger)

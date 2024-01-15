@@ -32,13 +32,8 @@ class ApiRetirer @Inject() (config: AppConfig, apiDefinitionRepository: APIDefin
     extends ApplicationLogger {
 
   def retireApis()(implicit ec: ExecutionContext): Future[Unit] = {
-    if (config.apisToRetire != null && config.apisToRetire.length != 0) {
-      logger.info(s"Attempting to retire ${config.apisToRetire.length} API versions.")
       Future.sequence(config.apisToRetire.filter(isValid).map { apiAndVersion => findAndRetireApi(apiAndVersion) })
         .map(_ => ())
-    } else {
-      Future.successful(())
-    }
   }
 
   private def findAndRetireApi(apiAndVersion: String)(implicit ec: ExecutionContext): Future[Unit] = {
@@ -47,22 +42,24 @@ class ApiRetirer @Inject() (config: AppConfig, apiDefinitionRepository: APIDefin
 
     apiDefinitionRepository.fetchByServiceName(ServiceName(api)) map {
       case Some(definition) => {
-        definition.versions.foreach {
+        definition.versions.map {
           version =>
-            {
-              if (version.versionNbr == ApiVersionNbr(versionToRetire)) {
-                val updatedVersion = version.copy(status = ApiStatus.RETIRED)
-                listOfVersions += updatedVersion
-              }
+          {
+            if (version.versionNbr == ApiVersionNbr(versionToRetire)) {
+              listOfVersions += version.copy(status = ApiStatus.RETIRED)
+            } else {
+              listOfVersions += version
             }
+          }
         }
         val updatedDefinition = definition.copy(versions = listOfVersions.toList)
-        apiDefinitionRepository.save(updatedDefinition) // Error handling? Map the save to return
+        logger.info(s"Attempting to retire ${config.apisToRetire.length} API versions.")
+        apiDefinitionRepository.save(updatedDefinition)
         logger.debug(s"$api version $versionToRetire saved.")
       }
       case _                => logger.warn(s"$api version $versionToRetire can not be found")
     } recover {
-      case NonFatal(e) => logger.warn(s"$api delete failed.", e)
+      case NonFatal(e) => logger.warn(s"$api retire failed.", e)
     }
   }
   

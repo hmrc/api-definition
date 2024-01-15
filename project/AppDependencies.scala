@@ -18,6 +18,7 @@ object AppDependencies {
     "uk.gov.hmrc"              %% "bootstrap-test-play-28"  % bootstrapVersion,
     "uk.gov.hmrc.mongo"        %% "hmrc-mongo-test-play-28" % mongoPlayVersion,
     "org.scalaj"               %% "scalaj-http"             % "2.4.2",
+    "org.scalatest"            %% "scalatest"               % "3.2.17",
     "org.mockito"              %% "mockito-scala-scalatest" % "1.17.22",
     "com.typesafe.play"        %% "play-test"               % PlayVersion.current,
     "de.leanovate.play-mockws" %% "play-mockws"             % "2.8.1"

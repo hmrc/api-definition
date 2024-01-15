@@ -19,16 +19,14 @@ package uk.gov.hmrc.apidefinition.service
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
-
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiStatus, _}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HeaderNames._
-
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
-import uk.gov.hmrc.apidefinition.services.{APIDefinitionService, ApiRemover, AwsApiPublisher, NotificationService}
+import uk.gov.hmrc.apidefinition.services.{APIDefinitionService, ApiRemover, ApiRetirer, AwsApiPublisher, NotificationService}
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 
 class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
@@ -53,12 +51,14 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
     val mockNotificationService: NotificationService         = mock[NotificationService]
     val mockAppContext: AppConfig                            = mock[AppConfig]
     val mockApiRemover: ApiRemover                           = mock[ApiRemover]
+    val mockApiRetirer: ApiRetirer                           = mock[ApiRetirer]
 
     val underTest = new APIDefinitionService(
       FixedClock.clock,
       mockAwsApiPublisher,
       mockAPIDefinitionRepository,
       mockApiRemover,
+      mockApiRetirer,
       mockNotificationService,
       mockAppContext
     )

@@ -1,7 +1,6 @@
 import play.sbt.PlayScala
 import uk.gov.hmrc.DefaultBuildSettings._
-import uk.gov.hmrc.SbtAutoBuildPlugin
-
+import uk.gov.hmrc.{DefaultBuildSettings, SbtAutoBuildPlugin}
 import bloop.integrations.sbt.BloopDefaults
 
 lazy val appName = "api-definition"
@@ -56,6 +55,21 @@ lazy val microservice = Project(appName, file("."))
     ComponentTest / fork := false,
     addTestReportOption(ComponentTest, "component-reports")
   )
+
+  .configs(IntegrationTest)
+  .settings(DefaultBuildSettings.integrationTestSettings())
+  .settings(
+    IntegrationTest / fork := false,
+    IntegrationTest / parallelExecution := false,
+    IntegrationTest / unmanagedSourceDirectories += baseDirectory.value / "it",
+    IntegrationTest / unmanagedSourceDirectories += baseDirectory.value / "testcommon",
+    IntegrationTest / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-eT"),
+    IntegrationTest / testGrouping := oneForkedJvmPerTest(
+      (IntegrationTest / definedTests).value
+    ),
+    addTestReportOption(IntegrationTest, "int-test-reports")
+  )
+  .settings(scalafixConfigSettings(IntegrationTest))
 
 def onPackageName(rootPackage: String): String => Boolean = {
   testName => testName startsWith rootPackage
