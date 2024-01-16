@@ -4,22 +4,20 @@ import uk.gov.hmrc.{DefaultBuildSettings, SbtAutoBuildPlugin}
 import bloop.integrations.sbt.BloopDefaults
 
 lazy val appName = "api-definition"
-scalaVersion := "2.13.8"
+
+scalaVersion := "2.13.12"
 
 lazy val ComponentTest = config("component") extend Test
 
 ThisBuild / scalafixDependencies += "com.github.liancheng" %% "organize-imports" % "0.6.0"
 ThisBuild / libraryDependencySchemes += "org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always
-inThisBuild(
-    List(
-      semanticdbEnabled := true,
-      semanticdbVersion := scalafixSemanticdb.revision
-  )
-)
+ThisBuild / semanticdbEnabled := true
+ThisBuild / semanticdbVersion := scalafixSemanticdb.revision
+
 lazy val playSettings: Seq[Setting[_]] = Seq.empty
 
 lazy val microservice = Project(appName, file("."))
-  .enablePlugins(PlayScala, SbtAutoBuildPlugin, SbtDistributablesPlugin)
+  .enablePlugins(PlayScala, SbtDistributablesPlugin)
   .disablePlugins(JUnitXmlReportPlugin)
   .settings(playSettings: _*)
   .settings(scalaSettings: _*)
@@ -47,6 +45,7 @@ lazy val microservice = Project(appName, file("."))
   )
   .configs(ComponentTest)
   .settings(inConfig(ComponentTest)(Defaults.testSettings): _*)
+  .settings(inConfig(ComponentTest)(scalafixConfigSettings(ComponentTest)))
   .settings(inConfig(ComponentTest)(BloopDefaults.configSettings))
   .settings(
     ComponentTest / testOptions := Seq(Tests.Argument(TestFrameworks.ScalaTest, "-oDT")),
@@ -76,6 +75,7 @@ def onPackageName(rootPackage: String): String => Boolean = {
 }
 
 Global / bloopAggregateSourceDependencies := true
+Global / bloopExportJarClassifiers := Some(Set("sources"))
 
 commands ++= Seq(
   Command.command("run-all-tests") { state => "test" :: "component:test" :: state },
@@ -83,5 +83,5 @@ commands ++= Seq(
   Command.command("clean-and-test") { state => "clean" :: "compile" :: "run-all-tests" :: state },
 
   // Coverage does not need compile !
-  Command.command("pre-commit") { state => "scalafmtAll" :: "scalafixAll" :: "clean" :: "coverage" :: "run-all-tests" :: "coverageReport" :: state }
+  Command.command("pre-commit") { state => "scalafmtAll" :: "scalafixAll" :: "clean" :: "coverage" :: "run-all-tests" :: "coverageOff" :: "coverageAggregate" :: state }
 )

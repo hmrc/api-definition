@@ -34,7 +34,7 @@ trait TolerantJsonEndpoint {
 
   private val endpointWrites: OWrites[Endpoint] = Json.writes[Endpoint]
 
-  implicit val tolerantFormatEndpoint = OFormat[Endpoint](endpointReads, endpointWrites)
+  implicit val tolerantFormatEndpoint: Format[Endpoint] = OFormat[Endpoint](endpointReads, endpointWrites)
 }
 
 object TolerantJsonEndpoint extends TolerantJsonEndpoint

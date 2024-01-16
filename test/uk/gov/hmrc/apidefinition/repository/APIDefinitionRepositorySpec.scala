@@ -73,7 +73,6 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
     description = "This is the Hello API",
     context = ApiContext("hello"),
     versions = List(helloApiVersion),
-    requiresTrust = false,
     isTestSupport = false,
     lastPublishedAt = None,
     categories = List(ApiCategory.AGENTS)
@@ -86,7 +85,6 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
     description = "This is the Calendar API",
     context = ApiContext("calendar"),
     versions = List(calendarApiVersion),
-    requiresTrust = false,
     isTestSupport = false,
     lastPublishedAt = None,
     categories = List(ApiCategory.AGENTS)
@@ -106,7 +104,6 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
     description = "This is the Individual Income Tax API",
     context = ApiContext("individuals/income-tax"),
     versions = List(individualIncomeTaxApiVersion),
-    requiresTrust = false,
     isTestSupport = false,
     lastPublishedAt = None,
     categories = List(ApiCategory.AGENTS)
@@ -129,7 +126,6 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
     description = "This is the Individual National Insurance API",
     context = ApiContext("individuals/ni"),
     versions = List(individualNIApiVersion),
-    requiresTrust = false,
     isTestSupport = false,
     lastPublishedAt = None,
     categories = List(ApiCategory.AGENTS)

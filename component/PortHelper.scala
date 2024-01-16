@@ -1,10 +1,10 @@
 package component 
 
-import play.api.Logger
-
 import java.net.ServerSocket
 import scala.annotation.tailrec
 import scala.language.postfixOps
+
+import play.api.Logger
 
 object PortHelper {
   val rnd            = new scala.util.Random

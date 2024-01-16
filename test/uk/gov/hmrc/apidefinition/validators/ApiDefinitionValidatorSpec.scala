@@ -19,6 +19,7 @@ package uk.gov.hmrc.apidefinition.validators
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.successful
 
+import akka.stream.Materializer
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 
 import play.api.mvc.Results.{NoContent, UnprocessableEntity}
@@ -35,7 +36,7 @@ import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 
 class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite {
 
-  implicit val mat = app.materializer
+  implicit val mat: Materializer = app.materializer
 
   trait Setup {
     val mockAPIDefinitionService: APIDefinitionService       = mock[APIDefinitionService]
@@ -242,7 +243,6 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
       description = "API for checking payments",
       context = ApiContext("individuals/money"),
       versions = List(moneyApiVersion),
-      requiresTrust = false,
       isTestSupport = false,
       lastPublishedAt = None,
       categories = List(ApiCategory.OTHER)
@@ -286,7 +286,7 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
         assertValidationFailure(
           apiDefinition,
           List(s"Field 'endpoints.uriPattern' with value '$endpointUri' should" +
-            " match regular expression '^/[a-zA-Z0-9_\\-\\/{}]*$' for API 'Money API' version '1.0' endpoint 'Check Payments'")
+            " match regular expression '^/[.]?[a-zA-Z0-9_\\-\\/{}]*$' for API 'Money API' version '1.0' endpoint 'Check Payments'")
         )
       }
     }
@@ -315,7 +315,7 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
 
       assertValidationFailure(
         apiDefinition,
-        List(s"Field 'endpoints.uriPattern' with value '$endpoint' should match regular expression '^/[a-zA-Z0-9_\\-\\/{}]*$$' for API 'Money API' version '1.0' endpoint 'Check Payments'")
+        List(s"Field 'endpoints.uriPattern' with value '$endpoint' should match regular expression '^/[.]?[a-zA-Z0-9_\\-\\/{}]*$$' for API 'Money API' version '1.0' endpoint 'Check Payments'")
       )
     }
 

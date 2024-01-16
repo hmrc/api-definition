@@ -21,6 +21,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.Future.{failed, successful}
 import scala.concurrent.{ExecutionContext, Future}
 
+import play.api.libs.json.OFormat
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
@@ -48,7 +49,7 @@ class APIDefinitionService @Inject() (
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger with ClockNow {
 
-  implicit val useThisFormatter = TolerantJsonApiDefinition.tolerantFormatApiDefinition
+  implicit val useThisFormatter: OFormat[StoredApiDefinition] = TolerantJsonApiDefinition.tolerantFormatApiDefinition
 
   private def convertOne(stored: StoredApiDefinition): ApiDefinition = {
     ApiDefinition.fromStored(stored)

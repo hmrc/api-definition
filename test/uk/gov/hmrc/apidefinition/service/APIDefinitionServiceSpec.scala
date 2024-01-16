@@ -37,14 +37,14 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
   def unitSuccess: Future[Unit] = successful { () }
 
   private def aStoredApiDefinition(context: ApiContext, versions: ApiVersion*) =
-    StoredApiDefinition(ServiceName("service"), "http://service", "name", "description", context, versions.toList, false, false, None, List(ApiCategory.OTHER))
+    StoredApiDefinition(ServiceName("service"), "http://service", "name", "description", context, versions.toList, false, None, List(ApiCategory.OTHER))
 
   private def anApiDefinition(context: ApiContext, versions: ApiVersion*) =
-    ApiDefinition(ServiceName("service"), "http://service", "name", "description", context, versions.map(v => v.versionNbr -> v).toMap, false, false, None, List(ApiCategory.OTHER))
+    ApiDefinition(ServiceName("service"), "http://service", "name", "description", context, versions.map(v => v.versionNbr -> v).toMap, false, None, List(ApiCategory.OTHER))
 
   trait Setup {
 
-    implicit val hc = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
+    implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
 
     val mockAwsApiPublisher: AwsApiPublisher                 = mock[AwsApiPublisher]
     val mockAPIDefinitionRepository: APIDefinitionRepository = mock[APIDefinitionRepository]
@@ -97,7 +97,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
 
     val apiDefinitionWithAllVersions = aStoredApiDefinition(context, allVersions: _*)
     val apiDefinition                = someAPIDefinition
-    val apiDefinitionWithSavingTime  = apiDefinition.copy(lastPublishedAt = Some(instant()))
+    val apiDefinitionWithSavingTime  = apiDefinition.copy(lastPublishedAt = Some(instant))
 
     when(mockAPIDefinitionRepository.fetchByServiceName(apiDefinition.serviceName)).thenReturn(successful(Some(apiDefinition)))
     when(mockAwsApiPublisher.delete(apiDefinition)).thenReturn(successful(()))
@@ -164,7 +164,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
       val updatedStatus: ApiStatus                                = ApiStatus.BETA
       val existingAPIDefinition: StoredApiDefinition              = aStoredApiDefinition(apiContext, aVersion(apiVersion, existingStatus, ApiAccess.PUBLIC))
       val updatedAPIDefinition: StoredApiDefinition               = aStoredApiDefinition(apiContext, aVersion(apiVersion, updatedStatus, ApiAccess.PUBLIC))
-      val updatedAPIDefinitionWithSavingTime: StoredApiDefinition = updatedAPIDefinition.copy(lastPublishedAt = Some(instant()))
+      val updatedAPIDefinitionWithSavingTime: StoredApiDefinition = updatedAPIDefinition.copy(lastPublishedAt = Some(instant))
 
       when(mockAPIDefinitionRepository.fetchByContext(apiContext)).thenReturn(successful(Some(existingAPIDefinition)))
       when(mockNotificationService.notifyOfStatusChange(existingAPIDefinition.name, apiVersion, existingStatus, updatedStatus)).thenReturn(unitSuccess)
@@ -366,7 +366,6 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
           )
         )
       ),
-      false,
       false,
       None,
       List(ApiCategory.OTHER)

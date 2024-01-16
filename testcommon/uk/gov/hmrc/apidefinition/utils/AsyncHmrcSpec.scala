@@ -14,22 +14,10 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.apiplatform.modules.common.utils
+package uk.gov.hmrc.apidefinition.utils
 
-import java.time.temporal.ChronoUnit
-import java.time.{Clock, Instant, LocalDateTime, ZoneOffset}
+import play.api.test.{DefaultAwaitTimeout, FutureAwaits}
+import uk.gov.hmrc.apiplatform.modules.common.utils
 
-import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
-
-trait FixedClock extends ClockNow {
-
-  val clock: Clock = {
-    val utc: ZoneOffset      = ZoneOffset.UTC
-    val anLdt: LocalDateTime = LocalDateTime.of(2020, 1, 2, 3, 4, 5, 6 * 1000 * 1000).truncatedTo(ChronoUnit.MILLIS)
-    val anInstant: Instant   = anLdt.toInstant(utc).truncatedTo(ChronoUnit.MILLIS)
-
-    Clock.fixed(anInstant, utc)
-  }
-}
-
-object FixedClock extends FixedClock
+abstract class AsyncHmrcSpec
+    extends utils.HmrcSpec with DefaultAwaitTimeout with FutureAwaits {}
