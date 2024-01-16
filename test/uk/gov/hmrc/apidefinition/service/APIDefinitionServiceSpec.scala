@@ -302,6 +302,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
     "publish all APIs and remove unused APIs" in new Setup {
       val apiDefinition1: StoredApiDefinition = someAPIDefinition
       val apiDefinition2: StoredApiDefinition = someAPIDefinition
+      when(mockAppContext.apisToRetire).thenReturn(List.empty)
       when(mockApiRemover.deleteUnusedApis()).thenReturn(successful(()))
       when(mockAPIDefinitionRepository.fetchAll()).thenReturn(successful(Seq(apiDefinition1, apiDefinition2)))
       when(mockAwsApiPublisher.publishAll(*)(*)).thenReturn(successful(()))
@@ -309,6 +310,31 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
       await(underTest.publishAllToAws())
 
       verify(mockAwsApiPublisher, times(1)).publishAll(Seq(apiDefinition1, apiDefinition2))
+    }
+
+    "Do nothing when the config list of Apis to retire is empty" in new Setup {
+      val apiDefinition1: StoredApiDefinition = someAPIDefinition
+      val apiDefinition2: StoredApiDefinition = someAPIDefinition
+      when(mockAppContext.apisToRetire).thenReturn(List.empty)
+      when(mockApiRemover.deleteUnusedApis()).thenReturn(successful(()))
+      when(mockAPIDefinitionRepository.fetchAll()).thenReturn(successful(Seq(apiDefinition1, apiDefinition2)))
+      when(mockAwsApiPublisher.publishAll(*)(*)).thenReturn(successful(()))
+
+      await(underTest.publishAllToAws())
+      verifyZeroInteractions(mockApiRetirer)
+    }
+
+    "Retire Apis when the config list of Apis to retire is not empty" in new Setup {
+      val apiDefinition1: StoredApiDefinition = someAPIDefinition
+      val apiDefinition2: StoredApiDefinition = someAPIDefinition
+      when(mockAppContext.apisToRetire).thenReturn(List("api1,2.0", "api2,3.0", "api2,1.0"))
+      when(mockApiRetirer.retireApis()).thenReturn(successful(()))
+      when(mockApiRemover.deleteUnusedApis()).thenReturn(successful(()))
+      when(mockAPIDefinitionRepository.fetchAll()).thenReturn(successful(Seq(apiDefinition1, apiDefinition2)))
+      when(mockAwsApiPublisher.publishAll(*)(*)).thenReturn(successful(()))
+
+      await(underTest.publishAllToAws())
+      verify(mockApiRetirer, times(1)).retireApis()
     }
   }
 

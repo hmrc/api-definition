@@ -15,13 +15,11 @@
  */
 
 import scala.concurrent.ExecutionContext
-import scala.concurrent.Future.successful
-
+import scala.concurrent.Future.{failed, successful}
 import play.api.Logger
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApiContext, ApiVersionNbr}
-import uk.gov.hmrc.http.HeaderCarrier
-
+import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.services.ApiRetirer
@@ -31,7 +29,7 @@ class ApiRetirerSpec extends AsyncHmrcSpec {
 
   trait Setup {
     implicit val ec: ExecutionContext = ExecutionContext.global
-    implicit val hc                   = HeaderCarrier()
+    implicit val hc: HeaderCarrier = HeaderCarrier()
 
     val mockAppConfig: AppConfig                             = mock[AppConfig]
     val mockLogger: Logger                                   = mock[Logger]
@@ -185,14 +183,6 @@ class ApiRetirerSpec extends AsyncHmrcSpec {
       verifyNoMoreInteractions(mockAPIDefinitionRepository)
     }
 
-    "Do nothing when the config list of Apis to retire is empty" in new Setup {
-      when(mockAppConfig.apisToRetire).thenReturn(List.empty)
-
-      await(underTest.retireApis())
-      verifyZeroInteractions(mockLogger)
-      verifyZeroInteractions(mockAPIDefinitionRepository)
-    }
-
     "log an appropriate message when the api can not be found in the collection" in new Setup {
       when(mockAppConfig.apisToRetire).thenReturn(List("api6,2.0"))
       when(mockAPIDefinitionRepository.fetchByServiceName(ServiceName("api6"))).thenReturn(successful(None))
@@ -219,6 +209,15 @@ class ApiRetirerSpec extends AsyncHmrcSpec {
       verify(mockAPIDefinitionRepository, times(1)).fetchByServiceName(ServiceName("api1"))
       verify(mockAPIDefinitionRepository, times(1)).save(expectedApiDefinition)
       verifyNoMoreInteractions(mockAPIDefinitionRepository)
+    }
+
+    "log an appropriate message on failure" in new Setup {
+      val error = UpstreamErrorResponse.apply("error1", 500, 1)
+      when(mockAppConfig.apisToRetire).thenReturn(List("api1,2.0"))
+      when(mockAPIDefinitionRepository.fetchByServiceName(ServiceName("api1"))).thenReturn(failed(error))
+
+      await(underTest.retireApis())
+      verify(mockLogger).warn(s"api1 retire failed.", error)
     }
   }
 }

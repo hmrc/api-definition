@@ -32,6 +32,7 @@ class ApiRetirer @Inject() (config: AppConfig, apiDefinitionRepository: APIDefin
     extends ApplicationLogger {
 
   def retireApis()(implicit ec: ExecutionContext): Future[Unit] = {
+    logger.info(s"Attempting to retire ${config.apisToRetire.length} API versions.")
       Future.sequence(config.apisToRetire.filter(isValid).map { apiAndVersion => findAndRetireApi(apiAndVersion) })
         .map(_ => ())
   }
@@ -53,7 +54,6 @@ class ApiRetirer @Inject() (config: AppConfig, apiDefinitionRepository: APIDefin
           }
         }
         val updatedDefinition = definition.copy(versions = listOfVersions.toList)
-        logger.info(s"Attempting to retire ${config.apisToRetire.length} API versions.")
         apiDefinitionRepository.save(updatedDefinition)
         logger.debug(s"$api version $versionToRetire saved.")
       }
@@ -62,7 +62,6 @@ class ApiRetirer @Inject() (config: AppConfig, apiDefinitionRepository: APIDefin
       case NonFatal(e) => logger.warn(s"$api retire failed.", e)
     }
   }
-  
 
   private def getApiVersion(apiAndVersion: String): (String, String) = {
     val splitString     = apiAndVersion.split(",")
