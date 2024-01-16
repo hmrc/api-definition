@@ -21,6 +21,7 @@ object AppDependencies {
     "org.scalatest"            %% "scalatest"               % "3.2.17",
     "org.mockito"              %% "mockito-scala-scalatest" % "1.17.22",
     "com.typesafe.play"        %% "play-test"               % PlayVersion.current,
-    "de.leanovate.play-mockws" %% "play-mockws"             % "2.8.1"
+    "de.leanovate.play-mockws" %% "play-mockws"             % "2.8.1",
+    "com.vladsch.flexmark"     %  "flexmark-all"            % "0.62.2"
   ).map(_ % "test, component")
 }
