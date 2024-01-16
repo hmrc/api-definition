@@ -46,6 +46,8 @@ class APIDefinitionRepository @Inject() (mongoComponent: MongoComponent)(implici
         .map(fieldName => createUniqueBackgroundSingleFieldAscendingIndex(fieldName, s"${fieldName}Index"))
     ) with Logging {
 
+  override lazy val requiresTtlIndex = false
+
   override lazy val collection: MongoCollection[StoredApiDefinition] =
     CollectionFactory
       .collection(mongoComponent.database, collectionName, domainFormat)

@@ -16,6 +16,7 @@
 
 package component
 
+import org.scalatest.TestSuite
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 
 import play.api.inject.guice.GuiceApplicationBuilder
@@ -29,8 +30,8 @@ import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 
 trait ComponentSpec extends AsyncHmrcSpec
   with DefaultPlayMongoRepositorySupport[StoredApiDefinition] with WireMockSupport with GuiceOneServerPerSuite  {
-
-  override def repository: APIDefinitionRepository = app.injector.instanceOf[APIDefinitionRepository]
+  this: TestSuite =>
+  override val repository: APIDefinitionRepository = app.injector.instanceOf[APIDefinitionRepository]
 
    override def commonStubs(): Unit = {}
 
