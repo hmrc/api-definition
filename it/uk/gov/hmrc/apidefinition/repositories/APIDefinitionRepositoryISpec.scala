@@ -30,10 +30,22 @@ import play.api.test.Helpers.{await, defaultAwaitTimeout}
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 import uk.gov.hmrc.mongo.test.PlayMongoRepositorySupport
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiAccess, ApiCategory, ApiStatus, ApiVersion, AuthType, Endpoint, HttpMethod, ResourceThrottlingTier, ServiceName, StoredApiDefinition}
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{
+  ApiAccess,
+  ApiCategory,
+  ApiStatus,
+  ApiVersion,
+  AuthType,
+  Endpoint,
+  HttpMethod,
+  ResourceThrottlingTier,
+  ServiceName,
+  StoredApiDefinition
+}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApiContext, ApiVersionNbr}
 
-class APIDefinitionRepositoryISpec extends AnyWordSpec with PlayMongoRepositorySupport[StoredApiDefinition] with Matchers with BeforeAndAfterEach with GuiceOneAppPerSuite with IntegrationPatience {
+class APIDefinitionRepositoryISpec extends AnyWordSpec with PlayMongoRepositorySupport[StoredApiDefinition] with Matchers with BeforeAndAfterEach with GuiceOneAppPerSuite
+    with IntegrationPatience {
   val serviceRepo = repository.asInstanceOf[APIDefinitionRepository]
 
   override implicit lazy val app: Application = appBuilder.build()
@@ -80,7 +92,7 @@ class APIDefinitionRepositoryISpec extends AnyWordSpec with PlayMongoRepositoryS
       endpoints = List(Endpoint("/date", "Check current date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
     )
 
-    val definition = StoredApiDefinition (
+    val definition = StoredApiDefinition(
       serviceName = ServiceName("api1"),
       serviceBaseUrl = "test.com",
       name = "Test",

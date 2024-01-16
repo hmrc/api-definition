@@ -29,7 +29,7 @@ class ApiRetirerSpec extends AsyncHmrcSpec {
 
   trait Setup {
     implicit val ec: ExecutionContext = ExecutionContext.global
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+    implicit val hc: HeaderCarrier    = HeaderCarrier()
 
     val mockAppConfig: AppConfig                             = mock[AppConfig]
     val mockLogger: Logger                                   = mock[Logger]
@@ -172,7 +172,6 @@ class ApiRetirerSpec extends AsyncHmrcSpec {
       verify(mockLogger).debug(s"api1 version 2.0 saved.")
       verify(mockLogger).debug(s"api2 version 3.0 saved.")
       verify(mockLogger).debug(s"api2 version 1.0 saved.")
-
 
       verify(mockAPIDefinitionRepository, times(1)).fetchByServiceName(ServiceName("api1"))
       verify(mockAPIDefinitionRepository, times(2)).fetchByServiceName(ServiceName("api2"))

@@ -33,8 +33,8 @@ class ApiRetirer @Inject() (config: AppConfig, apiDefinitionRepository: APIDefin
 
   def retireApis()(implicit ec: ExecutionContext): Future[Unit] = {
     logger.info(s"Attempting to retire ${config.apisToRetire.length} API versions.")
-      Future.sequence(config.apisToRetire.filter(isValid).map { apiAndVersion => findAndRetireApi(apiAndVersion) })
-        .map(_ => ())
+    Future.sequence(config.apisToRetire.filter(isValid).map { apiAndVersion => findAndRetireApi(apiAndVersion) })
+      .map(_ => ())
   }
 
   private def findAndRetireApi(apiAndVersion: String)(implicit ec: ExecutionContext): Future[Unit] = {
@@ -45,13 +45,13 @@ class ApiRetirer @Inject() (config: AppConfig, apiDefinitionRepository: APIDefin
       case Some(definition) => {
         definition.versions.map {
           version =>
-          {
-            if (version.versionNbr == ApiVersionNbr(versionToRetire)) {
-              listOfVersions += version.copy(status = ApiStatus.RETIRED)
-            } else {
-              listOfVersions += version
+            {
+              if (version.versionNbr == ApiVersionNbr(versionToRetire)) {
+                listOfVersions += version.copy(status = ApiStatus.RETIRED)
+              } else {
+                listOfVersions += version
+              }
             }
-          }
         }
         val updatedDefinition = definition.copy(versions = listOfVersions.toList)
         apiDefinitionRepository.save(updatedDefinition)
