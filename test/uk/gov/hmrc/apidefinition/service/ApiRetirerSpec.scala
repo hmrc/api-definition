@@ -16,10 +16,12 @@
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future.{failed, successful}
+
 import play.api.Logger
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApiContext, ApiVersionNbr}
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
+
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.services.ApiRetirer
@@ -68,7 +70,6 @@ class ApiRetirerSpec extends AsyncHmrcSpec {
     description = "This is the Test API",
     context = ApiContext("test"),
     versions = List(testApiVersion1, testApiVersion2, testApiVersion3),
-    requiresTrust = false,
     isTestSupport = false,
     lastPublishedAt = None,
     categories = List(ApiCategory.AGENTS)
@@ -81,7 +82,6 @@ class ApiRetirerSpec extends AsyncHmrcSpec {
     description = "This is the Test API2",
     context = ApiContext("test2"),
     versions = List(testApiVersion1, testApiVersion2, testApiVersion3),
-    requiresTrust = false,
     isTestSupport = false,
     lastPublishedAt = None,
     categories = List(ApiCategory.AGENTS)
@@ -115,7 +115,6 @@ class ApiRetirerSpec extends AsyncHmrcSpec {
     description = "This is the Test API",
     context = ApiContext("test"),
     versions = List(testApiVersion1, expectedApiVersion2, testApiVersion3),
-    requiresTrust = false,
     isTestSupport = false,
     lastPublishedAt = None,
     categories = List(ApiCategory.AGENTS)
@@ -128,7 +127,6 @@ class ApiRetirerSpec extends AsyncHmrcSpec {
     description = "This is the Test API2",
     context = ApiContext("test2"),
     versions = List(testApiVersion1, testApiVersion2, expectedApiVersion3),
-    requiresTrust = false,
     isTestSupport = false,
     lastPublishedAt = None,
     categories = List(ApiCategory.AGENTS)
@@ -141,7 +139,6 @@ class ApiRetirerSpec extends AsyncHmrcSpec {
     description = "This is the Test API2",
     context = ApiContext("test2"),
     versions = List(expectedApiVersion1, testApiVersion2, testApiVersion3),
-    requiresTrust = false,
     isTestSupport = false,
     lastPublishedAt = None,
     categories = List(ApiCategory.AGENTS)

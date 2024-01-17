@@ -61,7 +61,6 @@ lazy val microservice = Project(appName, file("."))
     IntegrationTest / fork := false,
     IntegrationTest / parallelExecution := false,
     IntegrationTest / unmanagedSourceDirectories += baseDirectory.value / "it",
-    IntegrationTest / unmanagedSourceDirectories += baseDirectory.value / "testcommon",
     IntegrationTest / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-eT"),
     IntegrationTest / testGrouping := oneForkedJvmPerTest(
       (IntegrationTest / definedTests).value

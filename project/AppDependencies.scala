@@ -26,5 +26,5 @@ object AppDependencies {
     "com.vladsch.flexmark"     %  "flexmark-all"            % "0.62.2",
     "uk.gov.hmrc"              %% "api-platform-test-common-domain"   % commonDomainVersion,
     "de.leanovate.play-mockws" %% "play-mockws"             % "2.8.1"
-  ).map(_ % "test, component")
+  ).map(_ % "test, component, it")
 }

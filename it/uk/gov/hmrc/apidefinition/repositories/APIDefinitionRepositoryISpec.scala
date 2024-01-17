@@ -16,33 +16,22 @@
 
 package uk.gov.hmrc.apidefinition.repositories
 
-import java.util.UUID
 import org.mongodb.scala.ReadPreference.primaryPreferred
-import org.mongodb.scala.bson.{BsonBoolean, BsonDocument}
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.concurrent.IntegrationPatience
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.test.Helpers.{await, defaultAwaitTimeout}
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApiContext, ApiVersionNbr}
 import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
 import uk.gov.hmrc.mongo.test.PlayMongoRepositorySupport
+
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{
-  ApiAccess,
-  ApiCategory,
-  ApiStatus,
-  ApiVersion,
-  AuthType,
-  Endpoint,
-  HttpMethod,
-  ResourceThrottlingTier,
-  ServiceName,
-  StoredApiDefinition
-}
-import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApiContext, ApiVersionNbr}
 
 class APIDefinitionRepositoryISpec extends AnyWordSpec with PlayMongoRepositorySupport[StoredApiDefinition] with Matchers with BeforeAndAfterEach with GuiceOneAppPerSuite
     with IntegrationPatience {
@@ -99,7 +88,6 @@ class APIDefinitionRepositoryISpec extends AnyWordSpec with PlayMongoRepositoryS
       description = "This is the Test API",
       context = ApiContext("test"),
       versions = List(testApiVersion1),
-      requiresTrust = false,
       isTestSupport = false,
       lastPublishedAt = None,
       categories = List(ApiCategory.OTHER)
