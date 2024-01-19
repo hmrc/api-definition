@@ -144,7 +144,6 @@ class ApiRetirerSpec extends AsyncHmrcSpec {
   "retireApis" should {
     "fetch a single api to retire and set it to retired" in new Setup {
       val apisToRetire = List("api1,2.0")
-//      when(mockAppConfig.apisToRetire).thenReturn(List("api1,2.0"))
       when(mockAPIDefinitionRepository.fetchByServiceName(ServiceName("api1"))).thenReturn(successful(Some(testApiDefinition)))
 
       await(underTest.retireApis(apisToRetire))
@@ -158,7 +157,6 @@ class ApiRetirerSpec extends AsyncHmrcSpec {
     }
 
     "fetch multiple apis and versions and set them to retired" in new Setup {
-//      when(mockAppConfig.apisToRetire).thenReturn(List("api1,2.0", "api2,3.0", "api2,1.0"))
       val apisToRetire = List("api1,2.0", "api2,3.0", "api2,1.0")
       when(mockAPIDefinitionRepository.fetchByServiceName(ServiceName("api1"))).thenReturn(successful(Some(testApiDefinition)))
       when(mockAPIDefinitionRepository.fetchByServiceName(ServiceName("api2"))).thenReturn(successful(Some(testApiDefinition2)))
@@ -179,7 +177,6 @@ class ApiRetirerSpec extends AsyncHmrcSpec {
     }
 
     "log an appropriate message when the api can not be found in the collection" in new Setup {
-//      when(mockAppConfig.apisToRetire).thenReturn(List("api6,2.0"))
       val apisToRetire = List("api6,2.0")
       when(mockAPIDefinitionRepository.fetchByServiceName(ServiceName("api6"))).thenReturn(successful(None))
 
@@ -188,7 +185,6 @@ class ApiRetirerSpec extends AsyncHmrcSpec {
     }
 
     "ignore when api name is invalid" in new Setup {
-//      when(mockAppConfig.apisToRetire).thenReturn(List("api1,2.0", "someInvalidFormat,", ",anotherInvalidFormat", "yetanotherInvalidFormat"))
       val apisToRetire = List("api1,2.0", "someInvalidFormat,", ",anotherInvalidFormat", "yetanotherInvalidFormat")
       when(mockAPIDefinitionRepository.fetchByServiceName(ServiceName("api1"))).thenReturn(successful(Some(testApiDefinition)))
 
@@ -199,7 +195,6 @@ class ApiRetirerSpec extends AsyncHmrcSpec {
     }
 
     "save unchanged api versions" in new Setup {
-//      when(mockAppConfig.apisToRetire).thenReturn(List("api1,2.0"))
       val apisToRetire = List("api1,2.0")
       when(mockAPIDefinitionRepository.fetchByServiceName(ServiceName("api1"))).thenReturn(successful(Some(testApiDefinition)))
 
@@ -211,7 +206,6 @@ class ApiRetirerSpec extends AsyncHmrcSpec {
 
     "log an appropriate message on failure" in new Setup {
       val error        = UpstreamErrorResponse.apply("error1", 500, 1)
-//      when(mockAppConfig.apisToRetire).thenReturn(List("api1,2.0"))
       val apisToRetire = List("api1,2.0")
       when(mockAPIDefinitionRepository.fetchByServiceName(ServiceName("api1"))).thenReturn(failed(error))
 
