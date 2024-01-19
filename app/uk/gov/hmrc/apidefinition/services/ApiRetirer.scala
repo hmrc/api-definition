@@ -30,7 +30,7 @@ import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
 class ApiRetirer @Inject() (apiDefinitionRepository: APIDefinitionRepository)
     extends ApplicationLogger {
 
-  def retireApis(apisToRetire: List[String])(implicit ec: ExecutionContext): Future[Unit] = {
+  def retireApis(apisToRetire: Seq[String])(implicit ec: ExecutionContext): Future[Unit] = {
     logger.info(s"Attempting to retire ${apisToRetire.length} API versions.")
     Future.sequence(apisToRetire.filter(isValid).map { apiAndVersion => findAndRetireApi(apiAndVersion) })
       .map(_ => ())
