@@ -22,7 +22,6 @@ import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApiContext, ApiVersionNbr}
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 
-import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.services.ApiRetirer
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
@@ -33,11 +32,10 @@ class ApiRetirerSpec extends AsyncHmrcSpec {
     implicit val ec: ExecutionContext = ExecutionContext.global
     implicit val hc: HeaderCarrier    = HeaderCarrier()
 
-    val mockAppConfig: AppConfig                             = mock[AppConfig]
     val mockLogger: Logger                                   = mock[Logger]
     val mockAPIDefinitionRepository: APIDefinitionRepository = mock[APIDefinitionRepository]
 
-    val underTest = new ApiRetirer(mockAppConfig, mockAPIDefinitionRepository) {
+    val underTest = new ApiRetirer(mockAPIDefinitionRepository) {
       override val logger: Logger = mockLogger
     }
   }
@@ -143,13 +141,13 @@ class ApiRetirerSpec extends AsyncHmrcSpec {
     lastPublishedAt = None,
     categories = List(ApiCategory.AGENTS)
   )
-
   "retireApis" should {
     "fetch a single api to retire and set it to retired" in new Setup {
-      when(mockAppConfig.apisToRetire).thenReturn(List("api1,2.0"))
+      val apisToRetire = List("api1,2.0")
+//      when(mockAppConfig.apisToRetire).thenReturn(List("api1,2.0"))
       when(mockAPIDefinitionRepository.fetchByServiceName(ServiceName("api1"))).thenReturn(successful(Some(testApiDefinition)))
 
-      await(underTest.retireApis())
+      await(underTest.retireApis(apisToRetire))
       verify(mockLogger).info(s"Attempting to retire 1 API versions.")
       verify(mockLogger).debug(s"api1 version 2.0 saved.")
       verifyNoMoreInteractions(mockLogger)
@@ -160,11 +158,12 @@ class ApiRetirerSpec extends AsyncHmrcSpec {
     }
 
     "fetch multiple apis and versions and set them to retired" in new Setup {
-      when(mockAppConfig.apisToRetire).thenReturn(List("api1,2.0", "api2,3.0", "api2,1.0"))
+//      when(mockAppConfig.apisToRetire).thenReturn(List("api1,2.0", "api2,3.0", "api2,1.0"))
+      val apisToRetire = List("api1,2.0", "api2,3.0", "api2,1.0")
       when(mockAPIDefinitionRepository.fetchByServiceName(ServiceName("api1"))).thenReturn(successful(Some(testApiDefinition)))
       when(mockAPIDefinitionRepository.fetchByServiceName(ServiceName("api2"))).thenReturn(successful(Some(testApiDefinition2)))
 
-      await(underTest.retireApis())
+      await(underTest.retireApis(apisToRetire))
       verify(mockLogger).info(s"Attempting to retire 3 API versions.")
       verify(mockLogger).debug(s"api1 version 2.0 saved.")
       verify(mockLogger).debug(s"api2 version 3.0 saved.")
@@ -180,39 +179,43 @@ class ApiRetirerSpec extends AsyncHmrcSpec {
     }
 
     "log an appropriate message when the api can not be found in the collection" in new Setup {
-      when(mockAppConfig.apisToRetire).thenReturn(List("api6,2.0"))
+//      when(mockAppConfig.apisToRetire).thenReturn(List("api6,2.0"))
+      val apisToRetire = List("api6,2.0")
       when(mockAPIDefinitionRepository.fetchByServiceName(ServiceName("api6"))).thenReturn(successful(None))
 
-      await(underTest.retireApis())
+      await(underTest.retireApis(apisToRetire))
       verify(mockLogger).warn(s"api6 version 2.0 can not be found")
     }
 
     "ignore when api name is invalid" in new Setup {
-      when(mockAppConfig.apisToRetire).thenReturn(List("api1,2.0", "someInvalidFormat,", ",anotherInvalidFormat", "yetanotherInvalidFormat"))
+//      when(mockAppConfig.apisToRetire).thenReturn(List("api1,2.0", "someInvalidFormat,", ",anotherInvalidFormat", "yetanotherInvalidFormat"))
+      val apisToRetire = List("api1,2.0", "someInvalidFormat,", ",anotherInvalidFormat", "yetanotherInvalidFormat")
       when(mockAPIDefinitionRepository.fetchByServiceName(ServiceName("api1"))).thenReturn(successful(Some(testApiDefinition)))
 
-      await(underTest.retireApis())
+      await(underTest.retireApis(apisToRetire))
       verify(mockAPIDefinitionRepository, times(1)).fetchByServiceName(ServiceName("api1"))
       verify(mockAPIDefinitionRepository, times(1)).save(expectedApiDefinition)
       verifyNoMoreInteractions(mockAPIDefinitionRepository)
     }
 
     "save unchanged api versions" in new Setup {
-      when(mockAppConfig.apisToRetire).thenReturn(List("api1,2.0"))
+//      when(mockAppConfig.apisToRetire).thenReturn(List("api1,2.0"))
+      val apisToRetire = List("api1,2.0")
       when(mockAPIDefinitionRepository.fetchByServiceName(ServiceName("api1"))).thenReturn(successful(Some(testApiDefinition)))
 
-      await(underTest.retireApis())
+      await(underTest.retireApis(apisToRetire))
       verify(mockAPIDefinitionRepository, times(1)).fetchByServiceName(ServiceName("api1"))
       verify(mockAPIDefinitionRepository, times(1)).save(expectedApiDefinition)
       verifyNoMoreInteractions(mockAPIDefinitionRepository)
     }
 
     "log an appropriate message on failure" in new Setup {
-      val error = UpstreamErrorResponse.apply("error1", 500, 1)
-      when(mockAppConfig.apisToRetire).thenReturn(List("api1,2.0"))
+      val error        = UpstreamErrorResponse.apply("error1", 500, 1)
+//      when(mockAppConfig.apisToRetire).thenReturn(List("api1,2.0"))
+      val apisToRetire = List("api1,2.0")
       when(mockAPIDefinitionRepository.fetchByServiceName(ServiceName("api1"))).thenReturn(failed(error))
 
-      await(underTest.retireApis())
+      await(underTest.retireApis(apisToRetire))
       verify(mockLogger).warn(s"api1 retire failed.", error)
     }
   }

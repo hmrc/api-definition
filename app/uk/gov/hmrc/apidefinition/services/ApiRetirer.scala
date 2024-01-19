@@ -24,16 +24,15 @@ import scala.util.control.NonFatal
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiStatus, ApiVersion, ServiceName}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiVersionNbr
 
-import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
 
-class ApiRetirer @Inject() (config: AppConfig, apiDefinitionRepository: APIDefinitionRepository)
+class ApiRetirer @Inject() (apiDefinitionRepository: APIDefinitionRepository)
     extends ApplicationLogger {
 
-  def retireApis()(implicit ec: ExecutionContext): Future[Unit] = {
-    logger.info(s"Attempting to retire ${config.apisToRetire.length} API versions.")
-    Future.sequence(config.apisToRetire.filter(isValid).map { apiAndVersion => findAndRetireApi(apiAndVersion) })
+  def retireApis(apisToRetire: List[String])(implicit ec: ExecutionContext): Future[Unit] = {
+    logger.info(s"Attempting to retire ${apisToRetire.length} API versions.")
+    Future.sequence(apisToRetire.filter(isValid).map { apiAndVersion => findAndRetireApi(apiAndVersion) })
       .map(_ => ())
   }
 

@@ -172,7 +172,7 @@ class APIDefinitionService @Inject() (
 
   def publishAllToAws()(implicit hc: HeaderCarrier): Future[Unit] = {
     for {
-      _                <- if (config.apisToRetire.nonEmpty) apiRetirer.retireApis() else Future.successful()
+      _                <- if (config.apisToRetire.nonEmpty) apiRetirer.retireApis(config.apisToRetire) else Future.successful()
       _                <- apiRemover.deleteUnusedApis()
       publishApiResult <- apiDefinitionRepository.fetchAll().flatMap(awsApiPublisher.publishAll)
     } yield publishApiResult

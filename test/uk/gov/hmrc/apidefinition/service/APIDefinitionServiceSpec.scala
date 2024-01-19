@@ -329,14 +329,15 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
     "Retire Apis when the config list of Apis to retire is not empty" in new Setup {
       val apiDefinition1: StoredApiDefinition = someAPIDefinition
       val apiDefinition2: StoredApiDefinition = someAPIDefinition
+      val apisToRetire                        = List("api1,2.0", "api2,3.0", "api2,1.0")
       when(mockAppContext.apisToRetire).thenReturn(List("api1,2.0", "api2,3.0", "api2,1.0"))
-      when(mockApiRetirer.retireApis()).thenReturn(successful(()))
+      when(mockApiRetirer.retireApis(apisToRetire)).thenReturn(successful(()))
       when(mockApiRemover.deleteUnusedApis()).thenReturn(successful(()))
       when(mockAPIDefinitionRepository.fetchAll()).thenReturn(successful(Seq(apiDefinition1, apiDefinition2)))
       when(mockAwsApiPublisher.publishAll(*)(*)).thenReturn(successful(()))
 
       await(underTest.publishAllToAws())
-      verify(mockApiRetirer, times(1)).retireApis()
+      verify(mockApiRetirer, times(1)).retireApis(apisToRetire)
     }
   }
 
