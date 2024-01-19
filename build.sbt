@@ -1,7 +1,6 @@
 import play.sbt.PlayScala
 import uk.gov.hmrc.DefaultBuildSettings._
-import uk.gov.hmrc.SbtAutoBuildPlugin
-
+import uk.gov.hmrc.{DefaultBuildSettings, SbtAutoBuildPlugin}
 import bloop.integrations.sbt.BloopDefaults
 
 lazy val appName = "api-definition"
@@ -10,6 +9,7 @@ scalaVersion := "2.13.12"
 
 lazy val ComponentTest = config("component") extend Test
 
+ThisBuild / scalafixDependencies += "com.github.liancheng" %% "organize-imports" % "0.6.0"
 ThisBuild / libraryDependencySchemes += "org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always
 ThisBuild / semanticdbEnabled := true
 ThisBuild / semanticdbVersion := scalafixSemanticdb.revision
@@ -54,6 +54,20 @@ lazy val microservice = Project(appName, file("."))
     ComponentTest / fork := false,
     addTestReportOption(ComponentTest, "component-reports")
   )
+
+  .configs(IntegrationTest)
+  .settings(DefaultBuildSettings.integrationTestSettings())
+  .settings(
+    IntegrationTest / fork := false,
+    IntegrationTest / parallelExecution := false,
+    IntegrationTest / unmanagedSourceDirectories += baseDirectory.value / "it",
+    IntegrationTest / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-eT"),
+    IntegrationTest / testGrouping := oneForkedJvmPerTest(
+      (IntegrationTest / definedTests).value
+    ),
+    addTestReportOption(IntegrationTest, "int-test-reports")
+  )
+  .settings(scalafixConfigSettings(IntegrationTest))
 
 def onPackageName(rootPackage: String): String => Boolean = {
   testName => testName startsWith rootPackage

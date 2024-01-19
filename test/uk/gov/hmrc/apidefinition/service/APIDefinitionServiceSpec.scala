@@ -28,7 +28,7 @@ import uk.gov.hmrc.http.HeaderNames._
 
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
-import uk.gov.hmrc.apidefinition.services.{APIDefinitionService, ApiRemover, AwsApiPublisher, NotificationService}
+import uk.gov.hmrc.apidefinition.services.{APIDefinitionService, ApiRemover, ApiRetirer, AwsApiPublisher, NotificationService}
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 
 class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
@@ -53,12 +53,14 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
     val mockNotificationService: NotificationService         = mock[NotificationService]
     val mockAppContext: AppConfig                            = mock[AppConfig]
     val mockApiRemover: ApiRemover                           = mock[ApiRemover]
+    val mockApiRetirer: ApiRetirer                           = mock[ApiRetirer]
 
     val underTest = new APIDefinitionService(
       FixedClock.clock,
       mockAwsApiPublisher,
       mockAPIDefinitionRepository,
       mockApiRemover,
+      mockApiRetirer,
       mockNotificationService,
       mockAppContext
     )
@@ -302,6 +304,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
     "publish all APIs and remove unused APIs" in new Setup {
       val apiDefinition1: StoredApiDefinition = someAPIDefinition
       val apiDefinition2: StoredApiDefinition = someAPIDefinition
+      when(mockAppContext.apisToRetire).thenReturn(List.empty)
       when(mockApiRemover.deleteUnusedApis()).thenReturn(successful(()))
       when(mockAPIDefinitionRepository.fetchAll()).thenReturn(successful(Seq(apiDefinition1, apiDefinition2)))
       when(mockAwsApiPublisher.publishAll(*)(*)).thenReturn(successful(()))
@@ -309,6 +312,32 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
       await(underTest.publishAllToAws())
 
       verify(mockAwsApiPublisher, times(1)).publishAll(Seq(apiDefinition1, apiDefinition2))
+    }
+
+    "Do nothing when the config list of Apis to retire is empty" in new Setup {
+      val apiDefinition1: StoredApiDefinition = someAPIDefinition
+      val apiDefinition2: StoredApiDefinition = someAPIDefinition
+      when(mockAppContext.apisToRetire).thenReturn(List.empty)
+      when(mockApiRemover.deleteUnusedApis()).thenReturn(successful(()))
+      when(mockAPIDefinitionRepository.fetchAll()).thenReturn(successful(Seq(apiDefinition1, apiDefinition2)))
+      when(mockAwsApiPublisher.publishAll(*)(*)).thenReturn(successful(()))
+
+      await(underTest.publishAllToAws())
+      verifyZeroInteractions(mockApiRetirer)
+    }
+
+    "Retire Apis when the config list of Apis to retire is not empty" in new Setup {
+      val apiDefinition1: StoredApiDefinition = someAPIDefinition
+      val apiDefinition2: StoredApiDefinition = someAPIDefinition
+      val apisToRetire                        = List("api1,2.0", "api2,3.0", "api2,1.0")
+      when(mockAppContext.apisToRetire).thenReturn(List("api1,2.0", "api2,3.0", "api2,1.0"))
+      when(mockApiRetirer.retireApis(apisToRetire)).thenReturn(successful(()))
+      when(mockApiRemover.deleteUnusedApis()).thenReturn(successful(()))
+      when(mockAPIDefinitionRepository.fetchAll()).thenReturn(successful(Seq(apiDefinition1, apiDefinition2)))
+      when(mockAwsApiPublisher.publishAll(*)(*)).thenReturn(successful(()))
+
+      await(underTest.publishAllToAws())
+      verify(mockApiRetirer, times(1)).retireApis(apisToRetire)
     }
   }
 

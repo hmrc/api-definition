@@ -43,8 +43,9 @@ class APIDefinitionService @Inject() (
     awsApiPublisher: AwsApiPublisher,
     apiDefinitionRepository: APIDefinitionRepository,
     apiRemover: ApiRemover,
+    apiRetirer: ApiRetirer,
     notificationService: NotificationService,
-    playApplicationContext: AppConfig
+    config: AppConfig
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger with ClockNow {
 
@@ -171,6 +172,7 @@ class APIDefinitionService @Inject() (
 
   def publishAllToAws()(implicit hc: HeaderCarrier): Future[Unit] = {
     for {
+      _                <- if (config.apisToRetire.nonEmpty) apiRetirer.retireApis(config.apisToRetire) else Future.successful()
       _                <- apiRemover.deleteUnusedApis()
       publishApiResult <- apiDefinitionRepository.fetchAll().flatMap(awsApiPublisher.publishAll)
     } yield publishApiResult
