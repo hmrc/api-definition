@@ -39,7 +39,7 @@ class AppConfig @Inject() (val runModeConfiguration: Configuration, environment:
 
   lazy val apisToRemove = runModeConfiguration.underlying.as[List[String]]("apisToRemove")
 
-  lazy val apisToRetire = runModeConfiguration.underlying.as[List[String]]("apisToRetire")
+  lazy val apisToRetire: List[String] = runModeConfiguration.underlying.as[List[String]]("apisToRetire")
 
   lazy val skipContextValidationAllowlist: List[ServiceName] = runModeConfiguration.underlying.as[List[String]]("skipContextValidationAllowlist").map(ServiceName(_))
 
