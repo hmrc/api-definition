@@ -19,7 +19,7 @@ package uk.gov.hmrc.apidefinition.service
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Failure, Success, Try}
 
-import akka.stream.Materializer
+import org.apache.pekko.stream.Materializer
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 
 import play.api.libs.json.Json
@@ -61,7 +61,7 @@ class SpecificationServiceSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wi
     }
 
     "fetch and handle no raml found" in new Setup {
-      when(ramlLoader.load(any[String])).thenReturn(Failure(new RamlNotFoundException("")))
+      when(ramlLoader.load(any[String])).thenReturn(Failure(RamlNotFoundException("")))
 
       val ojs = await(specificationService.fetchApiSpecification(ServiceName("api-not-real"), ApiVersionNbr("1.0")))
 

@@ -21,9 +21,9 @@ import scala.concurrent.duration.{FiniteDuration, _}
 import scala.concurrent.{Await, Future}
 import scala.language.postfixOps
 
-import akka.stream.scaladsl.{FileIO, Sink, Source}
-import akka.stream.{IOResult, Materializer}
-import akka.util.ByteString
+import org.apache.pekko.stream.scaladsl.{FileIO, Sink, Source}
+import org.apache.pekko.stream.{IOResult, Materializer}
+import org.apache.pekko.util.ByteString
 
 import play.api.libs.ws.WSResponse
 

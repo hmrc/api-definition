@@ -21,9 +21,9 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future._
 import scala.util.Random
 
-import akka.stream.Materializer
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
+import org.apache.pekko.stream.Materializer
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 
 import play.api.http.Status

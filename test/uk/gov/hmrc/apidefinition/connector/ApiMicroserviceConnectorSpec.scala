@@ -16,9 +16,9 @@
 
 package uk.gov.hmrc.apidefinition.connector
 
-import akka.stream.scaladsl.Source
-import akka.util.ByteString
 import mockws.{MockWS, MockWSHelpers}
+import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.util.ByteString
 import org.scalatest.BeforeAndAfterAll
 
 import play.api.http.HttpEntity
