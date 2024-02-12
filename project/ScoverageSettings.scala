@@ -11,7 +11,6 @@ object ScoverageSettings {
     coverageExcludedPackages := Seq(
       "<empty>",
       """.*\.controllers\.binders""",
-      "com.kenshoo.play.metrics.*",
       "prod.*",
       "testOnlyDoNotUseInAppConf.*",
       "app.*",
