@@ -5,13 +5,14 @@ import bloop.integrations.sbt.BloopDefaults
 
 lazy val appName = "api-definition"
 
-scalaVersion := "2.13.12"
+Global / bloopAggregateSourceDependencies := true
+Global / bloopExportJarClassifiers := Some(Set("sources"))
 
-lazy val ComponentTest = config("component") extend Test
-
+ThisBuild / scalaVersion := "2.13.12"
 ThisBuild / libraryDependencySchemes += "org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always
 ThisBuild / semanticdbEnabled := true
 ThisBuild / semanticdbVersion := scalafixSemanticdb.revision
+ThisBuild / majorVersion := 1
 
 lazy val playSettings: Seq[Setting[_]] = Seq.empty
 
@@ -24,14 +25,12 @@ lazy val microservice = Project(appName, file("."))
   .settings(defaultSettings(): _*)
   .settings(
     name := appName,
-    majorVersion := 1,
     libraryDependencies ++= AppDependencies(),
     retrieveManaged := true
     )
   .settings(
     Test / testOptions := Seq(Tests.Argument(TestFrameworks.ScalaTest, "-oDT")),
     Test / unmanagedSourceDirectories += baseDirectory.value / "test",
-    Test / unmanagedSourceDirectories += baseDirectory.value / "testcommon",
     Test / unmanagedResourceDirectories += baseDirectory.value / "test" / "resources",
     addTestReportOption(Test, "test-reports")
   )
@@ -42,17 +41,6 @@ lazy val microservice = Project(appName, file("."))
       "uk.gov.hmrc.apiplatform.modules.apis.domain.models._"
     )
   )
-  .configs(ComponentTest)
-  .settings(inConfig(ComponentTest)(Defaults.testSettings): _*)
-  .settings(inConfig(ComponentTest)(scalafixConfigSettings(ComponentTest)))
-  .settings(inConfig(ComponentTest)(BloopDefaults.configSettings))
-  .settings(
-    ComponentTest / testOptions := Seq(Tests.Argument(TestFrameworks.ScalaTest, "-oDT")),
-    ComponentTest / unmanagedSourceDirectories += baseDirectory.value / "component",
-    ComponentTest / parallelExecution := false,
-    ComponentTest / fork := false,
-    addTestReportOption(ComponentTest, "component-reports")
-  )
   .settings(
     scalacOptions ++= Seq(
       "-Wconf:cat=unused&src=views/.*\\.scala:s",
@@ -62,32 +50,21 @@ lazy val microservice = Project(appName, file("."))
     )
   )
 
-  .configs(IntegrationTest)
-  .settings(DefaultBuildSettings.integrationTestSettings())
-  .settings(
-    IntegrationTest / fork := false,
-    IntegrationTest / parallelExecution := false,
-    IntegrationTest / unmanagedSourceDirectories += baseDirectory.value / "it",
-    IntegrationTest / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-eT"),
-    IntegrationTest / testGrouping := oneForkedJvmPerTest(
-      (IntegrationTest / definedTests).value
-    ),
-    addTestReportOption(IntegrationTest, "int-test-reports")
-  )
-  .settings(scalafixConfigSettings(IntegrationTest))
-
-def onPackageName(rootPackage: String): String => Boolean = {
-  testName => testName startsWith rootPackage
-}
-
-Global / bloopAggregateSourceDependencies := true
-Global / bloopExportJarClassifiers := Some(Set("sources"))
+lazy val component = (project in file("component"))
+  .enablePlugins(PlayScala)
+  .dependsOn(microservice % "test->test")
+  .settings(DefaultBuildSettings.itSettings())
 
 commands ++= Seq(
-  Command.command("run-all-tests") { state => "test" :: "component:test" :: state },
+  Command.command("cleanAll") { state => "clean" :: "component/clean" :: state },
+  Command.command("fmtAll") { state => "scalafmtAll" :: "component/scalafmtAll" :: state },
+  Command.command("fixAll") { state => "scalafixAll" :: "component/scalafixAll" :: state },
+  Command.command("testAll") { state => "test" :: "component/test" :: state },
 
-  Command.command("clean-and-test") { state => "clean" :: "compile" :: "run-all-tests" :: state },
+  Command.command("run-all-tests") { state => "testAll" :: state },
+
+  Command.command("clean-and-test") { state => "cleanAll" :: "compile" :: "run-all-tests" :: state },
 
   // Coverage does not need compile !
-  Command.command("pre-commit") { state => "clean" :: "scalafmtAll" :: "scalafixAll" :: "coverage" :: "run-all-tests" :: "coverageOff" :: "coverageAggregate" :: state }
+  Command.command("pre-commit") { state => "cleanAll" :: "fmtAll" :: "fixAll" :: "coverage" :: "testAll" :: "coverageOff" :: "coverageAggregate" :: state }
 )

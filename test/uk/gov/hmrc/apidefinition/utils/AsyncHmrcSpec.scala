@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,18 +14,10 @@
  * limitations under the License.
  */
 
-package component
+package uk.gov.hmrc.apidefinition.utils
 
-import play.api.http.Status.OK
+import play.api.test.{DefaultAwaitTimeout, FutureAwaits}
+import uk.gov.hmrc.apiplatform.modules.common.utils.HmrcSpec
 
-class AppHealthSpec extends ComponentSpec {
-
-  "the application" when {
-    "the health check endpoint is called" should {
-      "respond with 200 OK" in {
-        val response = get("/ping/ping")
-        response.status shouldBe OK
-      }
-    }
-  }
-}
+abstract class AsyncHmrcSpec
+    extends HmrcSpec with DefaultAwaitTimeout with FutureAwaits {}

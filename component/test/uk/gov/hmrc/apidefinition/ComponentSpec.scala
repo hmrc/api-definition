@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 HM Revenue & Customs
+ * Copyright 2024 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,31 +14,37 @@
  * limitations under the License.
  */
 
-package component
+package uk.gov.hmrc.definition
 
 import org.scalatest.TestSuite
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.ws.{WSClient, WSResponse}
+import play.api.test.{DefaultAwaitTimeout, FutureAwaits}
 import play.api.{Application, Mode}
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.StoredApiDefinition
+import uk.gov.hmrc.apiplatform.modules.common.utils.HmrcSpec
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
-import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 
-trait ComponentSpec extends AsyncHmrcSpec
-  with DefaultPlayMongoRepositorySupport[StoredApiDefinition] with WireMockSupport with GuiceOneServerPerSuite  {
+trait ComponentSpec
+    extends HmrcSpec
+    with DefaultAwaitTimeout
+    with FutureAwaits
+    with DefaultPlayMongoRepositorySupport[StoredApiDefinition]
+    with WireMockSupport
+    with GuiceOneServerPerSuite {
   this: TestSuite =>
   override val repository: APIDefinitionRepository = app.injector.instanceOf[APIDefinitionRepository]
 
-   override def commonStubs(): Unit = {}
+  override def commonStubs(): Unit = {}
 
   override def fakeApplication(): Application = new GuiceApplicationBuilder()
     .in(Mode.Test)
     .configure(
-      "mongodb.uri" -> mongoUri,
+      "mongodb.uri"                            -> mongoUri,
       "microservice.services.aws-gateway.host" -> wireMockHost,
       "microservice.services.aws-gateway.port" -> wireMockPort
     )
@@ -51,12 +57,12 @@ trait ComponentSpec extends AsyncHmrcSpec
   }
 
   def post(endpoint: String, body: String, headers: List[(String, String)]): WSResponse = {
-      await(
-        wsClient
-      .url(s"http://localhost:$port$endpoint")
-      .withHttpHeaders(headers: _*)
-      .withFollowRedirects(false)
-      .post(body)
-      )
+    await(
+      wsClient
+        .url(s"http://localhost:$port$endpoint")
+        .withHttpHeaders(headers: _*)
+        .withFollowRedirects(false)
+        .post(body)
+    )
   }
 }
