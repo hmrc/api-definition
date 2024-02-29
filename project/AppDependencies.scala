@@ -22,5 +22,5 @@ object AppDependencies {
     "org.mockito"              %% "mockito-scala-scalatest"          % "1.17.29",
     "uk.gov.hmrc"              %% "api-platform-test-common-domain"  % commonDomainVersion,
     "de.leanovate.play-mockws" %% "play-mockws-3-0"                  % "3.0.2"
-  ).map(_ % "test, component, it")
+  ).map(_ % "test")
 }
