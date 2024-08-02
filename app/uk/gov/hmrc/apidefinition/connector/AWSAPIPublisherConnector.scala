@@ -25,7 +25,8 @@ import play.api.http.HeaderNames.CONTENT_TYPE
 import play.api.libs.json.{Json, Reads}
 import play.api.{Configuration, Environment, Mode}
 import uk.gov.hmrc.http.HttpReads.Implicits._
-import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, UpstreamErrorResponse}
+import uk.gov.hmrc.http.client.HttpClientV2
+import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps, UpstreamErrorResponse}
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 import uk.gov.hmrc.apidefinition.config.AppConfig
@@ -40,7 +41,7 @@ object AWSAPIPublisherConnector {
 }
 
 class AWSAPIPublisherConnector @Inject() (
-    http: HttpClient,
+    http: HttpClientV2,
     environment: Environment,
     appContext: AppConfig,
     val runModeConfiguration: Configuration,
@@ -59,15 +60,13 @@ class AWSAPIPublisherConnector @Inject() (
   def createOrUpdateAPI(apiName: String, awsSwaggerDetails: AWSSwaggerDetails)(implicit hc: HeaderCarrier): Future[String] = {
     val headersWithoutAuthorization: HeaderCarrier = hc.copy(authorization = None)
 
-    http.PUT[AWSSwaggerDetails, Either[UpstreamErrorResponse, RequestId]](s"$serviceBaseUrl/$apiName", awsSwaggerDetails, headers)(
-      implicitly,
-      implicitly,
-      headersWithoutAuthorization,
-      implicitly
-    ) flatMap {
-      case Right(RequestId(value)) => successful(value)
-      case Left(err)               => failed(err)
-    }
+    http.put(url"$serviceBaseUrl/$apiName")(headersWithoutAuthorization)
+      .setHeader(headers: _*)
+      .withBody(Json.toJson(awsSwaggerDetails))
+      .execute[Either[UpstreamErrorResponse, RequestId]].flatMap {
+        case Right(RequestId(value)) => successful(value)
+        case Left(err)               => failed(err)
+      }
   }
 
   def deleteAPI(apiName: String)(implicit hc: HeaderCarrier): Future[String] = {
@@ -75,9 +74,10 @@ class AWSAPIPublisherConnector @Inject() (
       .copy(authorization = None)
       .withExtraHeaders(apiKeyHeaderName -> awsApiKey)
 
-    http.DELETE[Either[UpstreamErrorResponse, RequestId]](s"$serviceBaseUrl/$apiName")(implicitly, headersWithoutAuthorization, implicitly) flatMap {
-      case Right(RequestId(value)) => successful(value)
-      case Left(err)               => failed(err)
-    }
+    http.delete(url"$serviceBaseUrl/$apiName")(headersWithoutAuthorization)
+      .execute[Either[UpstreamErrorResponse, RequestId]].flatMap {
+        case Right(RequestId(value)) => successful(value)
+        case Left(err)               => failed(err)
+      }
   }
 }

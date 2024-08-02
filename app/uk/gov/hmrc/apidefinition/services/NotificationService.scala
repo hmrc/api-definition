@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.apidefinition.services
 
+import java.net.URL
 import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
@@ -25,7 +26,8 @@ import play.mvc.Http.Status.NOT_FOUND
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiVersionNbr
 import uk.gov.hmrc.http.HttpReads.Implicits._
-import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpResponse}
+import uk.gov.hmrc.http.client.HttpClientV2
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 
 import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
 
@@ -59,8 +61,8 @@ class LoggingNotificationService(override val environmentName: String) extends N
 }
 
 class EmailNotificationService(
-    httpClient: HttpClient,
-    val emailServiceURL: String,
+    httpClient: HttpClientV2,
+    val emailServiceURL: URL,
     val emailTemplateId: String,
     override val environmentName: String,
     val emailAddresses: Set[String]
@@ -99,7 +101,9 @@ class EmailNotificationService(
       }
     }
 
-    httpClient.POST[SendEmailRequest, HttpResponse](emailServiceURL, payload)
+    httpClient.post(emailServiceURL)
+      .withBody(Json.toJson(payload))
+      .execute[HttpResponse]
       .map { response =>
         logger.info(s"Sent '${payload.templateId}' to: ${payload.to.mkString(",")} with response: ${response.status}")
         response.status match {
