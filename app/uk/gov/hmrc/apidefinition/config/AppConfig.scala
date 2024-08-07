@@ -17,8 +17,7 @@
 package uk.gov.hmrc.apidefinition.config
 
 import javax.inject.{Inject, Singleton}
-
-import net.ceedubs.ficus.Ficus._
+import scala.jdk.CollectionConverters._
 
 import play.api.{Configuration, Environment, Mode}
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ServiceName
@@ -31,22 +30,22 @@ class AppConfig @Inject() (val runModeConfiguration: Configuration, environment:
   lazy val buildProductionUrlForPrototypedAPIs: Boolean = runModeConfiguration.getOptional[Boolean]("buildProductionUrlForPrototypedAPIs").getOrElse(false)
   lazy val isSandbox: Boolean                           = runModeConfiguration.getOptional[Boolean]("isSandbox").getOrElse(false)
 
-  lazy val fetchByContextTtlInSeconds: String = runModeConfiguration.underlying.as[String]("fetchByContextTtlInSeconds")
+  lazy val fetchByContextTtlInSeconds: String = runModeConfiguration.underlying.getString("fetchByContextTtlInSeconds")
 
   lazy val ramlLoaderRewrites = buildRamlLoaderRewrites
 
   lazy val serviceBaseUrl = runModeConfiguration.getOptional[String]("serviceBaseUrl").getOrElse("http://localhost")
 
-  lazy val apisToRemove = runModeConfiguration.underlying.as[List[String]]("apisToRemove")
+  lazy val apisToRemove = runModeConfiguration.get[Seq[String]]("apisToRemove").toList
 
-  lazy val apisToRetire: List[String] = runModeConfiguration.underlying.as[List[String]]("apisToRetire")
+  lazy val apisToRetire = runModeConfiguration.get[Seq[String]]("apisToRetire").toList
 
-  lazy val skipContextValidationAllowlist: List[ServiceName] = runModeConfiguration.underlying.as[List[String]]("skipContextValidationAllowlist").map(ServiceName(_))
+  lazy val skipContextValidationAllowlist: List[ServiceName] = runModeConfiguration.underlying.getStringList("skipContextValidationAllowlist").asScala.toList.map(ServiceName(_))
 
   def baseUrl(serviceName: String): String = {
     val context = runModeConfiguration.getOptional[String](s"$serviceName.context").getOrElse("")
 
-    if (context.length > 0) s"${servicesConfig.baseUrl(serviceName)}/$context"
+    if (context.nonEmpty) s"${servicesConfig.baseUrl(serviceName)}/$context"
     else servicesConfig.baseUrl(serviceName)
   }
 

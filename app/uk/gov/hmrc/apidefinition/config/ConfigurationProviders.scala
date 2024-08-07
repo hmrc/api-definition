@@ -20,7 +20,8 @@ import javax.inject.{Inject, Provider, Singleton}
 
 import play.api.inject.{Binding, Module}
 import play.api.{Configuration, Environment, Mode}
-import uk.gov.hmrc.http.HttpClient
+import uk.gov.hmrc.http.StringContextOps
+import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.ramltools.loaders.{RamlLoader, UrlRewriter}
 
@@ -40,7 +41,7 @@ class ConfigurationModule extends Module {
 }
 
 @Singleton
-class NotificationServiceConfigProvider @Inject() (val runModeConfiguration: Configuration, environment: Environment, httpClient: HttpClient, servicesConfig: ServicesConfig)
+class NotificationServiceConfigProvider @Inject() (val runModeConfiguration: Configuration, environment: Environment, httpClient: HttpClientV2, servicesConfig: ServicesConfig)
     extends Provider[NotificationService] with ApplicationLogger {
 
   private val LoggerNotificationType = "LOG"
@@ -73,7 +74,7 @@ class NotificationServiceConfigProvider @Inject() (val runModeConfiguration: Con
 
           case (Some(emailServiceURL), Some(emailTemplateId), emailAddresses) =>
             logger.info(s"Email notifications will be sent to $emailAddresses using template [$emailTemplateId] for [$environmentName] environment")
-            new EmailNotificationService(httpClient, emailServiceURL, emailTemplateId, environmentName, emailAddresses.toSet)
+            new EmailNotificationService(httpClient, url"$emailServiceURL", emailTemplateId, environmentName, emailAddresses.toSet)
           case _                                                              =>
             logger.warn(s"Failed to create EmailNotificationService")
             defaultNotificationService(environmentName)

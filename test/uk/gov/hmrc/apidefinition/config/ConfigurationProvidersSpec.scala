@@ -22,6 +22,7 @@ import org.scalatest.BeforeAndAfterEach
 
 import play.api.{Configuration, Environment}
 import uk.gov.hmrc.http.HttpClient
+import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 import uk.gov.hmrc.apidefinition.services.{EmailNotificationService, LoggingNotificationService, NotificationService}
@@ -123,7 +124,7 @@ class ConfigurationProvidersSpec extends AsyncHmrcSpec with BeforeAndAfterEach {
       when(mockRunModeConfiguration.getOptional[Configuration](eqTo("notifications"))(*)).thenReturn(Some(notificationsConfiguration))
     }
 
-    val mockHttpClient: HttpClient        = mock[HttpClient]
+    val mockHttpClient: HttpClientV2      = mock[HttpClientV2]
     val mockServiceConfig: ServicesConfig = mock[ServicesConfig]
     val underTest                         = new NotificationServiceConfigProvider(mockRunModeConfiguration, mockEnvironment, mockHttpClient, mockServiceConfig)
   }

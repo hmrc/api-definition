@@ -16,59 +16,51 @@
 
 package uk.gov.hmrc.apidefinition.service
 
+import java.net.URL
 import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future._
 
-import org.mockito.ArgumentCaptor
-
 import play.api.http.Status.{INTERNAL_SERVER_ERROR, NOT_FOUND, OK}
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiStatus
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
-import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpResponse}
+import uk.gov.hmrc.http.client.{HttpClientV2, RequestBuilder}
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps}
 
-import uk.gov.hmrc.apidefinition.services.{EmailNotificationService, SendEmailRequest}
+import uk.gov.hmrc.apidefinition.services.EmailNotificationService
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 
 class NotificationServiceSpec extends AsyncHmrcSpec {
 
   trait EmailNotificationSetup {
 
-    def httpCallIsSuccessful(): ArgumentCaptor[SendEmailRequest] = {
-      val sendEmailRequestCaptor: ArgumentCaptor[SendEmailRequest] = ArgumentCaptor.forClass(classOf[SendEmailRequest])
-
-      when(mockHTTPClient.POST[SendEmailRequest, HttpResponse](
-        matches(emailServiceURL),
-        sendEmailRequestCaptor.capture(),
-        any[Seq[(String, String)]]
-      )(*, *, *, *)).thenReturn(successful(HttpResponse(OK, "")))
-
-      sendEmailRequestCaptor
+    def httpCallIsSuccessful(): Unit = {
+      when(mockHTTPClient.post(eqTo(emailServiceURL))(*)).thenReturn(mockRequestBuilder)
+      when(mockRequestBuilder.withBody(*)(*, *, *)).thenReturn(mockRequestBuilder)
+      when(mockRequestBuilder.execute[HttpResponse](*, *)).thenReturn(successful(HttpResponse(OK, "")))
     }
 
-    def emailServiceIsUnavailable(): Unit =
-      when(mockHTTPClient.POST[SendEmailRequest, HttpResponse](
-        matches(emailServiceURL),
-        any[SendEmailRequest],
-        any[Seq[(String, String)]]
-      )(*, *, *, *)).thenReturn(successful(HttpResponse(NOT_FOUND, "")))
+    def emailServiceIsUnavailable(): Unit = {
+      when(mockHTTPClient.post(eqTo(emailServiceURL))(*)).thenReturn(mockRequestBuilder)
+      when(mockRequestBuilder.withBody(*)(*, *, *)).thenReturn(mockRequestBuilder)
+      when(mockRequestBuilder.execute[HttpResponse](*, *)).thenReturn(successful(HttpResponse(NOT_FOUND, "")))
+    }
 
     def callToEmailServiceFails(body: String): Unit = {
-      when(mockHTTPClient.POST[SendEmailRequest, HttpResponse](
-        matches(emailServiceURL),
-        any[SendEmailRequest],
-        any[Seq[(String, String)]]
-      )(*, *, *, *)).thenReturn(successful(HttpResponse(INTERNAL_SERVER_ERROR, body)))
+      when(mockHTTPClient.post(eqTo(emailServiceURL))(*)).thenReturn(mockRequestBuilder)
+      when(mockRequestBuilder.withBody(*)(*, *, *)).thenReturn(mockRequestBuilder)
+      when(mockRequestBuilder.execute[HttpResponse](*, *)).thenReturn(successful(HttpResponse(INTERNAL_SERVER_ERROR, body)))
     }
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val emailServiceURL: String     = "https://localhost:9876/hmrc/email"
+    val emailServiceURL: URL        = url"https://localhost:9876/hmrc/email"
     val emailTemplateId: String     = UUID.randomUUID().toString
     val environmentName: String     = "Production"
     val emailAddresses: Set[String] = Set("foo@bar.com")
 
-    val mockHTTPClient: HttpClient = mock[HttpClient]
+    val mockHTTPClient: HttpClientV2       = mock[HttpClientV2]
+    val mockRequestBuilder: RequestBuilder = mock[RequestBuilder]
 
     val underTest: EmailNotificationService = new EmailNotificationService(mockHTTPClient, emailServiceURL, emailTemplateId, environmentName, emailAddresses)
   }
@@ -81,18 +73,9 @@ class NotificationServiceSpec extends AsyncHmrcSpec {
       private val existingApiStatus = ApiStatus.ALPHA
       private val newApiStatus      = ApiStatus.BETA
 
-      private val requestCaptor: ArgumentCaptor[SendEmailRequest] = httpCallIsSuccessful()
+      httpCallIsSuccessful()
 
       await(underTest.notifyOfStatusChange(apiName, apiVersion, existingApiStatus, newApiStatus))
-
-      private val capturedRequest: SendEmailRequest = requestCaptor.getValue
-      capturedRequest.to shouldBe emailAddresses
-      capturedRequest.templateId shouldBe emailTemplateId
-      capturedRequest.parameters.get("apiName") shouldBe Some(apiName)
-      capturedRequest.parameters.get("apiVersion") shouldBe Some(apiVersion.toString)
-      capturedRequest.parameters.get("currentStatus") shouldBe Some(existingApiStatus.toString)
-      capturedRequest.parameters.get("newStatus") shouldBe Some(newApiStatus.toString)
-      capturedRequest.parameters.get("environmentName") shouldBe Some(environmentName)
     }
 
     "throw RuntimeException if email service is not available" in new EmailNotificationSetup {

@@ -32,6 +32,7 @@ import play.api.http.HeaderNames.{AUTHORIZATION, CONTENT_TYPE}
 import play.api.http.Status.{INTERNAL_SERVER_ERROR, OK}
 import play.api.{Configuration, Environment}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiVersionNbr
+import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{Authorization, HeaderCarrier, HttpClient, UpstreamErrorResponse}
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
@@ -67,7 +68,7 @@ class AWSAPIPublisherConnectorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuit
     WireMock.reset()
     implicit val hc: HeaderCarrier = HeaderCarrier(authorization = Some(Authorization("foo")))
 
-    val http: HttpClient                    = app.injector.instanceOf[HttpClient]
+    val http                                = app.injector.instanceOf[HttpClientV2]
     val environment: Environment            = app.injector.instanceOf[Environment]
     val runModeConfiguration: Configuration = app.injector.instanceOf[Configuration]
     val appContext: AppConfig               = app.injector.instanceOf[AppConfig]
