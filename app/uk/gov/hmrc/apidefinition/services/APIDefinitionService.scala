@@ -87,14 +87,31 @@ class APIDefinitionService @Inject() (
     def findStatusDifferences(existingAPIVersions: Seq[ApiVersion], newAPIVersions: Seq[ApiVersion]): Seq[(ApiVersionNbr, ApiStatus, ApiStatus)] =
       (existingAPIVersions ++ newAPIVersions)
         .groupBy(_.versionNbr)
-        .filter(v => v._2.size == 2)
+        .filter(v => v._2.size == 2) // Only an updated version
         .filterNot(v => v._2.head.status == v._2.last.status)
         .map(v => (v._1, v._2.head.status, v._2.last.status))
         .toSeq
 
+    def findNewVersion(existingAPIVersions: Seq[ApiVersion], newAPIVersions: Seq[ApiVersion]): Seq[(ApiVersionNbr, ApiStatus, ApiStatus)]     = Seq.empty
+    // new version if ApiVersionNbr exists in newAPIVersions but not existingAPIVersions
+    def findRemovedVersion(existingAPIVersions: Seq[ApiVersion], newAPIVersions: Seq[ApiVersion]): Seq[(ApiVersionNbr, ApiStatus, ApiStatus)] = Seq.empty
+    // new version if ApiVersionNbr exists in existingAPIVersions but not newAPIVersions
+    def notChanged(existingAPIVersions: Seq[ApiVersion], newAPIVersions: Seq[ApiVersion])                                                     = findStatusDifferences(existingAPIVersions, newAPIVersions).isEmpty
+
+    def findEndpointChanges(
+        existingAPIVersions: Seq[ApiVersion],
+        newAPIVersions: Seq[ApiVersion]
+      ): Seq[(ApiVersionNbr, List[Endpoint], List[Endpoint])] = (existingAPIVersions ++ newAPIVersions)
+      .groupBy(_.versionNbr)
+      .filter(v => v._2.size == 2)
+      .filterNot(v => v._2.head.endpoints == v._2.last.endpoints)
+      .map(v => (v._1, v._2.head.endpoints, v._2.last.endpoints))
+      .toSeq
+
     apiDefinitionRepository.fetchByContext(apiDefinition.context)
       .map(existingAPIDefinitionOption =>
         existingAPIDefinitionOption
+          // if None new API
           .map(existingAPIDefinition => findStatusDifferences(existingAPIDefinition.versions, apiDefinition.versions))
           .map(_.foreach(diff => notificationService.notifyOfStatusChange(apiDefinition.name, diff._1, diff._2, diff._3)))
       )
