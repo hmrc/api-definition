@@ -19,15 +19,15 @@ package uk.gov.hmrc.apidefinition.service
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
-
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiStatus, _}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HeaderNames._
-
 import uk.gov.hmrc.apidefinition.config.AppConfig
-import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
+import uk.gov.hmrc.apidefinition.models.ApiEvents.ApiVersionStatusChange
+import uk.gov.hmrc.apidefinition.models.{ApiEvent, EventId}
+import uk.gov.hmrc.apidefinition.repository.{APIDefinitionRepository, APIEventRepository, APIEventRepositorySpec}
 import uk.gov.hmrc.apidefinition.services.{APIDefinitionService, ApiRemover, ApiRetirer, AwsApiPublisher, NotificationService}
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 
@@ -50,6 +50,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
 
     val mockAwsApiPublisher: AwsApiPublisher                 = mock[AwsApiPublisher]
     val mockAPIDefinitionRepository: APIDefinitionRepository = mock[APIDefinitionRepository]
+    val mockAPIEventRepository: APIEventRepository = mock[APIEventRepository]
     val mockNotificationService: NotificationService         = mock[NotificationService]
     val mockAppContext: AppConfig                            = mock[AppConfig]
     val mockApiRemover: ApiRemover                           = mock[ApiRemover]
@@ -59,6 +60,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
       FixedClock.clock,
       mockAwsApiPublisher,
       mockAPIDefinitionRepository,
+      mockAPIEventRepository,
       mockApiRemover,
       mockApiRetirer,
       mockNotificationService,
@@ -104,6 +106,8 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
     when(mockAPIDefinitionRepository.fetchByServiceName(apiDefinition.serviceName)).thenReturn(successful(Some(apiDefinition)))
     when(mockAwsApiPublisher.delete(apiDefinition)).thenReturn(successful(()))
     when(mockAPIDefinitionRepository.delete(apiDefinition.serviceName)).thenReturn(successful(()))
+    when(mockAPIEventRepository.createAll(*)).thenReturn(successful(true))
+
   }
 
   trait FetchSetup extends Setup {
@@ -169,7 +173,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
       val updatedAPIDefinitionWithSavingTime: StoredApiDefinition = updatedAPIDefinition.copy(lastPublishedAt = Some(instant))
 
       when(mockAPIDefinitionRepository.fetchByContext(apiContext)).thenReturn(successful(Some(existingAPIDefinition)))
-      when(mockNotificationService.notifyOfStatusChange(existingAPIDefinition.name, apiVersion, existingStatus, updatedStatus)).thenReturn(unitSuccess)
+      when(mockNotificationService.process(*)).thenReturn(unitSuccess)
       when(mockAwsApiPublisher.publish(updatedAPIDefinition)).thenReturn(unitSuccess)
       when(mockAPIDefinitionRepository.save(updatedAPIDefinitionWithSavingTime)).thenReturn(successful(updatedAPIDefinitionWithSavingTime))
 
@@ -177,7 +181,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
 
       verify(mockAwsApiPublisher, times(1)).publish(updatedAPIDefinition)
       verify(mockAPIDefinitionRepository, times(1)).save(updatedAPIDefinitionWithSavingTime)
-      verify(mockNotificationService).notifyOfStatusChange(existingAPIDefinition.name, apiVersion, existingStatus, updatedStatus)
+      verify(mockNotificationService).process(List(ApiVersionStatusChange(*[EventId],eqTo(existingAPIDefinition.name),eqTo(serviceName),eqTo(instant),eqTo(existingStatus),eqTo(updatedStatus),eqTo(apiVersion))))
     }
   }
 

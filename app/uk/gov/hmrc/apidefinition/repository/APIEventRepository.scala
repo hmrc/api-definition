@@ -75,6 +75,10 @@ class APIEventRepository @Inject() (mongoComponent: MongoComponent)(implicit val
     collection.insertOne(apiEvent).toFuture().map(_.wasAcknowledged())
   }
 
+  def createAll(apiEvents: List[ApiEvent]): Future[Boolean] = {
+    collection.insertMany(apiEvents).toFuture().map(_.wasAcknowledged())
+  }
+
   def fetchEvents(serviceName: ServiceName): Future[List[ApiEvent]] = {
     collection.find(equal("serviceName", Codecs.toBson(serviceName)))
       .toFuture()

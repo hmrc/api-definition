@@ -16,18 +16,17 @@
 
 package uk.gov.hmrc.apidefinition.repository
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
-
 import org.mongodb.scala.model.Filters
 import org.scalatest.concurrent.Eventually
 import org.scalatest.prop.TableDrivenPropertyChecks.forAll
 import org.scalatest.prop.Tables.Table
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
+import uk.gov.hmrc.apidefinition.models.ApiEvents._
+import uk.gov.hmrc.apidefinition.models.{ApiEvent, EventId}
+import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiAccess.{PUBLIC, Private}
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiStatus.{ALPHA, BETA}
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
@@ -36,9 +35,8 @@ import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.mongo.play.json.Codecs
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 
-import uk.gov.hmrc.apidefinition.models.ApiEvents._
-import uk.gov.hmrc.apidefinition.models.{ApiEvent, EventId}
-import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 class APIEventRepositorySpec extends AsyncHmrcSpec
     with DefaultPlayMongoRepositorySupport[ApiEvent]
@@ -57,11 +55,12 @@ class APIEventRepositorySpec extends AsyncHmrcSpec
 
   val version1                = ApiVersionNbr("1.0")
   val serviceName             = ServiceName("api-event-test")
-  val apiCreated              = ApiCreated(EventId.random, serviceName, instant)
-  val newApiVersion           = NewApiVersion(EventId.random, serviceName, instant, ALPHA, version1)
-  val apiVersionStatusChange  = ApiVersionStatusChange(EventId.random, serviceName, instant, ALPHA, BETA, version1)
-  val apiVersionAccessChange  = ApiVersionAccessChange(EventId.random, serviceName, instant, PUBLIC, Private(true), version1)
-  val publishedNoChange       = ApiPublishedNoChange(EventId.random, serviceName, instant)
+  val apiName                 = "Api 123"
+  val apiCreated              = ApiCreated(EventId.random, apiName, serviceName, instant)
+  val newApiVersion           = NewApiVersion(EventId.random, apiName, serviceName, instant, ALPHA, version1)
+  val apiVersionStatusChange  = ApiVersionStatusChange(EventId.random, apiName, serviceName, instant, ALPHA, BETA, version1)
+  val apiVersionAccessChange  = ApiVersionAccessChange(EventId.random, apiName, serviceName, instant, PUBLIC, Private(true), version1)
+  val publishedNoChange       = ApiPublishedNoChange(EventId.random, apiName, serviceName, instant)
   val apiList: List[ApiEvent] = List(apiCreated, newApiVersion, apiVersionStatusChange, apiVersionAccessChange, publishedNoChange)
 
   "createEvent()" should {
@@ -73,6 +72,14 @@ class APIEventRepositorySpec extends AsyncHmrcSpec
         result shouldBe true
         await(repository.collection.find(Filters.equal("id", Codecs.toBson(event.id))).toFuture()) shouldBe List(event)
       }
+    }
+  }
+
+  "createAll()" should {
+    "create all Api Events in Mongo" in {
+      await(repository.createAll(apiList))
+      val result = await(repository.fetchEvents(serviceName))
+      result shouldBe apiList
     }
   }
 
