@@ -88,8 +88,14 @@ object ApiEvents {
       versionNbr: ApiVersionNbr
     ) extends ApiEvent {
 
+    private def accessDisplay(access: ApiAccess) = access match {
+      case ApiAccess.PUBLIC         => "Public"
+      case ApiAccess.Private(true)  => "Private Trial"
+      case ApiAccess.Private(false) => "Private"
+    }
+
     override def asMetaData(): MetaData =
-      ("Api Version Access Change", List(s"Version: $versionNbr", s"Old Api Access: ${oldApiAccess.displayText}", s"New Api Access: ${newApiAccess.displayText}"))
+      ("Api Version Access Change", List(s"Version: $versionNbr", s"Old Api Access: ${accessDisplay(oldApiAccess)}", s"New Api Access: ${accessDisplay(newApiAccess)}"))
   }
 
   case class ApiPublishedNoChange(id: EventId, apiName: String, serviceName: ServiceName, eventDateTime: Instant) extends ApiEvent {

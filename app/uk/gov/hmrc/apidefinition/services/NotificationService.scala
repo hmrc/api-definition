@@ -48,6 +48,7 @@ trait NotificationService {
   def process(events: List[ApiEvent])(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Unit] = {
     Future.sequence(events map {
       case e: ApiVersionStatusChange => notifyOfStatusChange(e.apiName, e.versionNbr, e.oldApiStatus, e.newApiStatus)
+      case _                         => successful(())
     }).map(_ => ())
   }
 }

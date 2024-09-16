@@ -17,58 +17,32 @@
 package uk.gov.hmrc.apidefinition.controllers
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future.{failed, successful}
-
-import org.apache.pekko.stream.Materializer
-import org.apache.pekko.stream.scaladsl.{Sink, Source}
-import org.apache.pekko.util.ByteString
 
 import play.api.http.HeaderNames
-import play.api.http.HeaderNames.CONTENT_TYPE
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.AnyContentAsEmpty
-import play.api.mvc.Results._
 import play.api.test.Helpers._
 import play.api.test.{FakeRequest, StubControllerComponentsFactory}
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ServiceName
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiVersionNbr
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 
-import uk.gov.hmrc.apidefinition.services.DocumentationService
+import uk.gov.hmrc.apidefinition.mocks.DocumentationServiceMockModule
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 
 class DocumentationControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFactory {
 
-  trait Setup {
-    // implicit val mat: Materializer = materializer
+  trait Setup extends DocumentationServiceMockModule {
     val request: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
-    val documentationService: DocumentationService   = mock[DocumentationService]
     val hc: HeaderCarrier                            = HeaderCarrier()
     val serviceName: ServiceName                     = ServiceName("api-example-microservice")
     val version: ApiVersionNbr                       = ApiVersionNbr("1.0")
     val resourceName: String                         = "application.raml"
-    // scalastyle:off magic.number
-    // val body: Array[Byte] = Array[Byte](0x1, 0x2, 0x3)
     val body                                         = "blah blah"
-    // scalastyle:on magic.number
     val contentType: String                          = "application/text"
 
-    val underTest = new DocumentationController(documentationService, stubControllerComponents())
+    val underTest = new DocumentationController(DocumentationServiceMock.documentationMock, stubControllerComponents())
 
-    def theDocumentationServiceWillReturnTheResource = {
-      when(documentationService.fetchApiDocumentationResource(*[ServiceName], *[ApiVersionNbr], *))
-        .thenReturn(successful(Ok(body).withHeaders(CONTENT_TYPE -> contentType)))
-    }
-
-    def theDocumentationServiceWillFailToReturnTheResource = {
-      when(documentationService.fetchApiDocumentationResource(*[ServiceName], *[ApiVersionNbr], *))
-        .thenReturn(failed(new RuntimeException("Some message")))
-    }
-
-    def theDocumentationServiceWillReturnNotFound = {
-      when(documentationService.fetchApiDocumentationResource(*[ServiceName], *[ApiVersionNbr], *))
-        .thenReturn(failed(new NotFoundException("some message")))
-    }
   }
 
   trait RegistrationSetup extends Setup {
@@ -89,15 +63,15 @@ class DocumentationControllerSpec extends AsyncHmrcSpec with StubControllerCompo
   "fetchApiDocumentationResource" should {
 
     "call the service to get the resource" in new Setup {
-      theDocumentationServiceWillReturnTheResource
+      DocumentationServiceMock.FetchApiDocumentationResource.success(body)
 
       await(underTest.fetchApiDocumentationResource(serviceName, version, resourceName)(request))
 
-      verify(documentationService).fetchApiDocumentationResource(eqTo(serviceName), eqTo(version), eqTo(resourceName))
+      DocumentationServiceMock.FetchApiDocumentationResource.verifyCalled(serviceName, version, resourceName)
     }
 
     "return the resource with a Content-type header when the content type is known" in new Setup {
-      theDocumentationServiceWillReturnTheResource
+      DocumentationServiceMock.FetchApiDocumentationResource.success(body, contentType)
 
       private val result = underTest.fetchApiDocumentationResource(serviceName, version, resourceName)(request)
 
@@ -109,7 +83,7 @@ class DocumentationControllerSpec extends AsyncHmrcSpec with StubControllerCompo
     }
 
     "return the resource with no Content-type header when the content type is unknown" in new Setup {
-      theDocumentationServiceWillReturnTheResource
+      DocumentationServiceMock.FetchApiDocumentationResource.success(body)
 
       private val result = underTest.fetchApiDocumentationResource(serviceName, version, resourceName)(request)
 
@@ -119,7 +93,7 @@ class DocumentationControllerSpec extends AsyncHmrcSpec with StubControllerCompo
     }
 
     "return internal server error when the service fails to return the resource" in new Setup {
-      theDocumentationServiceWillFailToReturnTheResource
+      DocumentationServiceMock.FetchApiDocumentationResource.errors(new RuntimeException("Some message"))
 
       private val result = underTest.fetchApiDocumentationResource(serviceName, version, resourceName)(request)
 
@@ -127,7 +101,7 @@ class DocumentationControllerSpec extends AsyncHmrcSpec with StubControllerCompo
     }
 
     "return not found when the service is unable to find the api or version" in new Setup {
-      theDocumentationServiceWillReturnNotFound
+      DocumentationServiceMock.FetchApiDocumentationResource.errors(new NotFoundException("some message"))
 
       private val result = underTest.fetchApiDocumentationResource(serviceName, version, resourceName)(request)
 
@@ -135,9 +109,4 @@ class DocumentationControllerSpec extends AsyncHmrcSpec with StubControllerCompo
     }
   }
 
-  def sourceToArray(dataStream: Source[ByteString, _])(implicit mat: Materializer): Array[Byte] = {
-    await(dataStream
-      .runWith(Sink.reduce[ByteString](_ ++ _))
-      .map { r: ByteString => r.toArray[Byte] })
-  }
 }
