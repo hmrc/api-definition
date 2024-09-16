@@ -65,33 +65,34 @@ class APIEventRepositorySpec extends AsyncHmrcSpec
   val publishedNoChange       = ApiPublishedNoChange(ApiEventId.random, apiName, serviceName, instant)
   val apiList: List[ApiEvent] = List(apiCreated, newApiVersion, apiVersionStatusChange, apiVersionAccessChange, publishedNoChange)
 
-  "createEvent()" should {
-    val eventTable = Table("Event to use", apiList: _*)
+  "APIEventRepository" when {
+    "createEvent()" should {
+      val eventTable = Table("Event to use", apiList: _*)
 
-    "create a Api Event in Mongo" in forAll(eventTable) { event =>
-      {
-        val result = await(repository.createEvent(event))
-        result shouldBe true
-        await(repository.collection.find(Filters.equal("id", Codecs.toBson(event.id))).toFuture()) shouldBe List(event)
+      "create a Api Event in Mongo" in forAll(eventTable) { event =>
+        {
+          val result = await(repository.createEvent(event))
+          result shouldBe true
+          await(repository.collection.find(Filters.equal("id", Codecs.toBson(event.id))).toFuture()) shouldBe List(event)
+        }
+      }
+    }
+
+    "createAll()" should {
+      "create all Api Events in Mongo" in {
+        await(repository.createAll(apiList))
+        val result = await(repository.fetchEvents(serviceName))
+        result.sortBy(_.apiName) shouldBe apiList.sortBy(_.apiName)
+      }
+    }
+
+    "fetchEvents" should {
+      "fetch all events by serviceName" in {
+        await(Future.sequence(apiList.map(repository.collection.insertOne(_).toFuture())))
+        await(repository.collection.insertOne(apiCreated.copy(id = ApiEventId.random, serviceName = ServiceName("OTHER"))).toFuture())
+        val result = await(repository.fetchEvents(serviceName))
+        result.sortBy(_.apiName) shouldBe apiList.sortBy(_.apiName)
       }
     }
   }
-
-  "createAll()" should {
-    "create all Api Events in Mongo" in {
-      await(repository.createAll(apiList))
-      val result = await(repository.fetchEvents(serviceName))
-      result shouldBe apiList
-    }
-  }
-
-  "fetchEvents" should {
-    "fetch all events by serviceName" in {
-      await(Future.sequence(apiList.map(repository.collection.insertOne(_).toFuture())))
-      await(repository.collection.insertOne(apiCreated.copy(id = ApiEventId.random, serviceName = ServiceName("OTHER"))).toFuture())
-      val result = await(repository.fetchEvents(serviceName))
-      result shouldBe apiList
-    }
-  }
-
 }
