@@ -82,7 +82,7 @@ class APIEventRepositorySpec extends AsyncHmrcSpec
       "create all Api Events in Mongo" in {
         await(repository.createAll(apiList))
         val result = await(repository.fetchEvents(serviceName))
-        result.sortBy(_.apiName) shouldBe apiList.sortBy(_.apiName)
+        result.sortBy(_.id.value) shouldBe apiList.sortBy(_.id.value)
       }
     }
 
@@ -91,7 +91,7 @@ class APIEventRepositorySpec extends AsyncHmrcSpec
         await(Future.sequence(apiList.map(repository.collection.insertOne(_).toFuture())))
         await(repository.collection.insertOne(apiCreated.copy(id = ApiEventId.random, serviceName = ServiceName("OTHER"))).toFuture())
         val result = await(repository.fetchEvents(serviceName))
-        result.sortBy(_.apiName) shouldBe apiList.sortBy(_.apiName)
+        result.sortBy(_.id.value) shouldBe apiList.sortBy(_.id.value)
       }
     }
   }
