@@ -25,7 +25,7 @@ import uk.gov.hmrc.apidefinition.models.ApiEventFormatter._
 
 class ApiEventSpec extends HmrcSpec with FixedClock {
 
-  val eventId        = EventId.random
+  val eventId        = ApiEventId.random
   val apiName        = "Api 123"
   val serviceName    = ServiceName("api-123")
   val apiStatus      = ApiStatus.ALPHA

@@ -37,7 +37,7 @@ import uk.gov.hmrc.mongo.play.json.Codecs
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 
 import uk.gov.hmrc.apidefinition.models.ApiEvents._
-import uk.gov.hmrc.apidefinition.models.{ApiEvent, EventId}
+import uk.gov.hmrc.apidefinition.models.{ApiEvent, ApiEventId}
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 
 class APIEventRepositorySpec extends AsyncHmrcSpec
@@ -58,11 +58,11 @@ class APIEventRepositorySpec extends AsyncHmrcSpec
   val version1                = ApiVersionNbr("1.0")
   val serviceName             = ServiceName("api-event-test")
   val apiName                 = "Api 123"
-  val apiCreated              = ApiCreated(EventId.random, apiName, serviceName, instant)
-  val newApiVersion           = NewApiVersion(EventId.random, apiName, serviceName, instant, ALPHA, version1)
-  val apiVersionStatusChange  = ApiVersionStatusChange(EventId.random, apiName, serviceName, instant, ALPHA, BETA, version1)
-  val apiVersionAccessChange  = ApiVersionAccessChange(EventId.random, apiName, serviceName, instant, PUBLIC, Private(true), version1)
-  val publishedNoChange       = ApiPublishedNoChange(EventId.random, apiName, serviceName, instant)
+  val apiCreated              = ApiCreated(ApiEventId.random, apiName, serviceName, instant)
+  val newApiVersion           = NewApiVersion(ApiEventId.random, apiName, serviceName, instant, ALPHA, version1)
+  val apiVersionStatusChange  = ApiVersionStatusChange(ApiEventId.random, apiName, serviceName, instant, ALPHA, BETA, version1)
+  val apiVersionAccessChange  = ApiVersionAccessChange(ApiEventId.random, apiName, serviceName, instant, PUBLIC, Private(true), version1)
+  val publishedNoChange       = ApiPublishedNoChange(ApiEventId.random, apiName, serviceName, instant)
   val apiList: List[ApiEvent] = List(apiCreated, newApiVersion, apiVersionStatusChange, apiVersionAccessChange, publishedNoChange)
 
   "createEvent()" should {
@@ -88,7 +88,7 @@ class APIEventRepositorySpec extends AsyncHmrcSpec
   "fetchEvents" should {
     "fetch all events by serviceName" in {
       await(Future.sequence(apiList.map(repository.collection.insertOne(_).toFuture())))
-      await(repository.collection.insertOne(apiCreated.copy(id = EventId.random, serviceName = ServiceName("OTHER"))).toFuture())
+      await(repository.collection.insertOne(apiCreated.copy(id = ApiEventId.random, serviceName = ServiceName("OTHER"))).toFuture())
       val result = await(repository.fetchEvents(serviceName))
       result shouldBe apiList
     }

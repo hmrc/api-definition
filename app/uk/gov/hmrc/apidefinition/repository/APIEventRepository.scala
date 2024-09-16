@@ -46,13 +46,6 @@ class APIEventRepository @Inject() (mongoComponent: MongoComponent)(implicit val
             .background(true)
         ),
         IndexModel(
-          ascending("eventType"),
-          IndexOptions()
-            .name("eventType_index")
-            .unique(false)
-            .background(true)
-        ),
-        IndexModel(
           ascending("serviceName"),
           IndexOptions()
             .name("serviceName_index")

@@ -29,7 +29,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.models.ApiEvents._
-import uk.gov.hmrc.apidefinition.models.{ApiEvent, EventId, TolerantJsonApiDefinition}
+import uk.gov.hmrc.apidefinition.models.{ApiEvent, ApiEventId, TolerantJsonApiDefinition}
 import uk.gov.hmrc.apidefinition.repository.{APIDefinitionRepository, APIEventRepository}
 import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
 
@@ -94,17 +94,17 @@ class APIDefinitionService @Inject() (
 
     val findStatusDifferences = versionPairs
       .filterNot(v => v._2.head.status == v._2.last.status)
-      .map(v => ApiVersionStatusChange(EventId.random, apiName, serviceName, instant(), v._2.head.status, v._2.last.status, v._1))
+      .map(v => ApiVersionStatusChange(ApiEventId.random, apiName, serviceName, instant(), v._2.head.status, v._2.last.status, v._1))
       .toList
 
     val findAccessDifferences = versionPairs
       .filterNot(v => v._2.head.access == v._2.last.access)
-      .map(v => ApiVersionAccessChange(EventId.random, apiName, serviceName, instant(), v._2.head.access, v._2.last.access, v._1))
+      .map(v => ApiVersionAccessChange(ApiEventId.random, apiName, serviceName, instant(), v._2.head.access, v._2.last.access, v._1))
       .toList
 
     val findNewVersion = newAPIVersions
       .filterNot(newVersion => existingAPIVersions.map(_.versionNbr).contains(newVersion.versionNbr))
-      .map(newVersion => NewApiVersion(EventId.random, apiName, serviceName, instant(), newVersion.status, newVersion.versionNbr))
+      .map(newVersion => NewApiVersion(ApiEventId.random, apiName, serviceName, instant(), newVersion.status, newVersion.versionNbr))
 
     findStatusDifferences ++ findAccessDifferences ++ findNewVersion
   }
@@ -114,8 +114,8 @@ class APIDefinitionService @Inject() (
       .map {
         case Some(existingAPIDefinition) =>
           val events = findApiEvents(apiDefinition.name, apiDefinition.serviceName, existingAPIDefinition.versions, apiDefinition.versions)
-          if (events.isEmpty) List(ApiPublishedNoChange(EventId.random, apiDefinition.name, apiDefinition.serviceName, instant())) else events
-        case None                        => List(ApiCreated(EventId.random, apiDefinition.name, apiDefinition.serviceName, instant()))
+          if (events.isEmpty) List(ApiPublishedNoChange(ApiEventId.random, apiDefinition.name, apiDefinition.serviceName, instant())) else events
+        case None                        => List(ApiCreated(ApiEventId.random, apiDefinition.name, apiDefinition.serviceName, instant()))
       }
   }
 

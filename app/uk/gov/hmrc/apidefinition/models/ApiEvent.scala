@@ -27,16 +27,16 @@ import uk.gov.hmrc.play.json.Union
 import uk.gov.hmrc.apidefinition.models.ApiEvent.MetaData
 import uk.gov.hmrc.apidefinition.models.ApiEvents._
 
-final case class EventId(value: UUID) extends AnyVal
+final case class ApiEventId(value: UUID) extends AnyVal
 
-object EventId {
-  def random: EventId = EventId(UUID.randomUUID())
+object ApiEventId {
+  def random: ApiEventId = ApiEventId(UUID.randomUUID())
 
-  implicit val eventIdJf: Format[EventId] = Json.valueFormat[EventId]
+  implicit val eventIdJf: Format[ApiEventId] = Json.valueFormat[ApiEventId]
 }
 
 sealed trait ApiEvent {
-  def id: EventId
+  def id: ApiEventId
   def apiName: String
   def serviceName: ServiceName
   def eventDateTime: Instant
@@ -56,16 +56,16 @@ object ApiEvent {
 
 object ApiEvents {
 
-  case class ApiCreated(id: EventId, apiName: String, serviceName: ServiceName, eventDateTime: Instant) extends ApiEvent {
+  case class ApiCreated(id: ApiEventId, apiName: String, serviceName: ServiceName, eventDateTime: Instant) extends ApiEvent {
     override def asMetaData(): MetaData = ("Api Created", List())
   }
 
-  case class NewApiVersion(id: EventId, apiName: String, serviceName: ServiceName, eventDateTime: Instant, apiStatus: ApiStatus, versionNbr: ApiVersionNbr) extends ApiEvent {
+  case class NewApiVersion(id: ApiEventId, apiName: String, serviceName: ServiceName, eventDateTime: Instant, apiStatus: ApiStatus, versionNbr: ApiVersionNbr) extends ApiEvent {
     override def asMetaData(): MetaData = ("New Api Version Published", List(s"Version: $versionNbr", s"Api Status: ${apiStatus.displayText}"))
   }
 
   case class ApiVersionStatusChange(
-      id: EventId,
+      id: ApiEventId,
       apiName: String,
       serviceName: ServiceName,
       eventDateTime: Instant,
@@ -79,7 +79,7 @@ object ApiEvents {
   }
 
   case class ApiVersionAccessChange(
-      id: EventId,
+      id: ApiEventId,
       apiName: String,
       serviceName: ServiceName,
       eventDateTime: Instant,
@@ -98,7 +98,7 @@ object ApiEvents {
       ("Api Version Access Change", List(s"Version: $versionNbr", s"Old Api Access: ${accessDisplay(oldApiAccess)}", s"New Api Access: ${accessDisplay(newApiAccess)}"))
   }
 
-  case class ApiPublishedNoChange(id: EventId, apiName: String, serviceName: ServiceName, eventDateTime: Instant) extends ApiEvent {
+  case class ApiPublishedNoChange(id: ApiEventId, apiName: String, serviceName: ServiceName, eventDateTime: Instant) extends ApiEvent {
     override def asMetaData(): MetaData = ("Api Published No Change", List())
   }
 
