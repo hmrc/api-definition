@@ -16,15 +16,16 @@
 
 package uk.gov.hmrc.apidefinition.models
 
+import java.time.Instant
+import java.util.UUID
+
 import play.api.libs.json.{Format, Json, OFormat}
-import uk.gov.hmrc.apidefinition.models.ApiEvent.MetaData
-import uk.gov.hmrc.apidefinition.models.ApiEvents._
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiAccess, ApiStatus, ServiceName}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiVersionNbr
 import uk.gov.hmrc.play.json.Union
 
-import java.time.Instant
-import java.util.UUID
+import uk.gov.hmrc.apidefinition.models.ApiEvent.MetaData
+import uk.gov.hmrc.apidefinition.models.ApiEvents._
 
 final case class EventId(value: UUID) extends AnyVal
 

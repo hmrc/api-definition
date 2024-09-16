@@ -16,17 +16,18 @@
 
 package uk.gov.hmrc.apidefinition.repository
 
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+
 import org.mongodb.scala.model.Filters
 import org.scalatest.concurrent.Eventually
 import org.scalatest.prop.TableDrivenPropertyChecks.forAll
 import org.scalatest.prop.Tables.Table
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
-import uk.gov.hmrc.apidefinition.models.ApiEvents._
-import uk.gov.hmrc.apidefinition.models.{ApiEvent, EventId}
-import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiAccess.{PUBLIC, Private}
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiStatus.{ALPHA, BETA}
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
@@ -35,8 +36,9 @@ import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.mongo.play.json.Codecs
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import uk.gov.hmrc.apidefinition.models.ApiEvents._
+import uk.gov.hmrc.apidefinition.models.{ApiEvent, EventId}
+import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 
 class APIEventRepositorySpec extends AsyncHmrcSpec
     with DefaultPlayMongoRepositorySupport[ApiEvent]

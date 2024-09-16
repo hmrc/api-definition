@@ -16,21 +16,22 @@
 
 package uk.gov.hmrc.apidefinition.services
 
+import java.time.Clock
+import javax.inject.{Inject, Singleton}
+import scala.concurrent.Future.{failed, successful}
+import scala.concurrent.{ExecutionContext, Future}
+
 import play.api.libs.json.OFormat
-import uk.gov.hmrc.apidefinition.config.AppConfig
-import uk.gov.hmrc.apidefinition.models.ApiEvents._
-import uk.gov.hmrc.apidefinition.models.{ApiEvent, EventId, TolerantJsonApiDefinition}
-import uk.gov.hmrc.apidefinition.repository.{APIDefinitionRepository, APIEventRepository}
-import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
 import uk.gov.hmrc.http.HeaderCarrier
 
-import java.time.Clock
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.Future.{failed, successful}
-import scala.concurrent.{ExecutionContext, Future}
+import uk.gov.hmrc.apidefinition.config.AppConfig
+import uk.gov.hmrc.apidefinition.models.ApiEvents._
+import uk.gov.hmrc.apidefinition.models.{ApiEvent, EventId, TolerantJsonApiDefinition}
+import uk.gov.hmrc.apidefinition.repository.{APIDefinitionRepository, APIEventRepository}
+import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
 
 object APIDefinitionService {
 

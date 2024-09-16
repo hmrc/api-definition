@@ -16,21 +16,22 @@
 
 package uk.gov.hmrc.apidefinition.services
 
+import java.net.URL
+import scala.concurrent.Future.successful
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success, Try}
+
 import play.api.libs.json.{Json, OFormat}
 import play.mvc.Http.Status.NOT_FOUND
-import uk.gov.hmrc.apidefinition.models.ApiEvent
-import uk.gov.hmrc.apidefinition.models.ApiEvents.ApiVersionStatusChange
-import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiVersionNbr
 import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 
-import java.net.URL
-import scala.concurrent.Future.successful
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
+import uk.gov.hmrc.apidefinition.models.ApiEvent
+import uk.gov.hmrc.apidefinition.models.ApiEvents.ApiVersionStatusChange
+import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
 
 trait NotificationService {
   val environmentName: String
@@ -47,7 +48,7 @@ trait NotificationService {
   def process(events: List[ApiEvent])(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Unit] = {
     Future.sequence(events map {
       case e: ApiVersionStatusChange => notifyOfStatusChange(e.apiName, e.versionNbr, e.oldApiStatus, e.newApiStatus)
-    }).map(_=>())
+    }).map(_ => ())
   }
 }
 

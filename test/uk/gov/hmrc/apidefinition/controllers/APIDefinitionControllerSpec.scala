@@ -35,7 +35,6 @@ package uk.gov.hmrc.apidefinition.controllers
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
-
 import play.api.libs.json.Json
 import play.api.mvc.{AnyContentAsEmpty, Request, Result}
 import play.api.test.Helpers._
@@ -44,8 +43,8 @@ import play.mvc.Http.HeaderNames
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.http.{BadRequestException, UnauthorizedException}
-
 import uk.gov.hmrc.apidefinition.config.AppConfig
+import uk.gov.hmrc.apidefinition.mocks.ApiDefinitionServiceMockModule
 import uk.gov.hmrc.apidefinition.models.ErrorCode.INVALID_REQUEST_PAYLOAD
 import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
@@ -55,7 +54,7 @@ import uk.gov.hmrc.apidefinition.validators._
 
 class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFactory with TolerantJsonApiDefinition {
 
-  trait Setup {
+  trait Setup extends ApiDefinitionServiceMockModule {
 
     implicit lazy val request: Request[AnyContentAsEmpty.type] = FakeRequest()
 
@@ -74,7 +73,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
     val apiVersionValidator: ApiVersionValidator         = new ApiVersionValidator(apiEndpointValidator)
     val apiDefinitionValidator: ApiDefinitionValidator   = new ApiDefinitionValidator(mockAPIDefinitionService, apiContextValidator, apiVersionValidator)
 
-    val underTest = new APIDefinitionController(apiDefinitionValidator, mockAPIDefinitionService, mockAppContext, stubControllerComponents())
+    val underTest = new APIDefinitionController(apiDefinitionValidator, ApiDefinitionServiceMock.aMock, mockAppContext, stubControllerComponents())
   }
 
   trait QueryDispatcherSetup extends Setup {
@@ -94,10 +93,10 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
         )
       ).toList
 
-    when(mockAPIDefinitionService.fetchByContext(*[ApiContext])).thenReturn(successful(Some(apiDefinitions.head)))
-    when(mockAPIDefinitionService.fetchAllPublicAPIs(*)).thenReturn(successful(apiDefinitions))
-    when(mockAPIDefinitionService.fetchAllPrivateAPIs()).thenReturn(successful(apiDefinitions))
-    when(mockAPIDefinitionService.fetchAll).thenReturn(successful(apiDefinitions))
+      ApiDefinitionServiceMock.FetchByContext.success(apiDefinitions.head)
+      ApiDefinitionServiceMock.FetchAllPublicAPIs.success(apiDefinitions)
+      ApiDefinitionServiceMock.FetchAllPrivateAPIs.success(apiDefinitions)
+      ApiDefinitionServiceMock.FetchAll.success(apiDefinitions)
 
     def verifyApiDefinitionsReturnedOkWithNoCacheControl(result: Future[Result]) = {
       status(result) shouldBe OK
@@ -107,9 +106,11 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
   }
 
   trait ValidatorSetup extends Setup {
-    when(mockAPIDefinitionService.fetchByContext(*[ApiContext])).thenReturn(successful(None))
-    when(mockAPIDefinitionService.fetchByName(*)).thenReturn(successful(None))
-    when(mockAPIDefinitionService.fetchByServiceBaseUrl(*)).thenReturn(successful(None))
+
+    ApiDefinitionServiceMock.FetchByContext.returnsNone()
+    ApiDefinitionServiceMock.FetchByName.returnsNone()
+    ApiDefinitionServiceMock.FetchByServiceUrL.returnsNone()
+
     when(mockApiDefinitionRepository.fetchByServiceName(*[ServiceName])).thenReturn(successful(None))
 
     def theServiceWillCreateOrUpdateTheAPIDefinition = {
