@@ -28,8 +28,9 @@ import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apidefinition.config.AppConfig
-import uk.gov.hmrc.apidefinition.models.TolerantJsonApiDefinition
-import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
+import uk.gov.hmrc.apidefinition.models.ApiEvents._
+import uk.gov.hmrc.apidefinition.models.{ApiEvent, ApiEventId, TolerantJsonApiDefinition}
+import uk.gov.hmrc.apidefinition.repository.{APIDefinitionRepository, APIEventRepository}
 import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
 
 object APIDefinitionService {
@@ -42,6 +43,7 @@ class APIDefinitionService @Inject() (
     val clock: Clock,
     awsApiPublisher: AwsApiPublisher,
     apiDefinitionRepository: APIDefinitionRepository,
+    apiEventRepository: APIEventRepository,
     apiRemover: ApiRemover,
     apiRetirer: ApiRetirer,
     notificationService: NotificationService,
@@ -76,28 +78,45 @@ class APIDefinitionService @Inject() (
     }
 
     for {
-      _                        <- checkAPIDefinitionForStatusChanges(apiDefinition)
+      events                   <- checkAPIDefinitionForChanges(apiDefinition)
+      _                        <- apiEventRepository.createAll(events)
+      _                        <- notificationService.process(events)
       _                        <- publish()
       definitionWithPublishTime = apiDefinition.copy(lastPublishedAt = Some(instant()))
       _                        <- apiDefinitionRepository.save(definitionWithPublishTime) recoverWith recoverSave
     } yield ()
   }
 
-  private def checkAPIDefinitionForStatusChanges(apiDefinition: StoredApiDefinition)(implicit hc: HeaderCarrier): Future[Unit] = {
-    def findStatusDifferences(existingAPIVersions: Seq[ApiVersion], newAPIVersions: Seq[ApiVersion]): Seq[(ApiVersionNbr, ApiStatus, ApiStatus)] =
-      (existingAPIVersions ++ newAPIVersions)
-        .groupBy(_.versionNbr)
-        .filter(v => v._2.size == 2)
-        .filterNot(v => v._2.head.status == v._2.last.status)
-        .map(v => (v._1, v._2.head.status, v._2.last.status))
-        .toSeq
+  def findApiEvents(apiName: String, serviceName: ServiceName, existingAPIVersions: Seq[ApiVersion], newAPIVersions: Seq[ApiVersion]): List[ApiEvent] = {
+    val versionPairs = (existingAPIVersions ++ newAPIVersions)
+      .groupBy(_.versionNbr)
+      .filter(v => v._2.size == 2)
 
+    val findStatusDifferences = versionPairs
+      .filterNot(v => v._2.head.status == v._2.last.status)
+      .map(v => ApiVersionStatusChange(ApiEventId.random, apiName, serviceName, instant(), v._2.head.status, v._2.last.status, v._1))
+      .toList
+
+    val findAccessDifferences = versionPairs
+      .filterNot(v => v._2.head.access == v._2.last.access)
+      .map(v => ApiVersionAccessChange(ApiEventId.random, apiName, serviceName, instant(), v._2.head.access, v._2.last.access, v._1))
+      .toList
+
+    val findNewVersion = newAPIVersions
+      .filterNot(newVersion => existingAPIVersions.map(_.versionNbr).contains(newVersion.versionNbr))
+      .map(newVersion => NewApiVersion(ApiEventId.random, apiName, serviceName, instant(), newVersion.status, newVersion.versionNbr))
+
+    findStatusDifferences ++ findAccessDifferences ++ findNewVersion
+  }
+
+  private def checkAPIDefinitionForChanges(apiDefinition: StoredApiDefinition): Future[List[ApiEvent]] = {
     apiDefinitionRepository.fetchByContext(apiDefinition.context)
-      .map(existingAPIDefinitionOption =>
-        existingAPIDefinitionOption
-          .map(existingAPIDefinition => findStatusDifferences(existingAPIDefinition.versions, apiDefinition.versions))
-          .map(_.foreach(diff => notificationService.notifyOfStatusChange(apiDefinition.name, diff._1, diff._2, diff._3)))
-      )
+      .map {
+        case Some(existingAPIDefinition) =>
+          val events = findApiEvents(apiDefinition.name, apiDefinition.serviceName, existingAPIDefinition.versions, apiDefinition.versions)
+          if (events.isEmpty) List(ApiPublishedNoChange(ApiEventId.random, apiDefinition.name, apiDefinition.serviceName, instant())) else events
+        case None                        => List(ApiCreated(ApiEventId.random, apiDefinition.name, apiDefinition.serviceName, instant()))
+      }
   }
 
   def fetchByServiceName(serviceName: ServiceName): Future[Option[ApiDefinition]] = {

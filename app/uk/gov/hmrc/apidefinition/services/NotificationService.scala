@@ -29,6 +29,8 @@ import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 
+import uk.gov.hmrc.apidefinition.models.ApiEvent
+import uk.gov.hmrc.apidefinition.models.ApiEvents.ApiVersionStatusChange
 import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
 
 trait NotificationService {
@@ -42,6 +44,13 @@ trait NotificationService {
     )(implicit ec: ExecutionContext,
       headerCarrier: HeaderCarrier
     ): Future[Unit]
+
+  def process(events: List[ApiEvent])(implicit ec: ExecutionContext, hc: HeaderCarrier): Future[Unit] = {
+    Future.sequence(events map {
+      case e: ApiVersionStatusChange => notifyOfStatusChange(e.apiName, e.versionNbr, e.oldApiStatus, e.newApiStatus)
+      case _                         => successful(())
+    }).map(_ => ())
+  }
 }
 
 class LoggingNotificationService(override val environmentName: String) extends NotificationService with ApplicationLogger {

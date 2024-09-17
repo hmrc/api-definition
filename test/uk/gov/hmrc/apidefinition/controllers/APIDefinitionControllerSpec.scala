@@ -34,7 +34,7 @@ package uk.gov.hmrc.apidefinition.controllers
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.concurrent.Future.{failed, successful}
+import scala.concurrent.Future.successful
 
 import play.api.libs.json.Json
 import play.api.mvc.{AnyContentAsEmpty, Request, Result}
@@ -46,35 +46,34 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.http.{BadRequestException, UnauthorizedException}
 
 import uk.gov.hmrc.apidefinition.config.AppConfig
+import uk.gov.hmrc.apidefinition.mocks.{APIEventRepositoryMockModule, ApiDefinitionServiceMockModule}
 import uk.gov.hmrc.apidefinition.models.ErrorCode.INVALID_REQUEST_PAYLOAD
 import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
-import uk.gov.hmrc.apidefinition.services.APIDefinitionService
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 import uk.gov.hmrc.apidefinition.validators._
 
 class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFactory with TolerantJsonApiDefinition {
 
-  trait Setup {
+  trait Setup extends ApiDefinitionServiceMockModule with APIEventRepositoryMockModule {
 
     implicit lazy val request: Request[AnyContentAsEmpty.type] = FakeRequest()
 
     val serviceName = ServiceName("calendar")
     val userEmail   = "user@email.com"
 
-    val mockAPIDefinitionService: APIDefinitionService       = mock[APIDefinitionService]
     val mockApiDefinitionRepository: APIDefinitionRepository = mock[APIDefinitionRepository]
     val mockAppContext: AppConfig                            = mock[AppConfig]
     when(mockAppContext.fetchByContextTtlInSeconds).thenReturn("1234")
     when(mockAppContext.skipContextValidationAllowlist).thenReturn(List())
 
-    val apiContextValidator: ApiContextValidator         = new ApiContextValidator(mockAPIDefinitionService, mockApiDefinitionRepository, mockAppContext)
+    val apiContextValidator: ApiContextValidator         = new ApiContextValidator(ApiDefinitionServiceMock.aMock, mockApiDefinitionRepository, mockAppContext)
     val queryParameterValidator: QueryParameterValidator = new QueryParameterValidator()
     val apiEndpointValidator: ApiEndpointValidator       = new ApiEndpointValidator(queryParameterValidator)
     val apiVersionValidator: ApiVersionValidator         = new ApiVersionValidator(apiEndpointValidator)
-    val apiDefinitionValidator: ApiDefinitionValidator   = new ApiDefinitionValidator(mockAPIDefinitionService, apiContextValidator, apiVersionValidator)
+    val apiDefinitionValidator: ApiDefinitionValidator   = new ApiDefinitionValidator(ApiDefinitionServiceMock.aMock, apiContextValidator, apiVersionValidator)
 
-    val underTest = new APIDefinitionController(apiDefinitionValidator, mockAPIDefinitionService, mockAppContext, stubControllerComponents())
+    val underTest = new APIDefinitionController(apiDefinitionValidator, ApiDefinitionServiceMock.aMock, mockAppContext, stubControllerComponents())
   }
 
   trait QueryDispatcherSetup extends Setup {
@@ -94,10 +93,10 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
         )
       ).toList
 
-    when(mockAPIDefinitionService.fetchByContext(*[ApiContext])).thenReturn(successful(Some(apiDefinitions.head)))
-    when(mockAPIDefinitionService.fetchAllPublicAPIs(*)).thenReturn(successful(apiDefinitions))
-    when(mockAPIDefinitionService.fetchAllPrivateAPIs()).thenReturn(successful(apiDefinitions))
-    when(mockAPIDefinitionService.fetchAll).thenReturn(successful(apiDefinitions))
+    ApiDefinitionServiceMock.FetchByContext.success(apiDefinitions.head)
+    ApiDefinitionServiceMock.FetchAllPublicAPIs.success(apiDefinitions)
+    ApiDefinitionServiceMock.FetchAllPrivateAPIs.success(apiDefinitions)
+    ApiDefinitionServiceMock.FetchAll.success(apiDefinitions)
 
     def verifyApiDefinitionsReturnedOkWithNoCacheControl(result: Future[Result]) = {
       status(result) shouldBe OK
@@ -107,13 +106,15 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
   }
 
   trait ValidatorSetup extends Setup {
-    when(mockAPIDefinitionService.fetchByContext(*[ApiContext])).thenReturn(successful(None))
-    when(mockAPIDefinitionService.fetchByName(*)).thenReturn(successful(None))
-    when(mockAPIDefinitionService.fetchByServiceBaseUrl(*)).thenReturn(successful(None))
+
+    ApiDefinitionServiceMock.FetchByContext.returnsNone()
+    ApiDefinitionServiceMock.FetchByName.returnsNone()
+    ApiDefinitionServiceMock.FetchByServiceUrL.returnsNone()
+
     when(mockApiDefinitionRepository.fetchByServiceName(*[ServiceName])).thenReturn(successful(None))
 
     def theServiceWillCreateOrUpdateTheAPIDefinition = {
-      when(mockAPIDefinitionService.createOrUpdate(*)(*)).thenReturn(successful(()))
+      ApiDefinitionServiceMock.CreateOrUpdate.success()
     }
 
     def thereAreNoOverlappingAPIContexts =
@@ -152,8 +153,8 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
       val result = underTest.createOrUpdate()(request.withBody(Json.parse(calendarApiDefinition)))
 
       status(result) shouldBe NO_CONTENT
+      ApiDefinitionServiceMock.CreateOrUpdate.verifyCall(apiDefinition)
 
-      verify(mockAPIDefinitionService).createOrUpdate(refEq(apiDefinition))(*)
     }
 
     "fail with a 422 (invalid request) when the json payload is invalid for the request" in new ValidatorSetup {
@@ -164,14 +165,13 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
 
       status(result) shouldBe UNPROCESSABLE_ENTITY
 
-      verifyZeroInteractions(mockAPIDefinitionService)
+      verifyZeroInteractions(ApiDefinitionServiceMock.aMock)
     }
 
     "fail with a 500 (internal server error) when the service throws an exception" in new ValidatorSetup {
 
       thereAreNoOverlappingAPIContexts
-      when(mockAPIDefinitionService.createOrUpdate(*)(*))
-        .thenReturn(failed(new RuntimeException("Something went wrong")))
+      ApiDefinitionServiceMock.CreateOrUpdate.thenFails()
 
       val result = underTest.createOrUpdate()(request.withBody(Json.parse(calendarApiDefinition)))
 
@@ -207,7 +207,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
           |}""".stripMargin.replaceAll("\n", " ")
 
       thereAreNoOverlappingAPIContexts
-      verifyZeroInteractions(mockAPIDefinitionService)
+      verifyZeroInteractions(ApiDefinitionServiceMock.aMock)
 
       val result = underTest.createOrUpdate()(request.withBody(Json.parse(body)))
 
@@ -259,7 +259,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
           |}""".stripMargin.replaceAll("\n", " ")
 
       thereAreNoOverlappingAPIContexts
-      verifyZeroInteractions(mockAPIDefinitionService)
+      verifyZeroInteractions(ApiDefinitionServiceMock.aMock)
 
       val result = underTest.createOrUpdate()(request.withBody(Json.parse(body)))
 
@@ -324,7 +324,8 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
 
       status(result) shouldBe NO_CONTENT
 
-      verify(mockAPIDefinitionService).createOrUpdate(refEq(apiDefinition))(*)
+      ApiDefinitionServiceMock.CreateOrUpdate.verifyCall(apiDefinition)
+
     }
 
     "parse an API definition with not defined access type should be public" in new ValidatorSetup {
@@ -381,7 +382,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
 
       status(result) shouldBe NO_CONTENT
 
-      verify(mockAPIDefinitionService).createOrUpdate(refEq(apiDefinition))(*)
+      ApiDefinitionServiceMock.CreateOrUpdate.verifyCall(apiDefinition)
     }
 
     "parse an API definition with PRIVATE access type" in new ValidatorSetup {
@@ -439,8 +440,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
       private val result = underTest.createOrUpdate()(request.withBody(Json.parse(apiDefinitionJson)))
 
       status(result) shouldBe NO_CONTENT
-
-      verify(mockAPIDefinitionService).createOrUpdate(refEq(apiDefinition))(*)
+      ApiDefinitionServiceMock.CreateOrUpdate.verifyCall(apiDefinition)
     }
 
     "fail with a 422 (Unprocessable entity) when access type 'PROTECTED' is unkown" in new ValidatorSetup {
@@ -473,7 +473,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
           |  ]
           |}""".stripMargin.replaceAll("\n", " ")
 
-      verifyZeroInteractions(mockAPIDefinitionService)
+      verifyZeroInteractions(ApiDefinitionServiceMock.aMock)
 
       private val result = underTest.createOrUpdate()(request.withBody(Json.parse(apiDefinitionJson)))
 
@@ -502,8 +502,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
         List(ApiCategory.AGENTS)
       )
 
-      when(mockAPIDefinitionService.fetchByServiceName(eqTo(serviceName)))
-        .thenReturn(successful(Some(apiDefinition)))
+      ApiDefinitionServiceMock.FetchByServiceName.success(serviceName, apiDefinition)
 
       private val result = underTest.fetch(serviceName)(request)
 
@@ -512,8 +511,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
     }
 
     "fail with a 404 (not found) when no API exists for the given serviceName" in new Setup {
-      when(mockAPIDefinitionService.fetchByServiceName(eqTo(serviceName)))
-        .thenReturn(successful(None))
+      ApiDefinitionServiceMock.FetchByServiceName.returnsNone()
 
       private val result = underTest.fetch(serviceName)(request)
 
@@ -521,8 +519,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
     }
 
     "fail with a 500 (internal server error) when the service throws an exception" in new Setup {
-      when(mockAPIDefinitionService.fetchByServiceName(eqTo(serviceName)))
-        .thenReturn(failed(new RuntimeException("Something went wrong")))
+      ApiDefinitionServiceMock.FetchByServiceName.thenFails()
 
       private val result = underTest.fetch(serviceName)(request)
 
@@ -533,9 +530,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
   "queryDispatcher" should {
 
     "fail with a 500 (internal server error) when the fetchAllPublicAPIs throws an exception" in new QueryDispatcherSetup {
-
-      when(mockAPIDefinitionService.fetchAllPublicAPIs(alsoIncludePrivateTrials = false))
-        .thenReturn(failed(new RuntimeException("Something went wrong")))
+      ApiDefinitionServiceMock.FetchAllPublicAPIs.thenFails(alsoIncludePrivateTrials = false)
 
       private val result = underTest.queryDispatcher()(request)
 
@@ -549,13 +544,11 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
 
       verifyApiDefinitionsReturnedOkWithNoCacheControl(result)
 
-      verify(mockAPIDefinitionService).fetchAllPrivateAPIs()
+      verify(ApiDefinitionServiceMock.aMock).fetchAllPrivateAPIs()
     }
 
     "fail with a 500 (internal server error) when private is defined and the service throws an exception" in new QueryDispatcherSetup {
-
-      when(mockAPIDefinitionService.fetchAllPrivateAPIs())
-        .thenReturn(failed(new RuntimeException("Something went wrong")))
+      ApiDefinitionServiceMock.FetchAllPrivateAPIs.thenFails()
 
       private val result = underTest.queryDispatcher()(FakeRequest("GET", s"?type=private"))
 
@@ -567,12 +560,11 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
 
       verifyApiDefinitionsReturnedOkWithNoCacheControl(result)
 
-      verify(mockAPIDefinitionService).fetchAll
+      ApiDefinitionServiceMock.FetchAll.verifyCalled()
     }
 
     "fail with a 500 (internal server error) when all is defined and the service throws an exception" in new QueryDispatcherSetup {
-      when(mockAPIDefinitionService.fetchAll)
-        .thenReturn(failed(new RuntimeException("Something went wrong")))
+      ApiDefinitionServiceMock.FetchAll.thenFails()
 
       private val result = underTest.queryDispatcher()(FakeRequest("GET", s"?type=all"))
 
@@ -591,9 +583,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
     }
 
     "return 404 Not Found when the context is defined and an API does not exist for the context" in new QueryDispatcherSetup {
-
-      when(mockAPIDefinitionService.fetchByContext(eqTo(ApiContext("calendar"))))
-        .thenReturn(successful(None))
+      ApiDefinitionServiceMock.FetchByContext.returnsNoneForContext(ApiContext("calendar"))
 
       private val result = underTest.queryDispatcher()(FakeRequest("GET", s"?context=calendar"))
 
@@ -602,9 +592,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
     }
 
     "fail with a 500 (internal server error) when the context is defined and the service throws an exception" in new QueryDispatcherSetup {
-
-      when(mockAPIDefinitionService.fetchByContext(eqTo(ApiContext("calendar"))))
-        .thenReturn(failed(new RuntimeException("Something went wrong")))
+      ApiDefinitionServiceMock.FetchByContext.thenFails()
 
       private val result = underTest.queryDispatcher()(FakeRequest("GET", s"?context=calendar"))
 
@@ -620,7 +608,8 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
       contentAsJson(result) shouldEqual Json.toJson(apiDefinitions.head)
       header(HeaderNames.CACHE_CONTROL, result) shouldBe Some("max-age=1234")
 
-      verify(mockAPIDefinitionService).fetchByContext(eqTo(ApiContext(context)))
+      ApiDefinitionServiceMock.FetchByContext.verifyCalled(ApiContext(context))
+
     }
 
     "accept an options parameter where alsoIncludePrivateTrials can be specified" when {
@@ -635,7 +624,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
 
           verifyApiDefinitionsReturnedOkWithNoCacheControl(result)
 
-          verify(mockAPIDefinitionService).fetchAllPublicAPIs(alsoIncludePrivateTrials)
+          ApiDefinitionServiceMock.FetchAllPublicAPIs.verifyCalled(alsoIncludePrivateTrials)
         }
 
         "return all Public APIs (without private trials) when the type parameter is defined as public" in new QueryDispatcherSetup {
@@ -644,7 +633,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
 
           verifyApiDefinitionsReturnedOkWithNoCacheControl(result)
 
-          verify(mockAPIDefinitionService).fetchAllPublicAPIs(alsoIncludePrivateTrials)
+          ApiDefinitionServiceMock.FetchAllPublicAPIs.verifyCalled(alsoIncludePrivateTrials)
         }
       }
 
@@ -654,35 +643,33 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
         val alsoIncludePrivateTrials               = true
 
         "return all the Public APIs and private trial APIs" in new QueryDispatcherSetup {
-
-          when(mockAPIDefinitionService.fetchAllPublicAPIs(*)).thenReturn(successful(apiDefinitions))
+          ApiDefinitionServiceMock.FetchAllPublicAPIs.success(apiDefinitions)
 
           private val result = underTest.queryDispatcher()(FakeRequest("GET", s"?$alsoIncludePrivateTrialsQueryParameter"))
 
           verifyApiDefinitionsReturnedOkWithNoCacheControl(result)
 
-          verify(mockAPIDefinitionService).fetchAllPublicAPIs(alsoIncludePrivateTrials)
+          ApiDefinitionServiceMock.FetchAllPublicAPIs.verifyCalled(alsoIncludePrivateTrials)
         }
 
         "return all Public APIs and private trial APIs when the type parameter is defined as public" in new QueryDispatcherSetup {
-
-          when(mockAPIDefinitionService.fetchAllPublicAPIs(*)).thenReturn(successful(apiDefinitions))
+          ApiDefinitionServiceMock.FetchAllPublicAPIs.success(apiDefinitions)
 
           private val result = underTest.queryDispatcher()(FakeRequest("GET", s"?type=public&$alsoIncludePrivateTrialsQueryParameter"))
 
           verifyApiDefinitionsReturnedOkWithNoCacheControl(result)
 
-          verify(mockAPIDefinitionService).fetchAllPublicAPIs(alsoIncludePrivateTrials)
+          ApiDefinitionServiceMock.FetchAllPublicAPIs.verifyCalled(alsoIncludePrivateTrials)
         }
 
         "be tolerant of query parameters being passed in any order" in new QueryDispatcherSetup {
-          when(mockAPIDefinitionService.fetchAllPublicAPIs(*)).thenReturn(successful(apiDefinitions))
+          ApiDefinitionServiceMock.FetchAllPublicAPIs.success(apiDefinitions)
 
           private val result = underTest.queryDispatcher()(FakeRequest("GET", s"?$alsoIncludePrivateTrialsQueryParameter&type=public"))
 
           verifyApiDefinitionsReturnedOkWithNoCacheControl(result)
 
-          verify(mockAPIDefinitionService).fetchAllPublicAPIs(alsoIncludePrivateTrials)
+          ApiDefinitionServiceMock.FetchAllPublicAPIs.verifyCalled(alsoIncludePrivateTrials)
         }
       }
     }
@@ -690,10 +677,10 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
 
   "validate" should {
     "succeed with status 202 (Accepted) when the payload is valid" in new ValidatorSetup {
+      ApiDefinitionServiceMock.FetchByName.returnsNone()
+      ApiDefinitionServiceMock.FetchByServiceBaseUrl.returnsNone()
+      ApiDefinitionServiceMock.FetchByContext.returnsNone()
 
-      when(mockAPIDefinitionService.fetchByName(*)).thenReturn(successful(None))
-      when(mockAPIDefinitionService.fetchByServiceBaseUrl(*)).thenReturn(successful(None))
-      when(mockAPIDefinitionService.fetchByContext(*[ApiContext])).thenReturn(successful(None))
       thereAreNoOverlappingAPIContexts
 
       private val result = underTest.validate()(request.withBody(Json.parse(calendarApiDefinition)))
@@ -719,9 +706,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
 
   "delete" should {
     "succeed with status 204 (NoContent) when the deletion succeeds" in new Setup {
-
-      when(mockAPIDefinitionService.delete(eqTo(ServiceName("service-name")))(*))
-        .thenReturn(successful(()))
+      ApiDefinitionServiceMock.Delete.success(ServiceName("service-name"))
 
       private val result = underTest.delete(ServiceName("service-name"))(request)
 
@@ -729,9 +714,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
     }
 
     "fail with status 500 when the deletion fails" in new Setup {
-
-      when(mockAPIDefinitionService.delete(eqTo(ServiceName("service-name")))(*))
-        .thenReturn(failed(new RuntimeException("Something went wrong")))
+      ApiDefinitionServiceMock.Delete.thenFailsWith(new RuntimeException("Something went wrong"))
 
       private val result = underTest.delete(ServiceName("service-name"))(request)
 
@@ -740,8 +723,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
 
     "fail with status 403 when the deletion is unauthorized" in new Setup {
 
-      when(mockAPIDefinitionService.delete(eqTo(ServiceName("service-name")))(*))
-        .thenReturn(failed(new UnauthorizedException("Unauthorized")))
+      ApiDefinitionServiceMock.Delete.thenFailsWith(new UnauthorizedException("Unauthorized"))
 
       private val result = underTest.delete(ServiceName("service-name"))(request)
 
@@ -751,7 +733,8 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
 
   "publishAllToAws" should {
     "succeed with status 204 when all APIs are republished" in new Setup {
-      when(mockAPIDefinitionService.publishAllToAws()(*)).thenReturn(successful(()))
+
+      ApiDefinitionServiceMock.PublishAllToAws.success()
 
       val result = underTest.publishAllToAws()(request)
 
@@ -761,7 +744,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
 
     "fail with status 500 and return the error message when it fails to publish" in new Setup {
       val message = "Some error"
-      when(mockAPIDefinitionService.publishAllToAws()(*)).thenReturn(failed(new RuntimeException(message)))
+      ApiDefinitionServiceMock.PublishAllToAws.thenFailsWith(message)
 
       val result = underTest.publishAllToAws()(request)
 
