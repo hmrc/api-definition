@@ -31,7 +31,7 @@ import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.models.ErrorCode._
-import uk.gov.hmrc.apidefinition.models.{ErrorCode, TolerantJsonApiDefinition}
+import uk.gov.hmrc.apidefinition.models.{DisplayApiEvent, ErrorCode, TolerantJsonApiDefinition}
 import uk.gov.hmrc.apidefinition.services.APIDefinitionService
 import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
 import uk.gov.hmrc.apidefinition.validators.ApiDefinitionValidator
@@ -107,6 +107,12 @@ class APIDefinitionController @Inject() (
 
   def publishAllToAws(): Action[AnyContent] = Action.async { implicit request =>
     apiDefinitionService.publishAllToAws().map { _ => NoContent } recover recovery
+  }
+
+  def fetchEvents(serviceName: ServiceName): Action[AnyContent] = Action.async { _ =>
+    apiDefinitionService.fetchEventsByServiceName(serviceName) map { apiEvents =>
+      Ok(Json.toJson(apiEvents.map(DisplayApiEvent(_))))
+    } recover recovery
   }
 
   private def extractQueryOptions(request: Request[AnyContent]) = {

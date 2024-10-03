@@ -41,19 +41,23 @@ import play.api.mvc.{AnyContentAsEmpty, Request, Result}
 import play.api.test.Helpers._
 import play.api.test.{FakeRequest, StubControllerComponentsFactory}
 import play.mvc.Http.HeaderNames
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiStatus.ALPHA
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.http.{BadRequestException, UnauthorizedException}
 
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.mocks.{APIEventRepositoryMockModule, ApiDefinitionServiceMockModule}
+import uk.gov.hmrc.apidefinition.models.ApiEvents.{ApiCreated, NewApiVersion}
 import uk.gov.hmrc.apidefinition.models.ErrorCode.INVALID_REQUEST_PAYLOAD
 import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 import uk.gov.hmrc.apidefinition.validators._
 
-class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerComponentsFactory with TolerantJsonApiDefinition {
+class APIDefinitionControllerSpec extends AsyncHmrcSpec
+    with StubControllerComponentsFactory with TolerantJsonApiDefinition with FixedClock {
 
   trait Setup extends ApiDefinitionServiceMockModule with APIEventRepositoryMockModule {
 
@@ -776,6 +780,62 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec with StubControllerCompo
       }
 
       exception.getMessage shouldBe "Invalid options specified: SomeOtherValue"
+    }
+  }
+
+  "fetchEvents" should {
+    "return a list of events for the given serviceName" in new Setup {
+      val version1                = ApiVersionNbr("1.0")
+      val apiName                 = "Api 123"
+      val apiCreated              = ApiCreated(ApiEventId.random, apiName, serviceName, instant)
+      val newApiVersion           = NewApiVersion(ApiEventId.random, apiName, serviceName, instant, ALPHA, version1)
+      val apiList: List[ApiEvent] = List(apiCreated, newApiVersion)
+
+      ApiDefinitionServiceMock.FetchEventsByServiceName.success(serviceName, apiList)
+
+      private val result = underTest.fetchEvents(serviceName)(request)
+
+      status(result) shouldBe OK
+      contentAsJson(result) shouldBe Json.parse(
+        s"""
+           |[
+           |  {
+           |    "id": "${apiCreated.id.value}",
+           |    "serviceName": "${apiCreated.serviceName}",
+           |    "eventDateTime": "2020-01-02T03:04:05.006Z",
+           |    "eventType": "${apiCreated.asMetaData()._1}",
+           |    "metaData": []
+           |  },
+           |  {
+           |    "id": "${newApiVersion.id.value}",
+           |    "serviceName": "${newApiVersion.serviceName}",
+           |    "eventDateTime": "2020-01-02T03:04:05.006Z",
+           |    "eventType": "${newApiVersion.asMetaData()._1}",
+           |    "metaData": [
+           |      "${newApiVersion.asMetaData()._2(0)}",
+           |      "${newApiVersion.asMetaData()._2(1)}"
+           |    ]
+           |  }
+           |]
+           |""".stripMargin
+      )
+    }
+
+    "return an empty list if no events found for the given serviceName" in new Setup {
+      ApiDefinitionServiceMock.FetchEventsByServiceName.success(serviceName, List.empty)
+
+      private val result = underTest.fetchEvents(serviceName)(request)
+
+      status(result) shouldBe OK
+      contentAsJson(result) shouldBe Json.parse("[]")
+    }
+
+    "fail with a 500 (internal server error) when the service throws an exception" in new Setup {
+      ApiDefinitionServiceMock.FetchEventsByServiceName.thenFails()
+
+      private val result = underTest.fetchEvents(serviceName)(request)
+
+      status(result) shouldBe INTERNAL_SERVER_ERROR
     }
   }
 
