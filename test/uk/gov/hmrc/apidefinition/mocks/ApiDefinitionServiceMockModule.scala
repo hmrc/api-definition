@@ -23,6 +23,7 @@ import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiDefinition, ServiceName, StoredApiDefinition}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiContext
 
+import uk.gov.hmrc.apidefinition.models.ApiEvent
 import uk.gov.hmrc.apidefinition.services.APIDefinitionService
 
 trait ApiDefinitionServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
@@ -171,10 +172,19 @@ trait ApiDefinitionServiceMockModule extends MockitoSugar with ArgumentMatchersS
 
     }
 
+    object FetchEventsByServiceName {
+
+      def success(serviceName: ServiceName, apiEvents: List[ApiEvent]) = {
+        when(aMock.fetchEventsByServiceName(eqTo(serviceName))).thenReturn(successful(apiEvents))
+      }
+
+      def thenFails() = {
+        when(aMock.fetchEventsByServiceName(*[ServiceName])).thenReturn(failed(new RuntimeException(s"Something went wrong")))
+      }
+    }
   }
 
   object ApiDefinitionServiceMock extends BaseApiDefinitionServiceMock {
     val aMock = mock[APIDefinitionService]
-
   }
 }

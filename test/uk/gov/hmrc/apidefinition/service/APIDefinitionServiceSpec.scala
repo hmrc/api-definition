@@ -28,6 +28,7 @@ import uk.gov.hmrc.http.HeaderNames._
 
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.mocks.APIEventRepositoryMockModule
+import uk.gov.hmrc.apidefinition.models.{ApiEventId, ApiEvents}
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.services.{APIDefinitionService, ApiRemover, ApiRetirer, AwsApiPublisher, NotificationService}
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
@@ -346,6 +347,25 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
 
       await(underTest.publishAllToAws())
       verify(mockApiRetirer, times(1)).retireApis(apisToRetire)
+    }
+  }
+
+  "fetchEvents" should {
+    "return API events from the repository" in new FetchSetup {
+      val apiEvent = ApiEvents.ApiCreated(ApiEventId.random, "Api 123", serviceName, instant)
+      APIEventRepositoryMock.FetchEvents.success(serviceName, List(apiEvent))
+
+      val response = await(underTest.fetchEventsByServiceName(serviceName))
+
+      response shouldBe List(apiEvent)
+    }
+
+    "return empty list when there are no events" in new FetchSetup {
+      APIEventRepositoryMock.FetchEvents.success(serviceName, List.empty)
+
+      val response = await(underTest.fetchEventsByServiceName(serviceName))
+
+      response shouldBe List.empty
     }
   }
 

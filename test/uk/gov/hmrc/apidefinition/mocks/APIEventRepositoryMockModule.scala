@@ -20,6 +20,9 @@ import scala.concurrent.Future.successful
 
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ServiceName
+
+import uk.gov.hmrc.apidefinition.models.ApiEvent
 import uk.gov.hmrc.apidefinition.repository.APIEventRepository
 
 trait APIEventRepositoryMockModule extends MockitoSugar with ArgumentMatchersSugar {
@@ -33,6 +36,13 @@ trait APIEventRepositoryMockModule extends MockitoSugar with ArgumentMatchersSug
         when(aMock.createAll(*)).thenReturn(successful(true))
       }
 
+    }
+
+    object FetchEvents {
+
+      def success(serviceName: ServiceName, apiEvents: List[ApiEvent]) = {
+        when(aMock.fetchEvents(eqTo(serviceName))).thenReturn(successful(apiEvents))
+      }
     }
   }
 

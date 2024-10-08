@@ -6,6 +6,8 @@ GET         /api-definition/:serviceName/:version/documentation/*resource       
 
 GET         /api-definition/:serviceName/:version/specification                  uk.gov.hmrc.apidefinition.controllers.SpecificationController.fetchApiSpecification(serviceName: ServiceName, version: uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiVersionNbr)
 
+GET         /api-definition/:serviceName/events                                  uk.gov.hmrc.apidefinition.controllers.APIDefinitionController.fetchEvents(serviceName: ServiceName)
+
 POST        /api-definition                                                      uk.gov.hmrc.apidefinition.controllers.APIDefinitionController.createOrUpdate()
 POST        /api-definition/validate                                             uk.gov.hmrc.apidefinition.controllers.APIDefinitionController.validate
 
