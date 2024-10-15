@@ -19,7 +19,7 @@ package uk.gov.hmrc.apidefinition.repository
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
-import org.mongodb.scala.model.Filters.equal
+import org.mongodb.scala.model.Filters._
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model._
 
@@ -72,9 +72,15 @@ class APIEventRepository @Inject() (mongoComponent: MongoComponent)(implicit val
     collection.insertMany(apiEvents).toFuture().map(_.wasAcknowledged())
   }
 
-  def fetchEvents(serviceName: ServiceName): Future[List[ApiEvent]] = {
-    collection.find(equal("serviceName", Codecs.toBson(serviceName)))
-      .toFuture()
-      .map(_.toList)
+  def fetchEvents(serviceName: ServiceName, includeNoChange: Boolean = true): Future[List[ApiEvent]] = {
+    if (includeNoChange) {
+      collection.find(equal("serviceName", Codecs.toBson(serviceName)))
+        .toFuture()
+        .map(_.toList)
+    } else {
+      collection.find(and(equal("serviceName", Codecs.toBson(serviceName)), notEqual("eventType", Codecs.toBson("API_PUBLISHED_NO_CHANGE"))))
+        .toFuture()
+        .map(_.toList)
+    }
   }
 }

@@ -93,6 +93,13 @@ class APIEventRepositorySpec extends AsyncHmrcSpec
         val result = await(repository.fetchEvents(serviceName))
         result.sortBy(_.id.value) shouldBe apiList.sortBy(_.id.value)
       }
+
+      "fetch all events by serviceName, excluding no change events" in {
+        await(Future.sequence(apiList.map(repository.collection.insertOne(_).toFuture())))
+        await(repository.collection.insertOne(apiCreated.copy(id = ApiEventId.random, serviceName = ServiceName("OTHER"))).toFuture())
+        val result = await(repository.fetchEvents(serviceName, includeNoChange = false))
+        result.sortBy(_.id.value) shouldBe apiList.sortBy(_.id.value).filterNot(_.isInstanceOf[ApiPublishedNoChange])
+      }
     }
   }
 }

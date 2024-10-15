@@ -40,8 +40,8 @@ trait APIEventRepositoryMockModule extends MockitoSugar with ArgumentMatchersSug
 
     object FetchEvents {
 
-      def success(serviceName: ServiceName, apiEvents: List[ApiEvent]) = {
-        when(aMock.fetchEvents(eqTo(serviceName))).thenReturn(successful(apiEvents))
+      def success(serviceName: ServiceName, apiEvents: List[ApiEvent], includeNoChange: Boolean = true) = {
+        when(aMock.fetchEvents(eqTo(serviceName), eqTo(includeNoChange))).thenReturn(successful(apiEvents))
       }
     }
   }

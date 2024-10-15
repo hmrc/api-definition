@@ -198,6 +198,6 @@ class APIDefinitionService @Inject() (
 
   }
 
-  def fetchEventsByServiceName(serviceName: ServiceName): Future[List[ApiEvent]] =
-    apiEventRepository.fetchEvents(serviceName)
+  def fetchEventsByServiceName(serviceName: ServiceName, includeNoChange: Boolean = true): Future[List[ApiEvent]] =
+    apiEventRepository.fetchEvents(serviceName, includeNoChange)
 }
