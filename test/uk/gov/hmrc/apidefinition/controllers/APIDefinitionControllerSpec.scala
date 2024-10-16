@@ -821,6 +821,43 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec
       )
     }
 
+    "return a list of events for the given serviceName, excluding no change events" in new Setup {
+      val version1                = ApiVersionNbr("1.0")
+      val apiName                 = "Api 123"
+      val apiCreated              = ApiCreated(ApiEventId.random, apiName, serviceName, instant)
+      val newApiVersion           = NewApiVersion(ApiEventId.random, apiName, serviceName, instant, ALPHA, version1)
+      val apiList: List[ApiEvent] = List(apiCreated, newApiVersion)
+
+      ApiDefinitionServiceMock.FetchEventsByServiceName.success(serviceName, apiList, includeNoChange = false)
+
+      private val result = underTest.fetchEvents(serviceName, includeNoChange = false)(request)
+
+      status(result) shouldBe OK
+      contentAsJson(result) shouldBe Json.parse(
+        s"""
+           |[
+           |  {
+           |    "id": "${apiCreated.id.value}",
+           |    "serviceName": "${apiCreated.serviceName}",
+           |    "eventDateTime": "2020-01-02T03:04:05.006Z",
+           |    "eventType": "${apiCreated.asMetaData()._1}",
+           |    "metaData": []
+           |  },
+           |  {
+           |    "id": "${newApiVersion.id.value}",
+           |    "serviceName": "${newApiVersion.serviceName}",
+           |    "eventDateTime": "2020-01-02T03:04:05.006Z",
+           |    "eventType": "${newApiVersion.asMetaData()._1}",
+           |    "metaData": [
+           |      "${newApiVersion.asMetaData()._2(0)}",
+           |      "${newApiVersion.asMetaData()._2(1)}"
+           |    ]
+           |  }
+           |]
+           |""".stripMargin
+      )
+    }
+
     "return an empty list if no events found for the given serviceName" in new Setup {
       ApiDefinitionServiceMock.FetchEventsByServiceName.success(serviceName, List.empty)
 

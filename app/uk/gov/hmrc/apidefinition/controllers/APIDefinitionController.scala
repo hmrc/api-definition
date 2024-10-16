@@ -109,8 +109,8 @@ class APIDefinitionController @Inject() (
     apiDefinitionService.publishAllToAws().map { _ => NoContent } recover recovery
   }
 
-  def fetchEvents(serviceName: ServiceName): Action[AnyContent] = Action.async { _ =>
-    apiDefinitionService.fetchEventsByServiceName(serviceName) map { apiEvents =>
+  def fetchEvents(serviceName: ServiceName, includeNoChange: Boolean = true): Action[AnyContent] = Action.async { _ =>
+    apiDefinitionService.fetchEventsByServiceName(serviceName, includeNoChange) map { apiEvents =>
       Ok(Json.toJson(apiEvents.map(DisplayApiEvent(_))))
     } recover recovery
   }

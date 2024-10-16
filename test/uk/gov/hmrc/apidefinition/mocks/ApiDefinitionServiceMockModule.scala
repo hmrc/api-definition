@@ -174,12 +174,16 @@ trait ApiDefinitionServiceMockModule extends MockitoSugar with ArgumentMatchersS
 
     object FetchEventsByServiceName {
 
-      def success(serviceName: ServiceName, apiEvents: List[ApiEvent]) = {
-        when(aMock.fetchEventsByServiceName(eqTo(serviceName))).thenReturn(successful(apiEvents))
+      def success(serviceName: ServiceName, apiEvents: List[ApiEvent], includeNoChange: Boolean = true) = {
+        when(aMock.fetchEventsByServiceName(eqTo(serviceName), eqTo(includeNoChange))).thenReturn(successful(apiEvents))
+      }
+
+      def notIncludingNoChangeRequestSuccess(serviceName: ServiceName, apiEvents: List[ApiEvent]) = {
+        when(aMock.fetchEventsByServiceName(eqTo(serviceName), eqTo(false))).thenReturn(successful(apiEvents))
       }
 
       def thenFails() = {
-        when(aMock.fetchEventsByServiceName(*[ServiceName])).thenReturn(failed(new RuntimeException(s"Something went wrong")))
+        when(aMock.fetchEventsByServiceName(*[ServiceName], *[Boolean])).thenReturn(failed(new RuntimeException(s"Something went wrong")))
       }
     }
   }

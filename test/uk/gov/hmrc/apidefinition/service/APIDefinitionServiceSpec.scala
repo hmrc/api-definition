@@ -360,6 +360,15 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
       response shouldBe List(apiEvent)
     }
 
+    "return API events from the repository, excluding no change events" in new FetchSetup {
+      val apiEvent = ApiEvents.ApiCreated(ApiEventId.random, "Api 123", serviceName, instant)
+      APIEventRepositoryMock.FetchEvents.success(serviceName, List(apiEvent), includeNoChange = false)
+
+      val response = await(underTest.fetchEventsByServiceName(serviceName, includeNoChange = false))
+
+      response shouldBe List(apiEvent)
+    }
+
     "return empty list when there are no events" in new FetchSetup {
       APIEventRepositoryMock.FetchEvents.success(serviceName, List.empty)
 
