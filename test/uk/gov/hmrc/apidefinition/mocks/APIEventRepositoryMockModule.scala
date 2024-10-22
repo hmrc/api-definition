@@ -18,6 +18,7 @@ package uk.gov.hmrc.apidefinition.mocks
 
 import scala.concurrent.Future.successful
 
+import org.mockito.captor.{ArgCaptor, Captor}
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ServiceName
@@ -36,6 +37,13 @@ trait APIEventRepositoryMockModule extends MockitoSugar with ArgumentMatchersSug
         when(aMock.createAll(*)).thenReturn(successful(true))
       }
 
+      def verifyCall() = {
+        val captureAction: Captor[List[ApiEvent]] = ArgCaptor[List[ApiEvent]]
+
+        verify(aMock, times(1)).createAll(captureAction)
+
+        captureAction.value
+      }
     }
 
     object FetchEvents {

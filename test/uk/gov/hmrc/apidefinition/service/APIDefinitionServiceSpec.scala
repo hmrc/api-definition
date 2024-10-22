@@ -140,6 +140,38 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
       // verifyZeroInteractions(mockNotificationService)
     }
 
+    "create or update the API Definition where the definition has changed" in new Setup {
+      val newEndpoint                   = Endpoint(
+        "/tomorrow",
+        "Get Tomorrow's Date",
+        HttpMethod.GET,
+        AuthType.NONE,
+        ResourceThrottlingTier.UNLIMITED,
+        None,
+        queryParameters = List.empty
+      )
+      val newApiDefinitionVersion       = apiDefinition.versions.head.copy(endpoints = List(apiDefinition.versions.head.endpoints.head, newEndpoint))
+      val newApiDefinition              = apiDefinition.copy(versions = List(newApiDefinitionVersion))
+      val newAiDefinitionWithSavingTime = newApiDefinition.copy(lastPublishedAt = Some(instant))
+
+      when(mockNotificationService.process(*)(*, *)).thenReturn(unitSuccess)
+      when(mockAPIDefinitionRepository.fetchByContext(apiDefinition.context)).thenReturn(successful(Some(apiDefinition)))
+      when(mockAwsApiPublisher.publish(newApiDefinition)).thenReturn(unitSuccess)
+      when(mockAPIDefinitionRepository.save(newAiDefinitionWithSavingTime)).thenReturn(successful(newAiDefinitionWithSavingTime))
+
+      await(underTest.createOrUpdate(newApiDefinition))
+
+      verify(mockAwsApiPublisher, times(1)).publish(newApiDefinition)
+      verify(mockAPIDefinitionRepository, times(1)).save(newAiDefinitionWithSavingTime)
+
+      val capture = APIEventRepositoryMock.CreateAll.verifyCall()
+      capture.size shouldBe 1
+      capture.head.asMetaData() shouldBe ("Api Version Endpoints Added", List(
+        s"Version: ${newApiDefinition.versions.head.versionNbr}",
+        s"Endpoint: ${newEndpoint.method}: ${newEndpoint.uriPattern}"
+      ))
+    }
+
     "propagate unexpected errors that happen when trying to publish an API to AWS" in new Setup {
       when(mockNotificationService.process(*)(*, *)).thenReturn(unitSuccess)
       when(mockAPIDefinitionRepository.fetchByContext(apiDefinition.context)).thenReturn(successful(Some(apiDefinition)))

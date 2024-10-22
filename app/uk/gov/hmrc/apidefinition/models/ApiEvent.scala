@@ -20,7 +20,7 @@ import java.time.Instant
 import java.util.UUID
 
 import play.api.libs.json.{Format, Json, OFormat}
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiAccess, ApiStatus, ServiceName}
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiAccess, ApiStatus, Endpoint, ServiceName}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiVersionNbr
 import uk.gov.hmrc.play.json.Union
 
@@ -96,6 +96,32 @@ object ApiEvents {
 
     override def asMetaData(): MetaData =
       ("Api Version Access Change", List(s"Version: $versionNbr", s"Old Api Access: ${accessDisplay(oldApiAccess)}", s"New Api Access: ${accessDisplay(newApiAccess)}"))
+  }
+
+  case class ApiVersionEndpointsAdded(
+      id: ApiEventId,
+      apiName: String,
+      serviceName: ServiceName,
+      eventDateTime: Instant,
+      endpoints: List[Endpoint],
+      versionNbr: ApiVersionNbr
+    ) extends ApiEvent {
+
+    override def asMetaData(): MetaData =
+      ("Api Version Endpoints Added", List(s"Version: $versionNbr") ++ endpoints.map(e => s"Endpoint: ${e.method}: ${e.uriPattern}"))
+  }
+
+  case class ApiVersionEndpointsRemoved(
+      id: ApiEventId,
+      apiName: String,
+      serviceName: ServiceName,
+      eventDateTime: Instant,
+      endpoints: List[Endpoint],
+      versionNbr: ApiVersionNbr
+    ) extends ApiEvent {
+
+    override def asMetaData(): MetaData =
+      ("Api Version Endpoints Removed", List(s"Version: $versionNbr") ++ endpoints.map(e => s"Endpoint: ${e.method}: ${e.uriPattern}"))
   }
 
   case class ApiPublishedNoChange(id: ApiEventId, apiName: String, serviceName: ServiceName, eventDateTime: Instant) extends ApiEvent {
