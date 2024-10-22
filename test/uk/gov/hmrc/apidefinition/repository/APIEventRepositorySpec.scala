@@ -55,15 +55,20 @@ class APIEventRepositorySpec extends AsyncHmrcSpec
         "mongodb.uri" -> s"mongodb://127.0.0.1:27017/test-${this.getClass.getSimpleName}"
       )
 
-  val version1                = ApiVersionNbr("1.0")
-  val serviceName             = ServiceName("api-event-test")
-  val apiName                 = "Api 123"
-  val apiCreated              = ApiCreated(ApiEventId.random, apiName, serviceName, instant)
-  val newApiVersion           = NewApiVersion(ApiEventId.random, apiName, serviceName, instant, ALPHA, version1)
-  val apiVersionStatusChange  = ApiVersionStatusChange(ApiEventId.random, apiName, serviceName, instant, ALPHA, BETA, version1)
-  val apiVersionAccessChange  = ApiVersionAccessChange(ApiEventId.random, apiName, serviceName, instant, PUBLIC, Private(true), version1)
-  val publishedNoChange       = ApiPublishedNoChange(ApiEventId.random, apiName, serviceName, instant)
-  val apiList: List[ApiEvent] = List(apiCreated, newApiVersion, apiVersionStatusChange, apiVersionAccessChange, publishedNoChange)
+  val version1                   = ApiVersionNbr("1.0")
+  val serviceName                = ServiceName("api-event-test")
+  val apiName                    = "Api 123"
+  val endpoint                   = Endpoint("/endpoint/url", "Endpoint name", HttpMethod.GET, AuthType.APPLICATION, ResourceThrottlingTier.UNLIMITED, None, List.empty)
+  val apiCreated                 = ApiCreated(ApiEventId.random, apiName, serviceName, instant)
+  val newApiVersion              = NewApiVersion(ApiEventId.random, apiName, serviceName, instant, ALPHA, version1)
+  val apiVersionStatusChange     = ApiVersionStatusChange(ApiEventId.random, apiName, serviceName, instant, ALPHA, BETA, version1)
+  val apiVersionAccessChange     = ApiVersionAccessChange(ApiEventId.random, apiName, serviceName, instant, PUBLIC, Private(true), version1)
+  val apiVersionEndpointsAdded   = ApiVersionEndpointsAdded(ApiEventId.random, apiName, serviceName, instant, List(endpoint), version1)
+  val apiVersionEndpointsRemoved = ApiVersionEndpointsRemoved(ApiEventId.random, apiName, serviceName, instant, List(endpoint), version1)
+  val publishedNoChange          = ApiPublishedNoChange(ApiEventId.random, apiName, serviceName, instant)
+
+  val apiList: List[ApiEvent] =
+    List(apiCreated, newApiVersion, apiVersionStatusChange, apiVersionAccessChange, apiVersionEndpointsAdded, apiVersionEndpointsRemoved, publishedNoChange)
 
   "APIEventRepository" when {
     "createEvent()" should {

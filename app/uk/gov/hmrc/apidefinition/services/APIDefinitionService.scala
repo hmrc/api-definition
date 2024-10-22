@@ -107,11 +107,16 @@ class APIDefinitionService @Inject() (
       .map(v => ApiVersionEndpointsAdded(ApiEventId.random, apiName, serviceName, instant(), listEndpointsAdded(v._2.head.endpoints, v._2.last.endpoints), v._1))
       .toList
 
+    val findEndpointsRemoved = versionPairs
+      .filter(v => checkEndpointsRemoved(v._2.head.endpoints, v._2.last.endpoints))
+      .map(v => ApiVersionEndpointsRemoved(ApiEventId.random, apiName, serviceName, instant(), listEndpointsRemoved(v._2.head.endpoints, v._2.last.endpoints), v._1))
+      .toList
+
     val findNewVersion = newAPIVersions
       .filterNot(newVersion => existingAPIVersions.map(_.versionNbr).contains(newVersion.versionNbr))
       .map(newVersion => NewApiVersion(ApiEventId.random, apiName, serviceName, instant(), newVersion.status, newVersion.versionNbr))
 
-    findStatusDifferences ++ findAccessDifferences ++ findEndpointsAdded ++ findNewVersion
+    findStatusDifferences ++ findAccessDifferences ++ findEndpointsAdded ++ findEndpointsRemoved ++ findNewVersion
   }
 
   private def checkEndpointsAdded(oldEndpoints: List[Endpoint], newEndpoints: List[Endpoint]): Boolean = {
@@ -121,6 +126,15 @@ class APIDefinitionService @Inject() (
   private def listEndpointsAdded(oldEndpoints: List[Endpoint], newEndpoints: List[Endpoint]): List[Endpoint] = {
     // Go through new list, checking for the existance of an old one
     newEndpoints.filterNot(ne => isEndpointPresentInList(ne, oldEndpoints))
+  }
+
+  private def checkEndpointsRemoved(oldEndpoints: List[Endpoint], newEndpoints: List[Endpoint]): Boolean = {
+    !listEndpointsRemoved(oldEndpoints, newEndpoints).isEmpty
+  }
+
+  private def listEndpointsRemoved(oldEndpoints: List[Endpoint], newEndpoints: List[Endpoint]): List[Endpoint] = {
+    // Go through old list, checking for the existance of a new one
+    oldEndpoints.filterNot(oe => isEndpointPresentInList(oe, newEndpoints))
   }
 
   private def isEndpointPresentInList(endpoint: Endpoint, listOfEndpoints: List[Endpoint]): Boolean = {

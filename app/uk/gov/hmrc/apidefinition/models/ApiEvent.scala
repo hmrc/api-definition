@@ -131,17 +131,21 @@ object ApiEvents {
 }
 
 object ApiEventFormatter {
-  implicit val apiCreatedFormatter: OFormat[ApiCreated]                         = Json.format[ApiCreated]
-  implicit val newApiVersionFormatter: OFormat[NewApiVersion]                   = Json.format[NewApiVersion]
-  implicit val apiVersionStatusFormatter: OFormat[ApiVersionStatusChange]       = Json.format[ApiVersionStatusChange]
-  implicit val apiVersionAccessChangeFormatter: OFormat[ApiVersionAccessChange] = Json.format[ApiVersionAccessChange]
-  implicit val apiPublishedNoChangeFormatter: OFormat[ApiPublishedNoChange]     = Json.format[ApiPublishedNoChange]
+  implicit val apiCreatedFormatter: OFormat[ApiCreated]                                 = Json.format[ApiCreated]
+  implicit val newApiVersionFormatter: OFormat[NewApiVersion]                           = Json.format[NewApiVersion]
+  implicit val apiVersionStatusFormatter: OFormat[ApiVersionStatusChange]               = Json.format[ApiVersionStatusChange]
+  implicit val apiVersionAccessChangeFormatter: OFormat[ApiVersionAccessChange]         = Json.format[ApiVersionAccessChange]
+  implicit val apiVersionEndpointsAddedFormatter: OFormat[ApiVersionEndpointsAdded]     = Json.format[ApiVersionEndpointsAdded]
+  implicit val apiVersionEndpointsRemovedFormatter: OFormat[ApiVersionEndpointsRemoved] = Json.format[ApiVersionEndpointsRemoved]
+  implicit val apiPublishedNoChangeFormatter: OFormat[ApiPublishedNoChange]             = Json.format[ApiPublishedNoChange]
 
   implicit val apiEventsFormats: OFormat[ApiEvent] = Union.from[ApiEvent]("eventType")
     .and[ApiCreated]("API_CREATED")
     .and[NewApiVersion]("NEW_API_VERSION")
     .and[ApiVersionStatusChange]("API_VERSION_STATUS_CHANGE")
     .and[ApiVersionAccessChange]("API_VERSION_ACCESS_CHANGE")
+    .and[ApiVersionEndpointsAdded]("API_VERSION_ENDPOINTS_ADDED")
+    .and[ApiVersionEndpointsRemoved]("API_VERSION_ENDPOINTS_REMOVED")
     .and[ApiPublishedNoChange]("API_PUBLISHED_NO_CHANGE")
     .format
 }
