@@ -876,6 +876,16 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec
     }
   }
 
+  "deleteEvents" should {
+    "delete all events for the given serviceName" in new Setup {
+      ApiDefinitionServiceMock.DeleteEventsByServiceName.success(serviceName)
+
+      private val result = underTest.deleteEvents(serviceName)(request)
+
+      status(result) shouldBe OK
+    }
+  }
+
   private val calendarApiDefinition =
     """{
       |  "serviceName": "calendar",

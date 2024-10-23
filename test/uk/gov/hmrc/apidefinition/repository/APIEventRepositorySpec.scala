@@ -101,5 +101,19 @@ class APIEventRepositorySpec extends AsyncHmrcSpec
         result.sortBy(_.id.value) shouldBe apiList.sortBy(_.id.value).filterNot(_.isInstanceOf[ApiPublishedNoChange])
       }
     }
+
+    "deleteEvents" should {
+      "delete all events by serviceName" in {
+        await(Future.sequence(apiList.map(repository.collection.insertOne(_).toFuture())))
+        val serviceName2 = ServiceName("OTHER")
+        val apiEvent2    = apiCreated.copy(id = ApiEventId.random, serviceName = serviceName2)
+        await(repository.collection.insertOne(apiEvent2).toFuture())
+
+        await(repository.deleteEvents(serviceName))
+
+        await(repository.fetchEvents(serviceName)) shouldBe List.empty
+        await(repository.fetchEvents(serviceName2)) shouldBe List(apiEvent2)
+      }
+    }
   }
 }
