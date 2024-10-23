@@ -19,6 +19,7 @@ package uk.gov.hmrc.apidefinition.repository
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
+import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model.Filters._
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model._
@@ -82,5 +83,15 @@ class APIEventRepository @Inject() (mongoComponent: MongoComponent)(implicit val
         .toFuture()
         .map(_.toList)
     }
+  }
+
+  def deleteEvents(serviceName: ServiceName): Future[Unit] = {
+    collection.deleteMany(serviceNameSelector(serviceName))
+      .toFuture()
+      .map(_ => logger.info(s"All API events for service name '$serviceName' have been deleted successfully"))
+  }
+
+  private def serviceNameSelector(serviceName: ServiceName): Bson = {
+    equal("serviceName", Codecs.toBson(serviceName.value))
   }
 }
