@@ -20,7 +20,7 @@ import java.time.Instant
 import java.util.UUID
 
 import play.api.libs.json.{Format, Json, OFormat}
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiAccess, ApiStatus, ServiceName}
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiAccess, ApiStatus, Endpoint, ServiceName}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiVersionNbr
 import uk.gov.hmrc.play.json.Union
 
@@ -98,6 +98,32 @@ object ApiEvents {
       ("Api Version Access Change", List(s"Version: $versionNbr", s"Old Api Access: ${accessDisplay(oldApiAccess)}", s"New Api Access: ${accessDisplay(newApiAccess)}"))
   }
 
+  case class ApiVersionEndpointsAdded(
+      id: ApiEventId,
+      apiName: String,
+      serviceName: ServiceName,
+      eventDateTime: Instant,
+      endpoints: List[Endpoint],
+      versionNbr: ApiVersionNbr
+    ) extends ApiEvent {
+
+    override def asMetaData(): MetaData =
+      ("Api Version Endpoints Added", List(s"Version: $versionNbr") ++ endpoints.map(e => s"Endpoint: ${e.method}: ${e.uriPattern}"))
+  }
+
+  case class ApiVersionEndpointsRemoved(
+      id: ApiEventId,
+      apiName: String,
+      serviceName: ServiceName,
+      eventDateTime: Instant,
+      endpoints: List[Endpoint],
+      versionNbr: ApiVersionNbr
+    ) extends ApiEvent {
+
+    override def asMetaData(): MetaData =
+      ("Api Version Endpoints Removed", List(s"Version: $versionNbr") ++ endpoints.map(e => s"Endpoint: ${e.method}: ${e.uriPattern}"))
+  }
+
   case class ApiPublishedNoChange(id: ApiEventId, apiName: String, serviceName: ServiceName, eventDateTime: Instant) extends ApiEvent {
     override def asMetaData(): MetaData = ("Api Published No Change", List())
   }
@@ -105,17 +131,21 @@ object ApiEvents {
 }
 
 object ApiEventFormatter {
-  implicit val apiCreatedFormatter: OFormat[ApiCreated]                         = Json.format[ApiCreated]
-  implicit val newApiVersionFormatter: OFormat[NewApiVersion]                   = Json.format[NewApiVersion]
-  implicit val apiVersionStatusFormatter: OFormat[ApiVersionStatusChange]       = Json.format[ApiVersionStatusChange]
-  implicit val apiVersionAccessChangeFormatter: OFormat[ApiVersionAccessChange] = Json.format[ApiVersionAccessChange]
-  implicit val apiPublishedNoChangeFormatter: OFormat[ApiPublishedNoChange]     = Json.format[ApiPublishedNoChange]
+  implicit val apiCreatedFormatter: OFormat[ApiCreated]                                 = Json.format[ApiCreated]
+  implicit val newApiVersionFormatter: OFormat[NewApiVersion]                           = Json.format[NewApiVersion]
+  implicit val apiVersionStatusFormatter: OFormat[ApiVersionStatusChange]               = Json.format[ApiVersionStatusChange]
+  implicit val apiVersionAccessChangeFormatter: OFormat[ApiVersionAccessChange]         = Json.format[ApiVersionAccessChange]
+  implicit val apiVersionEndpointsAddedFormatter: OFormat[ApiVersionEndpointsAdded]     = Json.format[ApiVersionEndpointsAdded]
+  implicit val apiVersionEndpointsRemovedFormatter: OFormat[ApiVersionEndpointsRemoved] = Json.format[ApiVersionEndpointsRemoved]
+  implicit val apiPublishedNoChangeFormatter: OFormat[ApiPublishedNoChange]             = Json.format[ApiPublishedNoChange]
 
   implicit val apiEventsFormats: OFormat[ApiEvent] = Union.from[ApiEvent]("eventType")
     .and[ApiCreated]("API_CREATED")
     .and[NewApiVersion]("NEW_API_VERSION")
     .and[ApiVersionStatusChange]("API_VERSION_STATUS_CHANGE")
     .and[ApiVersionAccessChange]("API_VERSION_ACCESS_CHANGE")
+    .and[ApiVersionEndpointsAdded]("API_VERSION_ENDPOINTS_ADDED")
+    .and[ApiVersionEndpointsRemoved]("API_VERSION_ENDPOINTS_REMOVED")
     .and[ApiPublishedNoChange]("API_PUBLISHED_NO_CHANGE")
     .format
 }

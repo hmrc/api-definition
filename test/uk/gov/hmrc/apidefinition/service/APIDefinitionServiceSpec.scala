@@ -140,6 +140,61 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
       // verifyZeroInteractions(mockNotificationService)
     }
 
+    "create or update the API Definition where a new endpoint has been added" in new Setup {
+      val newEndpoint                    = Endpoint(
+        "/tomorrow",
+        "Get Tomorrow's Date",
+        HttpMethod.GET,
+        AuthType.NONE,
+        ResourceThrottlingTier.UNLIMITED,
+        None,
+        queryParameters = List.empty
+      )
+      val multiEndpointapiDefinition     = multiVersionAndEndpointAPIDefinition
+      val newApiDefinitionVersion        = multiEndpointapiDefinition.versions.head.copy(endpoints = List(multiEndpointapiDefinition.versions.head.endpoints.head, newEndpoint))
+      val newApiDefinition               = multiEndpointapiDefinition.copy(versions = List(newApiDefinitionVersion, multiEndpointapiDefinition.versions.tail.head))
+      val newApiDefinitionWithSavingTime = newApiDefinition.copy(lastPublishedAt = Some(instant))
+
+      when(mockNotificationService.process(*)(*, *)).thenReturn(unitSuccess)
+      when(mockAPIDefinitionRepository.fetchByContext(newApiDefinition.context)).thenReturn(successful(Some(multiEndpointapiDefinition)))
+      when(mockAwsApiPublisher.publish(newApiDefinition)).thenReturn(unitSuccess)
+      when(mockAPIDefinitionRepository.save(newApiDefinitionWithSavingTime)).thenReturn(successful(newApiDefinitionWithSavingTime))
+
+      await(underTest.createOrUpdate(newApiDefinition))
+
+      verify(mockAwsApiPublisher, times(1)).publish(newApiDefinition)
+      verify(mockAPIDefinitionRepository, times(1)).save(newApiDefinitionWithSavingTime)
+
+      val capture = APIEventRepositoryMock.CreateAll.verifyCall()
+      capture.size shouldBe 1
+      capture.head.asMetaData() shouldBe ("Api Version Endpoints Added",
+      List("Version: 1.0", "Endpoint: GET: /tomorrow"))
+    }
+
+    "create or update the API Definition where an endpoint has been removed" in new Setup {
+      val multiEndpointapiDefinition     = multiVersionAndEndpointAPIDefinition
+      val newApiDefinitionVersion        = multiEndpointapiDefinition.versions.tail.head.copy(endpoints =
+        List(multiEndpointapiDefinition.versions.tail.head.endpoints.head, multiEndpointapiDefinition.versions.tail.head.endpoints.tail.head)
+      )
+      val newApiDefinition               = multiEndpointapiDefinition.copy(versions = List(multiEndpointapiDefinition.versions.head, newApiDefinitionVersion))
+      val newApiDefinitionWithSavingTime = newApiDefinition.copy(lastPublishedAt = Some(instant))
+
+      when(mockNotificationService.process(*)(*, *)).thenReturn(unitSuccess)
+      when(mockAPIDefinitionRepository.fetchByContext(newApiDefinition.context)).thenReturn(successful(Some(multiEndpointapiDefinition)))
+      when(mockAwsApiPublisher.publish(newApiDefinition)).thenReturn(unitSuccess)
+      when(mockAPIDefinitionRepository.save(newApiDefinitionWithSavingTime)).thenReturn(successful(newApiDefinitionWithSavingTime))
+
+      await(underTest.createOrUpdate(newApiDefinition))
+
+      verify(mockAwsApiPublisher, times(1)).publish(newApiDefinition)
+      verify(mockAPIDefinitionRepository, times(1)).save(newApiDefinitionWithSavingTime)
+
+      val capture = APIEventRepositoryMock.CreateAll.verifyCall()
+      capture.size shouldBe 1
+      capture.head.asMetaData() shouldBe ("Api Version Endpoints Removed",
+      List("Version: 2.0", "Endpoint: GET: /yesterday"))
+    }
+
     "propagate unexpected errors that happen when trying to publish an API to AWS" in new Setup {
       when(mockNotificationService.process(*)(*, *)).thenReturn(unitSuccess)
       when(mockAPIDefinitionRepository.fetchByContext(apiDefinition.context)).thenReturn(successful(Some(apiDefinition)))
@@ -411,4 +466,67 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
       List(ApiCategory.OTHER)
     )
 
+  private def multiVersionAndEndpointAPIDefinition: StoredApiDefinition =
+    StoredApiDefinition(
+      serviceName,
+      "http://calendar",
+      "Calendar API",
+      "My Calendar API",
+      context,
+      List(
+        ApiVersion(
+          ApiVersionNbr("1.0"),
+          ApiStatus.BETA,
+          ApiAccess.PUBLIC,
+          List(
+            Endpoint(
+              "/today",
+              "Get Today's Date",
+              HttpMethod.GET,
+              AuthType.NONE,
+              ResourceThrottlingTier.UNLIMITED,
+              None,
+              queryParameters = List.empty
+            )
+          )
+        ),
+        ApiVersion(
+          ApiVersionNbr("2.0"),
+          ApiStatus.BETA,
+          ApiAccess.PUBLIC,
+          List(
+            Endpoint(
+              "/today",
+              "Get Today's Date",
+              HttpMethod.GET,
+              AuthType.NONE,
+              ResourceThrottlingTier.UNLIMITED,
+              None,
+              queryParameters = List.empty
+            ),
+            Endpoint(
+              "/tomorrow",
+              "Get Tomorrow's Date",
+              HttpMethod.GET,
+              AuthType.USER,
+              ResourceThrottlingTier.UNLIMITED,
+              None,
+              queryParameters = List.empty
+            ),
+            Endpoint(
+              "/yesterday",
+              "Get Yesterday's Date",
+              HttpMethod.GET,
+              AuthType.APPLICATION,
+              ResourceThrottlingTier.UNLIMITED,
+              None,
+              queryParameters = List.empty
+            )
+          )
+        )
+      ),
+      false,
+      None,
+      List(ApiCategory.OTHER)
+    )
 }
