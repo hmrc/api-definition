@@ -12,5 +12,5 @@
 # Add all the application routes to the prod.routes file
 ->         /                          prod.Routes
 
-DELETE         /api-definition/test-only/:serviceName/events                                  uk.gov.hmrc.apidefinition.controllers.APIDefinitionController.deleteEvents(serviceName: ServiceName)
+DELETE         /test-only/api-definition/:serviceName/events                                  uk.gov.hmrc.apidefinition.controllers.APIDefinitionController.deleteEvents(serviceName: ServiceName)
 
