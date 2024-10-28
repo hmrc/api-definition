@@ -52,6 +52,13 @@ trait APIEventRepositoryMockModule extends MockitoSugar with ArgumentMatchersSug
         when(aMock.fetchEvents(eqTo(serviceName), eqTo(includeNoChange))).thenReturn(successful(apiEvents))
       }
     }
+
+    object DeleteEvents {
+
+      def success(serviceName: ServiceName) = {
+        when(aMock.deleteEvents(eqTo(serviceName))).thenReturn(successful())
+      }
+    }
   }
 
   object APIEventRepositoryMock extends BaseAPIEventRepositoryMock {

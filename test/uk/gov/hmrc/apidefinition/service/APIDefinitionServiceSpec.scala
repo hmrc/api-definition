@@ -560,6 +560,16 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
     }
   }
 
+  "deleteEventsByServiceName" should {
+    "delete all API events for service from the repository" in new FetchSetup {
+      APIEventRepositoryMock.DeleteEvents.success(serviceName)
+
+      await(underTest.deleteEventsByServiceName(serviceName))
+
+      verify(APIEventRepositoryMock.aMock).deleteEvents(serviceName)
+    }
+  }
+
   private def aVersion(version: ApiVersionNbr, status: ApiStatus = ApiStatus.BETA, access: ApiAccess) =
     ApiVersion(version, status, access, List(Endpoint("/test", "test", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)))
 
