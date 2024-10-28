@@ -59,6 +59,8 @@ class APIEventRepository @Inject() (mongoComponent: MongoComponent)(implicit val
         .forType[NewApiVersion]
         .forType[ApiVersionStatusChange]
         .forType[ApiVersionAccessChange]
+        .forType[ApiVersionEndpointsAdded]
+        .forType[ApiVersionEndpointsRemoved]
         .forType[ApiPublishedNoChange]
         .build,
       replaceIndexes = true
