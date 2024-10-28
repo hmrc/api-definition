@@ -115,6 +115,12 @@ class APIDefinitionController @Inject() (
     } recover recovery
   }
 
+  def deleteEvents(serviceName: ServiceName): Action[AnyContent] = Action.async { _ =>
+    apiDefinitionService.deleteEventsByServiceName(serviceName) map { _ =>
+      Ok("")
+    } recover recovery
+  }
+
   private def extractQueryOptions(request: Request[AnyContent]) = {
     QueryOptions(request.getQueryString("options"))
   }

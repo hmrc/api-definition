@@ -186,6 +186,13 @@ trait ApiDefinitionServiceMockModule extends MockitoSugar with ArgumentMatchersS
         when(aMock.fetchEventsByServiceName(*[ServiceName], *[Boolean])).thenReturn(failed(new RuntimeException(s"Something went wrong")))
       }
     }
+
+    object DeleteEventsByServiceName {
+
+      def success(serviceName: ServiceName) = {
+        when(aMock.deleteEventsByServiceName(eqTo(serviceName))).thenReturn(successful())
+      }
+    }
   }
 
   object ApiDefinitionServiceMock extends BaseApiDefinitionServiceMock {
