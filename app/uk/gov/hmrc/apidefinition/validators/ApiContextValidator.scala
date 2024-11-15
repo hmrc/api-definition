@@ -44,7 +44,7 @@ class ApiContextValidator @Inject() (
 
   private val ValidTopLevelContexts: Set[ApiContext] =
     Set("agents", "customs", "individuals", "mobile", "obligations", "organisations", "test", "payments", "misc", "accounts").map(ApiContext(_))
-  private val contextRegex: Regex                    = """^[a-zA-Z0-9_\-\/]+$""".r
+  private val contextRegex: Regex                    = """^[a-z]+[a-z\/\-]{4,}$""".r
 
   def validate(errorContext: String, apiDefinition: StoredApiDefinition)(implicit context: ApiContext): Future[HMRCValidated[ApiContext]] = {
     if (appConfig.skipContextValidationAllowlist.contains(apiDefinition.serviceName)) {
@@ -60,11 +60,9 @@ class ApiContextValidator @Inject() (
 
   private def validateContext(errorContext: String)(implicit context: ApiContext): HMRCValidated[ApiContext] = {
     (
-      validateThat(!_.value.startsWith("/"), _ => s"Field 'context' should not start with '/' $errorContext"),
-      validateThat(!_.value.endsWith("/"), _ => s"Field 'context' should not end with '/' $errorContext"),
       validateThat(!_.value.contains("//"), _ => s"Field 'context' should not have empty path segments $errorContext"),
       validateThat(_.value.matches(contextRegex), _ => s"Field 'context' should match regular expression '$contextRegex' $errorContext")
-    ).mapN((_, _, _, _) => context)
+    ).mapN((_, _) => context)
   }
 
   private def validateAgainstDatabase(errorContext: String, apiDefinition: StoredApiDefinition)(implicit context: ApiContext): Future[HMRCValidated[ApiContext]] = {
