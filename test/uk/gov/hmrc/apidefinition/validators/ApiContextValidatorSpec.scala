@@ -97,7 +97,8 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
   }
 
   "ApiContextValidator" should {
-    lazy val errorContext: String = "for API"
+    lazy val errorContext: String          = "for API"
+    lazy val shouldMatchRegExError: String = s"Field 'context' should match regular expression '^[a-z]+[a-z\\/\\-]{4,}$$'"
 
     "skip context validation for APIs in the skip context validation allowlist" in new Setup {
       val context: ApiContext                     = ApiContext("/totally//inv@lid/context!!")
@@ -186,7 +187,7 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
       val result: validatorUnderTest.HMRCValidated[ApiContext] = await(validatorUnderTest.validate(errorContext, apiDefinition)(context))
 
       verifyZeroInteractions(mockAPIDefinitionService, mockAPIDefinitionRepository)
-      verifyValidationFailed(result, Seq(s"Field 'context' should not start with '/' $errorContext"))
+      verifyValidationFailed(result, Seq(s"$shouldMatchRegExError $errorContext"))
     }
 
     "fail validation when the context ends with '/' " in new Setup {
@@ -196,7 +197,7 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
       val result: validatorUnderTest.HMRCValidated[ApiContext] = await(validatorUnderTest.validate(errorContext, apiDefinition)(context))
 
       verifyZeroInteractions(mockAPIDefinitionService, mockAPIDefinitionRepository)
-      verifyValidationFailed(result, Seq(s"Field 'context' should not end with '/' $errorContext"))
+      verifyValidationFailed(result, Seq(s"$shouldMatchRegExError $errorContext"))
     }
 
     "fail validation when the context contains '//' " in new Setup {
@@ -221,7 +222,7 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
         val result: validatorUnderTest.HMRCValidated[ApiContext] = await(validatorUnderTest.validate(errorContext, apiDefinition)(badContext))
 
         verifyZeroInteractions(mockAPIDefinitionService, mockAPIDefinitionRepository)
-        verifyValidationFailed(result, Seq(s"Field 'context' should match regular expression '^[a-zA-Z0-9_\\-\\/]+$$' $errorContext"))
+        verifyValidationFailed(result, Seq(s"$shouldMatchRegExError $errorContext"))
       }
     }
 
@@ -268,9 +269,8 @@ class ApiContextValidatorSpec extends AsyncHmrcSpec {
       verifyValidationFailed(
         result,
         Seq(
-          s"Field 'context' should not start with '/' $errorContext",
-          s"Field 'context' should not end with '/' $errorContext",
-          s"Field 'context' should not have empty path segments $errorContext"
+          s"Field 'context' should not have empty path segments $errorContext",
+          s"$shouldMatchRegExError $errorContext"
         )
       )
     }
