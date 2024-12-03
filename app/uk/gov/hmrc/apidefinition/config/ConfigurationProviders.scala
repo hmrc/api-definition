@@ -23,9 +23,7 @@ import play.api.{Configuration, Environment, Mode}
 import uk.gov.hmrc.http.StringContextOps
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
-import uk.gov.hmrc.ramltools.loaders.{RamlLoader, UrlRewriter}
 
-import uk.gov.hmrc.apidefinition.raml.{DocumentationRamlLoader, DocumentationUrlRewriter}
 import uk.gov.hmrc.apidefinition.services.{EmailNotificationService, LoggingNotificationService, NotificationService}
 import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
 
@@ -33,9 +31,7 @@ class ConfigurationModule extends Module {
 
   override def bindings(environment: Environment, configuration: Configuration): Seq[Binding[_]] = {
     Seq(
-      bind[NotificationService].toProvider[NotificationServiceConfigProvider],
-      bind[RamlLoader].to[DocumentationRamlLoader],
-      bind[UrlRewriter].to[DocumentationUrlRewriter]
+      bind[NotificationService].toProvider[NotificationServiceConfigProvider]
     )
   }
 }
