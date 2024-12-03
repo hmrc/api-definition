@@ -41,7 +41,7 @@ import uk.gov.hmrc.http.{HeaderCarrier, InternalServerException, NotFoundExcepti
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.connector.ApiMicroserviceConnector
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
-import uk.gov.hmrc.apidefinition.services.{DocumentationService, SpecificationService}
+import uk.gov.hmrc.apidefinition.services.DocumentationService
 import uk.gov.hmrc.apidefinition.utils.{AsyncHmrcSpec, Utils}
 
 class DocumentationServiceSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite with Utils {
@@ -125,12 +125,10 @@ class DocumentationServiceSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wi
     val mockAPIDefinitionRepository: APIDefinitionRepository   = mock[APIDefinitionRepository]
     val mockApiMicroserviceConnector: ApiMicroserviceConnector = mock[ApiMicroserviceConnector]
     val mockServiceConfig: AppConfig                           = mock[AppConfig]
-    val mockSpecificationService: SpecificationService         = mock[SpecificationService]
 
     val underTest = new DocumentationService(
       mockAPIDefinitionRepository,
       mockApiMicroserviceConnector,
-      mockSpecificationService,
       mockServiceConfig
     )
 
