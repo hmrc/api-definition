@@ -42,7 +42,6 @@ object DocumentationService {
 class DocumentationService @Inject() (
     apiDefinitionRepository: APIDefinitionRepository,
     apiMicroserviceConnector: ApiMicroserviceConnector,
-    specificationService: SpecificationService,
     config: AppConfig
   )(implicit val ec: ExecutionContext,
     val mat: Materializer

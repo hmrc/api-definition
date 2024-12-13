@@ -4,8 +4,6 @@ GET         /api-definition                                                     
 GET         /api-definition/:serviceName                                         uk.gov.hmrc.apidefinition.controllers.APIDefinitionController.fetch(serviceName: ServiceName)
 GET         /api-definition/:serviceName/:version/documentation/*resource        uk.gov.hmrc.apidefinition.controllers.DocumentationController.fetchApiDocumentationResource(serviceName: ServiceName, version: uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiVersionNbr, resource: String)
 
-GET         /api-definition/:serviceName/:version/specification                  uk.gov.hmrc.apidefinition.controllers.SpecificationController.fetchApiSpecification(serviceName: ServiceName, version: uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiVersionNbr)
-
 GET         /api-definition/:serviceName/events                                  uk.gov.hmrc.apidefinition.controllers.APIDefinitionController.fetchEvents(serviceName: ServiceName, includeNoChange: Boolean ?= true)
 
 POST        /api-definition                                                      uk.gov.hmrc.apidefinition.controllers.APIDefinitionController.createOrUpdate()
@@ -15,5 +13,3 @@ POST        /api-definition/republish-all                                       
 POST        /api-definition/republish-all-aws                                    uk.gov.hmrc.apidefinition.controllers.APIDefinitionController.publishAllToAws()
 
 DELETE      /api-definition/:serviceName                                         uk.gov.hmrc.apidefinition.controllers.APIDefinitionController.delete(serviceName: ServiceName)
-
-GET         /preview                                                             uk.gov.hmrc.apidefinition.controllers.SpecificationController.fetchPreviewApiSpecification(ramlUrl)
