@@ -37,7 +37,7 @@ class DocumentationControllerSpec extends AsyncHmrcSpec with StubControllerCompo
     val hc: HeaderCarrier                            = HeaderCarrier()
     val serviceName: ServiceName                     = ServiceName("api-example-microservice")
     val version: ApiVersionNbr                       = ApiVersionNbr("1.0")
-    val resourceName: String                         = "application.raml"
+    val resourceName: String                         = "application.yaml"
     val body                                         = "blah blah"
     val contentType: String                          = "application/text"
 
