@@ -32,8 +32,6 @@ class AppConfig @Inject() (val runModeConfiguration: Configuration, environment:
 
   lazy val fetchByContextTtlInSeconds: String = runModeConfiguration.underlying.getString("fetchByContextTtlInSeconds")
 
-  lazy val ramlLoaderRewrites = buildRamlLoaderRewrites
-
   lazy val serviceBaseUrl = runModeConfiguration.getOptional[String]("serviceBaseUrl").getOrElse("http://localhost")
 
   lazy val apisToRemove = runModeConfiguration.get[Seq[String]]("apisToRemove").toList
@@ -49,10 +47,4 @@ class AppConfig @Inject() (val runModeConfiguration: Configuration, environment:
     else servicesConfig.baseUrl(serviceName)
   }
 
-  private def buildRamlLoaderRewrites: Map[String, String] = {
-    Map(
-      runModeConfiguration.getOptional[String](s"ramlLoaderUrlRewrite.from").getOrElse("") ->
-        runModeConfiguration.getOptional[String](s"ramlLoaderUrlRewrite.to").getOrElse("")
-    )
-  }
 }
