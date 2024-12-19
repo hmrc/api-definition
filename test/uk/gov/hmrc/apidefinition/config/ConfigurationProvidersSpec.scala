@@ -21,7 +21,6 @@ import java.util.UUID
 import org.scalatest.BeforeAndAfterEach
 
 import play.api.{Configuration, Environment}
-import uk.gov.hmrc.http.HttpClient
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
