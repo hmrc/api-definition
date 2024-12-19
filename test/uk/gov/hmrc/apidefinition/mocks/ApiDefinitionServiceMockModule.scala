@@ -190,7 +190,7 @@ trait ApiDefinitionServiceMockModule extends MockitoSugar with ArgumentMatchersS
     object DeleteEventsByServiceName {
 
       def success(serviceName: ServiceName) = {
-        when(aMock.deleteEventsByServiceName(eqTo(serviceName))).thenReturn(successful())
+        when(aMock.deleteEventsByServiceName(eqTo(serviceName))).thenReturn(successful(()))
       }
     }
   }
