@@ -25,11 +25,10 @@ trait TolerantJsonApiAccess {
   private val readsPrivateApiAccess: Reads[ApiAccess.Private]    = ((JsPath \ "isTrial").readNullable[Boolean]).map(_.fold(ApiAccess.Private(false))(b => ApiAccess.Private(b)))
   private val writesPrivateApiAccess: OWrites[ApiAccess.Private] = Json.writes[ApiAccess.Private]
 
-  private implicit val formatPrivateApiAccess: OFormat[ApiAccess.Private]    = OFormat[ApiAccess.Private](readsPrivateApiAccess, writesPrivateApiAccess)
-  private implicit val formatPublicApiAccess: OFormat[ApiAccess.PUBLIC.type] = Json.format[ApiAccess.PUBLIC.type]
+  private implicit val formatPrivateApiAccess: OFormat[ApiAccess.Private] = OFormat[ApiAccess.Private](readsPrivateApiAccess, writesPrivateApiAccess)
 
   implicit val tolerantFormatApiAccess: Format[ApiAccess] = Union.from[ApiAccess]("type")
-    .and[ApiAccess.PUBLIC.type]("PUBLIC")
+    .andType[ApiAccess.PUBLIC.type]("PUBLIC", () => ApiAccess.PUBLIC)
     .and[ApiAccess.Private]("PRIVATE")
     .format
 }
