@@ -58,7 +58,7 @@ class ApiDefinitionValidator @Inject() (
       else s"for API '${apiDefinition.name}'"
 
     for {
-      contextValidated        <- apiContextValidator.validate(errorContext, apiDefinition)(apiDefinition.context)
+      contextValidated        <- apiContextValidator.validate(s"$errorContext; Context: '${apiDefinition.context}'", apiDefinition)(apiDefinition.context)
       nameValidated           <- validateName(errorContext)
       serviceBaseUrlValidated <- validateServiceBaseUrl(errorContext)
 
