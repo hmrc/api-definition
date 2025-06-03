@@ -416,7 +416,7 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
       assertValidationFailure(
         apiDefinition,
         List(
-          "Field 'context' must be unique for API 'Money API'",
+          s"Field 'context' must be unique for API 'Money API'; Context: '${apiDefinition.context}'",
           "Field 'name' must be unique for API 'Money API'",
           "Field 'serviceBaseUrl' must be unique for API 'Money API'",
           "Field 'endpoints.uriPattern' is required for API 'Money API' version '1.0' endpoint 'Check Payments'"
