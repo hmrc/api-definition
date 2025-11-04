@@ -32,14 +32,36 @@ class ApiVersionValidator @Inject() (apiEndpointValidator: ApiEndpointValidator)
       validateThat(_.versionNbr.value.nonEmpty, _ => s"Field 'versions.version' is required $errorContext"),
       validateThat(_.endpoints.nonEmpty, _ => s"Field 'versions.endpoints' must not be empty $errorContext"),
       validateStatus(errorContext),
-      validateAll[Endpoint](u => apiEndpointValidator.validate(errorContext)(u))(version.endpoints)
-    ).mapN((_, _, _, _) => version)
+      validateAll[Endpoint](u => apiEndpointValidator.validate(errorContext)(u))(version.endpoints),
+      validateUniqueEndpointPaths(errorContext)
+    ).mapN((_, _, _, _, _) => version)
   }
 
   private def validateStatus(errorContext: String)(implicit version: ApiVersion): HMRCValidated[ApiVersion] = {
     version.status match {
       case ApiStatus.ALPHA => validateThat(_ => version.endpointsEnabled == false, _ => s"Field 'versions.endpointsEnabled' must be false for ALPHA status")
       case _               => version.validNel
+    }
+  }
+
+  private def validateUniqueEndpointPaths(errorContext: String)(implicit version: ApiVersion): HMRCValidated[ApiVersion] = {
+    def segments(path: String): List[String] = path.split("/").filter(_.nonEmpty).toList
+    def isVariable(segment: String): Boolean = segment.startsWith("{") && segment.endsWith("}")
+
+    val invalidPairsOfUris = version.endpoints
+      .map(_.uriPattern)
+      .combinations(2)
+      .map { case List(uri1, uri2) => (uri1, uri2) }
+      .filter { case (uri1, uri2) =>
+        segments(uri1).zip(segments(uri2))
+          .takeWhile { case (s1, s2) => isVariable(s1) && isVariable(s2) || s1 == s2 }
+          .exists { case (s1, s2) => isVariable(s1) && isVariable(s2) && s1 != s2 }
+      }
+      .toList
+    if (invalidPairsOfUris.isEmpty) {
+      version.validNel
+    } else {
+      s"Clashing endpoints $errorContext: $invalidPairsOfUris".invalidNel
     }
   }
 }
