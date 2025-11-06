@@ -427,7 +427,7 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
 
     "detect ambiguity of different variables in the same path segment" in new Setup {
       val values = Table(
-        ("Endpoint1", "Endpoint2", "Error message"),
+        ("UriPattern1", "UriPattern2", "Error message"),
         (
           "/{alpha}",
           "/{beta}",
@@ -440,12 +440,12 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
         )
       )
 
-      forAll(values) { case (endpoint1, endpoint2, errorMessage) =>
+      forAll(values) { case (uriPattern1, uriPattern2, errorMessage) =>
         val apiDefinition: StoredApiDefinition = calendarApi.copy(versions =
           List(calendarApi.versions.head.copy(
             endpoints = List(
-              Endpoint(endpoint1, "Endpoint1", HttpMethod.GET, AuthType.NONE),
-              Endpoint(endpoint2, "Endpoint2", HttpMethod.GET, AuthType.NONE)
+              Endpoint(uriPattern1, "Endpoint1", HttpMethod.GET, AuthType.NONE),
+              Endpoint(uriPattern2, "Endpoint2", HttpMethod.GET, AuthType.NONE)
             )
           ))
         )
@@ -456,16 +456,19 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
 
     "not detect ambiguity of different variables in the same path segment" in new Setup {
       val values = Table(
-        ("Endpoint1", "Endpoint2"),
-        ("/hello/{alpha}/{beta}", "/hello/world/{gamma}")
+        ("UriPattern1", "UriPattern2"),
+        ("/{alpha}/", "/world"),                           // Only one URI has a variable in root segment
+        ("/hello/{alpha}/", "/hello/world"),               // Only one URI has a variable in segment 2
+        ("/hello/{alpha}/{beta}", "/hello/world/{gamma}"), // OK up to segment 2, so variables in segment 3 don't matter
+        ("/hello/world/{alpha}/", "/hello/World/{beta}")   // Different cases for 'world', so variables in segment 3 don't matter
       )
 
-      forAll(values) { case (endpoint1, endpoint2) =>
+      forAll(values) { case (uriPattern1, uriPattern2) =>
         val apiDefinition: StoredApiDefinition = calendarApi.copy(versions =
           List(calendarApi.versions.head.copy(
             endpoints = List(
-              Endpoint(endpoint1, "Endpoint1", HttpMethod.GET, AuthType.NONE),
-              Endpoint(endpoint2, "Endpoint2", HttpMethod.GET, AuthType.NONE)
+              Endpoint(uriPattern1, "Endpoint1", HttpMethod.GET, AuthType.NONE),
+              Endpoint(uriPattern2, "Endpoint2", HttpMethod.GET, AuthType.NONE)
             )
           ))
         )
