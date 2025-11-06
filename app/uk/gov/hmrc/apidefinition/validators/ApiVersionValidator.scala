@@ -48,20 +48,35 @@ class ApiVersionValidator @Inject() (apiEndpointValidator: ApiEndpointValidator)
     def segments(path: String): List[String] = path.split("/").filter(_.nonEmpty).toList
     def isVariable(segment: String): Boolean = segment.startsWith("{") && segment.endsWith("}")
 
-    val invalidPairsOfUris = version.endpoints
+    def isUriPairAmbiguous(uriPair: (String, String)): Boolean = {
+      val (uri1, uri2) = uriPair
+      segments(uri1).zip(segments(uri2))
+        .takeWhile { case (s1, s2) => s1 == s2 || isVariable(s1) || isVariable(s2) }
+        .exists { case (s1, s2) => isVariable(s1) && isVariable(s2) && s1 != s2 }
+    }
+
+    def errorMessage(uriPair: (String, String)): String = {
+      val (uri1, uri2)   = uriPair
+      val (segs1, segs2) = (segments(uri1), segments(uri2))
+      val matchingParts  = segs1.zip(segs2)
+        .takeWhile { case (seg1, seg2) => seg1 == seg2 || !isVariable(seg1) || !isVariable(seg2) }
+        .size
+      val var1           = segs1.get(matchingParts).getOrElse("???")
+      val var2           = segs2.get(matchingParts).getOrElse("???")
+      s"The variables $var1 and $var2 cannot appear in the same segment in the endpoints $uri1 and $uri2"
+    }
+
+    val invalidUriPairs = version.endpoints
       .map(_.uriPattern)
       .combinations(2)
       .map { case List(uri1, uri2) => (uri1, uri2) }
-      .filter { case (uri1, uri2) =>
-        segments(uri1).zip(segments(uri2))
-          .takeWhile { case (s1, s2) => isVariable(s1) && isVariable(s2) || s1 == s2 }
-          .exists { case (s1, s2) => isVariable(s1) && isVariable(s2) && s1 != s2 }
-      }
+      .filter(isUriPairAmbiguous)
       .toList
-    if (invalidPairsOfUris.isEmpty) {
+
+    if (invalidUriPairs.isEmpty) {
       version.validNel
     } else {
-      s"Clashing endpoints $errorContext: $invalidPairsOfUris".invalidNel
+      s"Ambiguous path segment variables $errorContext: ${invalidUriPairs.map(errorMessage)}".invalidNel
     }
   }
 }
