@@ -37,8 +37,9 @@ class ApiEndpointValidator @Inject() (queryParameterValidator: QueryParameterVal
       validateUriPattern(errorContext),
       validateScope(errorContext),
       validatePathParameters(errorContext, endpoint),
-      validateQueryParameters(errorContext, endpoint.queryParameters)
-    ).mapN((_, _, _, _, _) => endpoint)
+      validateQueryParameters(errorContext, endpoint.queryParameters),
+      validateUniqueParameterNames(errorContext, endpoint)
+    ).mapN((_, _, _, _, _, _) => endpoint)
   }
 
   private def validateUriPattern(errorContext: String)(implicit endpoint: Endpoint): HMRCValidated[Endpoint] = {
@@ -75,4 +76,17 @@ class ApiEndpointValidator @Inject() (queryParameterValidator: QueryParameterVal
     validateAll[QueryParameter](u => queryParameterValidator.validate(errorContext)(u))(queryParameters)
   }
 
+  private def validateUniqueParameterNames(errorContext: String, endpoint: Endpoint): HMRCValidated[Endpoint] = {
+    def isVariable(segment: String): Boolean = segment.startsWith("{") && segment.endsWith("}")
+
+    val pathParameters          = endpoint.uriPattern.split("/").filter(_.nonEmpty).toList.filter(isVariable)
+    val queryParameters         = endpoint.queryParameters.map(_.name).map(x => s"{$x}")
+    val duplicateParameterNames = pathParameters.intersect(queryParameters)
+
+    if (duplicateParameterNames.isEmpty) {
+      endpoint.validNel
+    } else {
+      s"Duplicate name for path and query parameters: ${duplicateParameterNames.mkString(",")} $errorContext".invalidNel
+    }
+  }
 }

@@ -19,13 +19,14 @@ package uk.gov.hmrc.apidefinition.validators
 import scala.concurrent.ExecutionContext.Implicits.global
 
 import cats.data.Validated
+import org.scalatest.prop.TableDrivenPropertyChecks
 
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{AuthType, Endpoint, HttpMethod, ResourceThrottlingTier}
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{AuthType, Endpoint, HttpMethod, QueryParameter, ResourceThrottlingTier}
 
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 import uk.gov.hmrc.apidefinition.validators.ApiEndpointValidator
 
-class ApiEndpointValidatorSpec extends AsyncHmrcSpec {
+class ApiEndpointValidatorSpec extends AsyncHmrcSpec with TableDrivenPropertyChecks {
 
   trait Setup {
 
@@ -82,6 +83,56 @@ class ApiEndpointValidatorSpec extends AsyncHmrcSpec {
             println(errors.toList.mkString)
             succeed
           }
+        }
+      }
+    }
+
+    "detect duplicate parameter names" in new Setup {
+      val errorContext = "for API 'My API' version '1.0'"
+      val values       = Table(
+        ("URIPattern", "Query params", "Error message"),
+        (
+          "/{alpha}",
+          List("alpha"),
+          s"Duplicate name for path and query parameters: {alpha} $errorContext endpoint '${endpoint.endpointName}'"
+        ),
+        (
+          "/{alpha}/with/{beta}",
+          List("alpha", "beta"),
+          s"Duplicate name for path and query parameters: {alpha},{beta} $errorContext endpoint '${endpoint.endpointName}'"
+        )
+      )
+
+      forAll(values) { case (uriPattern, queryParams, errorMessage) =>
+        val testEndpoint: Endpoint = endpoint.copy(
+          uriPattern,
+          queryParameters = queryParams.map(QueryParameter(_, required = true))
+        )
+
+        validator.validate(errorContext)(testEndpoint) match {
+          case Validated.Valid(_)        => fail(s"$testEndpoint should fail validation")
+          case Validated.Invalid(errors) => errors.head shouldBe errorMessage
+        }
+      }
+    }
+
+    "not detect duplicate parameter names" in new Setup {
+      val values = Table(
+        ("URIPattern", "Query params"),
+        ("/{alpha}", List.empty),  // No query parameters
+        ("/alpha", List("alpha")), // No path parameters
+        ("/{alpha}", List("beta")) // Different path and query parameters
+      )
+
+      forAll(values) { case (uriPattern, queryParams) =>
+        val testEndpoint: Endpoint = endpoint.copy(
+          uriPattern,
+          queryParameters = queryParams.map(QueryParameter(_, required = true))
+        )
+
+        validator.validate("error context")(testEndpoint) match {
+          case Validated.Valid(_)        => succeed
+          case Validated.Invalid(errors) => fail(s"endpoint validation failed ${errors.toList.mkString}")
         }
       }
     }
