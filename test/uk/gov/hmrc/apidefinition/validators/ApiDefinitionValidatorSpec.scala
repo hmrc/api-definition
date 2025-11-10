@@ -20,6 +20,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.successful
 
 import org.apache.pekko.stream.Materializer
+import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 
 import play.api.mvc.Results.{NoContent, UnprocessableEntity}
@@ -34,7 +35,7 @@ import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.services.APIDefinitionService
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 
-class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite {
+class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite with TableDrivenPropertyChecks {
 
   implicit val mat: Materializer = app.materializer
 
@@ -424,6 +425,57 @@ class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite 
       )
     }
 
+    "detect ambiguity of different variables in the same path segment" in new Setup {
+      val values = Table(
+        ("UriPattern1", "UriPattern2", "Error message"),
+        (
+          "/{alpha}",
+          "/{beta}",
+          "Ambiguous path segment variables for API 'Calendar API' version '1.0': List(The variables {alpha} and {beta} cannot appear in the same segment in the endpoints /{alpha} and /{beta})"
+        ),
+        (
+          "/hello/{alpha}",
+          "/hello/{beta}",
+          "Ambiguous path segment variables for API 'Calendar API' version '1.0': List(The variables {alpha} and {beta} cannot appear in the same segment in the endpoints /hello/{alpha} and /hello/{beta})"
+        )
+      )
+
+      forAll(values) { case (uriPattern1, uriPattern2, errorMessage) =>
+        val apiDefinition: StoredApiDefinition = calendarApi.copy(versions =
+          List(calendarApi.versions.head.copy(
+            endpoints = List(
+              Endpoint(uriPattern1, "Endpoint1", HttpMethod.GET, AuthType.NONE),
+              Endpoint(uriPattern2, "Endpoint2", HttpMethod.GET, AuthType.NONE)
+            )
+          ))
+        )
+
+        assertValidationFailure(apiDefinition, List(errorMessage))
+      }
+    }
+
+    "not detect ambiguity of different variables in the same path segment" in new Setup {
+      val values = Table(
+        ("UriPattern1", "UriPattern2"),
+        ("/{alpha}/", "/world"),                           // Only one URI has a variable in root segment
+        ("/hello/{alpha}/", "/hello/world"),               // Only one URI has a variable in segment 2
+        ("/hello/{alpha}/{beta}", "/hello/world/{gamma}"), // OK up to segment 2, so variables in segment 3 don't matter
+        ("/hello/world/{alpha}/", "/hello/World/{beta}")   // Different cases for 'world', so variables in segment 3 don't matter
+      )
+
+      forAll(values) { case (uriPattern1, uriPattern2) =>
+        val apiDefinition: StoredApiDefinition = calendarApi.copy(versions =
+          List(calendarApi.versions.head.copy(
+            endpoints = List(
+              Endpoint(uriPattern1, "Endpoint1", HttpMethod.GET, AuthType.NONE),
+              Endpoint(uriPattern2, "Endpoint2", HttpMethod.GET, AuthType.NONE)
+            )
+          ))
+        )
+
+        assertValidationSuccess(apiDefinition)
+      }
+    }
   }
 
 }

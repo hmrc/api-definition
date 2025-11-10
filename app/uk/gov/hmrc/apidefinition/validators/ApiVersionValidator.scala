@@ -32,14 +32,50 @@ class ApiVersionValidator @Inject() (apiEndpointValidator: ApiEndpointValidator)
       validateThat(_.versionNbr.value.nonEmpty, _ => s"Field 'versions.version' is required $errorContext"),
       validateThat(_.endpoints.nonEmpty, _ => s"Field 'versions.endpoints' must not be empty $errorContext"),
       validateStatus(errorContext),
-      validateAll[Endpoint](u => apiEndpointValidator.validate(errorContext)(u))(version.endpoints)
-    ).mapN((_, _, _, _) => version)
+      validateAll[Endpoint](u => apiEndpointValidator.validate(errorContext)(u))(version.endpoints),
+      validateUniqueEndpointPaths(errorContext)
+    ).mapN((_, _, _, _, _) => version)
   }
 
   private def validateStatus(errorContext: String)(implicit version: ApiVersion): HMRCValidated[ApiVersion] = {
     version.status match {
       case ApiStatus.ALPHA => validateThat(_ => version.endpointsEnabled == false, _ => s"Field 'versions.endpointsEnabled' must be false for ALPHA status")
       case _               => version.validNel
+    }
+  }
+
+  private def validateUniqueEndpointPaths(errorContext: String)(implicit version: ApiVersion): HMRCValidated[ApiVersion] = {
+    def segments(path: String): List[String]                          = path.split("/").filter(_.nonEmpty).toList
+    def isVariable(segment: String): Boolean                          = segment.startsWith("{") && segment.endsWith("}")
+    def bothSegmentsAreVariables(seg1: String, seg2: String): Boolean = isVariable(seg1) && isVariable(seg2)
+
+    def isUriPairAmbiguous(uriPair: (String, String)): Boolean = {
+      val (uriPattern1, uriPattern2) = uriPair
+      segments(uriPattern1).zip(segments(uriPattern2))
+        .takeWhile { case (seg1, seg2) => seg1 == seg2 || bothSegmentsAreVariables(seg1, seg2) }
+        .exists { case (seg1, seg2) => seg1 != seg2 && bothSegmentsAreVariables(seg1, seg2) }
+    }
+
+    def errorMessage(uriPair: (String, String)): String = {
+      val (uriPattern1, uriPattern2) = uriPair
+      val (segs1, segs2)             = (segments(uriPattern1), segments(uriPattern2))
+      val matchingParts              = segs1.zip(segs2).takeWhile { case (seg1, seg2) => seg1 == seg2 }.size
+      val var1                       = segs1.get(matchingParts).getOrElse("???")
+      val var2                       = segs2.get(matchingParts).getOrElse("???")
+      s"The variables $var1 and $var2 cannot appear in the same segment in the endpoints $uriPattern1 and $uriPattern2"
+    }
+
+    val invalidUriPairs = version.endpoints
+      .map(_.uriPattern)
+      .combinations(2)
+      .collect { case List(uriPattern1, uriPattern2) => (uriPattern1, uriPattern2) }
+      .filter(isUriPairAmbiguous)
+      .toList
+
+    if (invalidUriPairs.isEmpty) {
+      version.validNel
+    } else {
+      s"Ambiguous path segment variables $errorContext: ${invalidUriPairs.map(errorMessage)}".invalidNel
     }
   }
 }
