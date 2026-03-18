@@ -447,7 +447,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec
       ApiDefinitionServiceMock.CreateOrUpdate.verifyCall(apiDefinition)
     }
 
-    "fail with a 422 (Unprocessable entity) when access type 'PROTECTED' is unkown" in new ValidatorSetup {
+    "fail with a 422 (Unprocessable entity) when access type 'PROTECTED' is unknown" in new ValidatorSetup {
 
       private val apiDefinitionJson =
         """{

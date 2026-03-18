@@ -33,14 +33,11 @@ import scala.util.control.NonFatal
 @Singleton
 class EventsAdminController @Inject()(
     apiDefinitionService: APIDefinitionService,
-    appContext: AppConfig,
     cc: ControllerComponents
   )(implicit val ec: ExecutionContext
   ) extends BackendController(cc) with ApplicationLogger {
 
   implicit val useTolerantReaders: Format[StoredApiDefinition] = TolerantJsonApiDefinition.tolerantFormatApiDefinition
-
-  val fetchByContextTtlInSeconds: String = appContext.fetchByContextTtlInSeconds
 
   private def recovery: PartialFunction[Throwable, Result] = {
     case NonFatal(e) =>
