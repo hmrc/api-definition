@@ -82,7 +82,7 @@ class APIDefinitionService @Inject() (
       _                        <- apiEventRepository.createAll(events)
       _                        <- notificationService.process(events)
       _                        <- publish()
-      definitionWithPublishTime = apiDefinition.copy(lastPublishedAt = Some(instant()))
+      definitionWithPublishTime = apiDefinition.copy(lastPublishedAt = Some(instant))
       _                        <- apiDefinitionRepository.save(definitionWithPublishTime) recoverWith recoverSave
     } yield ()
   }
@@ -94,27 +94,27 @@ class APIDefinitionService @Inject() (
 
     val findStatusDifferences = versionPairs
       .filterNot(v => v._2.head.status == v._2.last.status)
-      .map(v => ApiVersionStatusChange(ApiEventId.random, apiName, serviceName, instant(), v._2.head.status, v._2.last.status, v._1))
+      .map(v => ApiVersionStatusChange(ApiEventId.random, apiName, serviceName, instant, v._2.head.status, v._2.last.status, v._1))
       .toList
 
     val findAccessDifferences = versionPairs
       .filterNot(v => v._2.head.access == v._2.last.access)
-      .map(v => ApiVersionAccessChange(ApiEventId.random, apiName, serviceName, instant(), v._2.head.access, v._2.last.access, v._1))
+      .map(v => ApiVersionAccessChange(ApiEventId.random, apiName, serviceName, instant, v._2.head.access, v._2.last.access, v._1))
       .toList
 
     val findEndpointsAdded = versionPairs
       .filter(v => checkEndpointsAdded(v._2.head.endpoints, v._2.last.endpoints))
-      .map(v => ApiVersionEndpointsAdded(ApiEventId.random, apiName, serviceName, instant(), listEndpointsAdded(v._2.head.endpoints, v._2.last.endpoints), v._1))
+      .map(v => ApiVersionEndpointsAdded(ApiEventId.random, apiName, serviceName, instant, listEndpointsAdded(v._2.head.endpoints, v._2.last.endpoints), v._1))
       .toList
 
     val findEndpointsRemoved = versionPairs
       .filter(v => checkEndpointsRemoved(v._2.head.endpoints, v._2.last.endpoints))
-      .map(v => ApiVersionEndpointsRemoved(ApiEventId.random, apiName, serviceName, instant(), listEndpointsRemoved(v._2.head.endpoints, v._2.last.endpoints), v._1))
+      .map(v => ApiVersionEndpointsRemoved(ApiEventId.random, apiName, serviceName, instant, listEndpointsRemoved(v._2.head.endpoints, v._2.last.endpoints), v._1))
       .toList
 
     val findNewVersion = newAPIVersions
       .filterNot(newVersion => existingAPIVersions.map(_.versionNbr).contains(newVersion.versionNbr))
-      .map(newVersion => NewApiVersion(ApiEventId.random, apiName, serviceName, instant(), newVersion.status, newVersion.versionNbr))
+      .map(newVersion => NewApiVersion(ApiEventId.random, apiName, serviceName, instant, newVersion.status, newVersion.versionNbr))
 
     findStatusDifferences ++ findAccessDifferences ++ findEndpointsAdded ++ findEndpointsRemoved ++ findNewVersion
   }
@@ -147,8 +147,8 @@ class APIDefinitionService @Inject() (
       .map {
         case Some(existingAPIDefinition) =>
           val events = findApiEvents(apiDefinition.name, apiDefinition.serviceName, existingAPIDefinition.versions, apiDefinition.versions)
-          if (events.isEmpty) List(ApiPublishedNoChange(ApiEventId.random, apiDefinition.name, apiDefinition.serviceName, instant())) else events
-        case None                        => List(ApiCreated(ApiEventId.random, apiDefinition.name, apiDefinition.serviceName, instant()))
+          if (events.isEmpty) List(ApiPublishedNoChange(ApiEventId.random, apiDefinition.name, apiDefinition.serviceName, instant)) else events
+        case None                        => List(ApiCreated(ApiEventId.random, apiDefinition.name, apiDefinition.serviceName, instant))
       }
   }
 
