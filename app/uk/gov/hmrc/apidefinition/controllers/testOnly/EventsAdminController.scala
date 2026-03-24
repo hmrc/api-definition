@@ -16,22 +16,22 @@
 
 package uk.gov.hmrc.apidefinition.controllers.testOnly
 
-import play.api.libs.json._
-import play.api.mvc._
-import uk.gov.hmrc.apidefinition.config.AppConfig
-import uk.gov.hmrc.apidefinition.controllers.error
-import uk.gov.hmrc.apidefinition.models.{ErrorCode, TolerantJsonApiDefinition}
-import uk.gov.hmrc.apidefinition.services.APIDefinitionService
-import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
-import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 import scala.util.control.NonFatal
 
+import play.api.libs.json._
+import play.api.mvc._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
+
+import uk.gov.hmrc.apidefinition.controllers.error
+import uk.gov.hmrc.apidefinition.models.{ErrorCode, TolerantJsonApiDefinition}
+import uk.gov.hmrc.apidefinition.services.APIDefinitionService
+import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
+
 @Singleton
-class EventsAdminController @Inject()(
+class EventsAdminController @Inject() (
     apiDefinitionService: APIDefinitionService,
     cc: ControllerComponents
   )(implicit val ec: ExecutionContext
