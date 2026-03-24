@@ -70,7 +70,6 @@ class DocumentationService @Inject() (
     }
   }
 
-  // noinspection ScalaStyle
   private def fetchResource(serviceName: ServiceName, version: ApiVersionNbr, resource: String): Future[WSResponse] = {
 
     def fetchResourceFromMicroservice(serviceBaseUrl: String): Future[WSResponse] =

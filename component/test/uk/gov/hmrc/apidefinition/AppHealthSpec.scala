@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.definition
+package uk.gov.hmrc.apidefinition
 
 import play.api.http.Status.OK
 
