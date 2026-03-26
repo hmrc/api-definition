@@ -16,23 +16,19 @@
 
 package uk.gov.hmrc.apidefinition.validators
 
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
 import scala.util.matching.Regex
 
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.QueryParameter
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 
-@Singleton
-class QueryParameterValidator @Inject() (implicit override val ec: ExecutionContext) extends Validator[QueryParameter] {
+object QueryParameterValidator extends Validator[QueryParameter] {
 
   private val queryParameterNameRegex: Regex = "^[a-zA-Z0-9_\\-]+$".r
 
-  def validate(errorContext: String)(implicit queryParameter: QueryParameter): HMRCValidated[QueryParameter] = {
-    validateThat(_.name.nonEmpty, _ => s"Field 'queryParameters.name' is required $errorContext").andThen {
-      validateField(
-        _.name.matches(queryParameterNameRegex),
-        q => s"Field 'queryParameters.name' with value '${q.name}' should match regular expression '$queryParameterNameRegex' $errorContext"
-      )
-    }
+  def validate(queryParameter: QueryParameter): HMRCValidatedNel[QueryParameter] = {
+    import cats.implicits._
+    queryParameter.valid
+    .ensure("Field 'queryParameters.name' is required")(_.name.nonEmpty)
+    .ensure(s"Field 'queryParameters.name' with value '${queryParameter.name}' should match regular expression '$queryParameterNameRegex'")(_.name.matches(queryParameterNameRegex))
+    .toValidatedNel
   }
 }

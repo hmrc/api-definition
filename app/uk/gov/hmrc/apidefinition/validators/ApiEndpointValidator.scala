@@ -16,77 +16,75 @@
 
 package uk.gov.hmrc.apidefinition.validators
 
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
 import scala.util.matching.Regex
 
-import cats.implicits._
 
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import cats.implicits._
 
-@Singleton
-class ApiEndpointValidator @Inject() (queryParameterValidator: QueryParameterValidator)(implicit override val ec: ExecutionContext) extends Validator[Endpoint] {
-
+object ApiEndpointValidator extends Validator[Endpoint] {
   private val uriRegex: Regex           = """^/[.]?[a-zA-Z0-9_\-\/{}]*$""".r
   private val pathParameterRegex: Regex = """^\{[a-zA-Z]+[a-zA-Z0-9_\-]*\}$""".r
 
-  def validate(ec: String)(implicit endpoint: Endpoint): HMRCValidated[Endpoint] = {
-    val errorContext: String = if (endpoint.endpointName.isEmpty) ec else s"$ec endpoint '${endpoint.endpointName}'"
+  def validate(endpoint: Endpoint): HMRCValidatedNel[Endpoint] = {
     (
-      validateThat(_.endpointName.nonEmpty, _ => s"Field 'endpoints.endpointName' is required $errorContext"),
-      validateUriPattern(errorContext),
-      validateScope(errorContext),
-      validatePathParameters(errorContext, endpoint),
-      validateQueryParameters(errorContext, endpoint.queryParameters),
-      validateUniqueParameterNames(errorContext, endpoint)
-    ).mapN((_, _, _, _, _, _) => endpoint)
-  }
-
-  private def validateUriPattern(errorContext: String)(implicit endpoint: Endpoint): HMRCValidated[Endpoint] = {
-    validateThat(_.uriPattern.nonEmpty, _ => s"Field 'endpoints.uriPattern' is required $errorContext").andThen(
-      validateField(
-        _.uriPattern.matches(uriRegex),
-        u => s"Field 'endpoints.uriPattern' with value '${u.uriPattern}' should match regular expression '$uriRegex' $errorContext"
-      )
+      validateEndpointName(endpoint.endpointName),
+      validateUriPattern(endpoint.uriPattern),
+      if(endpoint.authType == AuthType.USER) validateScope(endpoint.scope) else endpoint.scope.validNel,
+      validatePathParameters(endpoint.uriPattern),
+      validateQueryParameters(endpoint.queryParameters),
+      validateUniqueParameterNames(endpoint)
     )
+    .mapN { case _ => endpoint }
+    .leftMap(_.map(s => s"${endpoint.endpointName} - $s"))
   }
 
-  private def validateScope(errorContext: String)(implicit endpoint: Endpoint): HMRCValidated[Endpoint] = {
-    endpoint.authType match {
-      case AuthType.USER => validateThat(_ => endpoint.scope.nonEmpty, _ => s"Field 'endpoints.scope' is required $errorContext")
-      case _             => endpoint.validNel
-    }
+  protected def validateEndpointName(endpointName: String): HMRCValidatedNel[String] = {
+    endpointName.valid.ensure("Field 'endpoints.endpointName' is required")(_.nonEmpty).toValidatedNel
+  }
+  
+  protected def validateUriPattern(uriPattern: String): HMRCValidatedNel[String] = {
+    uriPattern.valid
+    .ensure(s"Field 'endpoints.uriPattern' is required")(_.nonEmpty)
+    .ensure(s"Field 'endpoints.uriPattern' with value '$uriPattern' should match regular expression '$uriRegex'")(y => y.matches(uriRegex))
+    .toValidatedNel
   }
 
-  private def validatePathParameters(errorContext: String, endpoint: Endpoint): HMRCValidated[String] = {
-    val isPathParam: String => Boolean = { segment: String => segment.contains("{") || segment.contains("}") }
-    val segments                       = endpoint.uriPattern.split("/").toList
+  protected def validateScope(scope: Option[String]): HMRCValidatedNel[Option[String]] = {
+    scope.valid.ensure(s"Field 'endpoints.scope' is required")(_.filterNot(_.isBlank()).isDefined)
+    .toValidatedNel
+  }
 
-    def pathParamValidationError: String => String = {
-      s => s"Curly-bracketed segment '$s' should match regular expression '$pathParameterRegex' $errorContext"
-    }
-
-    segments
-      .filter(isPathParam)
-      .map(validateField(_.matches(pathParameterRegex), pathParamValidationError))
+  protected def validateQueryParameters(queryParameters: List[QueryParameter]): HMRCValidatedNel[List[QueryParameter]] = {
+    queryParameters
+      .map(qp => QueryParameterValidator.validate(qp).map(_ :: Nil))
       .combineAll
   }
 
-  private def validateQueryParameters(errorContext: String, queryParameters: List[QueryParameter]): HMRCValidated[List[QueryParameter]] = {
-    validateAll[QueryParameter](u => queryParameterValidator.validate(errorContext)(u))(queryParameters)
+  protected def validatePathParameters(uriPattern: String): HMRCValidatedNel[String] = {
+    val isPathParam: String => Boolean = { segment: String => segment.contains("{") || segment.contains("}") }
+    val segments                       = uriPattern.split("/").toList
+
+    val pathParamValidationError: String => String = s => s"Curly-bracketed segment '$s' should match regular expression '$pathParameterRegex'"
+
+    val validatePathParam: (String) => HMRCValidatedNel[String] = 
+      _.valid.ensureOr(pathParamValidationError)(_.matches(pathParameterRegex)).toValidatedNel
+      
+    segments.filter(isPathParam)
+      .map(pathParam => validatePathParam(pathParam).map(_ :: Nil))
+      .combineAll
+      .map(_ => uriPattern)
   }
 
-  private def validateUniqueParameterNames(errorContext: String, endpoint: Endpoint): HMRCValidated[Endpoint] = {
+  protected def validateUniqueParameterNames(endpoint: Endpoint): HMRCValidatedNel[Endpoint] = {
     def isVariable(segment: String): Boolean = segment.startsWith("{") && segment.endsWith("}")
 
     val pathParameters          = endpoint.uriPattern.split("/").filter(_.nonEmpty).toList.filter(isVariable)
     val queryParameters         = endpoint.queryParameters.map(_.name).map(x => s"{$x}")
     val duplicateParameterNames = pathParameters.intersect(queryParameters)
 
-    if (duplicateParameterNames.isEmpty) {
-      endpoint.validNel
-    } else {
-      s"Duplicate name for path and query parameters: ${duplicateParameterNames.mkString(",")} $errorContext".invalidNel
-    }
+    endpoint.valid
+      .ensure(s"Duplicate name for path and query parameters: ${duplicateParameterNames.mkString(",")}")(_ => duplicateParameterNames.isEmpty)
+      .toValidatedNel
   }
 }

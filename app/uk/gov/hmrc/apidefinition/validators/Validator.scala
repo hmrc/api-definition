@@ -16,34 +16,15 @@
 
 package uk.gov.hmrc.apidefinition.validators
 
-import scala.Iterable
-import scala.concurrent.{ExecutionContext, Future}
 import scala.util.matching.Regex
 
-import cats.data.ValidatedNel
+import cats.data.{ValidatedNel}
+
+
 import cats.implicits._
 
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiDefinition, StoredApiDefinition}
-
 trait Validator[T] {
-
-  type HMRCValidated[A]     = ValidatedNel[String, A]
-  type ShouldEvaluateToTrue = T => Boolean
-  type ConstructError       = T => String
-
-  implicit def ec: ExecutionContext
-
-  def validateThat(f: ShouldEvaluateToTrue, errFn: ConstructError)(implicit t: T): HMRCValidated[T] = {
-    if (f(t)) t.validNel else errFn(t).invalidNel
-  }
-
-  def validateField[U](f: U => Boolean, errFn: U => String)(u: U): HMRCValidated[U] = {
-    if (f(u)) u.validNel else errFn(u).invalidNel
-  }
-
-  def validateAll[U](f: U => HMRCValidated[U])(us: Iterable[U]): HMRCValidated[List[U]] = {
-    us.toList.map(u => f(u).map(_ :: Nil)).combineAll
-  }
+  type HMRCValidatedNel[A]  = ValidatedNel[String, A]
 
   implicit protected class RegexString(str: String) {
 
@@ -51,17 +32,4 @@ trait Validator[T] {
       r.findFirstIn(str).nonEmpty
     }
   }
-
-  def validateFieldNotAlreadyUsed(
-      fetchApi: => Future[Option[ApiDefinition]],
-      errorMessage: String
-    )(implicit t: T,
-      apiDefinition: StoredApiDefinition
-    ): Future[HMRCValidated[T]] = {
-    fetchApi.map {
-      case Some(found: ApiDefinition) => found.serviceName != apiDefinition.serviceName
-      case _                          => false
-    }.map(alreadyUsed => validateThat(_ => !alreadyUsed, _ => errorMessage))
-  }
-
 }

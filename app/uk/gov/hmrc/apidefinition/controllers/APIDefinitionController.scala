@@ -26,7 +26,7 @@ import play.api.libs.json._
 import play.api.mvc._
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{StoredApiDefinition, _}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiContext
-import uk.gov.hmrc.http.UnauthorizedException
+import uk.gov.hmrc.http.{BadRequestException, UnauthorizedException}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import uk.gov.hmrc.apidefinition.config.AppConfig
@@ -77,6 +77,10 @@ class APIDefinitionController @Inject() (
   }
 
   private def recovery: PartialFunction[Throwable, Result] = {
+    case e: BadRequestException =>
+      logger.error(s"An unexpected error occurred: ${e.getMessage}", e)
+      BadRequest(error(ErrorCode.INVALID_REQUEST_PAYLOAD, e.getMessage))
+
     case NonFatal(e) =>
       logger.error(s"An unexpected error occurred: ${e.getMessage}", e)
       InternalServerError(error(ErrorCode.INTERNAL_SERVER_ERROR, e.getMessage))

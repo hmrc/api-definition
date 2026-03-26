@@ -16,35 +16,38 @@
 
 package uk.gov.hmrc.apidefinition.validators
 
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
-
 import cats.implicits._
 
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiVersionNbr
 
-@Singleton
-class ApiVersionValidator @Inject() (apiEndpointValidator: ApiEndpointValidator)(implicit override val ec: ExecutionContext) extends Validator[ApiVersion] {
-
-  def validate(ec: String)(implicit version: ApiVersion): HMRCValidated[ApiVersion] = {
-    val errorContext: String = if (version.versionNbr.value.isEmpty) ec else s"$ec version '${version.versionNbr}'"
+object ApiVersionValidator extends Validator[ApiVersion] {
+  def validate(version: ApiVersion): HMRCValidatedNel[ApiVersion] = {
     (
-      validateThat(_.versionNbr.value.nonEmpty, _ => s"Field 'versions.version' is required $errorContext"),
-      validateThat(_.endpoints.nonEmpty, _ => s"Field 'versions.endpoints' must not be empty $errorContext"),
-      validateStatus(errorContext),
-      validateAll[Endpoint](u => apiEndpointValidator.validate(errorContext)(u))(version.endpoints),
-      validateUniqueEndpointPaths(errorContext)
-    ).mapN((_, _, _, _, _) => version)
+      validateVersionNumber(version.versionNbr),
+      validateStatusAndEndpointsEnabled(version.endpointsEnabled, version.status),
+      validateAllEndpoints(version.endpoints),
+      validateUniqueEndpointPaths(version.endpoints)
+    )
+    .mapN { case _ => version }
+    .leftMap(_.map(s => s"Version ${version.versionNbr} - $s"))
   }
 
-  private def validateStatus(errorContext: String)(implicit version: ApiVersion): HMRCValidated[ApiVersion] = {
-    version.status match {
-      case ApiStatus.ALPHA => validateThat(_ => version.endpointsEnabled == false, _ => s"Field 'versions.endpointsEnabled' must be false for ALPHA status")
-      case _               => version.validNel
-    }
+  protected def validateVersionNumber(versionNbr: ApiVersionNbr): HMRCValidatedNel[ApiVersionNbr] = {
+    versionNbr.valid.ensure("Field 'versions.version' is required")(_.value.nonEmpty).toValidatedNel
   }
 
-  private def validateUniqueEndpointPaths(errorContext: String)(implicit version: ApiVersion): HMRCValidated[ApiVersion] = {
+  protected def validateStatusAndEndpointsEnabled(endpointsEnabled: Boolean, status: ApiStatus): HMRCValidatedNel[ApiStatus] = {
+    status.valid.ensure("Field 'versions.endpointsEnabled' must be false for ALPHA status")(_ => !(endpointsEnabled && status == ApiStatus.ALPHA)).toValidatedNel
+  }
+
+  protected def validateAllEndpoints(endpoints: List[Endpoint]): HMRCValidatedNel[List[Endpoint]] = {
+    endpoints.valid
+    .ensure("Field 'versions.endpoints' must not be empty")(_.nonEmpty)
+    .foldMap(es => es.map(e => ApiEndpointValidator.validate(e).map(_ :: Nil)).combineAll)
+  }
+
+  protected def validateUniqueEndpointPaths(endpoints: List[Endpoint]): HMRCValidatedNel[List[Endpoint]] = {
     def segments(path: String): List[String]                          = path.split("/").filter(_.nonEmpty).toList
     def isVariable(segment: String): Boolean                          = segment.startsWith("{") && segment.endsWith("}")
     def bothSegmentsAreVariables(seg1: String, seg2: String): Boolean = isVariable(seg1) && isVariable(seg2)
@@ -65,17 +68,15 @@ class ApiVersionValidator @Inject() (apiEndpointValidator: ApiEndpointValidator)
       s"The variables $var1 and $var2 cannot appear in the same segment in the endpoints $uriPattern1 and $uriPattern2"
     }
 
-    val invalidUriPairs = version.endpoints
+    val invalidUriPairs: List[(String, String)] = endpoints
       .map(_.uriPattern)
       .combinations(2)
       .collect { case List(uriPattern1, uriPattern2) => (uriPattern1, uriPattern2) }
       .filter(isUriPairAmbiguous)
       .toList
 
-    if (invalidUriPairs.isEmpty) {
-      version.validNel
-    } else {
-      s"Ambiguous path segment variables $errorContext: ${invalidUriPairs.map(errorMessage)}".invalidNel
-    }
+    endpoints.valid
+      .ensure(s"Ambiguous path segment variables: ${invalidUriPairs.map(errorMessage)}")(_ => invalidUriPairs.isEmpty)
+      .toValidatedNel
   }
 }

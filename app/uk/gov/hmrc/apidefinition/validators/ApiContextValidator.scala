@@ -16,124 +16,111 @@
 
 package uk.gov.hmrc.apidefinition.validators
 
-import java.nio.file.{Path, Paths}
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.Future.successful
-import scala.concurrent.{ExecutionContext, Future}
 import scala.util.matching.Regex
 
-import cats.Monoid._
-import cats.data.Validated.Invalid
 import cats.implicits._
-import cats.kernel.Monoid
 
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiDefinition, StoredApiDefinition}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiContext
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiDefinition
+import java.nio.file.Path
+import java.nio.file.Paths
 
-import uk.gov.hmrc.apidefinition.config.AppConfig
-import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
-import uk.gov.hmrc.apidefinition.services.APIDefinitionService
 
-@Singleton
-class ApiContextValidator @Inject() (
-    apiDefinitionService: APIDefinitionService,
-    apiDefinitionRepository: APIDefinitionRepository,
-    appConfig: AppConfig
-  )(implicit override val ec: ExecutionContext
-  ) extends Validator[ApiContext] {
-
+object ApiContextValidator extends Validator[ApiContext] {
   private val ValidTopLevelContexts: Set[ApiContext] =
-    Set("agents", "customs", "individuals", "mobile", "obligations", "organisations", "test", "payments", "misc", "accounts").map(ApiContext(_))
+    Set("agents", "customs", "individuals", "mobile", "obligations", "organisations", "test", "payments", "misc", "accounts")
+      .map(ApiContext(_))
+  
+  private val formattedTopLevelContexts = ValidTopLevelContexts.map(_.value).toList.sorted.mkString("'", "', '", "'")
+
   private val contextRegex: Regex                    = """^[a-z]+[a-z\/\-]{4,}$""".r
 
-  def validate(errorContext: String, apiDefinition: StoredApiDefinition)(implicit context: ApiContext): Future[HMRCValidated[ApiContext]] = {
-    if (appConfig.skipContextValidationAllowlist.contains(apiDefinition.serviceName)) {
-      successful(context.validNel)
-    } else {
-      val validated = validateThat(_.value.nonEmpty, _ => s"Field 'context' should not be empty $errorContext").andThen(validateContext(errorContext)(_))
-      validated match {
-        case Invalid(_) => successful(validated)
-        case _          => validateAgainstDatabase(errorContext, apiDefinition)
-      }
-    }
-  }
-
-  private def validateContext(errorContext: String)(implicit context: ApiContext): HMRCValidated[ApiContext] = {
+  def validateForExistingAPI(apiContext: ApiContext): HMRCValidatedNel[ApiContext] = {
     (
-      validateThat(!_.value.contains("//"), _ => s"Field 'context' should not have empty path segments $errorContext"),
-      validateThat(_.value.matches(contextRegex), _ => s"Field 'context' should match regular expression '$contextRegex' $errorContext")
-    ).mapN((_, _) => context)
+      validateTopLevelContext(apiContext),
+      validateContext(apiContext)
+    )
+    .mapN { case _ => apiContext }
+    .leftMap(_.map(s => s"${apiContext.value} - $s"))
   }
 
-  private def validateAgainstDatabase(errorContext: String, apiDefinition: StoredApiDefinition)(implicit context: ApiContext): Future[HMRCValidated[ApiContext]] = {
-    val existingAPIDefinitionFuture: Future[Option[ApiDefinition]] = apiDefinitionService.fetchByContext(apiDefinition.context)
-    for {
-      contextUniqueValidated         <- validateFieldNotAlreadyUsed(existingAPIDefinitionFuture, s"Field 'context' must be unique $errorContext")(context, apiDefinition)
-      contextNotChangedValidated     <- validateContextNotChanged(errorContext, apiDefinition)
-      newAPITopLevelContextValidated <- existingAPIDefinitionFuture.flatMap(existingAPIDefinition =>
-                                          existingAPIDefinition match {
-                                            case None    => validationsForNewAPI(errorContext)
-                                            case Some(_) => successful(context.validNel)
-                                          }
-                                        )
-    } yield (contextUniqueValidated, contextNotChangedValidated, newAPITopLevelContextValidated).mapN((_, _, _) => context)
+  def validationsForNewAPI(apiContext: ApiContext, otherContextsInTopLevel: List[ApiContext]): HMRCValidatedNel[ApiContext] = {
+    (
+      validateTopLevelContext(apiContext),
+      validateContextHasAtLeastTwoSegments(apiContext),
+      validateContextDoesNotOverlapExistingAPI(apiContext, otherContextsInTopLevel)
+    )
+    .mapN { case _ => apiContext }
+    .leftMap(_.map(s => s"${apiContext.value} - $s"))
   }
 
-  private def validateContextNotChanged(errorContext: String, apiDefinition: StoredApiDefinition)(implicit context: ApiContext): Future[HMRCValidated[ApiContext]] = {
-    apiDefinitionRepository.fetchByServiceName(apiDefinition.serviceName)
-      .map {
-        case Some(found: StoredApiDefinition) => found.context != apiDefinition.context
-        case _                                => false
-      }.map(contextChanged => validateThat(_ => !contextChanged, _ => s"Field 'context' must not be changed $errorContext"))
+  protected def validateTopLevelContext(apiContext: ApiContext): HMRCValidatedNel[ApiContext] = {
+    (apiContext.valid
+      .ensure("Field 'context' should not be empty")(_.value.nonEmpty)
+      .ensure(s"Field 'context' must start with one of $formattedTopLevelContexts")(c => ValidTopLevelContexts.contains(c.topLevelContext()))
+    ).toValidatedNel
   }
 
-  private def validationsForNewAPI(errorContext: String)(implicit context: ApiContext): Future[HMRCValidated[ApiContext]] = {
-    for {
-      validTopLevelContext      <- validateTopLevelContext(errorContext)
-      atLeastTwoContextSegments <- validateContextHasAtLeastTwoSegments(errorContext)
-      noContextOverlaps         <- validateContextDoesNotOverlapExistingAPI(errorContext)
-    } yield (validTopLevelContext, atLeastTwoContextSegments, noContextOverlaps).mapN((_, _, _) => context)
+  protected def validateContext(apiContext: ApiContext): HMRCValidatedNel[ApiContext] = {
+    apiContext.valid
+      .ensure("Field 'context' should not have empty path segments")(c => ! c.value.contains("//"))
+      .ensure(s"Field 'context' should match regular expression '$contextRegex'")(_.value.matches(contextRegex))
+      .toValidatedNel
   }
 
-  private def validateTopLevelContext(errorContext: String)(implicit context: ApiContext): Future[HMRCValidated[ApiContext]] = {
-    def formattedTopLevelContexts: String = ValidTopLevelContexts.toList.map(_.value).sorted.mkString("'", "', '", "'")
+  protected def validateContextHasAtLeastTwoSegments(apiContext: ApiContext): HMRCValidatedNel[ApiContext] =
+    apiContext.valid
+    .ensure("Field 'context' must have at least two segments")(_.segments().length > 1)
+    .toValidatedNel
 
-    successful(validateThat(
-      _ => ValidTopLevelContexts.contains(context.topLevelContext()),
-      _ => s"Field 'context' must start with one of $formattedTopLevelContexts $errorContext"
-    ))
-  }
-
-  private def validateContextHasAtLeastTwoSegments(errorContext: String)(implicit context: ApiContext): Future[HMRCValidated[ApiContext]] =
-    successful(validateThat(
-      _ => context.segments().length > 1,
-      _ => s"Field 'context' must have at least two segments $errorContext"
-    ))
-
-  private def validateContextDoesNotOverlapExistingAPI(errorContext: String)(implicit context: ApiContext): Future[HMRCValidated[ApiContext]] = {
+  protected def validateContextDoesNotOverlapExistingAPI(apiContext: ApiContext, otherContextsInTopLevel: List[ApiContext]): HMRCValidatedNel[ApiContext] = {
     def overlap(firstPath: Path, secondPath: Path): Boolean = {
       firstPath.startsWith(secondPath) || secondPath.startsWith(firstPath)
     }
 
-    implicit val fakeApiContextMonoid: Monoid[ApiContext] = new Monoid[ApiContext] {
-      def empty: ApiContext                                 = ApiContext("")
-      def combine(x: ApiContext, y: ApiContext): ApiContext = ApiContext(x.value)
+    def validateNoOverlap(otherContext: ApiContext): HMRCValidatedNel[ApiContext] = {
+      otherContext.valid
+        .ensure(s"Field 'context' overlaps with '$otherContext'")(_ => ! overlap(Paths.get(otherContext.value), Paths.get(apiContext.value)))
+        .toValidatedNel
     }
 
-    for {
-      existingAPIDefinitions <- apiDefinitionRepository.fetchAllByTopLevelContext(context.topLevelContext()).map(_.filterNot(_.context == context))
-      existingContexts        = existingAPIDefinitions.map(_.context)
-      validations             = existingContexts.map(otherContext =>
-                                  validateThat(
-                                    _ => !overlap(Paths.get(otherContext.value), Paths.get(context.value)),
-                                    _ => s"Field 'context' overlaps with '$otherContext' $errorContext"
-                                  )
-                                )
-    } yield combineAll(validations)
-    /* API-4094: The combineAll() here actually concatenates the 'context' String multiple times, so any valid HMRCValidation object returned is technically
-     * incorrect. However, as we discard the value upstream, this still works. If in future we need to work with the value returned here, this will need
-     * to be corrected. Anything failing validation here is not affected.
-     */
+    otherContextsInTopLevel
+      .map(validateNoOverlap(_).map(_ => List.empty))
+      .combineAll
+      .map( _ => apiContext)
   }
 
 }
+//   def validate(errorContext: String, apiDefinition: StoredApiDefinition)(implicit context: ApiContext): Future[HMRCValidated[ApiContext]] = {
+//     if (appConfig.skipContextValidationAllowlist.contains(apiDefinition.serviceName)) {
+//       successful(context.validNel)
+//     } else {
+//       val validated = validateThat(_.value.nonEmpty, _ => s"Field 'context' should not be empty $errorContext").andThen(validateContext(errorContext)(_))
+//       validated match {
+//         case Invalid(_) => successful(validated)
+//         case _          => validateAgainstDatabase(errorContext, apiDefinition)
+//       }
+//     }
+//   }
+
+//   private def validateAgainstDatabase(errorContext: String, apiDefinition: StoredApiDefinition)(implicit context: ApiContext): Future[HMRCValidated[ApiContext]] = {
+//     val existingAPIDefinitionFuture: Future[Option[ApiDefinition]] = apiDefinitionService.fetchByContext(apiDefinition.context)
+//     for {
+//       contextUniqueValidated         <- validateFieldNotAlreadyUsed(existingAPIDefinitionFuture, s"Field 'context' must be unique $errorContext")(context, apiDefinition)
+//       contextNotChangedValidated     <- validateContextNotChanged(errorContext, apiDefinition)
+//       newAPITopLevelContextValidated <- existingAPIDefinitionFuture.flatMap(existingAPIDefinition =>
+//                                           existingAPIDefinition match {
+//                                             case None    => validationsForNewAPI(errorContext)
+//                                             case Some(_) => successful(context.validNel)
+//                                           }
+//                                         )
+//     } yield (contextUniqueValidated, contextNotChangedValidated, newAPITopLevelContextValidated).mapN((_, _, _) => context)
+//   }
+
+//   private def validateContextNotChanged(errorContext: String, apiDefinition: StoredApiDefinition)(implicit context: ApiContext): Future[HMRCValidated[ApiContext]] = {
+//     apiDefinitionRepository.fetchByServiceName(apiDefinition.serviceName)
+//       .map {
+//         case Some(found: StoredApiDefinition) => found.context != apiDefinition.context
+//         case _                                => false
+//       }.map(contextChanged => validateThat(_ => !contextChanged, _ => s"Field 'context' must not be changed $errorContext"))
+//   }
