@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.definition
+package uk.gov.hmrc.apidefinition
 
 import java.net.ServerSocket
 import scala.annotation.tailrec
@@ -27,8 +27,6 @@ object PortHelper {
   val range          = 8000 to 39999
   val usedPorts      = List[Int]()
   val logger: Logger = Logger(this.getClass())
-
-  // scalastyle:off magic.number
 
   @tailrec
   def randomAvailable: Int = {
@@ -67,5 +65,4 @@ object PortHelper {
       if (socket != null) socket.close()
     }
   }
-  // scalastyle:on magic.number
 }

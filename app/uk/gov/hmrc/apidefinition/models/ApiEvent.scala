@@ -92,6 +92,8 @@ object ApiEvents {
       case ApiAccess.PUBLIC         => "Public"
       case ApiAccess.Private(true)  => "Private Trial"
       case ApiAccess.Private(false) => "Private"
+      case ApiAccess.CONTROLLED     => "Controlled"
+      case ApiAccess.INTERNAL       => "Internal"
     }
 
     override def asMetaData(): MetaData =
