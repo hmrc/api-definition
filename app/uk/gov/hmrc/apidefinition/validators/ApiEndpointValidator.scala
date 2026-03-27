@@ -18,9 +18,9 @@ package uk.gov.hmrc.apidefinition.validators
 
 import scala.util.matching.Regex
 
+import cats.implicits._
 
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
-import cats.implicits._
 
 object ApiEndpointValidator extends Validator[Endpoint] {
   private val uriRegex: Regex           = """^/[.]?[a-zA-Z0-9_\-\/{}]*$""".r
@@ -30,29 +30,29 @@ object ApiEndpointValidator extends Validator[Endpoint] {
     (
       validateEndpointName(endpoint.endpointName),
       validateUriPattern(endpoint.uriPattern),
-      if(endpoint.authType == AuthType.USER) validateScope(endpoint.scope) else endpoint.scope.validNel,
+      if (endpoint.authType == AuthType.USER) validateScope(endpoint.scope) else endpoint.scope.validNel,
       validatePathParameters(endpoint.uriPattern),
       validateQueryParameters(endpoint.queryParameters),
       validateUniqueParameterNames(endpoint)
     )
-    .mapN { case _ => endpoint }
-    .leftMap(_.map(s => s"${endpoint.endpointName} - $s"))
+      .mapN { case _ => endpoint }
+      .leftMap(_.map(s => s"${endpoint.endpointName} - $s"))
   }
 
   protected def validateEndpointName(endpointName: String): HMRCValidatedNel[String] = {
-    endpointName.valid.ensure("Field 'endpoints.endpointName' is required")(_.nonEmpty).toValidatedNel
+    endpointName.valid.ensure("Field 'endpoints.endpointName' is required")(_.nonBlank).toValidatedNel
   }
-  
+
   protected def validateUriPattern(uriPattern: String): HMRCValidatedNel[String] = {
     uriPattern.valid
-    .ensure(s"Field 'endpoints.uriPattern' is required")(_.nonEmpty)
-    .ensure(s"Field 'endpoints.uriPattern' with value '$uriPattern' should match regular expression '$uriRegex'")(y => y.matches(uriRegex))
-    .toValidatedNel
+      .ensure("Field 'endpoints.uriPattern' is required")(_.nonBlank)
+      .ensure("Field 'endpoints.uriPattern' with value '$uriPattern' should match regular expression '$uriRegex'")(y => y.matches(uriRegex))
+      .toValidatedNel
   }
 
   protected def validateScope(scope: Option[String]): HMRCValidatedNel[Option[String]] = {
-    scope.valid.ensure(s"Field 'endpoints.scope' is required")(_.filterNot(_.isBlank()).isDefined)
-    .toValidatedNel
+    scope.valid.ensure("Field 'endpoints.scope' is required")(_.filterNot(_.isBlank()).isDefined)
+      .toValidatedNel
   }
 
   protected def validateQueryParameters(queryParameters: List[QueryParameter]): HMRCValidatedNel[List[QueryParameter]] = {
@@ -67,9 +67,9 @@ object ApiEndpointValidator extends Validator[Endpoint] {
 
     val pathParamValidationError: String => String = s => s"Curly-bracketed segment '$s' should match regular expression '$pathParameterRegex'"
 
-    val validatePathParam: (String) => HMRCValidatedNel[String] = 
+    val validatePathParam: (String) => HMRCValidatedNel[String] =
       _.valid.ensureOr(pathParamValidationError)(_.matches(pathParameterRegex)).toValidatedNel
-      
+
     segments.filter(isPathParam)
       .map(pathParam => validatePathParam(pathParam).map(_ :: Nil))
       .combineAll

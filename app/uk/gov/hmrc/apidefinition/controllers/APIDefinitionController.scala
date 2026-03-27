@@ -21,6 +21,8 @@ import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
+import cats.data.NonEmptyList
+
 import play.api.http.HeaderNames
 import play.api.libs.json._
 import play.api.mvc._
@@ -34,11 +36,9 @@ import uk.gov.hmrc.apidefinition.models.ErrorCode._
 import uk.gov.hmrc.apidefinition.models.{DisplayApiEvent, ErrorCode, TolerantJsonApiDefinition}
 import uk.gov.hmrc.apidefinition.services.APIDefinitionService
 import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
-import uk.gov.hmrc.apidefinition.validators.ApiDefinitionValidator
 
 @Singleton
 class APIDefinitionController @Inject() (
-    apiDefinitionValidator: ApiDefinitionValidator,
     apiDefinitionService: APIDefinitionService,
     appContext: AppConfig,
     cc: ControllerComponents
@@ -49,19 +49,19 @@ class APIDefinitionController @Inject() (
 
   val fetchByContextTtlInSeconds: String = appContext.fetchByContextTtlInSeconds
 
-  def createOrUpdate(): Action[JsValue] = Action.async(parse.json) { implicit request =>
-    implicit val useTolerantReaders = TolerantJsonApiDefinition.tolerantFormatApiDefinition
+  // def createOrUpdate(): Action[JsValue] = Action.async(parse.json) { implicit request =>
+  //   implicit val useTolerantReaders = TolerantJsonApiDefinition.tolerantFormatApiDefinition
 
-    handleRequest[StoredApiDefinition](request) { requestBody =>
-      apiDefinitionValidator.validate(requestBody) { validatedDefinition =>
-        logger.info(s"Create/Update API definition request: $validatedDefinition")
-        apiDefinitionService.createOrUpdate(validatedDefinition).map { _ =>
-          logger.info("API definition successfully created/updated")
-          NoContent
-        } recover recovery
-      }
-    }
-  }
+  //   handleRequest[StoredApiDefinition](request) { requestBody =>
+  //     apiDefinitionValidator.validate(requestBody) { validatedDefinition =>
+  //       logger.info(s"Create/Update API definition request: $validatedDefinition")
+  //       apiDefinitionService.createOrUpdate(validatedDefinition).map { _ =>
+  //         logger.info("API definition successfully created/updated")
+  //         NoContent
+  //       } recover recovery
+  //     }
+  //   }
+  // }
 
   def delete(serviceName: ServiceName): Action[AnyContent] = Action.async { implicit request =>
     apiDefinitionService.delete(serviceName).map { _ => NoContent } recover {
@@ -87,10 +87,12 @@ class APIDefinitionController @Inject() (
   }
 
   def validate: Action[JsValue] = Action.async(parse.json) { implicit request =>
-    handleRequest[StoredApiDefinition](request) { requestBody =>
-      apiDefinitionValidator.validate(requestBody) { validatedDefinition =>
-        successful(Accepted(Json.toJson(validatedDefinition)))
-      }
+    val asFailureResult: (NonEmptyList[String]) => Result = (in) => BadRequest(JsArray(in.toList.map(JsString)))
+
+    val asSuccessResult: (StoredApiDefinition) => Result = (api) => Accepted(Json.toJson(api))
+
+    handleRequest[StoredApiDefinition](request) { requestDefn =>
+      apiDefinitionService.validate(requestDefn).map(_.fold(asFailureResult, asSuccessResult))
     }
   }
 

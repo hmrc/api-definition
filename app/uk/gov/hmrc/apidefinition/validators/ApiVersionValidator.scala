@@ -22,6 +22,7 @@ import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiVersionNbr
 
 object ApiVersionValidator extends Validator[ApiVersion] {
+
   def validate(version: ApiVersion): HMRCValidatedNel[ApiVersion] = {
     (
       validateVersionNumber(version.versionNbr),
@@ -29,12 +30,12 @@ object ApiVersionValidator extends Validator[ApiVersion] {
       validateAllEndpoints(version.endpoints),
       validateUniqueEndpointPaths(version.endpoints)
     )
-    .mapN { case _ => version }
-    .leftMap(_.map(s => s"Version ${version.versionNbr} - $s"))
+      .mapN { case _ => version }
+      .leftMap(_.map(s => s"Version ${version.versionNbr} - $s"))
   }
 
   protected def validateVersionNumber(versionNbr: ApiVersionNbr): HMRCValidatedNel[ApiVersionNbr] = {
-    versionNbr.valid.ensure("Field 'versions.version' is required")(_.value.nonEmpty).toValidatedNel
+    versionNbr.valid.ensure("Field 'versions.version' is required")(_.value.nonBlank).toValidatedNel
   }
 
   protected def validateStatusAndEndpointsEnabled(endpointsEnabled: Boolean, status: ApiStatus): HMRCValidatedNel[ApiStatus] = {
@@ -43,8 +44,8 @@ object ApiVersionValidator extends Validator[ApiVersion] {
 
   protected def validateAllEndpoints(endpoints: List[Endpoint]): HMRCValidatedNel[List[Endpoint]] = {
     endpoints.valid
-    .ensure("Field 'versions.endpoints' must not be empty")(_.nonEmpty)
-    .foldMap(es => es.map(e => ApiEndpointValidator.validate(e).map(_ :: Nil)).combineAll)
+      .ensure("Field 'versions.endpoints' must not be empty")(_.nonEmpty)
+      .foldMap(es => es.map(e => ApiEndpointValidator.validate(e).map(_ :: Nil)).combineAll)
   }
 
   protected def validateUniqueEndpointPaths(endpoints: List[Endpoint]): HMRCValidatedNel[List[Endpoint]] = {

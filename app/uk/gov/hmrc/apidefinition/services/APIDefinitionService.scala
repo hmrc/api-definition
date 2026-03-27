@@ -32,7 +32,7 @@ import uk.gov.hmrc.apidefinition.models.ApiEvents._
 import uk.gov.hmrc.apidefinition.models.{ApiEvent, ApiEventId, TolerantJsonApiDefinition}
 import uk.gov.hmrc.apidefinition.repository.{APIDefinitionRepository, APIEventRepository}
 import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
-import uk.gov.hmrc.apidefinition.validators.Validator
+import uk.gov.hmrc.apidefinition.validators.{ApiDefinitionValidator, Validator}
 
 object APIDefinitionService {
 
@@ -60,48 +60,38 @@ class APIDefinitionService @Inject() (
 
   private def convertMany(storeds: Iterable[StoredApiDefinition]): List[ApiDefinition] = storeds.map(convertOne).toList
 
-  import cats.implicits._
+  def validate(requestedDefn: StoredApiDefinition): Future[HMRCValidatedNel[StoredApiDefinition]] = {
+    val validated: HMRCValidatedNel[StoredApiDefinition] = ApiDefinitionValidator.validateKeys(requestedDefn)
 
-  private def failure[T](msg: => String)(implicit serviceName: ServiceName): HMRCValidatedNel[T] = s"$serviceName - $msg".invalidNel[T]
+    (if (validated.isValid) {
+       for {
+         existingApiDefn <- apiDefinitionRepository.fetchByServiceName(requestedDefn.serviceName)
 
-  private def validateExistingApiHasNotChangedContext(
-        oDefnByServiceName: Option[StoredApiDefinition],
-        oDefnByContext: Option[StoredApiDefinition]
-      )(implicit serviceName: ServiceName): HMRCValidatedNel[Option[StoredApiDefinition]] = {
-    (oDefnByServiceName, oDefnByContext) match {
-      case (None, None)                 => None.validNel
-      case (None, Some(defnByContext))  => failure(s"cannot use the context of another API (${defnByContext.serviceName})")
-      case (Some(defnByServiceName), Some(defnByContext))
-          if (defnByServiceName.context == defnByContext.context) => oDefnByServiceName.validNel
-      case (Some(defnByServiceName), _) => failure(s"cannot change its context from the previously published ${defnByServiceName.context}")
-    } 
-  }
+         byContext        <- apiDefinitionRepository.fetchByContext(requestedDefn.context)
+         byServiceBaseUrl <- apiDefinitionRepository.fetchByServiceBaseUrl(requestedDefn.serviceBaseUrl)
+         byName           <- apiDefinitionRepository.fetchByName(requestedDefn.name)
 
-  def validateThenCreateOrUpdate(newApiDefn: StoredApiDefinition): Future[HMRCValidatedNel[StoredApiDefinition]] = {
-    implicit val serviceName: ServiceName = newApiDefn.serviceName
+         otherContextsWithSameTopLevel <- apiDefinitionRepository.fetchAllByTopLevelContext(requestedDefn.context.topLevelContext())
+                                            .map(_.filterNot(_.context == requestedDefn.context)) // Remove the requested api definition
+                                            .map(_.map(_.context).toList)
+         // Validate the 4 unique fields are valid in themselves
+         // Validate they all existing on the byServiceName record OR they don't exist at all
+         result                         = ApiDefinitionValidator.validate(requestedDefn, existingApiDefn, otherContextsWithSameTopLevel, byContext, byServiceBaseUrl, byName)
+       } yield result
+     } else {
+       successful(validated)
+     })
+      .map(_.leftMap(_.map(s => s"${requestedDefn.serviceName} - $s}")))
 
-    for {
-      // Validate the 4 unique fields are valid in themselves
-      // Validate they all existing on the byServiceName record OR they don't exist at all
-      existingApiDefn  <- apiDefinitionRepository.fetchByServiceName(newApiDefn.serviceName)
+    // apiDefinitionValidator.validate(requestBody) { validatedDefinition =>
+    //   logger.info(s"Create/Update API definition request: $validatedDefinition")
 
-      // _ <- validateExistingApiDefnIsUniqueBy(["serviceBaseUrl", "name", "context"])
-      
-      byContext        <- apiDefinitionRepository.fetchByContext(newApiDefn.context)
-      byServiceBaseUrl <- apiDefinitionRepository.fetchByServiceBaseUrl(newApiDefn.serviceBaseUrl)
-      byName           <- apiDefinitionRepository.fetchByName(newApiDefn.name)
-      
-      _                = validateExistingApiHasNotChangedContext(existingApiDefn, byContext)
+    // missingVersions = determineMissingVersions(newApiDefn, existingApiDefn)
+    // _              <- if (missingVersions.isEmpty) Future.successful(())
+    //                   else Future.failed(new BadRequestException(s"Versions may not be removed once published for ${newApiDefn.name} - ${missingVersions.mkString}"))
 
-      // apiDefinitionValidator.validate(requestBody) { validatedDefinition =>
-      //   logger.info(s"Create/Update API definition request: $validatedDefinition")
-
-      // missingVersions = determineMissingVersions(newApiDefn, existingApiDefn)
-      // _              <- if (missingVersions.isEmpty) Future.successful(())
-      //                   else Future.failed(new BadRequestException(s"Versions may not be removed once published for ${newApiDefn.name} - ${missingVersions.mkString}"))
-
-      // create all the stuffs
-    } yield newApiDefn.validNel
+    // create all the stuffs
+    // } yield newApiDefn.validNel
   }
 
   ////////////////////////////////////////////

@@ -18,13 +18,14 @@ package uk.gov.hmrc.apidefinition.validators
 
 import scala.util.matching.Regex
 
-import cats.data.{ValidatedNel}
-
-
+import cats.data.{NonEmptyList, ValidatedNel}
 import cats.implicits._
 
-trait Validator[T] {
-  type HMRCValidatedNel[A]  = ValidatedNel[String, A]
+trait BaseValidator {
+
+  implicit protected class StringSyntax(in: String) {
+    @inline def nonBlank: Boolean = !in.isBlank
+  }
 
   implicit protected class RegexString(str: String) {
 
@@ -32,4 +33,19 @@ trait Validator[T] {
       r.findFirstIn(str).nonEmpty
     }
   }
+
+  implicit protected class NelStringSyntax(str: String) {
+
+    def nel: NonEmptyList[String] = {
+      NonEmptyList.one(str)
+    }
+  }
+
+  val valid    = ().valid[String]
+  val validNel = ().validNel[String]
+}
+
+trait Validator[T] extends BaseValidator {
+  type HMRCValidatedNel[A] = ValidatedNel[String, A]
+
 }

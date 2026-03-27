@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.apidefinition.validators
 
-import scala.concurrent.ExecutionContext.Implicits.global
-
 import cats.data.Validated
 import org.scalatest.prop.TableDrivenPropertyChecks
 
@@ -30,12 +28,13 @@ class ApiEndpointValidatorSpec extends AsyncHmrcSpec with TableDrivenPropertyChe
 
   trait Setup {
 
-    val specialChars                                     = List(
+    val specialChars = List(
       ' ', '@', '%', '£', '*', '\\', '|', '$', '~', '^', ';', '=', '\'',
       '<', '>', '"', '?', '!', ',', '.', ':', '&', '[', ']', '(', ')'
     )
-    val queryParameterValidator: QueryParameterValidator = new QueryParameterValidator()
-    val validator                                        = new ApiEndpointValidator(queryParameterValidator)
+    // val queryParameterValidator: QueryParameterValidator = new QueryParameterValidator()
+    // val validator                                        = new ApiEndpointValidator(queryParameterValidator)
+    val validator    = ApiEndpointValidator
 
     val endpoint: Endpoint = Endpoint("/", "Test Endpoint", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)
   }
@@ -43,7 +42,7 @@ class ApiEndpointValidatorSpec extends AsyncHmrcSpec with TableDrivenPropertyChe
   "ApiEndpointValidator" should {
     "allow dots at start of endpoints" in new Setup {
 
-      val x = validator.validate("Error Message")(endpoint.copy("/.well-known/openid-configuration"))
+      val x = validator.validate(endpoint.copy("/.well-known/openid-configuration"))
 
       x match {
         case Validated.Valid(_)        => succeed
@@ -52,7 +51,7 @@ class ApiEndpointValidatorSpec extends AsyncHmrcSpec with TableDrivenPropertyChe
     }
 
     "not allow dots in middle of endpoints" in new Setup {
-      validator.validate("Error Message")(endpoint.copy(uriPattern = "/well.known")) match {
+      validator.validate(endpoint.copy(uriPattern = "/well.known")) match {
         case Validated.Valid(_)        => fail()
         case Validated.Invalid(errors) => succeed
       }
@@ -60,7 +59,7 @@ class ApiEndpointValidatorSpec extends AsyncHmrcSpec with TableDrivenPropertyChe
 
     "allow endpoints without dots" in new Setup {
 
-      validator.validate("Error Message")(endpoint.copy(uriPattern = "/well-known/openid-configuration")) match {
+      validator.validate(endpoint.copy(uriPattern = "/well-known/openid-configuration")) match {
         case Validated.Valid(_)        => succeed
         case Validated.Invalid(errors) => fail(s"endpoint validation failed ${errors.toList.mkString}")
       }
@@ -68,7 +67,7 @@ class ApiEndpointValidatorSpec extends AsyncHmrcSpec with TableDrivenPropertyChe
 
     "allow valid endpoints" in new Setup {
 
-      validator.validate("Error Message")(endpoint.copy(uriPattern = "/paye/{nino}/eligibility-check-digitally-excluded")) match {
+      validator.validate(endpoint.copy(uriPattern = "/paye/{nino}/eligibility-check-digitally-excluded")) match {
         case Validated.Valid(_)        => succeed
         case Validated.Invalid(errors) => fail(s"endpoint validation failed ${errors.toList.mkString}")
       }
@@ -77,7 +76,7 @@ class ApiEndpointValidatorSpec extends AsyncHmrcSpec with TableDrivenPropertyChe
     "fail validation if the endpoint contains in the URI" in new Setup {
       specialChars.foreach { char: Char =>
         val endpointUri = s"/payments$char"
-        validator.validate("Error Message")(endpoint.copy(uriPattern = endpointUri)) match {
+        validator.validate(endpoint.copy(uriPattern = endpointUri)) match {
           case Validated.Valid(_)        => fail(s"$char should fail validation")
           case Validated.Invalid(errors) => {
             println(errors.toList.mkString)
@@ -88,18 +87,17 @@ class ApiEndpointValidatorSpec extends AsyncHmrcSpec with TableDrivenPropertyChe
     }
 
     "detect duplicate parameter names" in new Setup {
-      val errorContext = "for API 'My API' version '1.0'"
-      val values       = Table(
+      val values = Table(
         ("URIPattern", "Query params", "Error message"),
         (
           "/{alpha}",
           List("alpha"),
-          s"Duplicate name for path and query parameters: {alpha} $errorContext endpoint '${endpoint.endpointName}'"
+          s"Test Endpoint - Duplicate name for path and query parameters: {alpha}"
         ),
         (
           "/{alpha}/with/{beta}",
           List("alpha", "beta"),
-          s"Duplicate name for path and query parameters: {alpha},{beta} $errorContext endpoint '${endpoint.endpointName}'"
+          s"Test Endpoint - Duplicate name for path and query parameters: {alpha},{beta}"
         )
       )
 
@@ -109,7 +107,7 @@ class ApiEndpointValidatorSpec extends AsyncHmrcSpec with TableDrivenPropertyChe
           queryParameters = queryParams.map(QueryParameter(_, required = true))
         )
 
-        validator.validate(errorContext)(testEndpoint) match {
+        validator.validate(testEndpoint) match {
           case Validated.Valid(_)        => fail(s"$testEndpoint should fail validation")
           case Validated.Invalid(errors) => errors.head shouldBe errorMessage
         }
@@ -130,7 +128,7 @@ class ApiEndpointValidatorSpec extends AsyncHmrcSpec with TableDrivenPropertyChe
           queryParameters = queryParams.map(QueryParameter(_, required = true))
         )
 
-        validator.validate("error context")(testEndpoint) match {
+        validator.validate(testEndpoint) match {
           case Validated.Valid(_)        => succeed
           case Validated.Invalid(errors) => fail(s"endpoint validation failed ${errors.toList.mkString}")
         }

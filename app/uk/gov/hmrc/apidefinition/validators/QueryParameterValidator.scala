@@ -27,8 +27,8 @@ object QueryParameterValidator extends Validator[QueryParameter] {
   def validate(queryParameter: QueryParameter): HMRCValidatedNel[QueryParameter] = {
     import cats.implicits._
     queryParameter.valid
-    .ensure("Field 'queryParameters.name' is required")(_.name.nonEmpty)
-    .ensure(s"Field 'queryParameters.name' with value '${queryParameter.name}' should match regular expression '$queryParameterNameRegex'")(_.name.matches(queryParameterNameRegex))
-    .toValidatedNel
+      .ensure("Field 'queryParameters.name' is required")(_.name.nonBlank)
+      .ensure(s"Field 'queryParameters.name' with value '${queryParameter.name}' should match regular expression '$queryParameterNameRegex'")(_.name.matches(queryParameterNameRegex))
+      .toValidatedNel
   }
 }
