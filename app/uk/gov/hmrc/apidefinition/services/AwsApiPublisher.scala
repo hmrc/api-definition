@@ -26,7 +26,7 @@ import com.google.inject.Singleton
 
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{StoredApiDefinition, _}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiContext
-import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.{HeaderCarrier, InternalServerException}
 
 import uk.gov.hmrc.apidefinition.connector.AWSAPIPublisherConnector
 import uk.gov.hmrc.apidefinition.models.AWSAPIDefinition.awsApiGatewayName
@@ -57,9 +57,12 @@ class AwsApiPublisher @Inject() (val awsAPIPublisherConnector: AWSAPIPublisherCo
       }
     } map { _ =>
       logger.info(s"Successfully published API '${apiDefinition.serviceName}' to AWS API Gateway")
-    } recover {
+    } recoverWith {
       case NonFatal(e) =>
         logger.error(s"Failed to publish API '${apiDefinition.serviceName}' to AWS API Gateway", e)
+        val ex = new InternalServerException(s"Error connecting to AWS API for ${apiDefinition.serviceName}")
+        ex.initCause(e)
+        Future.failed(ex)
     }
   }
 

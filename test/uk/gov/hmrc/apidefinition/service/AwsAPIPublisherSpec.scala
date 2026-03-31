@@ -25,7 +25,7 @@ import org.mockito.{ArgumentCaptor, ArgumentMatchers}
 
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiStatus, StoredApiDefinition, _}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
-import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.{HeaderCarrier, InternalServerException}
 
 import uk.gov.hmrc.apidefinition.connector.AWSAPIPublisherConnector
 import uk.gov.hmrc.apidefinition.models._
@@ -152,6 +152,15 @@ class AwsAPIPublisherSpec extends AsyncHmrcSpec {
       verify(underTest.awsAPIPublisherConnector).deleteAPI(s"${apiDefinition.context}--1.0")(hc)
       verify(underTest.awsAPIPublisherConnector)
         .createOrUpdateAPI(ArgumentMatchers.eq(s"${apiDefinition.context}--2.0"), *)(*)
+    }
+
+    "throw InternalServerException if creation of API in AWS returns a failure response" in new Setup {
+      when(underTest.awsAPIPublisherConnector.createOrUpdateAPI(*, *)(*)).thenReturn(failed(new RuntimeException("bang")))
+      val apiDefinition: StoredApiDefinition = aStoredApiDefinition()
+
+      intercept[InternalServerException] {
+        await(underTest.publish(apiDefinition))
+      }.getMessage shouldBe s"Error connecting to AWS API for ${apiDefinition.serviceName}"
     }
   }
 
