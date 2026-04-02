@@ -45,9 +45,7 @@ object ApiDefinitionValidator extends Validator[StoredApiDefinition] {
     ): HMRCValidatedNel[StoredApiDefinition] = {
     oExistingApiDefn.fold(
       validateNewAPI(skipContextValidation)(requestedDefn, byContext, byServiceBaseUrl, byName, otherContextsWithSameTopLevel)
-    )(
-      c => validateExistingAPI(skipContextValidation)(requestedDefn, c)
-    )
+    )(c => validateExistingAPI(skipContextValidation)(requestedDefn, c))
   }
 
   protected def validateOtherFields(requestedDefn: StoredApiDefinition): HMRCValidatedNel[StoredApiDefinition] = {
@@ -98,7 +96,9 @@ object ApiDefinitionValidator extends Validator[StoredApiDefinition] {
       .mapN { case _ => requestedDefn }
   }
 
-  protected def validateNewAPI(skipContextValidation: Boolean)(
+  protected def validateNewAPI(
+      skipContextValidation: Boolean
+    )(
       requestedDefn: StoredApiDefinition,
       byContext: Option[StoredApiDefinition],
       byServiceBaseUrl: Option[StoredApiDefinition],

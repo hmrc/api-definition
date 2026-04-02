@@ -27,7 +27,7 @@ class QueryParameterValidatorSpec extends AbstractValidatorSpec {
     failsToValidate(QueryParameterValidator.validate(QueryParameter(name, false)))("Field 'queryParameters.name' is required")
 
   def failsToValidateWithBadName(name: String)(implicit pos: Position): Unit =
-    failsToValidate(QueryParameterValidator.validate(QueryParameter(name, false)))() // TODO startsWith s"Field 'queryParameters.name' with value '$name' should match regular expression")
+    failsToValidate(QueryParameterValidator.validate(QueryParameter(name, false)))(s"Field 'queryParameters.name' with value '$name' should match regular expression")
 
   "QueryParameterValidator" should {
     "detect an empty name" in {

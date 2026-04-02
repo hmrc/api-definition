@@ -52,7 +52,7 @@ class ApiEndpointValidatorSpec extends AbstractValidatorSpec {
       def failsToValidateWithBadValue(value: String, clue: Option[String])(implicit pos: Position): Unit                 = failsToValidate(
         ApiEndpointValidator.validateUriPattern(value),
         clue = clue
-      )() // TODO startsWith s"Field 'endpoints.uriPattern' with value '$value' should match regular expression")
+      )(s"Field 'endpoints.uriPattern' with value '$value' should match regular expression")
 
       "detect an empty uri pattern" in {
         failsToValidateWithEmptyValue("")

@@ -47,7 +47,10 @@ class AbstractValidatorSpec extends AsyncHmrcSpec {
           errs.size shouldBe numberOfErrors
           expectedErrors.size match {
             case 0 => errs
-            case _ => errs.toList should contain theSameElementsAs expectedErrors
+            case _ =>
+              // This is like "errs should contain theSameElementsAs expectedErrors" using "startsWith" instead of "=="
+              errs.forall(err => expectedErrors.exists(expectedError => err.startsWith(expectedError))) shouldBe true
+              expectedErrors.forall(expectedError => errs.exists(err => err.startsWith(expectedError))) shouldBe true
           }
         case _             => fail()
       }

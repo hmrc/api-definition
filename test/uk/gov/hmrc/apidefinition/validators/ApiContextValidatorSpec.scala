@@ -58,7 +58,7 @@ class ApiContextValidatorSpec extends AbstractValidatorSpec {
       }
 
       "fail if context does not have a valid top-level context" in {
-        failsToValidate(ApiContextValidator.validateTopLevelContext(false)(ApiContext("anything")))() // TODO "Field 'context' must start with one of 'accounts', 'agents', 'customs', 'individuals', 'misc', 'mobile', 'obligations', 'organisations', 'payments', 'test'")
+        failsToValidate(ApiContextValidator.validateTopLevelContext(false)(ApiContext("anything")))("Field 'context' must start with one of")
       }
     }
 
