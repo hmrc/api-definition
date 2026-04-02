@@ -25,7 +25,7 @@ import play.api.libs.json.OFormat
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
-import uk.gov.hmrc.http.{BadRequestException, HeaderCarrier}
+import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.models.ApiEvents._
@@ -61,11 +61,16 @@ class APIDefinitionService @Inject() (
   private def convertMany(storeds: Iterable[StoredApiDefinition]): List[ApiDefinition] = storeds.map(convertOne).toList
 
   def validate(requestedDefn: StoredApiDefinition): Future[HMRCValidatedNel[StoredApiDefinition]] = {
-    val validated: HMRCValidatedNel[StoredApiDefinition] = ApiDefinitionValidator.validateKeys(requestedDefn)
+    val validated: HMRCValidatedNel[StoredApiDefinition] = ApiDefinitionValidator.validateKeysArePresent(requestedDefn)
 
     (if (validated.isValid) {
        for {
          existingApiDefn <- apiDefinitionRepository.fetchByServiceName(requestedDefn.serviceName)
+         skipContextValidation          = config.skipContextValidationAllowlist.contains(requestedDefn.serviceName)
+         // skipContextValidationAllowlist = ["vat-registered-companies-api", "tax-free-childcare-parent", "agent-authorisation-api", "national-insurance-des-stub"]
+         // exception staging has:
+         //     skipContextValidationAllowlist.0: "ciao-multisegment-api"
+         //     skipContextValidationAllowlist.1: "api-stop-autodeploy-test"
 
          byContext        <- apiDefinitionRepository.fetchByContext(requestedDefn.context)
          byServiceBaseUrl <- apiDefinitionRepository.fetchByServiceBaseUrl(requestedDefn.serviceBaseUrl)
@@ -74,24 +79,12 @@ class APIDefinitionService @Inject() (
          otherContextsWithSameTopLevel <- apiDefinitionRepository.fetchAllByTopLevelContext(requestedDefn.context.topLevelContext())
                                             .map(_.filterNot(_.context == requestedDefn.context)) // Remove the requested api definition
                                             .map(_.map(_.context).toList)
-         // Validate the 4 unique fields are valid in themselves
-         // Validate they all existing on the byServiceName record OR they don't exist at all
-         result                         = ApiDefinitionValidator.validate(requestedDefn, existingApiDefn, otherContextsWithSameTopLevel, byContext, byServiceBaseUrl, byName)
+         result                         = ApiDefinitionValidator.validate(requestedDefn, existingApiDefn, byContext, byServiceBaseUrl, byName, otherContextsWithSameTopLevel, skipContextValidation)
        } yield result
      } else {
        successful(validated)
      })
       .map(_.leftMap(_.map(s => s"${requestedDefn.serviceName} - $s}")))
-
-    // apiDefinitionValidator.validate(requestBody) { validatedDefinition =>
-    //   logger.info(s"Create/Update API definition request: $validatedDefinition")
-
-    // missingVersions = determineMissingVersions(newApiDefn, existingApiDefn)
-    // _              <- if (missingVersions.isEmpty) Future.successful(())
-    //                   else Future.failed(new BadRequestException(s"Versions may not be removed once published for ${newApiDefn.name} - ${missingVersions.mkString}"))
-
-    // create all the stuffs
-    // } yield newApiDefn.validNel
   }
 
   ////////////////////////////////////////////
@@ -116,10 +109,6 @@ class APIDefinitionService @Inject() (
 
     for {
       existingApiDefn <- apiDefinitionRepository.fetchByContext(newApiDefn.context)
-
-      missingVersions = determineMissingVersions(newApiDefn, existingApiDefn)
-      _              <- if (missingVersions.isEmpty) Future.successful(())
-                        else Future.failed(new BadRequestException(s"Versions may not be removed once published for ${newApiDefn.name} - ${missingVersions.mkString}"))
 
       events = checkAPIDefinitionForChanges(newApiDefn, existingApiDefn)
       _     <- apiEventRepository.createAll(events)
@@ -184,15 +173,6 @@ class APIDefinitionService @Inject() (
   private def isEndpointPresentInList(endpoint: Endpoint, listOfEndpoints: List[Endpoint]): Boolean = {
     // Note that we are assuming that an endpoint is equal if the method and URL are the same
     listOfEndpoints.exists(e => (e.method == endpoint.method && e.uriPattern == endpoint.uriPattern))
-  }
-
-  private def determineMissingVersions(apiDefinition: StoredApiDefinition, existingApiDefn: Option[StoredApiDefinition]): List[ApiVersionNbr] = {
-    existingApiDefn
-      .fold(List.empty[ApiVersionNbr]) { defn =>
-        val existingVersions = defn.versions.map(_.versionNbr)
-        val newVersions      = apiDefinition.versions.map(_.versionNbr)
-        existingVersions diff newVersions
-      }
   }
 
   private def checkAPIDefinitionForChanges(apiDefinition: StoredApiDefinition, existingApiDefn: Option[StoredApiDefinition]): List[ApiEvent] = {

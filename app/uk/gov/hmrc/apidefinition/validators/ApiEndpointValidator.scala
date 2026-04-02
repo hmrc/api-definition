@@ -33,35 +33,35 @@ object ApiEndpointValidator extends Validator[Endpoint] {
       if (endpoint.authType == AuthType.USER) validateScope(endpoint.scope) else endpoint.scope.validNel,
       validatePathParameters(endpoint.uriPattern),
       validateQueryParameters(endpoint.queryParameters),
-      validateUniqueParameterNames(endpoint)
+      validateUniqueParameterNames(endpoint.uriPattern, endpoint.queryParameters)
     )
       .mapN { case _ => endpoint }
       .leftMap(_.map(s => s"${endpoint.endpointName} - $s"))
   }
 
-  protected def validateEndpointName(endpointName: String): HMRCValidatedNel[String] = {
+  def validateEndpointName(endpointName: String): HMRCValidatedNel[String] = {
     endpointName.valid.ensure("Field 'endpoints.endpointName' is required")(_.nonBlank).toValidatedNel
   }
 
-  protected def validateUriPattern(uriPattern: String): HMRCValidatedNel[String] = {
+  def validateUriPattern(uriPattern: String): HMRCValidatedNel[String] = {
     uriPattern.valid
       .ensure("Field 'endpoints.uriPattern' is required")(_.nonBlank)
-      .ensure("Field 'endpoints.uriPattern' with value '$uriPattern' should match regular expression '$uriRegex'")(y => y.matches(uriRegex))
+      .ensure(s"Field 'endpoints.uriPattern' with value '$uriPattern' should match regular expression '$uriRegex'")(y => y.matches(uriRegex))
       .toValidatedNel
   }
 
-  protected def validateScope(scope: Option[String]): HMRCValidatedNel[Option[String]] = {
+  def validateScope(scope: Option[String]): HMRCValidatedNel[Option[String]] = {
     scope.valid.ensure("Field 'endpoints.scope' is required")(_.filterNot(_.isBlank()).isDefined)
       .toValidatedNel
   }
 
-  protected def validateQueryParameters(queryParameters: List[QueryParameter]): HMRCValidatedNel[List[QueryParameter]] = {
+  def validateQueryParameters(queryParameters: List[QueryParameter]): HMRCValidatedNel[List[QueryParameter]] = {
     queryParameters
       .map(qp => QueryParameterValidator.validate(qp).map(_ :: Nil))
       .combineAll
   }
 
-  protected def validatePathParameters(uriPattern: String): HMRCValidatedNel[String] = {
+  def validatePathParameters(uriPattern: String): HMRCValidatedNel[String] = {
     val isPathParam: String => Boolean = { segment: String => segment.contains("{") || segment.contains("}") }
     val segments                       = uriPattern.split("/").toList
 
@@ -76,14 +76,14 @@ object ApiEndpointValidator extends Validator[Endpoint] {
       .map(_ => uriPattern)
   }
 
-  protected def validateUniqueParameterNames(endpoint: Endpoint): HMRCValidatedNel[Endpoint] = {
+  def validateUniqueParameterNames(uriPattern: String, queryParameters: List[QueryParameter]): HMRCValidatedNel[Unit] = {
     def isVariable(segment: String): Boolean = segment.startsWith("{") && segment.endsWith("}")
 
-    val pathParameters          = endpoint.uriPattern.split("/").filter(_.nonEmpty).toList.filter(isVariable)
-    val queryParameters         = endpoint.queryParameters.map(_.name).map(x => s"{$x}")
-    val duplicateParameterNames = pathParameters.intersect(queryParameters)
+    val pathParameters          = uriPattern.split("/").filter(_.nonEmpty).toList.filter(isVariable)
+    val queryParameterNames     = queryParameters.map(_.name).map(x => s"{$x}")
+    val duplicateParameterNames = pathParameters.intersect(queryParameterNames)
 
-    endpoint.valid
+    ().valid
       .ensure(s"Duplicate name for path and query parameters: ${duplicateParameterNames.mkString(",")}")(_ => duplicateParameterNames.isEmpty)
       .toValidatedNel
   }

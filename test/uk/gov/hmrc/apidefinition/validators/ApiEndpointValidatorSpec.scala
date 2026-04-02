@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 HM Revenue & Customs
+ * Copyright 2026 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,122 +16,218 @@
 
 package uk.gov.hmrc.apidefinition.validators
 
-import cats.data.Validated
-import org.scalatest.prop.TableDrivenPropertyChecks
+import cats.data.NonEmptyList
+import org.scalactic.source.Position
 
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{AuthType, Endpoint, HttpMethod, QueryParameter, ResourceThrottlingTier}
 
-import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
-import uk.gov.hmrc.apidefinition.validators.ApiEndpointValidator
+class ApiEndpointValidatorSpec extends AbstractValidatorSpec {
+  "ApiEndpointValidator" when {
+    "validateEndpointName" should {
+      def validates(name: String)(implicit pos: Position): Unit                 = super.validates(ApiEndpointValidator.validateEndpointName(name))
+      def failsToValidateWithNoName(name: String)(implicit pos: Position): Unit =
+        failsToValidate(ApiEndpointValidator.validateEndpointName(name)).head shouldBe "Field 'endpoints.endpointName' is required"
 
-class ApiEndpointValidatorSpec extends AsyncHmrcSpec with TableDrivenPropertyChecks {
+      "detect an empty name" in {
+        failsToValidateWithNoName("")
+      }
 
-  trait Setup {
+      "detect a blank name" in {
+        failsToValidateWithNoName("   ")
+      }
 
-    val specialChars = List(
-      ' ', '@', '%', '£', '*', '\\', '|', '$', '~', '^', ';', '=', '\'',
-      '<', '>', '"', '?', '!', ',', '.', ':', '&', '[', ']', '(', ')'
-    )
-    // val queryParameterValidator: QueryParameterValidator = new QueryParameterValidator()
-    // val validator                                        = new ApiEndpointValidator(queryParameterValidator)
-    val validator    = ApiEndpointValidator
-
-    val endpoint: Endpoint = Endpoint("/", "Test Endpoint", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)
-  }
-
-  "ApiEndpointValidator" should {
-    "allow dots at start of endpoints" in new Setup {
-
-      val x = validator.validate(endpoint.copy("/.well-known/openid-configuration"))
-
-      x match {
-        case Validated.Valid(_)        => succeed
-        case Validated.Invalid(errors) => fail(s"endpoint validation failed ${errors.toList.mkString}")
+      "detect a valid name" in {
+        validates("abc")
+        validates("ab-c")
+        validates("a_bc")
+        validates("a_12bc")
+        validates("a_12bc")
       }
     }
 
-    "not allow dots in middle of endpoints" in new Setup {
-      validator.validate(endpoint.copy(uriPattern = "/well.known")) match {
-        case Validated.Valid(_)        => fail()
-        case Validated.Invalid(errors) => succeed
+    "validateUriPattern" should {
+      def validates(value: String, clue: Option[String] = Some(s"should validate $value"))(implicit pos: Position): Unit =
+        super.validates(ApiEndpointValidator.validateUriPattern(value), clue = clue)
+      def failsToValidateWithEmptyValue(value: String)(implicit pos: Position): Unit                                     =
+        failsToValidate(ApiEndpointValidator.validateUriPattern(value)).head shouldBe "Field 'endpoints.uriPattern' is required"
+      def failsToValidateWithBadValue(value: String, clue: Option[String])(implicit pos: Position): Unit                 = failsToValidate(
+        ApiEndpointValidator.validateUriPattern(value),
+        clue = clue
+      ).head should startWith(s"Field 'endpoints.uriPattern' with value '$value' should match regular expression")
+
+      "detect an empty uri pattern" in {
+        failsToValidateWithEmptyValue("")
       }
-    }
 
-    "allow endpoints without dots" in new Setup {
-
-      validator.validate(endpoint.copy(uriPattern = "/well-known/openid-configuration")) match {
-        case Validated.Valid(_)        => succeed
-        case Validated.Invalid(errors) => fail(s"endpoint validation failed ${errors.toList.mkString}")
+      "detect a blank uri pattern" in {
+        failsToValidateWithEmptyValue("   ")
       }
-    }
 
-    "allow valid endpoints" in new Setup {
+      "detect an invalid uri pattern" in {
+        failsToValidateWithBadValue("/well.known", clue = Some("not allow dots in middle of endpoints"))
 
-      validator.validate(endpoint.copy(uriPattern = "/paye/{nino}/eligibility-check-digitally-excluded")) match {
-        case Validated.Valid(_)        => succeed
-        case Validated.Invalid(errors) => fail(s"endpoint validation failed ${errors.toList.mkString}")
-      }
-    }
-
-    "fail validation if the endpoint contains in the URI" in new Setup {
-      specialChars.foreach { char: Char =>
-        val endpointUri = s"/payments$char"
-        validator.validate(endpoint.copy(uriPattern = endpointUri)) match {
-          case Validated.Valid(_)        => fail(s"$char should fail validation")
-          case Validated.Invalid(errors) => {
-            println(errors.toList.mkString)
-            succeed
-          }
-        }
-      }
-    }
-
-    "detect duplicate parameter names" in new Setup {
-      val values = Table(
-        ("URIPattern", "Query params", "Error message"),
-        (
-          "/{alpha}",
-          List("alpha"),
-          s"Test Endpoint - Duplicate name for path and query parameters: {alpha}"
-        ),
-        (
-          "/{alpha}/with/{beta}",
-          List("alpha", "beta"),
-          s"Test Endpoint - Duplicate name for path and query parameters: {alpha},{beta}"
-        )
-      )
-
-      forAll(values) { case (uriPattern, queryParams, errorMessage) =>
-        val testEndpoint: Endpoint = endpoint.copy(
-          uriPattern,
-          queryParameters = queryParams.map(QueryParameter(_, required = true))
+        val specialChars = List(
+          ' ', '@', '%', '£', '*', '\\', '|', '$', '~', '^', ';', '=', '\'',
+          '<', '>', '"', '?', '!', ',', '.', ':', '&', '[', ']', '(', ')'
         )
 
-        validator.validate(testEndpoint) match {
-          case Validated.Valid(_)        => fail(s"$testEndpoint should fail validation")
-          case Validated.Invalid(errors) => errors.head shouldBe errorMessage
+        specialChars.foreach { char: Char =>
+          val endpointUri = s"/payments$char"
+          failsToValidateWithBadValue(endpointUri, clue = Some(s"Invalid char '$char' should not be allowed"))
         }
+      }
+
+      "detect a valid uri pattern" in {
+        validates("/.well-known/openid-configuration", clue = Some("allow dots at start of endpoints"))
+        validates("/well-known/openid-configuration")
+        validates("/paye/{nino}/eligibility-check-digitally-excluded")
+      }
+
+    }
+
+    "validateScope" should {
+      def validates(value: Option[String])(implicit pos: Position): Unit                  = super.validates(ApiEndpointValidator.validateScope(value))
+      def failsToValidateWithNoValue(value: Option[String])(implicit pos: Position): Unit =
+        failsToValidate(ApiEndpointValidator.validateScope(value)).head shouldBe "Field 'endpoints.scope' is required"
+
+      "detect an empty name" in {
+        failsToValidateWithNoValue(Some(""))
+      }
+
+      "detect a blank name" in {
+        failsToValidateWithNoValue(Some("   "))
+      }
+
+      "detect a None" in {
+        failsToValidateWithNoValue(None)
+      }
+
+      "detect a valid name" in {
+        validates(Some("abc"))
       }
     }
 
-    "not detect duplicate parameter names" in new Setup {
-      val values = Table(
-        ("URIPattern", "Query params"),
-        ("/{alpha}", List.empty),  // No query parameters
-        ("/alpha", List("alpha")), // No path parameters
-        ("/{alpha}", List("beta")) // Different path and query parameters
-      )
+    "validateQueryParameters" should {
+      val validNames   = List("abc", "def")
+      val invalidNames = List(" ", "", "abc!")
 
-      forAll(values) { case (uriPattern, queryParams) =>
-        val testEndpoint: Endpoint = endpoint.copy(
-          uriPattern,
-          queryParameters = queryParams.map(QueryParameter(_, required = true))
+      def validates(names: List[String])(implicit pos: Position): Unit                                                =
+        super.validates(ApiEndpointValidator.validateQueryParameters(names.map(QueryParameter(_))), clue = Some(s"Valid names of ${names.mkString}"))
+      def failsToValidate(names: List[String], numberOfErrors: Int = 1)(implicit pos: Position): NonEmptyList[String] =
+        super.failsToValidate(ApiEndpointValidator.validateQueryParameters(names.map(QueryParameter(_))), numberOfErrors)
+
+      "succeed when all parameters are valid" in {
+        validates(validNames)
+      }
+
+      "fail when one parameter is invalid" in {
+        failsToValidate(invalidNames.head :: validNames)
+      }
+
+      "fail when many parameters are invalid" in {
+        failsToValidate(invalidNames ++ validNames, 3)
+      }
+    }
+
+    "validatePathParameters" should {
+      def validates(uriPattern: String)(implicit pos: Position): Unit                                                              =
+        super.validates(ApiEndpointValidator.validatePathParameters(uriPattern), clue = Some(s"Valid uri pattern of $uriPattern"))
+      // def failsToValidate(uriPattern: String, numberOfErrors: Int = 1)(implicit pos: Position): NonEmptyList[String] = super.failsToValidate(ApiEndpointValidator.validatePathParameters(uriPattern), numberOfErrors)
+      def failsToValidate(uriPattern: String, numberOfErrors: Int = 1, clue: String)(implicit pos: Position): NonEmptyList[String] =
+        super.failsToValidate(ApiEndpointValidator.validatePathParameters(uriPattern), numberOfErrors, Some(clue))
+
+      "succeed for valid path params" in {
+        validates("/abc/def")
+        validates("/abc/{param1}/def")
+        validates("/abc/{param1}/def/{param2}")
+      }
+
+      "fails for invalid path params" in {
+        failsToValidate("/abc/{param1!}", clue = "No bangs should be allowed")
+        failsToValidate("/abc/{param1!}/{param.two}", 2, clue = "Several problems with path parameters")
+        failsToValidate("/abc/{param1!}/{param.two}/{goodParam}", 2, clue = "Several problems with path parameters even if one is good")
+        failsToValidate("/abc/d}e{f", clue = "It's not a param but has brackets in")
+      }
+    }
+
+    "validateUniqueParameterNames" should {
+      def validates(uriPattern: String, queryParameters: List[QueryParameter])(implicit pos: Position): Unit                                     =
+        super.validates(ApiEndpointValidator.validateUniqueParameterNames(uriPattern, queryParameters), clue = Some(s"Valid uri pattern of $uriPattern"))
+      def failsToValidate(uriPattern: String, queryParameters: List[QueryParameter], clue: String)(implicit pos: Position): NonEmptyList[String] =
+        super.failsToValidate(ApiEndpointValidator.validateUniqueParameterNames(uriPattern, queryParameters), clue = Some(clue))
+
+      val qp1 = QueryParameter("abc", false)
+      val qp2 = QueryParameter("def", false)
+
+      "succeed for valid combos" in {
+        validates("/abc/{paramA}/{paramB}", List(qp1, qp2))
+        validates("/abc/{paramA}/{paramB}", List(qp1, qp1)) // We allow duplicate query params
+        validates("/abc/{paramA}/{paramA}", List(qp1, qp2)) // We allow duplicate path params
+      }
+
+      "fail for invalid combos" in {
+        failsToValidate("/abc/{paramA}/{def}", List(qp1, qp2), "path and query param clash")
+      }
+    }
+
+    "validate" should {
+      def validates(endpoint: Endpoint)(implicit pos: Position): Unit                               = super.validates(ApiEndpointValidator.validate(endpoint))
+      def failsToValidateEndpoint(endpoint: Endpoint)(implicit pos: Position): NonEmptyList[String] =
+        failsToValidate(ApiEndpointValidator.validate(endpoint), numberOfErrors = 6)
+
+      "collect all errors" in {
+        failsToValidateEndpoint(
+          Endpoint(
+            uriPattern = "/bad.pattern/{paramA}/abc",
+            endpointName = " ",
+            method = HttpMethod.GET,
+            authType = AuthType.USER,
+            scope = None,
+            throttlingTier = ResourceThrottlingTier.UNLIMITED,
+            queryParameters = List(
+              "paramA",
+              " ",
+              "",
+              "okay"
+            ).map(QueryParameter(_, false))
+          )
         )
+      }
 
-        validator.validate(testEndpoint) match {
-          case Validated.Valid(_)        => succeed
-          case Validated.Invalid(errors) => fail(s"endpoint validation failed ${errors.toList.mkString}")
-        }
+      "succeeds validation of a good USER endpoint" in {
+        validates(
+          Endpoint(
+            uriPattern = "/.goodpattern/{paramA}/abc",
+            endpointName = "fred",
+            method = HttpMethod.GET,
+            authType = AuthType.USER,
+            scope = Some("xyz"),
+            throttlingTier = ResourceThrottlingTier.UNLIMITED,
+            queryParameters = List(
+              "param1",
+              "param2",
+              "param3"
+            ).map(QueryParameter(_, false))
+          )
+        )
+      }
+
+      "succeeds validation of a good APP endpoint" in {
+        validates(
+          Endpoint(
+            uriPattern = "/.goodpattern/{paramA}/abc",
+            endpointName = "fred",
+            method = HttpMethod.GET,
+            authType = AuthType.APPLICATION,
+            scope = None,
+            throttlingTier = ResourceThrottlingTier.UNLIMITED,
+            queryParameters = List(
+              "param1",
+              "param2",
+              "param3"
+            ).map(QueryParameter(_, false))
+          )
+        )
       }
     }
   }

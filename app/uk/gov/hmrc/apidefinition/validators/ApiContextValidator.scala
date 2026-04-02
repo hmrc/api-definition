@@ -33,41 +33,42 @@ object ApiContextValidator extends Validator[ApiContext] {
 
   private val contextRegex: Regex = """^[a-z]+[a-z\/\-]{4,}$""".r
 
-  def validateForExistingAPI(apiContext: ApiContext): HMRCValidatedNel[ApiContext] = {
+  def validateForExistingAPI(skipContextValidation: Boolean)(apiContext: ApiContext): HMRCValidatedNel[ApiContext] = {
     (
-      validateTopLevelContext(apiContext),
-      validateContext(apiContext)
+      validateTopLevelContext(skipContextValidation)(apiContext),
+      validateContext(skipContextValidation)(apiContext)
     )
       .mapN { case _ => apiContext }
       .leftMap(_.map(s => s"${apiContext.value} - $s"))
   }
 
-  def validateForNewAPI(apiContext: ApiContext, otherContextsInTopLevel: List[ApiContext]): HMRCValidatedNel[ApiContext] = {
+  def validateForNewAPI(skipContextValidation: Boolean)(apiContext: ApiContext, otherContextsInTopLevel: List[ApiContext]): HMRCValidatedNel[ApiContext] = {
     (
-      validateTopLevelContext(apiContext),
-      validateContextHasAtLeastTwoSegments(apiContext),
+      validateTopLevelContext(skipContextValidation)(apiContext),
+      validateContextHasAtLeastTwoSegments(skipContextValidation)(apiContext),
       validateContextDoesNotOverlapExistingAPI(apiContext, otherContextsInTopLevel)
     )
       .mapN { case _ => apiContext }
       .leftMap(_.map(s => s"${apiContext.value} - $s"))
   }
 
-  protected def validateTopLevelContext(apiContext: ApiContext): HMRCValidatedNel[ApiContext] = {
+  protected def validateTopLevelContext(skipContextValidation: Boolean)(apiContext: ApiContext): HMRCValidatedNel[ApiContext] = {
     (apiContext.valid
       .ensure("Field 'context' should not be empty")(_.value.nonBlank)
-      .ensure(s"Field 'context' must start with one of $formattedTopLevelContexts")(c => ValidTopLevelContexts.contains(c.topLevelContext()))).toValidatedNel
-  }
-
-  protected def validateContext(apiContext: ApiContext): HMRCValidatedNel[ApiContext] = {
-    apiContext.valid
-      .ensure("Field 'context' should not have empty path segments")(c => !c.value.contains("//"))
-      .ensure(s"Field 'context' should match regular expression '$contextRegex'")(_.value.matches(contextRegex))
+      .ensure(s"Field 'context' must start with one of $formattedTopLevelContexts")(c => skipContextValidation || ValidTopLevelContexts.contains(c.topLevelContext())))
       .toValidatedNel
   }
 
-  protected def validateContextHasAtLeastTwoSegments(apiContext: ApiContext): HMRCValidatedNel[ApiContext] =
+  protected def validateContext(skipContextValidation: Boolean)(apiContext: ApiContext): HMRCValidatedNel[ApiContext] = {
     apiContext.valid
-      .ensure("Field 'context' must have at least two segments")(_.segments().length > 1)
+      .ensure("Field 'context' should not have empty path segments")(c => !c.value.contains("//"))
+      .ensure(s"Field 'context' should match regular expression '$contextRegex'")(c => skipContextValidation || c.value.matches(contextRegex))
+      .toValidatedNel
+  }
+
+  protected def validateContextHasAtLeastTwoSegments(skipContextValidation: Boolean)(apiContext: ApiContext): HMRCValidatedNel[ApiContext] =
+    apiContext.valid
+      .ensure("Field 'context' must have at least two segments")(c => skipContextValidation || c.segments().length > 1)
       .toValidatedNel
 
   protected def validateContextDoesNotOverlapExistingAPI(apiContext: ApiContext, otherContextsInTopLevel: List[ApiContext]): HMRCValidatedNel[ApiContext] = {

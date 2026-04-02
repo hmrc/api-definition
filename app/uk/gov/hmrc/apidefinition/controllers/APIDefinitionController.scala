@@ -49,19 +49,24 @@ class APIDefinitionController @Inject() (
 
   val fetchByContextTtlInSeconds: String = appContext.fetchByContextTtlInSeconds
 
-  // def createOrUpdate(): Action[JsValue] = Action.async(parse.json) { implicit request =>
-  //   implicit val useTolerantReaders = TolerantJsonApiDefinition.tolerantFormatApiDefinition
+  def createOrUpdate(): Action[JsValue] = Action.async(parse.json) { implicit request =>
+    implicit val useTolerantReaders = TolerantJsonApiDefinition.tolerantFormatApiDefinition
 
-  //   handleRequest[StoredApiDefinition](request) { requestBody =>
-  //     apiDefinitionValidator.validate(requestBody) { validatedDefinition =>
-  //       logger.info(s"Create/Update API definition request: $validatedDefinition")
-  //       apiDefinitionService.createOrUpdate(validatedDefinition).map { _ =>
-  //         logger.info("API definition successfully created/updated")
-  //         NoContent
-  //       } recover recovery
-  //     }
-  //   }
-  // }
+    handleRequest[StoredApiDefinition](request) { requestBody =>
+      val asFailureResult: (NonEmptyList[String]) => Result = (in) => BadRequest(JsArray(in.toList.map(JsString)))
+
+      val asValidRequest: (StoredApiDefinition) => Future[Result] = (api) => apiDefinitionService.createOrUpdate(api).map(_ => NoContent)
+
+      (
+        for {
+          validationResult <- apiDefinitionService.validate(requestBody)
+          _                 = logger.info(s"""Validation of Create/Update API definition ${validationResult.fold(_ => "failed", _ => "was successful")}""")
+          result           <- validationResult.fold(errs => successful(asFailureResult(errs)), validatedDefinition => asValidRequest(validatedDefinition))
+          _                 = logger.info("API definition successfully created/updated")
+        } yield result
+      ) recover recovery
+    }
+  }
 
   def delete(serviceName: ServiceName): Action[AnyContent] = Action.async { implicit request =>
     apiDefinitionService.delete(serviceName).map { _ => NoContent } recover {

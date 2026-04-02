@@ -43,9 +43,10 @@ trait BaseValidator {
 
   val valid    = ().valid[String]
   val validNel = ().validNel[String]
-}
 
-trait Validator[T] extends BaseValidator {
   type HMRCValidatedNel[A] = ValidatedNel[String, A]
-
 }
+
+object BaseValidator extends BaseValidator
+
+trait Validator[T] extends BaseValidator {}

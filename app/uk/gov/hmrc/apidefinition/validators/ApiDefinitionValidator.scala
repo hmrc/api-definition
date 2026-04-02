@@ -23,7 +23,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApiContext, ApiVers
 
 object ApiDefinitionValidator extends Validator[StoredApiDefinition] {
 
-  def validateKeys(apiDefinition: StoredApiDefinition): HMRCValidatedNel[StoredApiDefinition] = {
+  def validateKeysArePresent(apiDefinition: StoredApiDefinition): HMRCValidatedNel[StoredApiDefinition] = {
     (
       apiDefinition.serviceName.valid.ensure("Field 'serviceName' should not be empty")(_.value.nonBlank),
       apiDefinition.context.valid.ensure("Field 'context' should not be empty")(_.value.nonBlank),
@@ -37,12 +37,17 @@ object ApiDefinitionValidator extends Validator[StoredApiDefinition] {
   def validate(
       requestedDefn: StoredApiDefinition,
       oExistingApiDefn: Option[StoredApiDefinition],
-      otherContextsWithSameTopLevel: List[ApiContext],
       byContext: Option[StoredApiDefinition],
       byServiceBaseUrl: Option[StoredApiDefinition],
-      byName: Option[StoredApiDefinition]
+      byName: Option[StoredApiDefinition],
+      otherContextsWithSameTopLevel: List[ApiContext],
+      skipContextValidation: Boolean
     ): HMRCValidatedNel[StoredApiDefinition] = {
-    oExistingApiDefn.fold(validateNewAPI(requestedDefn, otherContextsWithSameTopLevel, byContext, byServiceBaseUrl, byName))(validateExistingAPI(requestedDefn, _))
+    oExistingApiDefn.fold(
+      validateNewAPI(skipContextValidation)(requestedDefn, byContext, byServiceBaseUrl, byName, otherContextsWithSameTopLevel)
+    )(
+      c => validateExistingAPI(skipContextValidation)(requestedDefn, c)
+    )
   }
 
   protected def validateOtherFields(requestedDefn: StoredApiDefinition): HMRCValidatedNel[StoredApiDefinition] = {
@@ -71,28 +76,38 @@ object ApiDefinitionValidator extends Validator[StoredApiDefinition] {
     )
   }
 
-  protected def validateExistingAPI(requestedDefn: StoredApiDefinition, existingApiDefn: StoredApiDefinition): HMRCValidatedNel[StoredApiDefinition] = {
+  protected def determineMissingVersions(apiDefinition: StoredApiDefinition, existingApiDefn: StoredApiDefinition): List[ApiVersionNbr] = {
+    val existingVersions = existingApiDefn.versions.map(_.versionNbr)
+    val newVersions      = apiDefinition.versions.map(_.versionNbr)
+    existingVersions diff newVersions
+  }
+
+  protected def validateExistingAPI(skipContextValidation: Boolean)(requestedDefn: StoredApiDefinition, existingApiDefn: StoredApiDefinition): HMRCValidatedNel[StoredApiDefinition] = {
     (
+      // Where has the exclusion code gone ?
       requestedDefn.context.validNel[String].ensure(s"Field 'context' cannot change from the previously published ${existingApiDefn.context}".nel)(_ != existingApiDefn.context)
-        .andThen(ApiContextValidator.validateForExistingAPI(_)),
+        .andThen(ApiContextValidator.validateForExistingAPI(skipContextValidation)(_)),
       requestedDefn.serviceBaseUrl.validNel[String].ensure(s"Field 'serviceBaseUrl' cannot change from the previously published ${existingApiDefn.serviceBaseUrl}".nel)(
         _ != existingApiDefn.serviceBaseUrl
       ),
-      requestedDefn.name.validNel[String].ensure(s"Field 'name' cannot change from the previously published ${existingApiDefn.name}".nel)(_ != existingApiDefn.name)
+      requestedDefn.name.validNel[String].ensure(s"Field 'name' cannot change from the previously published ${existingApiDefn.name}".nel)(_ != existingApiDefn.name),
+      determineMissingVersions(requestedDefn, existingApiDefn).validNel[String].ensureOr(missingVersions =>
+        s"Versions may not be removed once published ${missingVersions.mkString}".nel
+      )(_.isEmpty)
     )
       .mapN { case _ => requestedDefn }
   }
 
-  protected def validateNewAPI(
+  protected def validateNewAPI(skipContextValidation: Boolean)(
       requestedDefn: StoredApiDefinition,
-      otherContextsWithSameTopLevel: List[ApiContext],
       byContext: Option[StoredApiDefinition],
       byServiceBaseUrl: Option[StoredApiDefinition],
-      byName: Option[StoredApiDefinition]
+      byName: Option[StoredApiDefinition],
+      otherContextsWithSameTopLevel: List[ApiContext]
     ): HMRCValidatedNel[StoredApiDefinition] = {
     (
       byContext.validNel[String].ensureOr(other => s"Field 'context' must be unique but is used by ${other.get.serviceName}".nel)(_.isEmpty)
-        .andThen(_ => ApiContextValidator.validateForNewAPI(requestedDefn.context, otherContextsWithSameTopLevel)),
+        .andThen(_ => ApiContextValidator.validateForNewAPI(skipContextValidation)(requestedDefn.context, otherContextsWithSameTopLevel)),
       byServiceBaseUrl.validNel[String].ensureOr(other => s"Field 'serviceBaseUrl' must be unique but is used by ${other.get.serviceName}".nel)(_.isEmpty),
       byName.validNel[String].ensureOr(other => s"Field 'name' must be unique but is used by ${other.get.serviceName}".nel)(_.isEmpty)
     )

@@ -28,27 +28,27 @@ object ApiVersionValidator extends Validator[ApiVersion] {
       validateVersionNumber(version.versionNbr),
       validateStatusAndEndpointsEnabled(version.endpointsEnabled, version.status),
       validateAllEndpoints(version.endpoints),
-      validateUniqueEndpointPaths(version.endpoints)
+      validateUniqueEndpointPaths(version.endpoints.map(_.uriPattern))
     )
       .mapN { case _ => version }
       .leftMap(_.map(s => s"Version ${version.versionNbr} - $s"))
   }
 
-  protected def validateVersionNumber(versionNbr: ApiVersionNbr): HMRCValidatedNel[ApiVersionNbr] = {
+  def validateVersionNumber(versionNbr: ApiVersionNbr): HMRCValidatedNel[ApiVersionNbr] = {
     versionNbr.valid.ensure("Field 'versions.version' is required")(_.value.nonBlank).toValidatedNel
   }
 
-  protected def validateStatusAndEndpointsEnabled(endpointsEnabled: Boolean, status: ApiStatus): HMRCValidatedNel[ApiStatus] = {
+  def validateStatusAndEndpointsEnabled(endpointsEnabled: Boolean, status: ApiStatus): HMRCValidatedNel[ApiStatus] = {
     status.valid.ensure("Field 'versions.endpointsEnabled' must be false for ALPHA status")(_ => !(endpointsEnabled && status == ApiStatus.ALPHA)).toValidatedNel
   }
 
-  protected def validateAllEndpoints(endpoints: List[Endpoint]): HMRCValidatedNel[List[Endpoint]] = {
+  def validateAllEndpoints(endpoints: List[Endpoint]): HMRCValidatedNel[List[Endpoint]] = {
     endpoints.valid
       .ensure("Field 'versions.endpoints' must not be empty")(_.nonEmpty)
       .foldMap(es => es.map(e => ApiEndpointValidator.validate(e).map(_ :: Nil)).combineAll)
   }
 
-  protected def validateUniqueEndpointPaths(endpoints: List[Endpoint]): HMRCValidatedNel[List[Endpoint]] = {
+  def validateUniqueEndpointPaths(uriPatterns: List[String]): HMRCValidatedNel[List[String]] = {
     def segments(path: String): List[String]                          = path.split("/").filter(_.nonEmpty).toList
     def isVariable(segment: String): Boolean                          = segment.startsWith("{") && segment.endsWith("}")
     def bothSegmentsAreVariables(seg1: String, seg2: String): Boolean = isVariable(seg1) && isVariable(seg2)
@@ -69,14 +69,14 @@ object ApiVersionValidator extends Validator[ApiVersion] {
       s"The variables $var1 and $var2 cannot appear in the same segment in the endpoints $uriPattern1 and $uriPattern2"
     }
 
-    val invalidUriPairs: List[(String, String)] = endpoints
-      .map(_.uriPattern)
+    val invalidUriPairs: List[(String, String)] =
+      uriPatterns
       .combinations(2)
       .collect { case List(uriPattern1, uriPattern2) => (uriPattern1, uriPattern2) }
       .filter(isUriPairAmbiguous)
       .toList
 
-    endpoints.valid
+    uriPatterns.valid
       .ensure(s"Ambiguous path segment variables: ${invalidUriPairs.map(errorMessage)}")(_ => invalidUriPairs.isEmpty)
       .toValidatedNel
   }

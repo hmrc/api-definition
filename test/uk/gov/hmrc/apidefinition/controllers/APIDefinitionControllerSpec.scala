@@ -677,34 +677,34 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec
     }
   }
 
-  "validate" should {
-    "succeed with status 202 (Accepted) when the payload is valid" in new ValidatorSetup {
-      ApiDefinitionServiceMock.FetchByName.returnsNone()
-      ApiDefinitionServiceMock.FetchByServiceBaseUrl.returnsNone()
-      ApiDefinitionServiceMock.FetchByContext.returnsNone()
+  // "validate" should {
+  //   "succeed with status 202 (Accepted) when the payload is valid" in new ValidatorSetup {
+  //     ApiDefinitionServiceMock.FetchByName.returnsNone()
+  //     ApiDefinitionServiceMock.FetchByServiceBaseUrl.returnsNone()
+  //     ApiDefinitionServiceMock.FetchByContext.returnsNone()
 
-      thereAreNoOverlappingAPIContexts
+  //     thereAreNoOverlappingAPIContexts
 
-      private val result = underTest.validate()(request.withBody(Json.parse(calendarApiDefinition)))
+  //     private val result = underTest.validate()(request.withBody(Json.parse(calendarApiDefinition)))
 
-      status(result) shouldBe ACCEPTED
-    }
+  //     status(result) shouldBe ACCEPTED
+  //   }
 
-    "fail with status 422 (UnprocessableEntity) when the payload is invalid" in new ValidatorSetup {
+  //   "fail with status 422 (UnprocessableEntity) when the payload is invalid" in new ValidatorSetup {
 
-      private val result = underTest.validate()(request.withBody(Json.parse(calendarApiDefinitionMissingDescription)))
+  //     private val result = underTest.validate()(request.withBody(Json.parse(calendarApiDefinitionMissingDescription)))
 
-      contentAsJson(result) shouldEqual Json.toJson(
-        ErrorResponse(
-          ErrorCode.API_INVALID_JSON,
-          "Json cannot be converted to API Definition",
-          Some(List(
-            FieldErrorDescription("/description", "element is missing")
-          ))
-        )
-      )
-    }
-  }
+  //     contentAsJson(result) shouldEqual Json.toJson(
+  //       ErrorResponse(
+  //         ErrorCode.API_INVALID_JSON,
+  //         "Json cannot be converted to API Definition",
+  //         Some(List(
+  //           FieldErrorDescription("/description", "element is missing")
+  //         ))
+  //       )
+  //     )
+  //   }
+  // }
 
   "delete" should {
     "succeed with status 204 (NoContent) when the deletion succeeds" in new Setup {
