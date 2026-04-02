@@ -43,9 +43,9 @@ object ApiVersionValidator extends Validator[ApiVersion] {
   }
 
   def validateAllEndpoints(endpoints: List[Endpoint]): HMRCValidatedNel[List[Endpoint]] = {
-    endpoints.valid
-      .ensure("Field 'versions.endpoints' must not be empty")(_.nonEmpty)
-      .foldMap(es => es.map(e => ApiEndpointValidator.validate(e).map(_ :: Nil)).combineAll)
+    endpoints.validNel
+      .ensure("Field 'versions.endpoints' must not be empty".nel)(_.nonEmpty)
+      .andThen(_.traverse(ApiEndpointValidator.validate))
   }
 
   def validateUniqueEndpointPaths(uriPatterns: List[String]): HMRCValidatedNel[List[String]] = {
@@ -71,10 +71,10 @@ object ApiVersionValidator extends Validator[ApiVersion] {
 
     val invalidUriPairs: List[(String, String)] =
       uriPatterns
-      .combinations(2)
-      .collect { case List(uriPattern1, uriPattern2) => (uriPattern1, uriPattern2) }
-      .filter(isUriPairAmbiguous)
-      .toList
+        .combinations(2)
+        .collect { case List(uriPattern1, uriPattern2) => (uriPattern1, uriPattern2) }
+        .filter(isUriPairAmbiguous)
+        .toList
 
     uriPatterns.valid
       .ensure(s"Ambiguous path segment variables: ${invalidUriPairs.map(errorMessage)}")(_ => invalidUriPairs.isEmpty)

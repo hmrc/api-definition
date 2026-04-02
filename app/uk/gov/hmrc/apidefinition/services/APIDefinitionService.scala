@@ -65,12 +65,8 @@ class APIDefinitionService @Inject() (
 
     (if (validated.isValid) {
        for {
-         existingApiDefn <- apiDefinitionRepository.fetchByServiceName(requestedDefn.serviceName)
-         skipContextValidation          = config.skipContextValidationAllowlist.contains(requestedDefn.serviceName)
-         // skipContextValidationAllowlist = ["vat-registered-companies-api", "tax-free-childcare-parent", "agent-authorisation-api", "national-insurance-des-stub"]
-         // exception staging has:
-         //     skipContextValidationAllowlist.0: "ciao-multisegment-api"
-         //     skipContextValidationAllowlist.1: "api-stop-autodeploy-test"
+         existingApiDefn      <- apiDefinitionRepository.fetchByServiceName(requestedDefn.serviceName)
+         skipContextValidation = config.skipContextValidationAllowlist.contains(requestedDefn.serviceName)
 
          byContext        <- apiDefinitionRepository.fetchByContext(requestedDefn.context)
          byServiceBaseUrl <- apiDefinitionRepository.fetchByServiceBaseUrl(requestedDefn.serviceBaseUrl)
@@ -86,8 +82,6 @@ class APIDefinitionService @Inject() (
      })
       .map(_.leftMap(_.map(s => s"${requestedDefn.serviceName} - $s}")))
   }
-
-  ////////////////////////////////////////////
 
   def createOrUpdate(newApiDefn: StoredApiDefinition)(implicit hc: HeaderCarrier): Future[Unit] = {
 

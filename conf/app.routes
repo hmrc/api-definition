@@ -6,7 +6,7 @@ GET         /api-definition/:serviceName/:version/documentation/*resource       
 
 GET         /api-definition/:serviceName/events                                  uk.gov.hmrc.apidefinition.controllers.APIDefinitionController.fetchEvents(serviceName: ServiceName, includeNoChange: Boolean ?= true)
 
-#POST        /api-definition                                                      uk.gov.hmrc.apidefinition.controllers.APIDefinitionController.createOrUpdate()
+POST        /api-definition                                                      uk.gov.hmrc.apidefinition.controllers.APIDefinitionController.createOrUpdate()
 POST        /api-definition/validate                                             uk.gov.hmrc.apidefinition.controllers.APIDefinitionController.validate
 
 POST        /api-definition/republish-all                                        uk.gov.hmrc.apidefinition.controllers.APIDefinitionController.publishAllToAws()

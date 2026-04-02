@@ -17,21 +17,19 @@
 package uk.gov.hmrc.apidefinition.validators
 
 import org.scalactic.source.Position
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiStatus
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.Endpoint
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.AuthType
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ResourceThrottlingTier
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.HttpMethod
+import org.scalatest.prop.TableDrivenPropertyChecks
 
-class ApiVersionValidatorSpec extends AbstractValidatorSpec {
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+
+class ApiVersionValidatorSpec extends AbstractValidatorSpec with TableDrivenPropertyChecks {
   "ApiVersionValidator" when {
 
     "validateVersionNumber" should {
       def validates(versionNbr: ApiVersionNbr)(implicit pos: Position): Unit = super.validates(ApiVersionValidator.validateVersionNumber(versionNbr), clue = Some(versionNbr.value))
 
       def failsToValidateVersionNbr(versionNbr: ApiVersionNbr)(implicit pos: Position): Unit =
-        failsToValidate(ApiVersionValidator.validateVersionNumber(versionNbr)).head shouldBe "Field 'versions.version' is required"
+        failsToValidate(ApiVersionValidator.validateVersionNumber(versionNbr))("Field 'versions.version' is required")
 
       "detect an empty version nbr" in {
         failsToValidateVersionNbr(ApiVersionNbr(""))
@@ -44,18 +42,22 @@ class ApiVersionValidatorSpec extends AbstractValidatorSpec {
       "succeed with a valid version nbr" in {
         validates(ApiVersionNbr("1.0"))
       }
-
     }
 
     "validateStatusAndEndpointsEnabled" should {
-      def validates(endpointsEnabled: Boolean, status: ApiStatus)(implicit pos: Position): Unit = super.validates(ApiVersionValidator.validateStatusAndEndpointsEnabled(endpointsEnabled, status), clue = Some(s"""Should be invalid for a status of $status to be ${if(endpointsEnabled) "enabled" else "disabled"}"""))
+      def validates(endpointsEnabled: Boolean, status: ApiStatus)(implicit pos: Position): Unit            = super.validates(
+        ApiVersionValidator.validateStatusAndEndpointsEnabled(endpointsEnabled, status),
+        clue = Some(s"""Should be invalid for a status of $status to be ${if (endpointsEnabled) "enabled" else "disabled"}""")
+      )
       def failsToValidateCombo(endpointsEnabled: Boolean, status: ApiStatus)(implicit pos: Position): Unit =
-        failsToValidate(ApiVersionValidator.validateStatusAndEndpointsEnabled(endpointsEnabled, status)).head shouldBe "Field 'versions.endpointsEnabled' must be false for ALPHA status"
+        failsToValidate(
+          ApiVersionValidator.validateStatusAndEndpointsEnabled(endpointsEnabled, status)
+        )("Field 'versions.endpointsEnabled' must be false for ALPHA status")
 
       "succeed for alpha when disabled" in {
         validates(false, ApiStatus.ALPHA)
       }
-      
+
       "fail for alpha when enabled" in {
         failsToValidateCombo(true, ApiStatus.ALPHA)
       }
@@ -63,18 +65,17 @@ class ApiVersionValidatorSpec extends AbstractValidatorSpec {
       "succeed for others when enabled" in {
         for {
           status <- List(ApiStatus.BETA, ApiStatus.STABLE, ApiStatus.DEPRECATED, ApiStatus.RETIRED)
-          bool <- List(true, false)
-          _ = validates(bool, status)
+          bool   <- List(true, false)
+          _       = validates(bool, status)
         } yield ()
       }
-      
     }
 
     "validateAllEndpoints" should {
-      def validate(endpoints: List[Endpoint])(implicit pos: Position): Unit = super.validates(ApiVersionValidator.validateAllEndpoints(endpoints))
-      def failsToValidate(endpoints: List[Endpoint])(implicit pos: Position): Unit = super.failsToValidate(ApiVersionValidator.validateAllEndpoints(endpoints))
+      def validate(endpoints: List[Endpoint])(implicit pos: Position): Unit        = super.validates(ApiVersionValidator.validateAllEndpoints(endpoints))
+      def failsToValidate(endpoints: List[Endpoint])(implicit pos: Position): Unit = super.failsToValidate(ApiVersionValidator.validateAllEndpoints(endpoints))()
 
-      val goodEndpoint1 = 
+      val goodEndpoint1 =
         Endpoint(
           uriPattern = "/.goodpattern/{paramA}/abc",
           endpointName = "fred",
@@ -88,13 +89,17 @@ class ApiVersionValidatorSpec extends AbstractValidatorSpec {
         uriPattern = "/abc/def",
         endpointName = "bob"
       )
-      
+
       val badEndpoint = goodEndpoint1.copy(
         uriPattern = "/bad.pattern/{paramA}/abc"
       )
-        
+
       "succeed" in {
         validate(List(goodEndpoint1, goodEndpoint2))
+      }
+
+      "fail for missing endpoints" in {
+        failsToValidate(List.empty)
       }
 
       "fail for endpoint with duff uri pattern" in {
@@ -103,81 +108,90 @@ class ApiVersionValidatorSpec extends AbstractValidatorSpec {
     }
 
     "validateUniqueEndpointPaths" should {
-      def validate(uris: String*)(implicit pos: Position): Unit = super.validates(ApiVersionValidator.validateUniqueEndpointPaths(uris.toList))
-      def failsToValidate(uris: String*)(implicit pos: Position): Unit = super.failsToValidate(ApiVersionValidator.validateUniqueEndpointPaths(uris.toList))
+      def validate(uris: String*)(implicit pos: Position): Unit        = super.validates(ApiVersionValidator.validateUniqueEndpointPaths(uris.toList))
+      def failsToValidate(uris: String*)(implicit pos: Position): Unit = super.failsToValidate(ApiVersionValidator.validateUniqueEndpointPaths(uris.toList))()
 
-      
-      "succeed for a single endpoint" in {
-        validate("/a/good/uri")
+      "succeed when there is only one URI pattern" in {
+        validate("/{alpha}")
       }
 
-      "succeed for a two endpoint" in {
-        validate("/a/good/uri", "/b/good/uri")
-      }
-
-      "fail for overlaps" in {
-        failsToValidate("/a/good/uri", "/a/good/{bad}")
-
-
-
-
-
-      }
-    }
-
-    /*
-        "detect ambiguity of different variables in the same path segment" in new Setup {
-      val values = Table(
-        ("UriPattern1", "UriPattern2", "Error message"),
-        (
-          "/{alpha}",
-          "/{beta}",
-          "Ambiguous path segment variables for API 'Calendar API' version '1.0': List(The variables {alpha} and {beta} cannot appear in the same segment in the endpoints /{alpha} and /{beta})"
-        ),
-        (
-          "/hello/{alpha}",
-          "/hello/{beta}",
-          "Ambiguous path segment variables for API 'Calendar API' version '1.0': List(The variables {alpha} and {beta} cannot appear in the same segment in the endpoints /hello/{alpha} and /hello/{beta})"
-        )
-      )
-
-      forAll(values) { case (uriPattern1, uriPattern2, errorMessage) =>
-        val apiDefinition: StoredApiDefinition = calendarApi.copy(versions =
-          List(calendarApi.versions.head.copy(
-            endpoints = List(
-              Endpoint(uriPattern1, "Endpoint1", HttpMethod.GET, AuthType.NONE),
-              Endpoint(uriPattern2, "Endpoint2", HttpMethod.GET, AuthType.NONE)
-            )
-          ))
+      "succeed when different variables in the same path segment are not ambiguous" in {
+        val values = Table(
+          ("UriPattern1", "UriPattern2"),
+          ("/{alpha}/", "/world"),                           // Only one URI has a variable in root segment
+          ("/hello/{alpha}/", "/hello/world"),               // Only one URI has a variable in segment 2
+          ("/hello/{alpha}/{beta}", "/hello/world/{gamma}"), // OK up to segment 2, so variables in segment 3 don't matter
+          ("/hello/world/{alpha}/", "/hello/World/{beta}")   // Different cases for 'world', so variables in segment 3 don't matter
         )
 
-        assertValidationFailure(apiDefinition, List(errorMessage))
+        forAll(values) { case (uriPattern1, uriPattern2) => validate(uriPattern1, uriPattern2) }
       }
-    }
 
-    "not detect ambiguity of different variables in the same path segment" in new Setup {
-      val values = Table(
-        ("UriPattern1", "UriPattern2"),
-        ("/{alpha}/", "/world"),                           // Only one URI has a variable in root segment
-        ("/hello/{alpha}/", "/hello/world"),               // Only one URI has a variable in segment 2
-        ("/hello/{alpha}/{beta}", "/hello/world/{gamma}"), // OK up to segment 2, so variables in segment 3 don't matter
-        ("/hello/world/{alpha}/", "/hello/World/{beta}")   // Different cases for 'world', so variables in segment 3 don't matter
-      )
+      "succeed when there are three non-ambiguous URI patterns" in {
+        validate("/{alpha}", "/world", "/hello/{alpha}")
+      }
 
-      forAll(values) { case (uriPattern1, uriPattern2) =>
-        val apiDefinition: StoredApiDefinition = calendarApi.copy(versions =
-          List(calendarApi.versions.head.copy(
-            endpoints = List(
-              Endpoint(uriPattern1, "Endpoint1", HttpMethod.GET, AuthType.NONE),
-              Endpoint(uriPattern2, "Endpoint2", HttpMethod.GET, AuthType.NONE)
-            )
-          ))
+      "fail when different variables in the same path segment are ambiguous" in {
+        val values = Table(
+          ("UriPattern1", "UriPattern2"),
+          ("/{alpha}", "/{beta}"),            // Different variables cannot appear in the first segment
+          ("/hello/{alpha}", "/hello/{beta}") // Different variables cannot appear in the second segment
         )
 
-        assertValidationSuccess(apiDefinition)
+        forAll(values) { case (uriPattern1, uriPattern2) => failsToValidate(uriPattern1, uriPattern2) }
+      }
+
+      "fail when there are three URI patterns with two of them ambiguous" in {
+        failsToValidate("/{alpha}", "/world", "/{beta}")
       }
     }
   }
-    */
+
+  "validate" should {
+    def validates(apiVersion: ApiVersion)(implicit pos: Position): Unit               = super.validates(ApiVersionValidator.validate(apiVersion))
+    def failsToValidateEndpoint(apiVersion: ApiVersion)(implicit pos: Position): Unit =
+      failsToValidate(ApiVersionValidator.validate(apiVersion), numberOfErrors = 4)()
+
+    "collect all errors when failing" in {
+      failsToValidateEndpoint(
+        ApiVersion(
+          versionNbr = ApiVersionNbr(""),
+          status = ApiStatus.ALPHA,
+          access = ApiAccess.PUBLIC,
+          endpoints = List(
+            Endpoint(
+              uriPattern = "/bad.pattern/{paramA}/abc",
+              endpointName = "",
+              method = HttpMethod.GET,
+              authType = AuthType.APPLICATION
+            )
+          ),
+          endpointsEnabled = true,
+          awsRequestId = None,
+          versionSource = ApiVersionSource.UNKNOWN
+        )
+      )
+    }
+
+    "succeed with a good version" in {
+      validates(
+        ApiVersion(
+          versionNbr = ApiVersionNbr("1.0"),
+          status = ApiStatus.ALPHA,
+          access = ApiAccess.PUBLIC,
+          endpoints = List(
+            Endpoint(
+              uriPattern = "/.goodpattern/{paramA}/abc",
+              endpointName = "goodname",
+              method = HttpMethod.GET,
+              authType = AuthType.APPLICATION
+            )
+          ),
+          endpointsEnabled = false,
+          awsRequestId = None,
+          versionSource = ApiVersionSource.UNKNOWN
+        )
+      )
+    }
   }
 }

@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.apidefinition.validators
 
-import cats.data.NonEmptyList
 import cats.data.Validated.Invalid
 import org.scalactic.source.Position
 
@@ -34,12 +33,22 @@ class AbstractValidatorSpec extends AsyncHmrcSpec {
     clue.fold(testIt())(clue => withClue(clue) { testIt() })
   }
 
-  def failsToValidate[T](test: => HMRCValidatedNel[T], numberOfErrors: Int = 1, clue: Option[String] = None)(implicit pos: Position): NonEmptyList[String] = {
+  def failsToValidate[T](
+      test: => HMRCValidatedNel[T],
+      numberOfErrors: Int = 1,
+      clue: Option[String] = None
+    )(
+      expectedErrors: String*
+    )(implicit pos: Position
+    ): Unit = {
     def testIt() =
       test match {
         case Invalid(errs) =>
           errs.size shouldBe numberOfErrors
-          errs
+          expectedErrors.size match {
+            case 0 => errs
+            case _ => errs.toList should contain theSameElementsAs expectedErrors
+          }
         case _             => fail()
       }
     clue.fold(testIt())(clue => withClue(clue) { testIt() })

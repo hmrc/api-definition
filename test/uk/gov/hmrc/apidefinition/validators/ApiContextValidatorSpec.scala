@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.apidefinition.validators
 
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiContext
+
 // import scala.concurrent.ExecutionContext.Implicits.global
 // import scala.concurrent.Future.successful
 
@@ -31,6 +33,53 @@ package uk.gov.hmrc.apidefinition.validators
 
 class ApiContextValidatorSpec extends AbstractValidatorSpec {
 
+  "ApiContextValidator" when {
+    "validateTopLevelContext when skipping validation" should {
+      "fail if context is empty" in {
+        failsToValidate(ApiContextValidator.validateTopLevelContext(true)(ApiContext("")))("Field 'context' should not be empty")
+      }
+
+      "succeed if context has a valid top-level context" in {
+        validates(ApiContextValidator.validateTopLevelContext(true)(ApiContext("test/my-context")))
+      }
+
+      "succeed if context does not have a valid top-level context" in {
+        validates(ApiContextValidator.validateTopLevelContext(true)(ApiContext("anything")))
+      }
+    }
+
+    "validateTopLevelContext when not skipping validation" should {
+      "fail if context is empty" in {
+        failsToValidate(ApiContextValidator.validateTopLevelContext(false)(ApiContext("")))("Field 'context' should not be empty")
+      }
+
+      "succeed if context has a valid top-level context" in {
+        validates(ApiContextValidator.validateTopLevelContext(false)(ApiContext("test/my-context")))
+      }
+
+      "fail if context does not have a valid top-level context" in {
+        failsToValidate(ApiContextValidator.validateTopLevelContext(false)(ApiContext("anything")))() // TODO "Field 'context' must start with one of 'accounts', 'agents', 'customs', 'individuals', 'misc', 'mobile', 'obligations', 'organisations', 'payments', 'test'")
+      }
+    }
+
+    "validateContext" should {}
+
+    "validateContextHasAtLeastTwoSegments" should {}
+
+    "validateContextDoesNotOverlapExistingAPI" should {}
+
+    //////
+
+    "skip context validation for APIs in the skip context validation allowlist" in {}
+
+    "pass validation for new version of existing API with legacy context" in {}
+
+    "fail if new version of existing API has different context" in {}
+
+    "pass validation for new API with legitimate context" in {}
+
+    "pass validation for existing API with legitimate context" in {}
+  }
 }
 
 // class ApiContextValidatorSpec extends AsyncHmrcSpec {
