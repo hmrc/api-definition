@@ -48,7 +48,7 @@ object ApiDefinitionValidator extends Validator[StoredApiDefinition] {
     )(c => validateExistingAPI(skipContextValidation)(requestedDefn, c))
   }
 
-  protected def validateOtherFields(requestedDefn: StoredApiDefinition): HMRCValidatedNel[StoredApiDefinition] = {
+  def validateOtherFields(requestedDefn: StoredApiDefinition): HMRCValidatedNel[StoredApiDefinition] = {
     (
       requestedDefn.description.validNel[String].ensure("Field 'description' should not be empty".nel)(_.nonBlank),
       requestedDefn.categories.validNel[String].ensure("Field 'categories' should not be empty".nel)(_.nonEmpty),
@@ -66,7 +66,7 @@ object ApiDefinitionValidator extends Validator[StoredApiDefinition] {
       .combineAll
   }
 
-  protected val uniqueVersionsPredicate = (versionNbrs: List[ApiVersionNbr]) => {
+  private val uniqueVersionsPredicate = (versionNbrs: List[ApiVersionNbr]) => {
     !(
       versionNbrs.groupBy(identity)
         .view.mapValues(_.size)
@@ -82,7 +82,6 @@ object ApiDefinitionValidator extends Validator[StoredApiDefinition] {
 
   protected def validateExistingAPI(skipContextValidation: Boolean)(requestedDefn: StoredApiDefinition, existingApiDefn: StoredApiDefinition): HMRCValidatedNel[StoredApiDefinition] = {
     (
-      // Where has the exclusion code gone ?
       requestedDefn.context.validNel[String].ensure(s"Field 'context' cannot change from the previously published ${existingApiDefn.context}".nel)(_ != existingApiDefn.context)
         .andThen(ApiContextValidator.validateForExistingAPI(skipContextValidation)(_)),
       requestedDefn.serviceBaseUrl.validNel[String].ensure(s"Field 'serviceBaseUrl' cannot change from the previously published ${existingApiDefn.serviceBaseUrl}".nel)(

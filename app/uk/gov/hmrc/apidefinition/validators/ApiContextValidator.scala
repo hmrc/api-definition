@@ -34,11 +34,8 @@ object ApiContextValidator extends Validator[ApiContext] {
   private val contextRegex: Regex = """^[a-z]+[a-z\/\-]{4,}$""".r
 
   def validateForExistingAPI(skipContextValidation: Boolean)(apiContext: ApiContext): HMRCValidatedNel[ApiContext] = {
-    (
-      validateTopLevelContext(skipContextValidation)(apiContext),
-      validateContext(skipContextValidation)(apiContext)
-    )
-      .mapN { case _ => apiContext }
+    validateContext(skipContextValidation)(apiContext)
+      .map { case _ => apiContext }
       .leftMap(_.map(s => s"$apiContext - $s"))
   }
 
@@ -53,9 +50,8 @@ object ApiContextValidator extends Validator[ApiContext] {
   }
 
   def validateTopLevelContext(skipContextValidation: Boolean)(apiContext: ApiContext): HMRCValidatedNel[ApiContext] = {
-    (apiContext.valid
-      .ensure("Field 'context' should not be empty")(_.value.nonBlank)
-      .andThen(_.valid.ensure(s"Field 'context' must start with one of $formattedTopLevelContexts")(c => skipContextValidation || ValidTopLevelContexts.contains(c.topLevelContext()))))
+    apiContext.valid
+      .ensure(s"Field 'context' must start with one of $formattedTopLevelContexts")(c => skipContextValidation || ValidTopLevelContexts.contains(c.topLevelContext()))
       .toValidatedNel
   }
 

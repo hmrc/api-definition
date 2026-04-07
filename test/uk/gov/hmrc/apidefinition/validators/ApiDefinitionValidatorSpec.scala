@@ -16,26 +16,89 @@
 
 package uk.gov.hmrc.apidefinition.validators
 
-// import scala.concurrent.ExecutionContext.Implicits.global
-// import scala.concurrent.Future.successful
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{Endpoint, StoredApiDefinition, _}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApiContext, ApiVersionNbr}
 
-// import org.apache.pekko.stream.Materializer
-// import org.scalatest.prop.TableDrivenPropertyChecks
-// import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+class ApiDefinitionValidatorSpec extends AbstractValidatorSpec {
 
-// import play.api.mvc.Results.{NoContent, UnprocessableEntity}
-// import play.api.test.Helpers._
-// import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{Endpoint, QueryParameter, StoredApiDefinition, _}
-// import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApiContext, ApiVersionNbr}
+  private val calendarApi = StoredApiDefinition(
+    ServiceName("calendar"),
+    "http://calendar",
+    "Calendar API",
+    "My Calendar API",
+    ApiContext("individuals/calendar"),
+    List(ApiVersion(
+      ApiVersionNbr("1.0"),
+      ApiStatus.BETA,
+      ApiAccess.PUBLIC,
+      List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
+      endpointsEnabled = true
+    )),
+    false,
+    categories = List(ApiCategory.OTHER)
+  )
 
-// import uk.gov.hmrc.apidefinition.config.AppConfig
-// import uk.gov.hmrc.apidefinition.models.ErrorCode.INVALID_REQUEST_PAYLOAD
-// import uk.gov.hmrc.apidefinition.models._
-// import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
-// import uk.gov.hmrc.apidefinition.services.APIDefinitionService
-// import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
+  "ApiDefinitionValidator" when {
+    "validateOtherFields" should {
+      "succeed with a good API definition" in {
+        validates(ApiDefinitionValidator.validateOtherFields(calendarApi))
+      }
 
-// class ApiDefinitionValidatorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite with TableDrivenPropertyChecks {
+      "fail when the description is empty" in {
+        failsToValidate(ApiDefinitionValidator.validateOtherFields(calendarApi.copy(description = "")))("Field 'description' should not be empty")
+      }
+      "fail when the categories are empty" in {
+        failsToValidate(ApiDefinitionValidator.validateOtherFields(calendarApi.copy(categories = List.empty)))("Field 'categories' should not be empty")
+      }
+      "fail when the versions are empty" in {
+        failsToValidate(ApiDefinitionValidator.validateOtherFields(calendarApi.copy(versions = List.empty)))("Field 'versions' should not be empty")
+      }
+      "fail when the versions are not unique" in {
+        failsToValidate(ApiDefinitionValidator.validateOtherFields(calendarApi.copy(versions = calendarApi.versions.appended(calendarApi.versions.head))))(
+          "Field 'version' must be unique"
+        )
+      }
+    }
+
+    "validateAllVersions" should {
+      // Is this not covered in ApiVersionValidatorSpec?
+    }
+
+    "determineMissingVersions" should { /// ??????
+    }
+
+    "validateExistingAPI" when {
+      "skipping validation" should {
+        // Is this not covered in ApiContextValidatorSpec?
+      }
+      "not skipping validation" should {
+        // Is this not covered in ApiContextValidatorSpec?
+      }
+    }
+
+    "validateNewAPI" when {
+      "skipping validation" should {}
+      "not skipping validation" should {}
+    }
+
+    "validateKeysArePresent" should {
+      "fail when the serviceName is empty" in {
+        failsToValidate(ApiDefinitionValidator.validateKeysArePresent(calendarApi.copy(serviceName = ServiceName(""))))("Field 'serviceName' should not be empty")
+      }
+      "fail when the context is empty" in {
+        failsToValidate(ApiDefinitionValidator.validateKeysArePresent(calendarApi.copy(context = ApiContext(""))))("Field 'context' should not be empty")
+      }
+      "fail when the serviceBaseUrl is empty" in {
+        failsToValidate(ApiDefinitionValidator.validateKeysArePresent(calendarApi.copy(serviceBaseUrl = "")))("Field 'serviceBaseUrl' should not be empty")
+      }
+      "fail when the name is empty" in {
+        failsToValidate(ApiDefinitionValidator.validateKeysArePresent(calendarApi.copy(name = "")))("Field 'name' should not be empty")
+      }
+    }
+
+    "validate" should {}
+  }
+}
 
 //   implicit val mat: Materializer = app.materializer
 
@@ -477,5 +540,3 @@ package uk.gov.hmrc.apidefinition.validators
 //       }
 //     }
 //   }
-
-// }
