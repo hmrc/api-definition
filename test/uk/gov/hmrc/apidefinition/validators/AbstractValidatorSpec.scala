@@ -24,10 +24,10 @@ import uk.gov.hmrc.apidefinition.validators.BaseValidator.HMRCValidatedNel
 
 class AbstractValidatorSpec extends AsyncHmrcSpec {
 
-  def validates[T](test: => HMRCValidatedNel[T], numberOfErrors: Int = 1, clue: Option[String] = None)(implicit pos: Position): Unit = {
+  def validates[T](test: => HMRCValidatedNel[T], clue: Option[String] = None)(implicit pos: Position): Unit = {
     def testIt() =
       test match {
-        case Invalid(errs) => fail()
+        case Invalid(errs) => fail(s"Unexpected errors occurred: ${errs.toList}")
         case _             =>
       }
     clue.fold(testIt())(clue => withClue(clue) { testIt() })
@@ -49,8 +49,18 @@ class AbstractValidatorSpec extends AsyncHmrcSpec {
             case 0 => errs
             case _ =>
               // This is like "errs should contain theSameElementsAs expectedErrors" using "startsWith" instead of "=="
-              errs.forall(err => expectedErrors.exists(expectedError => err.startsWith(expectedError))) shouldBe true
-              expectedErrors.forall(expectedError => errs.exists(err => err.startsWith(expectedError))) shouldBe true
+              errs.toList.foreach(err => {
+                expectedErrors.exists(expectedError => err.startsWith(expectedError)) match {
+                  case false => fail(s"An unexpected error occurred: $err")
+                  case _     => succeed
+                }
+              })
+              expectedErrors.foreach(expectedError => {
+                errs.exists(err => err.startsWith(expectedError)) match {
+                  case false => fail(s"An expected error is missing: $expectedError")
+                  case _     => succeed
+                }
+              })
           }
         case _             => fail()
       }

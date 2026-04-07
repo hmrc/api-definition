@@ -39,7 +39,7 @@ object ApiContextValidator extends Validator[ApiContext] {
       validateContext(skipContextValidation)(apiContext)
     )
       .mapN { case _ => apiContext }
-      .leftMap(_.map(s => s"${apiContext.value} - $s"))
+      .leftMap(_.map(s => s"$apiContext - $s"))
   }
 
   def validateForNewAPI(skipContextValidation: Boolean)(apiContext: ApiContext, otherContextsInTopLevel: List[ApiContext]): HMRCValidatedNel[ApiContext] = {
@@ -49,7 +49,7 @@ object ApiContextValidator extends Validator[ApiContext] {
       validateContextDoesNotOverlapExistingAPI(apiContext, otherContextsInTopLevel)
     )
       .mapN { case _ => apiContext }
-      .leftMap(_.map(s => s"${apiContext.value} - $s"))
+      .leftMap(_.map(s => s"$apiContext - $s"))
   }
 
   def validateTopLevelContext(skipContextValidation: Boolean)(apiContext: ApiContext): HMRCValidatedNel[ApiContext] = {

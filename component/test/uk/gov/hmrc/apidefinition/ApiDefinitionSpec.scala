@@ -16,49 +16,57 @@
 
 package uk.gov.hmrc.apidefinition
 
-// class ApiDefinitionSpec extends ComponentSpec {
+import java.util.UUID
 
-//   val validDefinition1AsString =
-//     """{"serviceName":"calendar","serviceBaseUrl":"http://calendar","name":"Calendar API","description":"My Calendar API","context":"individuals/calendar","versions":[{"version":"1.0","status":"STABLE","access":{"type":"PUBLIC"},"endpoints":[{"uriPattern":"/today","endpointName":"Get Today's Date","method":"GET","authType":"NONE","throttlingTier":"UNLIMITED","queryParameters":[]}],"endpointsEnabled":true,"versionSource":"UNKNOWN"}],"requiresTrust":true,"isTestSupport":false,"categories":["OTHER"]}"""
+import com.github.tomakehurst.wiremock.client.WireMock
+import com.github.tomakehurst.wiremock.client.WireMock._
 
-//   val validDefinition2AsString =
-//     """{"serviceName":"calendar","serviceBaseUrl":"http://calendar","name":"Calendar API","description":"My Calendar API","context":"individuals/calendar","versions":[{"version":"1.0","status":"PUBLISHED","endpoints":[{"uriPattern":"/today","endpointName":"Get Today's Date","method":"GET","authType":"NONE","throttlingTier":"UNLIMITED"}]}],"isTestSupport":false,"categories":["OTHER"]}"""
+import play.api.http.HeaderNames.CONTENT_TYPE
+import play.api.http.Status.{NO_CONTENT, OK}
 
-//   val validHeaders = List(CONTENT_TYPE -> "application/json")
+class ApiDefinitionSpec extends ComponentSpec {
 
-//   def stubAWSGateway(): Unit = {
-//     val expectedRequestId = UUID.randomUUID.toString
+  val validDefinition1AsString =
+    """{"serviceName":"calendar","serviceBaseUrl":"http://calendar","name":"Calendar API","description":"My Calendar API","context":"individuals/calendar","versions":[{"version":"1.0","status":"STABLE","access":{"type":"PUBLIC"},"endpoints":[{"uriPattern":"/today","endpointName":"Get Today's Date","method":"GET","authType":"NONE","throttlingTier":"UNLIMITED","queryParameters":[]}],"endpointsEnabled":true,"versionSource":"UNKNOWN"}],"requiresTrust":true,"isTestSupport":false,"categories":["OTHER"]}"""
 
-//     stubFor(
-//       WireMock.put(urlPathEqualTo("/v1/api/individuals--calendar--1.0"))
-//         .willReturn(
-//           aResponse()
-//             .withStatus(OK)
-//             .withHeader(CONTENT_TYPE, "application/json")
-//             .withBody(s"""{ "RequestId" : "$expectedRequestId" }""")
-//         )
-//     )
-//   }
+  val validDefinition2AsString =
+    """{"serviceName":"calendar","serviceBaseUrl":"http://calendar","name":"Calendar API","description":"My Calendar API","context":"individuals/calendar","versions":[{"version":"1.0","status":"PUBLISHED","endpoints":[{"uriPattern":"/today","endpointName":"Get Today's Date","method":"GET","authType":"NONE","throttlingTier":"UNLIMITED"}]}],"isTestSupport":false,"categories":["OTHER"]}"""
 
-//   "GET /api-definition" should {
-//     "respond OK" in {
-//       val response = get("/api-definition")
-//       response.status shouldBe OK
-//     }
-//   }
+  val validHeaders = List(CONTENT_TYPE -> "application/json")
 
-//   "POST /api-definition" should {
-//     "return No Content for valid Json payload" in {
-//       stubAWSGateway()
-//       val response = post("/api-definition", validDefinition1AsString, validHeaders)
-//       response.status shouldBe NO_CONTENT
-//     }
+  def stubAWSGateway(): Unit = {
+    val expectedRequestId = UUID.randomUUID.toString
 
-//     "return No Content and be tolerant for json missing values" in {
-//       stubAWSGateway()
-//       val response = post("/api-definition", validDefinition2AsString, validHeaders)
+    stubFor(
+      WireMock.put(urlPathEqualTo("/v1/api/individuals--calendar--1.0"))
+        .willReturn(
+          aResponse()
+            .withStatus(OK)
+            .withHeader(CONTENT_TYPE, "application/json")
+            .withBody(s"""{ "RequestId" : "$expectedRequestId" }""")
+        )
+    )
+  }
 
-//       response.status shouldBe NO_CONTENT
-//     }
-//   }
-// }
+  "GET /api-definition" should {
+    "respond OK" in {
+      val response = get("/api-definition")
+      response.status shouldBe OK
+    }
+  }
+
+  "POST /api-definition" should {
+    "return No Content for valid Json payload" in {
+      stubAWSGateway()
+      val response = post("/api-definition", validDefinition1AsString, validHeaders)
+      response.status shouldBe NO_CONTENT
+    }
+
+    "return No Content and be tolerant for json missing values" in {
+      stubAWSGateway()
+      val response = post("/api-definition", validDefinition2AsString, validHeaders)
+
+      response.status shouldBe NO_CONTENT
+    }
+  }
+}
