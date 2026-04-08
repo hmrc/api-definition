@@ -23,21 +23,21 @@ class ApiContextValidatorSpec extends AbstractValidatorSpec {
   "ApiContextValidator" when {
     "validateTopLevelContext" when {
       "skipping validation" should {
-        "succeed if context has a valid top-level context" in {
+        "succeed if context has a valid top level" in {
           validates(ApiContextValidator.validateTopLevelContext(true)(ApiContext("test/my-context")))
         }
 
-        "succeed if context does not have a valid top-level context" in {
+        "succeed if context does not have a valid top level" in {
           validates(ApiContextValidator.validateTopLevelContext(true)(ApiContext("hello")))
         }
       }
 
       "not skipping validation" should {
-        "succeed if context has a valid top-level context" in {
+        "succeed if context has a valid top level" in {
           validates(ApiContextValidator.validateTopLevelContext(false)(ApiContext("test/my-context")))
         }
 
-        "fail if context does not have a valid top-level context" in {
+        "fail if context does not have a valid top level" in {
           failsToValidate(ApiContextValidator.validateTopLevelContext(false)(ApiContext("hello")))("Field 'context' must start with one of")
         }
       }
@@ -107,7 +107,7 @@ class ApiContextValidatorSpec extends AbstractValidatorSpec {
         failsToValidate(ApiContextValidator.validateContextDoesNotOverlapExistingAPI(threePartContext, List(twoPartContext)))(s"Field 'context' overlaps with '$twoPartContext'")
       }
 
-      "succeed when new API context does not overlap multiple other APIs in same top level context" in {
+      "succeed when new API context does not overlap multiple other APIs with same top level" in {
         val nonOverlappingContexts = List(ApiContext("individuals/bar"), ApiContext("individuals/baz"))
         validates(ApiContextValidator.validateContextDoesNotOverlapExistingAPI(twoPartContext, nonOverlappingContexts))
       }
@@ -120,11 +120,11 @@ class ApiContextValidatorSpec extends AbstractValidatorSpec {
 
     "validateForExistingAPI" when {
       "skipping validation" should {
-        "succeed even with a wrong top level and not matching the regular expression" in {
+        "succeed even with an invalid top level and not matching the regular expression" in {
           validates(ApiContextValidator.validateForExistingAPI(true)(ApiContext("hello/my_world")))
         }
 
-        "succeed with a good context, disregarding top level segment check" in {
+        "succeed with a good context, disregarding the top level check" in {
           validates(ApiContextValidator.validateForExistingAPI(true)(ApiContext("hello/my-world")))
         }
       }

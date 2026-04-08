@@ -92,7 +92,7 @@ class APIDefinitionController @Inject() (
   }
 
   def validate: Action[JsValue] = Action.async(parse.json) { implicit request =>
-    val asFailureResult: (NonEmptyList[String]) => Result = (in) => BadRequest(JsArray(in.toList.map(JsString)))
+    val asFailureResult: (NonEmptyList[String]) => Result = (in) => UnprocessableEntity(error(ErrorCode.INVALID_REQUEST_PAYLOAD, in.toList.mkString(",")))
 
     val asSuccessResult: (StoredApiDefinition) => Result = (api) => Accepted(Json.toJson(api))
 

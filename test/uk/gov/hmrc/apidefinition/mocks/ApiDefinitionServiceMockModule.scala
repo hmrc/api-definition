@@ -18,6 +18,8 @@ package uk.gov.hmrc.apidefinition.mocks
 
 import scala.concurrent.Future.{failed, successful}
 
+import cats.data.NonEmptyList
+import cats.implicits._
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiDefinition, ServiceName, StoredApiDefinition}
@@ -30,6 +32,17 @@ trait ApiDefinitionServiceMockModule extends MockitoSugar with ArgumentMatchersS
 
   protected trait BaseApiDefinitionServiceMock {
     def aMock: APIDefinitionService
+
+    object Validate {
+
+      def success(storedApiDefinition: StoredApiDefinition) = {
+        when(aMock.validate(*)).thenReturn(successful(storedApiDefinition.validNel))
+      }
+
+      def failsWith(errorMessages: NonEmptyList[String]) = {
+        when(aMock.validate(*)).thenReturn(successful(errorMessages.invalid[StoredApiDefinition]))
+      }
+    }
 
     object CreateOrUpdate {
 

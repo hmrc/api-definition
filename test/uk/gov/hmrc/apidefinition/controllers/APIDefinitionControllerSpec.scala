@@ -20,6 +20,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Future.successful
 
+import cats.data.NonEmptyList
+
 import play.api.libs.json.Json
 import play.api.mvc.{AnyContentAsEmpty, Request, Result}
 import play.api.test.Helpers._
@@ -53,12 +55,6 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec
     when(mockAppContext.fetchByContextTtlInSeconds).thenReturn("1234")
     when(mockAppContext.skipContextValidationAllowlist).thenReturn(List())
 
-    // val apiContextValidator: ApiContextValidator         = new ApiContextValidator(ApiDefinitionServiceMock.aMock, mockApiDefinitionRepository, mockAppContext)
-    // val queryParameterValidator: QueryParameterValidator = new QueryParameterValidator()
-    // val apiEndpointValidator: ApiEndpointValidator       = new ApiEndpointValidator(queryParameterValidator)
-    // val apiVersionValidator: ApiVersionValidator         = new ApiVersionValidator(apiEndpointValidator)
-    // val apiDefinitionValidator: ApiDefinitionValidator   = new ApiDefinitionValidator(ApiDefinitionServiceMock.aMock, apiContextValidator, apiVersionValidator)
-
     val underTest = new APIDefinitionController(ApiDefinitionServiceMock.aMock, mockAppContext, stubControllerComponents())
   }
 
@@ -91,6 +87,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec
     }
   }
 
+  // TODO: Remove??
   trait ValidatorSetup extends Setup {
 
     ApiDefinitionServiceMock.FetchByContext.returnsNone()
@@ -661,34 +658,47 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec
     }
   }
 
-  // "validate" should {
-  //   "succeed with status 202 (Accepted) when the payload is valid" in new ValidatorSetup {
-  //     ApiDefinitionServiceMock.FetchByName.returnsNone()
-  //     ApiDefinitionServiceMock.FetchByServiceBaseUrl.returnsNone()
-  //     ApiDefinitionServiceMock.FetchByContext.returnsNone()
+  "validate" should {
+    "succeed with status 202 (Accepted) when the payload is valid" in new Setup {
+      val apiDefinition = Json.parse(calendarApiDefinition)
+      ApiDefinitionServiceMock.Validate.success(apiDefinition.as[StoredApiDefinition])
 
-  //     thereAreNoOverlappingAPIContexts
+      private val result = underTest.validate()(request.withBody(apiDefinition))
 
-  //     private val result = underTest.validate()(request.withBody(Json.parse(calendarApiDefinition)))
+      status(result) shouldBe ACCEPTED
+    }
 
-  //     status(result) shouldBe ACCEPTED
-  //   }
+    "fail with status 422 (UnprocessableEntity) when the payload is invalid" in new Setup {
 
-  //   "fail with status 422 (UnprocessableEntity) when the payload is invalid" in new ValidatorSetup {
+      private val result = underTest.validate()(request.withBody(Json.parse(calendarApiDefinitionMissingDescription)))
 
-  //     private val result = underTest.validate()(request.withBody(Json.parse(calendarApiDefinitionMissingDescription)))
+      status(result) shouldBe UNPROCESSABLE_ENTITY
+      contentAsJson(result) shouldEqual Json.toJson(
+        ErrorResponse(
+          ErrorCode.API_INVALID_JSON,
+          "Json cannot be converted to API Definition",
+          Some(List(
+            FieldErrorDescription("/description", "element is missing")
+          ))
+        )
+      )
+    }
 
-  //     contentAsJson(result) shouldEqual Json.toJson(
-  //       ErrorResponse(
-  //         ErrorCode.API_INVALID_JSON,
-  //         "Json cannot be converted to API Definition",
-  //         Some(List(
-  //           FieldErrorDescription("/description", "element is missing")
-  //         ))
-  //       )
-  //     )
-  //   }
-  // }
+    "fail with status 422 (UnprocessableEntity) when there are validation failures" in new Setup {
+      val errorMessages = NonEmptyList.of("error message 1", "error message 2")
+      ApiDefinitionServiceMock.Validate.failsWith(errorMessages)
+
+      private val result = underTest.validate()(request.withBody(Json.parse(calendarApiDefinition)))
+
+      status(result) shouldBe UNPROCESSABLE_ENTITY
+      contentAsJson(result) shouldEqual Json.toJson(
+        ErrorResponse(
+          ErrorCode.INVALID_REQUEST_PAYLOAD,
+          errorMessages.toList.mkString(",")
+        )
+      )
+    }
+  }
 
   "delete" should {
     "succeed with status 204 (NoContent) when the deletion succeeds" in new Setup {

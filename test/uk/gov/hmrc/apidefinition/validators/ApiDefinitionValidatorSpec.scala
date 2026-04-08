@@ -99,85 +99,6 @@ class ApiDefinitionValidatorSpec extends AbstractValidatorSpec {
       }
     }
 
-    "validateExistingAPI" when {
-      "skipping validation" should {
-        "succeed even when context is invalid when it hasn't changed" in {
-          val badContext = ApiContext("my_calendar")
-          validates(ApiDefinitionValidator.validateExistingAPI(true)(
-            calendarApi.copy(context = badContext),
-            calendarApi.copy(context = badContext)
-          ))
-        }
-
-        "collect all errors" in {
-          val previousContext        = ApiContext("individuals/almanac")
-          val previousServiceBaseUrl = "http://almanac"
-          val previousName           = "Almanac API"
-          val deletedVersionNbr      = ApiVersionNbr("2.0")
-
-          failsToValidate(
-            ApiDefinitionValidator.validateExistingAPI(true)(
-              calendarApi,
-              calendarApi.copy(
-                context = previousContext,
-                serviceBaseUrl = previousServiceBaseUrl,
-                name = previousName,
-                versions = calendarApi.versions.appended(calendarApi.versions.head.copy(versionNbr = deletedVersionNbr))
-              )
-            ),
-            numberOfErrors = 4
-          )(
-            s"Field 'context' cannot change from the previously published $previousContext",
-            s"Field 'serviceBaseUrl' cannot change from the previously published $previousServiceBaseUrl",
-            s"Field 'name' cannot change from the previously published $previousName",
-            s"Versions may not be removed once published $deletedVersionNbr"
-          )
-        }
-      }
-
-      "not skipping validation" should {
-        "fail when context is invalid even though it hasn't changed" in {
-          val badContext = ApiContext("my_calendar")
-          failsToValidate(ApiDefinitionValidator.validateExistingAPI(false)(
-            calendarApi.copy(context = badContext),
-            calendarApi.copy(context = badContext)
-          ))(
-            s"$badContext - Field 'context' should match regular expression"
-          )
-        }
-
-        "collect all errors" in {
-          val previousContext        = ApiContext("individuals/almanac")
-          val previousServiceBaseUrl = "http://almanac"
-          val previousName           = "Almanac API"
-          val deletedVersionNbr      = ApiVersionNbr("2.0")
-
-          failsToValidate(
-            ApiDefinitionValidator.validateExistingAPI(false)(
-              calendarApi,
-              calendarApi.copy(
-                context = previousContext,
-                serviceBaseUrl = previousServiceBaseUrl,
-                name = previousName,
-                versions = calendarApi.versions.appended(calendarApi.versions.head.copy(versionNbr = deletedVersionNbr))
-              )
-            ),
-            numberOfErrors = 4
-          )(
-            s"Field 'context' cannot change from the previously published $previousContext",
-            s"Field 'serviceBaseUrl' cannot change from the previously published $previousServiceBaseUrl",
-            s"Field 'name' cannot change from the previously published $previousName",
-            s"Versions may not be removed once published $deletedVersionNbr"
-          )
-        }
-      }
-    }
-
-    "validateNewAPI" when {
-      "skipping validation" should {}
-      "not skipping validation" should {}
-    }
-
     "validateKeysArePresent" should {
       "fail when the serviceName is empty" in {
         failsToValidate(ApiDefinitionValidator.validateKeysArePresent(calendarApi.copy(serviceName = ServiceName(""))))("Field 'serviceName' should not be empty")
@@ -193,7 +114,125 @@ class ApiDefinitionValidatorSpec extends AbstractValidatorSpec {
       }
     }
 
-    "validate" should {}
+    "validate" when {
+      "the API already exists" should {
+        "collect multiple errors about changes" in {
+          val previousContext        = ApiContext("individuals/almanac")
+          val previousServiceBaseUrl = "http://almanac"
+          val previousName           = "Almanac API"
+          val deletedVersionNbr      = ApiVersionNbr("2.0")
+
+          List(false, true).foreach { skipContextValidation =>
+            failsToValidate(
+              ApiDefinitionValidator.validate(
+                requestedDefn = calendarApi,
+                oExistingApiDefn = Some(calendarApi.copy(
+                  context = previousContext,
+                  serviceBaseUrl = previousServiceBaseUrl,
+                  name = previousName,
+                  versions = calendarApi.versions.appended(calendarApi.versions.head.copy(versionNbr = deletedVersionNbr))
+                )),
+                byContext = None,
+                byServiceBaseUrl = None,
+                byName = None,
+                otherContextsWithSameTopLevel = List.empty,
+                skipContextValidation
+              ),
+              numberOfErrors = 4
+            )(
+              s"Field 'context' cannot change from the previously published $previousContext",
+              s"Field 'serviceBaseUrl' cannot change from the previously published $previousServiceBaseUrl",
+              s"Field 'name' cannot change from the previously published $previousName",
+              s"Versions may not be removed once published $deletedVersionNbr"
+            )
+          }
+        }
+
+        "fail when not skipping context validation if the context does not match the regular expression" in {
+          val badContext = ApiContext("my_calendar")
+          failsToValidate(ApiDefinitionValidator.validate(
+            requestedDefn = calendarApi.copy(context = badContext),
+            oExistingApiDefn = Some(calendarApi.copy(context = badContext)),
+            byContext = None,
+            byServiceBaseUrl = None,
+            byName = None,
+            otherContextsWithSameTopLevel = List.empty,
+            skipContextValidation = false
+          ))(
+            s"$badContext - Field 'context' should match regular expression"
+          )
+        }
+
+        "succeed when skipping context validation even if the context does not match the regular expression" in {
+          val badContext = ApiContext("my_calendar")
+          validates(ApiDefinitionValidator.validate(
+            requestedDefn = calendarApi.copy(context = badContext),
+            oExistingApiDefn = Some(calendarApi.copy(context = badContext)),
+            byContext = None,
+            byServiceBaseUrl = None,
+            byName = None,
+            otherContextsWithSameTopLevel = List.empty,
+            skipContextValidation = true
+          ))
+        }
+      }
+
+      "the API is new" should {
+        "collect multiple errors about uniqueness" in {
+          List(false, true).foreach { skipContextValidation =>
+            failsToValidate(
+              ApiDefinitionValidator.validate(
+                requestedDefn = calendarApi,
+                oExistingApiDefn = None,
+                byContext = Some(calendarApi),
+                byServiceBaseUrl = Some(calendarApi),
+                byName = Some(calendarApi),
+                otherContextsWithSameTopLevel = List.empty,
+                skipContextValidation
+              ),
+              numberOfErrors = 3
+            )(
+              s"Field 'context' must be unique but is used by ${calendarApi.serviceName}",
+              s"Field 'serviceBaseUrl' must be unique but is used by ${calendarApi.serviceName}",
+              s"Field 'name' must be unique but is used by ${calendarApi.serviceName}"
+            )
+          }
+        }
+
+        "fail when not skipping context validation if the context overlaps with another" in {
+          val overlappingContext = ApiContext("individuals/calendar/events")
+          List(false, true).foreach { skipContextValidation =>
+            failsToValidate(
+              ApiDefinitionValidator.validate(
+                requestedDefn = calendarApi,
+                oExistingApiDefn = None,
+                byContext = None,
+                byServiceBaseUrl = None,
+                byName = None,
+                otherContextsWithSameTopLevel = List(overlappingContext),
+                skipContextValidation
+              )
+            )(
+              s"${calendarApi.context} - Field 'context' overlaps with '$overlappingContext'"
+            )
+          }
+        }
+
+        "succeed when skipping context validation even if context does not have a valid top level" in {
+          validates(
+            ApiDefinitionValidator.validate(
+              requestedDefn = calendarApi.copy(context = ApiContext("my/calendar")),
+              oExistingApiDefn = None,
+              byContext = None,
+              byServiceBaseUrl = None,
+              byName = None,
+              otherContextsWithSameTopLevel = List.empty,
+              skipContextValidation = true
+            )
+          )
+        }
+      }
+    }
   }
 }
 

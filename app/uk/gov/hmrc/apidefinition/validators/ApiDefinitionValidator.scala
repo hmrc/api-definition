@@ -55,7 +55,7 @@ object ApiDefinitionValidator extends Validator[StoredApiDefinition] {
       requestedDefn.versions.validNel[String]
         .ensure("Field 'versions' should not be empty".nel)(_.nonEmpty)
         .ensure("Field 'version' must be unique".nel)(vs => uniqueVersionsPredicate(vs.map(_.versionNbr)))
-        .andThen { validateAllVersions(_) }
+        .andThen(validateAllVersions)
     )
       .mapN { case _ => requestedDefn }
   }
@@ -74,7 +74,7 @@ object ApiDefinitionValidator extends Validator[StoredApiDefinition] {
       .combineAll
   }
 
-  def validateExistingAPI(skipContextValidation: Boolean)(requestedDefn: StoredApiDefinition, existingApiDefn: StoredApiDefinition): HMRCValidatedNel[StoredApiDefinition] = {
+  private def validateExistingAPI(skipContextValidation: Boolean)(requestedDefn: StoredApiDefinition, existingApiDefn: StoredApiDefinition): HMRCValidatedNel[StoredApiDefinition] = {
     (
       requestedDefn.context.validNel[String].ensure(s"Field 'context' cannot change from the previously published ${existingApiDefn.context}".nel)(_ == existingApiDefn.context)
         .andThen(ApiContextValidator.validateForExistingAPI(skipContextValidation)(_)),
@@ -95,7 +95,7 @@ object ApiDefinitionValidator extends Validator[StoredApiDefinition] {
     existingVersions diff newVersions
   }
 
-  def validateNewAPI(
+  private def validateNewAPI(
       skipContextValidation: Boolean
     )(
       requestedDefn: StoredApiDefinition,
