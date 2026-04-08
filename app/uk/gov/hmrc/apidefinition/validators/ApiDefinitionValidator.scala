@@ -60,12 +60,6 @@ object ApiDefinitionValidator extends Validator[StoredApiDefinition] {
       .mapN { case _ => requestedDefn }
   }
 
-  protected def validateAllVersions(versions: List[ApiVersion]): HMRCValidatedNel[List[ApiVersion]] = {
-    versions
-      .map(v => ApiVersionValidator.validate(v).map(_ :: Nil))
-      .combineAll
-  }
-
   private val uniqueVersionsPredicate = (versionNbrs: List[ApiVersionNbr]) => {
     !(
       versionNbrs.groupBy(identity)
@@ -74,20 +68,20 @@ object ApiDefinitionValidator extends Validator[StoredApiDefinition] {
     )
   }
 
-  protected def determineMissingVersions(apiDefinition: StoredApiDefinition, existingApiDefn: StoredApiDefinition): List[ApiVersionNbr] = {
-    val existingVersions = existingApiDefn.versions.map(_.versionNbr)
-    val newVersions      = apiDefinition.versions.map(_.versionNbr)
-    existingVersions diff newVersions
+  private def validateAllVersions(versions: List[ApiVersion]): HMRCValidatedNel[List[ApiVersion]] = {
+    versions
+      .map(v => ApiVersionValidator.validate(v).map(_ :: Nil))
+      .combineAll
   }
 
-  protected def validateExistingAPI(skipContextValidation: Boolean)(requestedDefn: StoredApiDefinition, existingApiDefn: StoredApiDefinition): HMRCValidatedNel[StoredApiDefinition] = {
+  def validateExistingAPI(skipContextValidation: Boolean)(requestedDefn: StoredApiDefinition, existingApiDefn: StoredApiDefinition): HMRCValidatedNel[StoredApiDefinition] = {
     (
-      requestedDefn.context.validNel[String].ensure(s"Field 'context' cannot change from the previously published ${existingApiDefn.context}".nel)(_ != existingApiDefn.context)
+      requestedDefn.context.validNel[String].ensure(s"Field 'context' cannot change from the previously published ${existingApiDefn.context}".nel)(_ == existingApiDefn.context)
         .andThen(ApiContextValidator.validateForExistingAPI(skipContextValidation)(_)),
       requestedDefn.serviceBaseUrl.validNel[String].ensure(s"Field 'serviceBaseUrl' cannot change from the previously published ${existingApiDefn.serviceBaseUrl}".nel)(
-        _ != existingApiDefn.serviceBaseUrl
+        _ == existingApiDefn.serviceBaseUrl
       ),
-      requestedDefn.name.validNel[String].ensure(s"Field 'name' cannot change from the previously published ${existingApiDefn.name}".nel)(_ != existingApiDefn.name),
+      requestedDefn.name.validNel[String].ensure(s"Field 'name' cannot change from the previously published ${existingApiDefn.name}".nel)(_ == existingApiDefn.name),
       determineMissingVersions(requestedDefn, existingApiDefn).validNel[String].ensureOr(missingVersions =>
         s"Versions may not be removed once published ${missingVersions.mkString}".nel
       )(_.isEmpty)
@@ -95,7 +89,13 @@ object ApiDefinitionValidator extends Validator[StoredApiDefinition] {
       .mapN { case _ => requestedDefn }
   }
 
-  protected def validateNewAPI(
+  private def determineMissingVersions(apiDefinition: StoredApiDefinition, existingApiDefn: StoredApiDefinition): List[ApiVersionNbr] = {
+    val existingVersions = existingApiDefn.versions.map(_.versionNbr)
+    val newVersions      = apiDefinition.versions.map(_.versionNbr)
+    existingVersions diff newVersions
+  }
+
+  def validateNewAPI(
       skipContextValidation: Boolean
     )(
       requestedDefn: StoredApiDefinition,

@@ -21,19 +21,21 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApiContext, ApiVers
 
 class ApiDefinitionValidatorSpec extends AbstractValidatorSpec {
 
+  private val calendarVersion = ApiVersion(
+    ApiVersionNbr("1.0"),
+    ApiStatus.BETA,
+    ApiAccess.PUBLIC,
+    List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
+    endpointsEnabled = true
+  )
+
   private val calendarApi = StoredApiDefinition(
     ServiceName("calendar"),
     "http://calendar",
     "Calendar API",
     "My Calendar API",
     ApiContext("individuals/calendar"),
-    List(ApiVersion(
-      ApiVersionNbr("1.0"),
-      ApiStatus.BETA,
-      ApiAccess.PUBLIC,
-      List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
-      endpointsEnabled = true
-    )),
+    List(calendarVersion),
     false,
     categories = List(ApiCategory.OTHER)
   )
@@ -47,32 +49,127 @@ class ApiDefinitionValidatorSpec extends AbstractValidatorSpec {
       "fail when the description is empty" in {
         failsToValidate(ApiDefinitionValidator.validateOtherFields(calendarApi.copy(description = "")))("Field 'description' should not be empty")
       }
+
       "fail when the categories are empty" in {
         failsToValidate(ApiDefinitionValidator.validateOtherFields(calendarApi.copy(categories = List.empty)))("Field 'categories' should not be empty")
       }
+
       "fail when the versions are empty" in {
         failsToValidate(ApiDefinitionValidator.validateOtherFields(calendarApi.copy(versions = List.empty)))("Field 'versions' should not be empty")
       }
+
       "fail when the versions are not unique" in {
         failsToValidate(ApiDefinitionValidator.validateOtherFields(calendarApi.copy(versions = calendarApi.versions.appended(calendarApi.versions.head))))(
           "Field 'version' must be unique"
         )
       }
-    }
 
-    "validateAllVersions" should {
-      // Is this not covered in ApiVersionValidatorSpec?
-    }
+      "collect all empty field failures" in {
+        failsToValidate(
+          ApiDefinitionValidator.validateOtherFields(
+            calendarApi.copy(
+              description = "  ",
+              categories = List.empty,
+              versions = List.empty
+            )
+          ),
+          numberOfErrors = 3
+        )(
+          "Field 'description' should not be empty",
+          "Field 'categories' should not be empty",
+          "Field 'versions' should not be empty"
+        )
+      }
 
-    "determineMissingVersions" should { /// ??????
+      "collect all version failures" in {
+        failsToValidate(
+          ApiDefinitionValidator.validateOtherFields(
+            calendarApi.copy(versions =
+              List(
+                calendarVersion.copy(endpoints = List.empty),
+                calendarVersion.copy(versionNbr = ApiVersionNbr("2.0"), endpoints = List.empty)
+              )
+            )
+          ),
+          numberOfErrors = 2
+        )(
+          "Version 1.0 - Field 'versions.endpoints' must not be empty",
+          "Version 2.0 - Field 'versions.endpoints' must not be empty"
+        )
+      }
     }
 
     "validateExistingAPI" when {
       "skipping validation" should {
-        // Is this not covered in ApiContextValidatorSpec?
+        "succeed even when context is invalid when it hasn't changed" in {
+          val badContext = ApiContext("my_calendar")
+          validates(ApiDefinitionValidator.validateExistingAPI(true)(
+            calendarApi.copy(context = badContext),
+            calendarApi.copy(context = badContext)
+          ))
+        }
+
+        "collect all errors" in {
+          val previousContext        = ApiContext("individuals/almanac")
+          val previousServiceBaseUrl = "http://almanac"
+          val previousName           = "Almanac API"
+          val deletedVersionNbr      = ApiVersionNbr("2.0")
+
+          failsToValidate(
+            ApiDefinitionValidator.validateExistingAPI(true)(
+              calendarApi,
+              calendarApi.copy(
+                context = previousContext,
+                serviceBaseUrl = previousServiceBaseUrl,
+                name = previousName,
+                versions = calendarApi.versions.appended(calendarApi.versions.head.copy(versionNbr = deletedVersionNbr))
+              )
+            ),
+            numberOfErrors = 4
+          )(
+            s"Field 'context' cannot change from the previously published $previousContext",
+            s"Field 'serviceBaseUrl' cannot change from the previously published $previousServiceBaseUrl",
+            s"Field 'name' cannot change from the previously published $previousName",
+            s"Versions may not be removed once published $deletedVersionNbr"
+          )
+        }
       }
+
       "not skipping validation" should {
-        // Is this not covered in ApiContextValidatorSpec?
+        "fail when context is invalid even though it hasn't changed" in {
+          val badContext = ApiContext("my_calendar")
+          failsToValidate(ApiDefinitionValidator.validateExistingAPI(false)(
+            calendarApi.copy(context = badContext),
+            calendarApi.copy(context = badContext)
+          ))(
+            s"$badContext - Field 'context' should match regular expression"
+          )
+        }
+
+        "collect all errors" in {
+          val previousContext        = ApiContext("individuals/almanac")
+          val previousServiceBaseUrl = "http://almanac"
+          val previousName           = "Almanac API"
+          val deletedVersionNbr      = ApiVersionNbr("2.0")
+
+          failsToValidate(
+            ApiDefinitionValidator.validateExistingAPI(false)(
+              calendarApi,
+              calendarApi.copy(
+                context = previousContext,
+                serviceBaseUrl = previousServiceBaseUrl,
+                name = previousName,
+                versions = calendarApi.versions.appended(calendarApi.versions.head.copy(versionNbr = deletedVersionNbr))
+              )
+            ),
+            numberOfErrors = 4
+          )(
+            s"Field 'context' cannot change from the previously published $previousContext",
+            s"Field 'serviceBaseUrl' cannot change from the previously published $previousServiceBaseUrl",
+            s"Field 'name' cannot change from the previously published $previousName",
+            s"Versions may not be removed once published $deletedVersionNbr"
+          )
+        }
       }
     }
 

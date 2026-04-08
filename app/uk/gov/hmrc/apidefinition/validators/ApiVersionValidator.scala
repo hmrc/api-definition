@@ -77,7 +77,7 @@ object ApiVersionValidator extends Validator[ApiVersion] {
         .toList
 
     uriPatterns.valid
-      .ensure(s"Ambiguous path segment variables: ${invalidUriPairs.map(errorMessage)}")(_ => invalidUriPairs.isEmpty)
+      .ensure(s"Ambiguous path segment variables: ${invalidUriPairs.map(errorMessage).mkString(", ")}")(_ => invalidUriPairs.isEmpty)
       .toValidatedNel
   }
 }

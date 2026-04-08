@@ -51,13 +51,13 @@ class AbstractValidatorSpec extends AsyncHmrcSpec {
               // This is like "errs should contain theSameElementsAs expectedErrors" using "startsWith" instead of "=="
               errs.toList.foreach(err => {
                 expectedErrors.exists(expectedError => err.startsWith(expectedError)) match {
-                  case false => fail(s"An unexpected error occurred: $err")
+                  case false => fail(s"An unexpected error occurred: $err. Expected one of ${expectedErrors.toList}")
                   case _     => succeed
                 }
               })
               expectedErrors.foreach(expectedError => {
                 errs.exists(err => err.startsWith(expectedError)) match {
-                  case false => fail(s"An expected error is missing: $expectedError")
+                  case false => fail(s"An expected error is missing: $expectedError. Actual errors were ${errs.toList}")
                   case _     => succeed
                 }
               })

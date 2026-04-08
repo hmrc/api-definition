@@ -26,7 +26,8 @@ class ApiVersionValidatorSpec extends AbstractValidatorSpec with TableDrivenProp
   "ApiVersionValidator" when {
 
     "validateVersionNumber" should {
-      def validates(versionNbr: ApiVersionNbr)(implicit pos: Position): Unit = super.validates(ApiVersionValidator.validateVersionNumber(versionNbr), clue = Some(versionNbr.value))
+      def validates(versionNbr: ApiVersionNbr)(implicit pos: Position): Unit =
+        super.validates(ApiVersionValidator.validateVersionNumber(versionNbr), clue = Some(versionNbr.value))
 
       def failsToValidateVersionNbr(versionNbr: ApiVersionNbr)(implicit pos: Position): Unit =
         failsToValidate(ApiVersionValidator.validateVersionNumber(versionNbr))("Field 'versions.version' is required")
@@ -72,9 +73,6 @@ class ApiVersionValidatorSpec extends AbstractValidatorSpec with TableDrivenProp
     }
 
     "validateAllEndpoints" should {
-      def validate(endpoints: List[Endpoint])(implicit pos: Position): Unit        = super.validates(ApiVersionValidator.validateAllEndpoints(endpoints))
-      def failsToValidate(endpoints: List[Endpoint])(implicit pos: Position): Unit = super.failsToValidate(ApiVersionValidator.validateAllEndpoints(endpoints))()
-
       val goodEndpoint1 =
         Endpoint(
           uriPattern = "/.goodpattern/{paramA}/abc",
@@ -95,24 +93,24 @@ class ApiVersionValidatorSpec extends AbstractValidatorSpec with TableDrivenProp
       )
 
       "succeed" in {
-        validate(List(goodEndpoint1, goodEndpoint2))
+        validates(ApiVersionValidator.validateAllEndpoints(List(goodEndpoint1, goodEndpoint2)))
       }
 
       "fail for missing endpoints" in {
-        failsToValidate(List.empty)
+        failsToValidate(ApiVersionValidator.validateAllEndpoints(List.empty))("Field 'versions.endpoints' must not be empty")
       }
 
       "fail for endpoint with duff uri pattern" in {
-        failsToValidate(List(goodEndpoint1, goodEndpoint2, badEndpoint))
+        failsToValidate(ApiVersionValidator.validateAllEndpoints(List(goodEndpoint1, goodEndpoint2, badEndpoint)))(
+          s"${badEndpoint.endpointName} - Field 'endpoints.uriPattern' with value '${badEndpoint.uriPattern}' should match regular expression"
+        )
       }
     }
 
     "validateUniqueEndpointPaths" should {
-      def validate(uris: String*)(implicit pos: Position): Unit        = super.validates(ApiVersionValidator.validateUniqueEndpointPaths(uris.toList))
-      def failsToValidate(uris: String*)(implicit pos: Position): Unit = super.failsToValidate(ApiVersionValidator.validateUniqueEndpointPaths(uris.toList))()
-
+      def validates(uris: String*)(implicit pos: Position): Unit = super.validates(ApiVersionValidator.validateUniqueEndpointPaths(uris.toList))
       "succeed when there is only one URI pattern" in {
-        validate("/{alpha}")
+        validates("/{alpha}")
       }
 
       "succeed when different variables in the same path segment are not ambiguous" in {
@@ -124,11 +122,11 @@ class ApiVersionValidatorSpec extends AbstractValidatorSpec with TableDrivenProp
           ("/hello/world/{alpha}/", "/hello/World/{beta}")   // Different cases for 'world', so variables in segment 3 don't matter
         )
 
-        forAll(values) { case (uriPattern1, uriPattern2) => validate(uriPattern1, uriPattern2) }
+        forAll(values) { case (uriPattern1, uriPattern2) => validates(uriPattern1, uriPattern2) }
       }
 
       "succeed when there are three non-ambiguous URI patterns" in {
-        validate("/{alpha}", "/world", "/hello/{alpha}")
+        validates("/{alpha}", "/world", "/hello/{alpha}")
       }
 
       "fail when different variables in the same path segment are ambiguous" in {
@@ -138,43 +136,53 @@ class ApiVersionValidatorSpec extends AbstractValidatorSpec with TableDrivenProp
           ("/hello/{alpha}", "/hello/{beta}") // Different variables cannot appear in the second segment
         )
 
-        forAll(values) { case (uriPattern1, uriPattern2) => failsToValidate(uriPattern1, uriPattern2) }
+        forAll(values) {
+          case (uriPattern1, uriPattern2) => failsToValidate(ApiVersionValidator.validateUniqueEndpointPaths(List(uriPattern1, uriPattern2)))(
+              s"Ambiguous path segment variables: The variables {alpha} and {beta} cannot appear in the same segment in the endpoints $uriPattern1 and $uriPattern2"
+            )
+        }
       }
 
       "fail when there are three URI patterns with two of them ambiguous" in {
-        failsToValidate("/{alpha}", "/world", "/{beta}")
+        failsToValidate(ApiVersionValidator.validateUniqueEndpointPaths(List("/{alpha}", "/world", "/{beta}")))(
+          "Ambiguous path segment variables: The variables {alpha} and {beta} cannot appear in the same segment in the endpoints /{alpha} and /{beta}"
+        )
       }
     }
   }
 
   "validate" should {
-    def validates(apiVersion: ApiVersion)(implicit pos: Position): Unit               = super.validates(ApiVersionValidator.validate(apiVersion))
-    def failsToValidateEndpoint(apiVersion: ApiVersion)(implicit pos: Position): Unit =
-      failsToValidate(ApiVersionValidator.validate(apiVersion), numberOfErrors = 4)()
-
     "collect all errors when failing" in {
-      failsToValidateEndpoint(
-        ApiVersion(
-          versionNbr = ApiVersionNbr(""),
-          status = ApiStatus.ALPHA,
-          access = ApiAccess.PUBLIC,
-          endpoints = List(
-            Endpoint(
-              uriPattern = "/bad.pattern/{paramA}/abc",
-              endpointName = "",
-              method = HttpMethod.GET,
-              authType = AuthType.APPLICATION
-            )
-          ),
-          endpointsEnabled = true,
-          awsRequestId = None,
-          versionSource = ApiVersionSource.UNKNOWN
-        )
+      failsToValidate(
+        ApiVersionValidator.validate(
+          ApiVersion(
+            versionNbr = ApiVersionNbr(""),
+            status = ApiStatus.ALPHA,
+            access = ApiAccess.PUBLIC,
+            endpoints = List(
+              Endpoint(
+                uriPattern = "/bad.pattern/{paramA}/abc",
+                endpointName = "",
+                method = HttpMethod.GET,
+                authType = AuthType.APPLICATION
+              )
+            ),
+            endpointsEnabled = true,
+            awsRequestId = None,
+            versionSource = ApiVersionSource.UNKNOWN
+          )
+        ),
+        numberOfErrors = 4
+      )(
+        "Version  - Field 'versions.version' is required",
+        "Version  -  - Field 'endpoints.endpointName' is required",
+        "Version  -  - Field 'endpoints.uriPattern' with value '/bad.pattern/{paramA}/abc' should match regular expression",
+        "Version  - Field 'versions.endpointsEnabled' must be false for ALPHA status"
       )
     }
 
     "succeed with a good version" in {
-      validates(
+      validates(ApiVersionValidator.validate(
         ApiVersion(
           versionNbr = ApiVersionNbr("1.0"),
           status = ApiStatus.ALPHA,
@@ -191,7 +199,7 @@ class ApiVersionValidatorSpec extends AbstractValidatorSpec with TableDrivenProp
           awsRequestId = None,
           versionSource = ApiVersionSource.UNKNOWN
         )
-      )
+      ))
     }
   }
 }
