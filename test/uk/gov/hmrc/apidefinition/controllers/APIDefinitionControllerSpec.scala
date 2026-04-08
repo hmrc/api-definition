@@ -87,60 +87,59 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec
     }
   }
 
-  // TODO: Remove??
-  trait ValidatorSetup extends Setup {
-
-    ApiDefinitionServiceMock.FetchByContext.returnsNone()
-    ApiDefinitionServiceMock.FetchByName.returnsNone()
-    ApiDefinitionServiceMock.FetchByServiceUrL.returnsNone()
-
-    when(mockApiDefinitionRepository.fetchByServiceName(*[ServiceName])).thenReturn(successful(None))
-
-    def theServiceWillCreateOrUpdateTheAPIDefinition = {
+  "createOrUpdate" should {
+    "succeed with a 204 (NO CONTENT) when payload is valid and service responds successfully" in new Setup {
+      val apiDefinition =
+        StoredApiDefinition(
+          ServiceName("calendar"),
+          "http://calendar",
+          "Calendar API",
+          "My Calendar API",
+          ApiContext("individuals/calendar"),
+          versions =
+            List(
+              ApiVersion(
+                ApiVersionNbr("1.0"),
+                ApiStatus.STABLE,
+                ApiAccess.PUBLIC,
+                List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
+                true
+              )
+            ),
+          isTestSupport = false,
+          lastPublishedAt = None,
+          List(ApiCategory.OTHER)
+        )
+      ApiDefinitionServiceMock.Validate.success(apiDefinition)
       ApiDefinitionServiceMock.CreateOrUpdate.success()
-    }
 
-    def thereAreNoOverlappingAPIContexts =
-      when(mockApiDefinitionRepository.fetchAllByTopLevelContext(*[ApiContext])).thenReturn(successful(Seq.empty))
+      val result = underTest.createOrUpdate()(request.withBody(Json.parse(calendarApiDefinition)))
+
+      status(result) shouldBe NO_CONTENT
+      ApiDefinitionServiceMock.CreateOrUpdate.verifyCall(apiDefinition)
+   }
   }
+
+
+  // trait ValidatorSetup extends Setup {
+
+  //   ApiDefinitionServiceMock.FetchByContext.returnsNone()
+  //   ApiDefinitionServiceMock.FetchByName.returnsNone()
+  //   ApiDefinitionServiceMock.FetchByServiceUrL.returnsNone()
+
+  //   when(mockApiDefinitionRepository.fetchByServiceName(*[ServiceName])).thenReturn(successful(None))
+
+  //   def theServiceWillCreateOrUpdateTheAPIDefinition = {
+  //     ApiDefinitionServiceMock.CreateOrUpdate.success()
+  //   }
+
+  //   def thereAreNoOverlappingAPIContexts =
+  //     when(mockApiDefinitionRepository.fetchAllByTopLevelContext(*[ApiContext])).thenReturn(successful(Seq.empty))
+  // }
 
   // "createOrUpdate" should {
 
-  //   "succeed with a 204 (NO CONTENT) when payload is valid and service responds successfully" in new ValidatorSetup {
-
-  //     val apiDefinition =
-  //       StoredApiDefinition(
-  //         ServiceName("calendar"),
-  //         "http://calendar",
-  //         "Calendar API",
-  //         "My Calendar API",
-  //         ApiContext("individuals/calendar"),
-  //         versions =
-  //           List(
-  //             ApiVersion(
-  //               ApiVersionNbr("1.0"),
-  //               ApiStatus.STABLE,
-  //               ApiAccess.PUBLIC,
-  //               List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
-  //               true
-  //             )
-  //           ),
-  //         isTestSupport = false,
-  //         lastPublishedAt = None,
-  //         List(ApiCategory.OTHER)
-  //       )
-
-  //     thereAreNoOverlappingAPIContexts
-  //     theServiceWillCreateOrUpdateTheAPIDefinition
-
-  //     val result = underTest.createOrUpdate()(request.withBody(Json.parse(calendarApiDefinition)))
-
-  //     status(result) shouldBe NO_CONTENT
-  //     ApiDefinitionServiceMock.CreateOrUpdate.verifyCall(apiDefinition)
-
-  //   }
-
-  //   "fail with a 422 (invalid request) when the json payload is invalid for the request" in new ValidatorSetup {
+   //   "fail with a 422 (invalid request) when the json payload is invalid for the request" in new ValidatorSetup {
 
   //     val body = """{ "invalid": "json" }"""
 
