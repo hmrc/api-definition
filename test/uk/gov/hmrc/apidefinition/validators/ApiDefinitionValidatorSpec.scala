@@ -143,7 +143,7 @@ class ApiDefinitionValidatorSpec extends AbstractValidatorSpec {
               s"Field 'context' cannot change from the previously published $previousContext",
               s"Field 'serviceBaseUrl' cannot change from the previously published $previousServiceBaseUrl",
               s"Field 'name' cannot change from the previously published $previousName",
-              s"Versions may not be removed once published $deletedVersionNbr"
+              s"Versions ($deletedVersionNbr) may not be removed once published"
             )
           }
         }

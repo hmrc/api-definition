@@ -82,7 +82,7 @@ object ApiDefinitionValidator extends Validator[StoredApiDefinition] {
       ),
       requestedDefn.name.validNel.ensure(s"Field 'name' cannot change from the previously published ${existingApiDefn.name}".nel)(_ == existingApiDefn.name),
       determineMissingVersions(requestedDefn, existingApiDefn).validNel.ensureOr(missingVersions =>
-        s"Versions may not be removed once published ${missingVersions.mkString}".nel
+        s"Versions (${missingVersions.mkString(", ")}) may not be removed once published".nel
       )(_.isEmpty)
     )
       .mapN { case _ => requestedDefn }
