@@ -71,7 +71,7 @@ class ApiEndpointValidatorSpec extends AbstractValidatorSpec {
         )
 
         specialChars.foreach { char: Char =>
-          val endpointUri = s"/payments$char"
+          val endpointUri = s"/payments/${char}account"
           failsToValidateWithBadValue(endpointUri, clue = Some(s"Invalid char '$char' should not be allowed"))
         }
       }
@@ -109,8 +109,8 @@ class ApiEndpointValidatorSpec extends AbstractValidatorSpec {
       val validNames   = List("abc", "def")
       val invalidNames = List(" ", "", "abc!")
 
-      def failsToValidate(names: List[String], numberOfErrors: Int = 1)(implicit pos: Position): Unit =
-        super.failsToValidate(ApiEndpointValidator.validateQueryParameters(names.map(QueryParameter(_))), numberOfErrors)()
+      def failsToValidate(names: List[String], numberOfErrors: Int = 1, clue: Option[String] = None)(implicit pos: Position): Unit =
+        super.failsToValidate(ApiEndpointValidator.validateQueryParameters(names.map(QueryParameter(_))), numberOfErrors, clue = clue)()
 
       "succeed when all parameters are valid" in {
         validates(ApiEndpointValidator.validateQueryParameters(validNames.map(QueryParameter(_))), clue = Some(s"Valid names of ${validNames.mkString}"))
@@ -123,13 +123,22 @@ class ApiEndpointValidatorSpec extends AbstractValidatorSpec {
       "fail when many parameters are invalid" in {
         failsToValidate(invalidNames ++ validNames, 3)
       }
+
+      "fail when query parameter names contain invalid characters" in {
+        val specialChars = List(
+          ' ', '@', '%', '£', '*', '\\', '|', '$', '~', '^', ';', '=', '\'',
+          '<', '>', '"', '?', '!', ',', '.', ':', '&', '[', ']', '(', ')',
+          '/', '{', '}'
+        )
+        specialChars.map(char => failsToValidate(List(s"param$char"), clue = Some(s"Character [$char] is no longer invalid")))
+      }
     }
 
     "validatePathParameters" should {
       def validates(uriPattern: String)(implicit pos: Position): Unit                                              =
         super.validates(ApiEndpointValidator.validatePathParameters(uriPattern), clue = Some(s"Valid uri pattern of $uriPattern"))
       def failsToValidate(uriPattern: String, numberOfErrors: Int = 1, clue: String)(implicit pos: Position): Unit =
-        super.failsToValidate(ApiEndpointValidator.validatePathParameters(uriPattern), numberOfErrors, Some(clue))()
+        super.failsToValidate(ApiEndpointValidator.validatePathParameters(uriPattern), numberOfErrors, Some(clue))() // TODO Check message?
 
       "succeed for valid path params" in {
         validates("/abc/def")
@@ -138,7 +147,14 @@ class ApiEndpointValidatorSpec extends AbstractValidatorSpec {
       }
 
       "fails for invalid path params" in {
-        failsToValidate("/abc/{param1!}", clue = "No bangs should be allowed")
+        failsToValidate("/abc/{}", clue = "Missing path parameter name")
+        failsToValidate("/abc/}{", clue = "Path parameter name brackets inverted with missing name")
+        failsToValidate("/abc/}friend{", clue = "Path parameter name brackets inverted")
+        failsToValidate("/abc/{{friend}}", clue = "Path parameter name brackets doubled")
+        failsToValidate("/abc/my{brother}", clue = "Path parameter name not in a separate path segment")
+        failsToValidate("/abc/{0friend}", clue = "Path parameter name starting with a digit")
+        failsToValidate("/abc/{my/friend}", 2, clue = "Multiple path parameters defined incorrectly")
+        failsToValidate("/abc/{param1!}", clue = "No bangs should be allowed in path parameter name")
         failsToValidate("/abc/{param1!}/{param.two}", 2, clue = "Several problems with path parameters")
         failsToValidate("/abc/{param1!}/{param.two}/{goodParam}", 2, clue = "Several problems with path parameters even if one is good")
         failsToValidate("/abc/d}e{f", clue = "It's not a param but has brackets in")
@@ -208,7 +224,7 @@ class ApiEndpointValidatorSpec extends AbstractValidatorSpec {
         )
       }
 
-      "succeed with a good APP endpoint" in {
+      "succeed with a good APP endpoint without a scope" in {
         validates(
           Endpoint(
             uriPattern = "/.goodpattern/{paramA}/abc",
@@ -216,6 +232,24 @@ class ApiEndpointValidatorSpec extends AbstractValidatorSpec {
             method = HttpMethod.GET,
             authType = AuthType.APPLICATION,
             scope = None,
+            throttlingTier = ResourceThrottlingTier.UNLIMITED,
+            queryParameters = List(
+              "param1",
+              "param2",
+              "param3"
+            ).map(QueryParameter(_, false))
+          )
+        )
+      }
+
+      "succeed with a good APP endpoint with a scope" in {
+        validates(
+          Endpoint(
+            uriPattern = "/.goodpattern/{paramA}/abc",
+            endpointName = "fred",
+            method = HttpMethod.GET,
+            authType = AuthType.APPLICATION,
+            scope = Some("xyz"),
             throttlingTier = ResourceThrottlingTier.UNLIMITED,
             queryParameters = List(
               "param1",

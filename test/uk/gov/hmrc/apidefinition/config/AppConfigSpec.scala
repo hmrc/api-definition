@@ -19,7 +19,7 @@ package uk.gov.hmrc.apidefinition.config
 import org.scalatest.BeforeAndAfterEach
 import org.scalatestplus.play.guice.GuiceOneAppPerTest
 
-import play.api.{Configuration, Environment}
+import play.api.Configuration
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
@@ -31,7 +31,7 @@ class AppConfigSpec extends AsyncHmrcSpec
   trait Setup {
     val mockConfig         = mock[Configuration]
     val mockServicesConfig = mock[ServicesConfig]
-    val underTest          = new AppConfig(mockConfig, app.injector.instanceOf[Environment], mockServicesConfig)
+    val underTest          = new AppConfig(mockConfig, mockServicesConfig)
 
     def whenTestEnvironmentUndefined = when(mockConfig.getOptional[Boolean]("buildProductionUrlForPrototypedAPIs")).thenReturn(None)
     def whenTestEnvironmentEnabled   = when(mockConfig.getOptional[Boolean]("buildProductionUrlForPrototypedAPIs")).thenReturn(Some(true))

@@ -80,7 +80,6 @@ class APIDefinitionService @Inject() (
      } else {
        successful(validated)
      })
-      .map(_.leftMap(_.map(s => s"${requestedDefn.serviceName} - $s}")))
   }
 
   def createOrUpdate(newApiDefn: StoredApiDefinition)(implicit hc: HeaderCarrier): Future[Unit] = {

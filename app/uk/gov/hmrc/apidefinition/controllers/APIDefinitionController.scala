@@ -28,12 +28,12 @@ import play.api.libs.json._
 import play.api.mvc._
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{StoredApiDefinition, _}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiContext
-import uk.gov.hmrc.http.{BadRequestException, UnauthorizedException}
+import uk.gov.hmrc.http.UnauthorizedException
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.models.ErrorCode._
-import uk.gov.hmrc.apidefinition.models.{DisplayApiEvent, ErrorCode, TolerantJsonApiDefinition}
+import uk.gov.hmrc.apidefinition.models.{DisplayApiEvent, ErrorCode, TolerantJsonApiDefinition, ValidationErrors}
 import uk.gov.hmrc.apidefinition.services.APIDefinitionService
 import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
 
@@ -53,7 +53,7 @@ class APIDefinitionController @Inject() (
     implicit val useTolerantReaders = TolerantJsonApiDefinition.tolerantFormatApiDefinition
 
     handleRequest[StoredApiDefinition](request) { requestBody =>
-      val asFailureResult: (NonEmptyList[String]) => Result = (in) => BadRequest(JsArray(in.toList.map(JsString)))
+      val asFailureResult: (NonEmptyList[String]) => Result = (in) => UnprocessableEntity(Json.toJson(ValidationErrors(INVALID_REQUEST_PAYLOAD, in.toList)))
 
       val asValidRequest: (StoredApiDefinition) => Future[Result] = (api) => apiDefinitionService.createOrUpdate(api).map(_ => NoContent)
 
@@ -82,17 +82,13 @@ class APIDefinitionController @Inject() (
   }
 
   private def recovery: PartialFunction[Throwable, Result] = {
-    case e: BadRequestException =>
-      logger.error(s"An unexpected error occurred: ${e.getMessage}", e)
-      BadRequest(error(ErrorCode.INVALID_REQUEST_PAYLOAD, e.getMessage))
-
     case NonFatal(e) =>
       logger.error(s"An unexpected error occurred: ${e.getMessage}", e)
       InternalServerError(error(ErrorCode.INTERNAL_SERVER_ERROR, e.getMessage))
   }
 
   def validate: Action[JsValue] = Action.async(parse.json) { implicit request =>
-    val asFailureResult: (NonEmptyList[String]) => Result = (in) => UnprocessableEntity(error(ErrorCode.INVALID_REQUEST_PAYLOAD, in.toList.mkString(",")))
+    val asFailureResult: (NonEmptyList[String]) => Result = (in) => UnprocessableEntity(Json.toJson(ValidationErrors(INVALID_REQUEST_PAYLOAD, in.toList)))
 
     val asSuccessResult: (StoredApiDefinition) => Result = (api) => Accepted(Json.toJson(api))
 

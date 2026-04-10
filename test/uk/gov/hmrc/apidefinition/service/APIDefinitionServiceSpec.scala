@@ -20,6 +20,10 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
 
+import cats.data.NonEmptyList
+import cats.data.Validated.Valid
+import cats.implicits._
+
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiStatus, _}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
@@ -35,7 +39,7 @@ import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 
 class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
 
-  private val context     = ApiContext("calendar")
+  private val context     = ApiContext("agents/calendar")
   private val serviceName = ServiceName("calendar-service")
 
   def unitSuccess: Future[Unit] = successful { () }
@@ -53,7 +57,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
     val mockAwsApiPublisher: AwsApiPublisher                 = mock[AwsApiPublisher]
     val mockAPIDefinitionRepository: APIDefinitionRepository = mock[APIDefinitionRepository]
     val mockNotificationService: NotificationService         = mock[NotificationService]
-    val mockAppContext: AppConfig                            = mock[AppConfig]
+    val mockAppConfig: AppConfig                             = mock[AppConfig]
     val mockApiRemover: ApiRemover                           = mock[ApiRemover]
     val mockApiRetirer: ApiRetirer                           = mock[ApiRetirer]
 
@@ -65,7 +69,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
       mockApiRemover,
       mockApiRetirer,
       mockNotificationService,
-      mockAppContext
+      mockAppConfig
     )
 
     val applicationId = ApplicationId.random
@@ -123,6 +127,51 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
     val definition       = anApiDefinition(context, versions: _*)
 
     when(mockAPIDefinitionRepository.fetchByServiceName(serviceName)).thenReturn(successful(Some(storedDefinition)))
+  }
+
+  "validate" should {
+    "fail when keys are not present" in new Setup {
+      val defectiveDefinition = apiDefinition.copy(serviceName = ServiceName(""), context = ApiContext(""), serviceBaseUrl = "", name = "")
+
+      val result = await(underTest.validate(defectiveDefinition))
+
+      result shouldBe NonEmptyList.of(
+        "Field 'serviceName' should not be empty",
+        "Field 'context' should not be empty",
+        "Field 'serviceBaseUrl' should not be empty",
+        "Field 'name' should not be empty"
+      ).invalid
+    }
+
+    "succeed when ApiDefinitionValidator succeeds" in new Setup {
+      when(mockAppConfig.skipContextValidationAllowlist).thenReturn(List.empty)
+      when(mockAPIDefinitionRepository.fetchByServiceName(apiDefinition.serviceName)).thenReturn(successful(Some(apiDefinition)))
+      when(mockAPIDefinitionRepository.fetchByContext(apiDefinition.context)).thenReturn(successful(Some(apiDefinition)))
+      when(mockAPIDefinitionRepository.fetchByServiceBaseUrl(apiDefinition.serviceBaseUrl)).thenReturn(successful(Some(apiDefinition)))
+      when(mockAPIDefinitionRepository.fetchByName(apiDefinition.name)).thenReturn(successful(Some(apiDefinition)))
+      when(mockAPIDefinitionRepository.fetchAllByTopLevelContext(apiDefinition.context.topLevelContext())).thenReturn(successful(Nil))
+
+      val result = await(underTest.validate(apiDefinition))
+
+      result shouldBe Valid(apiDefinition)
+    }
+
+    "fail when ApiDefinitionValidator fails when there is a new api with an overlapping context" in new Setup {
+      when(mockAppConfig.skipContextValidationAllowlist).thenReturn(List.empty)
+      when(mockAPIDefinitionRepository.fetchByServiceName(apiDefinition.serviceName)).thenReturn(successful(None))
+      when(mockAPIDefinitionRepository.fetchByContext(apiDefinition.context)).thenReturn(successful(None))
+      when(mockAPIDefinitionRepository.fetchByServiceBaseUrl(apiDefinition.serviceBaseUrl)).thenReturn(successful(None))
+      when(mockAPIDefinitionRepository.fetchByName(apiDefinition.name)).thenReturn(successful(None))
+      when(mockAPIDefinitionRepository.fetchAllByTopLevelContext(apiDefinition.context.topLevelContext())).thenReturn(successful(
+        List(apiDefinition.copy(context = ApiContext("agents/calendar/events")))
+      ))
+
+      val result = await(underTest.validate(apiDefinition))
+
+      result shouldBe NonEmptyList.of(
+        "agents/calendar - Field 'context' overlaps with 'agents/calendar/events'"
+      ).invalid
+    }
   }
 
   "createOrUpdate" should {
@@ -495,7 +544,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
     "publish all APIs and remove unused APIs" in new Setup {
       val apiDefinition1: StoredApiDefinition = someAPIDefinition
       val apiDefinition2: StoredApiDefinition = someAPIDefinition
-      when(mockAppContext.apisToRetire).thenReturn(List.empty)
+      when(mockAppConfig.apisToRetire).thenReturn(List.empty)
       when(mockApiRemover.deleteUnusedApis()).thenReturn(successful(()))
       when(mockAPIDefinitionRepository.fetchAll()).thenReturn(successful(Seq(apiDefinition1, apiDefinition2)))
       when(mockAwsApiPublisher.publishAll(*)(*)).thenReturn(successful(()))
@@ -508,7 +557,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
     "Do nothing when the config list of Apis to retire is empty" in new Setup {
       val apiDefinition1: StoredApiDefinition = someAPIDefinition
       val apiDefinition2: StoredApiDefinition = someAPIDefinition
-      when(mockAppContext.apisToRetire).thenReturn(List.empty)
+      when(mockAppConfig.apisToRetire).thenReturn(List.empty)
       when(mockApiRemover.deleteUnusedApis()).thenReturn(successful(()))
       when(mockAPIDefinitionRepository.fetchAll()).thenReturn(successful(Seq(apiDefinition1, apiDefinition2)))
       when(mockAwsApiPublisher.publishAll(*)(*)).thenReturn(successful(()))
@@ -521,7 +570,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
       val apiDefinition1: StoredApiDefinition = someAPIDefinition
       val apiDefinition2: StoredApiDefinition = someAPIDefinition
       val apisToRetire                        = List("api1,2.0", "api2,3.0", "api2,1.0")
-      when(mockAppContext.apisToRetire).thenReturn(List("api1,2.0", "api2,3.0", "api2,1.0"))
+      when(mockAppConfig.apisToRetire).thenReturn(List("api1,2.0", "api2,3.0", "api2,1.0"))
       when(mockApiRetirer.retireApis(apisToRetire)).thenReturn(successful(()))
       when(mockApiRemover.deleteUnusedApis()).thenReturn(successful(()))
       when(mockAPIDefinitionRepository.fetchAll()).thenReturn(successful(Seq(apiDefinition1, apiDefinition2)))

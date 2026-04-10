@@ -25,13 +25,12 @@ object ApiDefinitionValidator extends Validator[StoredApiDefinition] {
 
   def validateKeysArePresent(apiDefinition: StoredApiDefinition): HMRCValidatedNel[StoredApiDefinition] = {
     (
-      apiDefinition.serviceName.valid.ensure("Field 'serviceName' should not be empty")(_.value.nonBlank),
-      apiDefinition.context.valid.ensure("Field 'context' should not be empty")(_.value.nonBlank),
-      apiDefinition.serviceBaseUrl.valid.ensure("Field 'serviceBaseUrl' should not be empty")(_.nonBlank),
-      apiDefinition.name.valid.ensure("Field 'name' should not be empty")(_.nonBlank)
+      apiDefinition.serviceName.validNel.ensure("Field 'serviceName' should not be empty".nel)(_.value.nonBlank),
+      apiDefinition.context.validNel.ensure("Field 'context' should not be empty".nel)(_.value.nonBlank),
+      apiDefinition.serviceBaseUrl.validNel.ensure("Field 'serviceBaseUrl' should not be empty".nel)(_.nonBlank),
+      apiDefinition.name.validNel.ensure("Field 'name' should not be empty".nel)(_.nonBlank)
     )
       .mapN { case _ => apiDefinition }
-      .toValidatedNel
   }
 
   def validate(
@@ -50,9 +49,9 @@ object ApiDefinitionValidator extends Validator[StoredApiDefinition] {
 
   def validateOtherFields(requestedDefn: StoredApiDefinition): HMRCValidatedNel[StoredApiDefinition] = {
     (
-      requestedDefn.description.validNel[String].ensure("Field 'description' should not be empty".nel)(_.nonBlank),
-      requestedDefn.categories.validNel[String].ensure("Field 'categories' should not be empty".nel)(_.nonEmpty),
-      requestedDefn.versions.validNel[String]
+      requestedDefn.description.validNel.ensure("Field 'description' should not be empty".nel)(_.nonBlank),
+      requestedDefn.categories.validNel.ensure("Field 'categories' should not be empty".nel)(_.nonEmpty),
+      requestedDefn.versions.validNel
         .ensure("Field 'versions' should not be empty".nel)(_.nonEmpty)
         .ensure("Field 'version' must be unique".nel)(vs => uniqueVersionsPredicate(vs.map(_.versionNbr)))
         .andThen(validateAllVersions)
@@ -76,13 +75,13 @@ object ApiDefinitionValidator extends Validator[StoredApiDefinition] {
 
   private def validateExistingAPI(skipContextValidation: Boolean)(requestedDefn: StoredApiDefinition, existingApiDefn: StoredApiDefinition): HMRCValidatedNel[StoredApiDefinition] = {
     (
-      requestedDefn.context.validNel[String].ensure(s"Field 'context' cannot change from the previously published ${existingApiDefn.context}".nel)(_ == existingApiDefn.context)
+      requestedDefn.context.validNel.ensure(s"Field 'context' cannot change from the previously published ${existingApiDefn.context}".nel)(_ == existingApiDefn.context)
         .andThen(ApiContextValidator.validateForExistingAPI(skipContextValidation)(_)),
-      requestedDefn.serviceBaseUrl.validNel[String].ensure(s"Field 'serviceBaseUrl' cannot change from the previously published ${existingApiDefn.serviceBaseUrl}".nel)(
+      requestedDefn.serviceBaseUrl.validNel.ensure(s"Field 'serviceBaseUrl' cannot change from the previously published ${existingApiDefn.serviceBaseUrl}".nel)(
         _ == existingApiDefn.serviceBaseUrl
       ),
-      requestedDefn.name.validNel[String].ensure(s"Field 'name' cannot change from the previously published ${existingApiDefn.name}".nel)(_ == existingApiDefn.name),
-      determineMissingVersions(requestedDefn, existingApiDefn).validNel[String].ensureOr(missingVersions =>
+      requestedDefn.name.validNel.ensure(s"Field 'name' cannot change from the previously published ${existingApiDefn.name}".nel)(_ == existingApiDefn.name),
+      determineMissingVersions(requestedDefn, existingApiDefn).validNel.ensureOr(missingVersions =>
         s"Versions may not be removed once published ${missingVersions.mkString}".nel
       )(_.isEmpty)
     )
@@ -105,10 +104,10 @@ object ApiDefinitionValidator extends Validator[StoredApiDefinition] {
       otherContextsWithSameTopLevel: List[ApiContext]
     ): HMRCValidatedNel[StoredApiDefinition] = {
     (
-      byContext.validNel[String].ensureOr(other => s"Field 'context' must be unique but is used by ${other.get.serviceName}".nel)(_.isEmpty)
+      byContext.validNel.ensureOr(other => s"Field 'context' must be unique but is used by ${other.get.serviceName}".nel)(_.isEmpty)
         .andThen(_ => ApiContextValidator.validateForNewAPI(skipContextValidation)(requestedDefn.context, otherContextsWithSameTopLevel)),
-      byServiceBaseUrl.validNel[String].ensureOr(other => s"Field 'serviceBaseUrl' must be unique but is used by ${other.get.serviceName}".nel)(_.isEmpty),
-      byName.validNel[String].ensureOr(other => s"Field 'name' must be unique but is used by ${other.get.serviceName}".nel)(_.isEmpty)
+      byServiceBaseUrl.validNel.ensureOr(other => s"Field 'serviceBaseUrl' must be unique but is used by ${other.get.serviceName}".nel)(_.isEmpty),
+      byName.validNel.ensureOr(other => s"Field 'name' must be unique but is used by ${other.get.serviceName}".nel)(_.isEmpty)
     )
       .mapN { case _ => requestedDefn }
   }
