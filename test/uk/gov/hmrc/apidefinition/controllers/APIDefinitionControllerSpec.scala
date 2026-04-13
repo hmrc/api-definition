@@ -14,27 +14,12 @@
  * limitations under the License.
  */
 
-/*
- * Copyright 2023 HM Revenue & Customs
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package uk.gov.hmrc.apidefinition.controllers
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.concurrent.Future.successful
+
+import cats.data.NonEmptyList
 
 import play.api.libs.json.Json
 import play.api.mvc.{AnyContentAsEmpty, Request, Result}
@@ -50,11 +35,10 @@ import uk.gov.hmrc.http.{BadRequestException, UnauthorizedException}
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.mocks.{APIEventRepositoryMockModule, ApiDefinitionServiceMockModule}
 import uk.gov.hmrc.apidefinition.models.ApiEvents.{ApiCreated, NewApiVersion}
-import uk.gov.hmrc.apidefinition.models.ErrorCode.INVALID_REQUEST_PAYLOAD
+import uk.gov.hmrc.apidefinition.models.ErrorCode.{API_INVALID_JSON, INVALID_REQUEST_PAYLOAD}
 import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
-import uk.gov.hmrc.apidefinition.validators._
 
 class APIDefinitionControllerSpec extends AsyncHmrcSpec
     with StubControllerComponentsFactory with TolerantJsonApiDefinition with FixedClock {
@@ -66,18 +50,14 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec
     val serviceName = ServiceName("calendar")
     val userEmail   = "user@email.com"
 
+    val apiDefinitionOne = Json.parse(calendarApiDefinition).as[StoredApiDefinition]
+
     val mockApiDefinitionRepository: APIDefinitionRepository = mock[APIDefinitionRepository]
     val mockAppContext: AppConfig                            = mock[AppConfig]
     when(mockAppContext.fetchByContextTtlInSeconds).thenReturn("1234")
     when(mockAppContext.skipContextValidationAllowlist).thenReturn(List())
 
-    val apiContextValidator: ApiContextValidator         = new ApiContextValidator(ApiDefinitionServiceMock.aMock, mockApiDefinitionRepository, mockAppContext)
-    val queryParameterValidator: QueryParameterValidator = new QueryParameterValidator()
-    val apiEndpointValidator: ApiEndpointValidator       = new ApiEndpointValidator(queryParameterValidator)
-    val apiVersionValidator: ApiVersionValidator         = new ApiVersionValidator(apiEndpointValidator)
-    val apiDefinitionValidator: ApiDefinitionValidator   = new ApiDefinitionValidator(ApiDefinitionServiceMock.aMock, apiContextValidator, apiVersionValidator)
-
-    val underTest = new APIDefinitionController(apiDefinitionValidator, ApiDefinitionServiceMock.aMock, mockAppContext, stubControllerComponents())
+    val underTest = new APIDefinitionController(ApiDefinitionServiceMock.aMock, mockAppContext, stubControllerComponents())
   }
 
   trait QueryDispatcherSetup extends Setup {
@@ -109,72 +89,32 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec
     }
   }
 
-  trait ValidatorSetup extends Setup {
-
-    ApiDefinitionServiceMock.FetchByContext.returnsNone()
-    ApiDefinitionServiceMock.FetchByName.returnsNone()
-    ApiDefinitionServiceMock.FetchByServiceUrL.returnsNone()
-
-    when(mockApiDefinitionRepository.fetchByServiceName(*[ServiceName])).thenReturn(successful(None))
-
-    def theServiceWillCreateOrUpdateTheAPIDefinition = {
-      ApiDefinitionServiceMock.CreateOrUpdate.success()
-    }
-
-    def thereAreNoOverlappingAPIContexts =
-      when(mockApiDefinitionRepository.fetchAllByTopLevelContext(*[ApiContext])).thenReturn(successful(Seq.empty))
-  }
-
   "createOrUpdate" should {
 
-    "succeed with a 204 (NO CONTENT) when payload is valid and service responds successfully" in new ValidatorSetup {
-
-      val apiDefinition =
-        StoredApiDefinition(
-          ServiceName("calendar"),
-          "http://calendar",
-          "Calendar API",
-          "My Calendar API",
-          ApiContext("individuals/calendar"),
-          versions =
-            List(
-              ApiVersion(
-                ApiVersionNbr("1.0"),
-                ApiStatus.STABLE,
-                ApiAccess.PUBLIC,
-                List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
-                true
-              )
-            ),
-          isTestSupport = false,
-          lastPublishedAt = None,
-          List(ApiCategory.OTHER)
-        )
-
-      thereAreNoOverlappingAPIContexts
-      theServiceWillCreateOrUpdateTheAPIDefinition
+    "succeed with a 204 (NO CONTENT) when payload is valid and service responds successfully" in new Setup {
+      ApiDefinitionServiceMock.Validate.success(apiDefinitionOne)
+      ApiDefinitionServiceMock.CreateOrUpdate.success()
 
       val result = underTest.createOrUpdate()(request.withBody(Json.parse(calendarApiDefinition)))
 
       status(result) shouldBe NO_CONTENT
-      ApiDefinitionServiceMock.CreateOrUpdate.verifyCall(apiDefinition)
-
+      ApiDefinitionServiceMock.CreateOrUpdate.verifyCall(apiDefinitionOne)
     }
 
-    "fail with a 422 (invalid request) when the json payload is invalid for the request" in new ValidatorSetup {
-
+    "fail with a 422 (invalid request) when the json payload is invalid for the request" in new Setup {
       val body = """{ "invalid": "json" }"""
 
       val result = underTest.createOrUpdate()(request.withBody(Json.parse(body)))
 
       status(result) shouldBe UNPROCESSABLE_ENTITY
-
+      val responseBody = contentAsJson(result).as[ErrorResponse]
+      responseBody.code shouldBe API_INVALID_JSON
+      responseBody.message shouldBe "Json cannot be converted to API Definition"
       verifyZeroInteractions(ApiDefinitionServiceMock.aMock)
     }
 
-    "fail with a 500 (internal server error) when the service throws an exception" in new ValidatorSetup {
-
-      thereAreNoOverlappingAPIContexts
+    "fail with a 500 (internal server error) when the service throws an exception" in new Setup {
+      ApiDefinitionServiceMock.Validate.success(apiDefinitionOne)
       ApiDefinitionServiceMock.CreateOrUpdate.thenFails()
 
       val result = underTest.createOrUpdate()(request.withBody(Json.parse(calendarApiDefinition)))
@@ -182,307 +122,14 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec
       status(result) shouldBe INTERNAL_SERVER_ERROR
     }
 
-    "fail with a 422 (Un-processable entity) when api name is invalid" in new ValidatorSetup {
+    "fail with a 422 (Unprocessable entity) when validation fails" in new Setup {
+      val errorMessages = NonEmptyList.of("bang", "crash")
+      ApiDefinitionServiceMock.Validate.failsWith(errorMessages)
 
-      val body: String =
-        """{
-          |   "serviceName":"calendar",
-          |   "name":"",
-          |   "description":"My Calendar API",
-          |   "serviceBaseUrl":"http://calendar",
-          |   "context":"individuals/calendar",
-          |   "categories" : ["OTHER"],
-          |   "versions":[
-          |      {
-          |         "version":"1.0",
-          |         "status":"STABLE",
-          |         "endpoints":[
-          |            {
-          |               "uriPattern":"/today",
-          |               "endpointName":"Get Today's Date",
-          |               "method":"GET",
-          |               "authType":"NONE",
-          |               "throttlingTier":"UNLIMITED"
-          |            }
-          |         ],
-          |         "endpointsEnabled": true
-          |      }
-          |   ]
-          |}""".stripMargin.replaceAll("\n", " ")
-
-      thereAreNoOverlappingAPIContexts
-      verifyZeroInteractions(ApiDefinitionServiceMock.aMock)
-
-      val result = underTest.createOrUpdate()(request.withBody(Json.parse(body)))
+      val result = underTest.createOrUpdate()(request.withBody(Json.parse(calendarApiDefinition)))
 
       status(result) shouldBe UNPROCESSABLE_ENTITY
-      contentAsJson(result).as[ValidationErrors] shouldBe
-        ValidationErrors(INVALID_REQUEST_PAYLOAD, List("Field 'name' should not be empty for API with service name 'calendar'"))
-    }
-
-    "fail with a 422 (Unprocessable entity) when same version appear multiple times" in new ValidatorSetup {
-
-      val body: String =
-        """{
-          |   "serviceName":"calendar",
-          |   "name":"Calendar API",
-          |   "description":"My Calendar API",
-          |   "serviceBaseUrl":"http://calendar",
-          |   "context":"individuals/calendar",
-          |   "categories" : ["OTHER"],
-          |   "versions":[
-          |      {
-          |         "version":"1.0",
-          |         "status":"STABLE",
-          |         "endpoints":[
-          |            {
-          |               "uriPattern":"/today",
-          |               "endpointName":"Get Today's Date",
-          |               "method":"GET",
-          |               "authType":"NONE",
-          |               "throttlingTier":"UNLIMITED"
-          |            }
-          |         ],
-          |         "endpointsEnabled": true
-          |      },
-          |      {
-          |         "version":"1.0",
-          |         "status":"STABLE",
-          |         "endpoints":[
-          |            {
-          |               "uriPattern":"/today",
-          |               "endpointName":"Get Today's Date",
-          |               "method":"GET",
-          |               "authType":"NONE",
-          |               "throttlingTier":"UNLIMITED"
-          |            }
-          |         ],
-          |         "endpointsEnabled": true
-          |      }
-          |   ]
-          |}""".stripMargin.replaceAll("\n", " ")
-
-      thereAreNoOverlappingAPIContexts
-      verifyZeroInteractions(ApiDefinitionServiceMock.aMock)
-
-      val result = underTest.createOrUpdate()(request.withBody(Json.parse(body)))
-
-      status(result) shouldBe UNPROCESSABLE_ENTITY
-      contentAsJson(result).as[ValidationErrors] shouldBe
-        ValidationErrors(INVALID_REQUEST_PAYLOAD, List("Field 'version' must be unique for API 'Calendar API'"))
-    }
-
-    "parse an API definition with PUBLIC access type" in new ValidatorSetup {
-      val apiDefinitionJson: String =
-        """{
-          |  "serviceName": "calendar",
-          |  "name": "Calendar API",
-          |  "description": "My Calendar API",
-          |  "serviceBaseUrl": "http://calendar",
-          |  "context": "individuals/calendar",
-          |  "requiresTrust": true,
-          |  "categories" : ["OTHER"],
-          |  "versions": [
-          |  {
-          |    "access" : {
-          |      "type" : "PUBLIC"
-          |    },
-          |    "version" : "1.0",
-          |    "status" : "STABLE",
-          |    "endpoints": [
-          |    {
-          |      "uriPattern": "/today",
-          |      "endpointName":"Get Today's Date",
-          |      "method": "GET",
-          |      "authType": "NONE",
-          |      "throttlingTier": "UNLIMITED"
-          |    }
-          |    ],
-          |    "endpointsEnabled": true
-          |  }
-          |  ]
-          |}""".stripMargin.replaceAll("\n", " ")
-
-      val apiDefinition = StoredApiDefinition(
-        ServiceName("calendar"),
-        "http://calendar",
-        "Calendar API",
-        "My Calendar API",
-        ApiContext("individuals/calendar"),
-        versions = List(ApiVersion(
-          ApiVersionNbr("1.0"),
-          ApiStatus.STABLE,
-          ApiAccess.PUBLIC,
-          List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
-          true
-        )),
-        isTestSupport = false,
-        lastPublishedAt = None,
-        List(ApiCategory.OTHER)
-      )
-
-      thereAreNoOverlappingAPIContexts
-      theServiceWillCreateOrUpdateTheAPIDefinition
-
-      val result = underTest.createOrUpdate()(request.withBody(Json.parse(apiDefinitionJson)))
-
-      status(result) shouldBe NO_CONTENT
-
-      ApiDefinitionServiceMock.CreateOrUpdate.verifyCall(apiDefinition)
-
-    }
-
-    "parse an API definition with not defined access type should be public" in new ValidatorSetup {
-      val apiDefinitionJson: String =
-        """{
-          |  "serviceName": "calendar",
-          |  "name": "Calendar API",
-          |  "description": "My Calendar API",
-          |  "serviceBaseUrl": "http://calendar",
-          |  "context": "individuals/calendar",
-          |  "requiresTrust": true,
-          |  "categories" : ["OTHER"],
-          |  "versions": [
-          |  {
-          |    "version" : "1.0",
-          |    "status" : "STABLE",
-          |    "endpoints": [
-          |    {
-          |      "uriPattern": "/today",
-          |      "endpointName":"Get Today's Date",
-          |      "method": "GET",
-          |      "authType": "NONE",
-          |      "throttlingTier": "UNLIMITED"
-          |    }
-          |    ],
-          |    "endpointsEnabled": true
-          |  }
-          |  ]
-          |}""".stripMargin.replaceAll("\n", " ")
-
-      val apiDefinition = StoredApiDefinition(
-        ServiceName("calendar"),
-        "http://calendar",
-        "Calendar API",
-        "My Calendar API",
-        ApiContext("individuals/calendar"),
-        versions =
-          List(ApiVersion(
-            ApiVersionNbr("1.0"),
-            ApiStatus.STABLE,
-            ApiAccess.PUBLIC,
-            List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
-            true
-          )),
-        false,
-        None,
-        List(ApiCategory.OTHER)
-      )
-
-      thereAreNoOverlappingAPIContexts
-      theServiceWillCreateOrUpdateTheAPIDefinition
-
-      private val result = underTest.createOrUpdate()(request.withBody(Json.parse(apiDefinitionJson)))
-
-      status(result) shouldBe NO_CONTENT
-
-      ApiDefinitionServiceMock.CreateOrUpdate.verifyCall(apiDefinition)
-    }
-
-    "parse an API definition with PRIVATE access type" in new ValidatorSetup {
-      private val apiDefinitionJson =
-        s"""{
-           |  "serviceName": "calendar",
-           |  "name": "Calendar API",
-           |  "description": "My Calendar API",
-           |  "serviceBaseUrl": "http://calendar",
-           |  "context": "individuals/calendar",
-           |  "requiresTrust": true,
-           |  "categories" : ["OTHER"],
-           |  "versions": [
-           |  {
-           |    "version" : "1.0",
-           |    "status" : "STABLE",
-           |    "access" : {
-           |      "type" : "PRIVATE"
-           |    },
-           |    "endpoints": [
-           |    {
-           |      "uriPattern": "/today",
-           |      "endpointName":"Get Today's Date",
-           |      "method": "GET",
-           |      "authType": "NONE",
-           |      "throttlingTier": "UNLIMITED"
-           |    }
-           |    ],
-           |    "endpointsEnabled": true
-           |  }
-           |  ]
-           |}""".stripMargin.replaceAll("\n", " ")
-
-      val apiDefinition = StoredApiDefinition(
-        ServiceName("calendar"),
-        "http://calendar",
-        "Calendar API",
-        "My Calendar API",
-        ApiContext("individuals/calendar"),
-        versions = List(ApiVersion(
-          ApiVersionNbr("1.0"),
-          ApiStatus.STABLE,
-          ApiAccess.Private(false),
-          List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
-          true
-        )),
-        false,
-        None,
-        List(ApiCategory.OTHER)
-      )
-
-      thereAreNoOverlappingAPIContexts
-      theServiceWillCreateOrUpdateTheAPIDefinition
-
-      private val result = underTest.createOrUpdate()(request.withBody(Json.parse(apiDefinitionJson)))
-
-      status(result) shouldBe NO_CONTENT
-      ApiDefinitionServiceMock.CreateOrUpdate.verifyCall(apiDefinition)
-    }
-
-    "fail with a 422 (Unprocessable entity) when access type 'PROTECTED' is unknown" in new ValidatorSetup {
-
-      private val apiDefinitionJson =
-        """{
-          |  "serviceName": "calendar",
-          |  "name": "Calendar API",
-          |  "description": "My Calendar API",
-          |  "serviceBaseUrl": "http://calendar",
-          |  "context": "calendar",
-          |  "requiresTrust": true,
-          |  "versions": [
-          |  {
-          |    "access" : {
-          |      "type" : "PROTECTED"
-          |    },
-          |    "version" : "1.0",
-          |    "status" : "STABLE",
-          |    "endpoints": [
-          |    {
-          |      "uriPattern": "/today",
-          |      "endpointName":"Get Today's Date",
-          |      "method": "GET",
-          |      "authType": "NONE",
-          |      "throttlingTier": "UNLIMITED"
-          |    }
-          |    ]
-          |  }
-          |  ]
-          |}""".stripMargin.replaceAll("\n", " ")
-
-      verifyZeroInteractions(ApiDefinitionServiceMock.aMock)
-
-      private val result = underTest.createOrUpdate()(request.withBody(Json.parse(apiDefinitionJson)))
-
-      status(result) shouldBe UNPROCESSABLE_ENTITY
-      (contentAsJson(result) \ "message").as[String] shouldBe "Json cannot be converted to API Definition"
+      contentAsJson(result).as[ValidationErrors] shouldBe ValidationErrors(INVALID_REQUEST_PAYLOAD, errorMessages.toList)
     }
   }
 
@@ -680,22 +327,20 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec
   }
 
   "validate" should {
-    "succeed with status 202 (Accepted) when the payload is valid" in new ValidatorSetup {
-      ApiDefinitionServiceMock.FetchByName.returnsNone()
-      ApiDefinitionServiceMock.FetchByServiceBaseUrl.returnsNone()
-      ApiDefinitionServiceMock.FetchByContext.returnsNone()
+    "succeed with status 202 (Accepted) when the payload is valid" in new Setup {
+      val apiDefinition = Json.parse(calendarApiDefinition)
+      ApiDefinitionServiceMock.Validate.success(apiDefinition.as[StoredApiDefinition])
 
-      thereAreNoOverlappingAPIContexts
-
-      private val result = underTest.validate()(request.withBody(Json.parse(calendarApiDefinition)))
+      private val result = underTest.validate()(request.withBody(apiDefinition))
 
       status(result) shouldBe ACCEPTED
     }
 
-    "fail with status 422 (UnprocessableEntity) when the payload is invalid" in new ValidatorSetup {
+    "fail with status 422 (UnprocessableEntity) when the payload is invalid" in new Setup {
 
       private val result = underTest.validate()(request.withBody(Json.parse(calendarApiDefinitionMissingDescription)))
 
+      status(result) shouldBe UNPROCESSABLE_ENTITY
       contentAsJson(result) shouldEqual Json.toJson(
         ErrorResponse(
           ErrorCode.API_INVALID_JSON,
@@ -705,6 +350,16 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec
           ))
         )
       )
+    }
+
+    "fail with status 422 (UnprocessableEntity) when there are validation failures" in new Setup {
+      val errorMessages = NonEmptyList.of("crash", "bang")
+      ApiDefinitionServiceMock.Validate.failsWith(errorMessages)
+
+      private val result = underTest.validate()(request.withBody(Json.parse(calendarApiDefinition)))
+
+      status(result) shouldBe UNPROCESSABLE_ENTITY
+      contentAsJson(result).as[ValidationErrors] shouldBe ValidationErrors(INVALID_REQUEST_PAYLOAD, errorMessages.toList)
     }
   }
 

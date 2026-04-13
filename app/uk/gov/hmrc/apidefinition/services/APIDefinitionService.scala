@@ -32,6 +32,7 @@ import uk.gov.hmrc.apidefinition.models.ApiEvents._
 import uk.gov.hmrc.apidefinition.models.{ApiEvent, ApiEventId, TolerantJsonApiDefinition}
 import uk.gov.hmrc.apidefinition.repository.{APIDefinitionRepository, APIEventRepository}
 import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
+import uk.gov.hmrc.apidefinition.validators.{ApiDefinitionValidator, Validator}
 
 object APIDefinitionService {
 
@@ -49,7 +50,7 @@ class APIDefinitionService @Inject() (
     notificationService: NotificationService,
     config: AppConfig
   )(implicit val ec: ExecutionContext
-  ) extends ApplicationLogger with ClockNow {
+  ) extends ApplicationLogger with ClockNow with Validator[StoredApiDefinition] {
 
   implicit val useThisFormatter: OFormat[StoredApiDefinition] = TolerantJsonApiDefinition.tolerantFormatApiDefinition
 
@@ -59,30 +60,55 @@ class APIDefinitionService @Inject() (
 
   private def convertMany(storeds: Iterable[StoredApiDefinition]): List[ApiDefinition] = storeds.map(convertOne).toList
 
-  def createOrUpdate(apiDefinition: StoredApiDefinition)(implicit hc: HeaderCarrier): Future[Unit] = {
+  def validate(requestedDefn: StoredApiDefinition): Future[HMRCValidatedNel[StoredApiDefinition]] = {
+    val validated: HMRCValidatedNel[StoredApiDefinition] = ApiDefinitionValidator.validateKeysArePresent(requestedDefn)
+
+    (if (validated.isValid) {
+       for {
+         existingApiDefn      <- apiDefinitionRepository.fetchByServiceName(requestedDefn.serviceName)
+         skipContextValidation = config.skipContextValidationAllowlist.contains(requestedDefn.serviceName)
+
+         byContext        <- apiDefinitionRepository.fetchByContext(requestedDefn.context)
+         byServiceBaseUrl <- apiDefinitionRepository.fetchByServiceBaseUrl(requestedDefn.serviceBaseUrl)
+         byName           <- apiDefinitionRepository.fetchByName(requestedDefn.name)
+
+         otherContextsWithSameTopLevel <- apiDefinitionRepository.fetchAllByTopLevelContext(requestedDefn.context.topLevelContext())
+                                            .map(_.filterNot(_.context == requestedDefn.context)) // Remove the requested api definition
+                                            .map(_.map(_.context).toList)
+         result                         = ApiDefinitionValidator.validate(requestedDefn, existingApiDefn, byContext, byServiceBaseUrl, byName, otherContextsWithSameTopLevel, skipContextValidation)
+       } yield result
+     } else {
+       successful(validated)
+     })
+  }
+
+  def createOrUpdate(newApiDefn: StoredApiDefinition)(implicit hc: HeaderCarrier): Future[Unit] = {
 
     def publish(): Future[Unit] = {
       (for {
-        _ <- awsApiPublisher.publish(apiDefinition)
+        _ <- awsApiPublisher.publish(newApiDefn)
       } yield ()) recoverWith {
         case e: APIDefinitionService.PublishingException =>
-          logger.error(s"Failed to create or update API [${apiDefinition.name}]", e)
-          failed(new RuntimeException(s"Could not publish API: [${apiDefinition.name}]"))
+          logger.error(s"Failed to create or update API [${newApiDefn.name}]", e)
+          failed(new RuntimeException(s"Could not publish API: [${newApiDefn.name}]"))
       }
     }
 
     def recoverSave: PartialFunction[Throwable, Future[Nothing]] = {
       case e: Throwable =>
-        logger.error(s"""API Definition for "${apiDefinition.name}" was published but not saved due to error: ${e.getMessage}""", e)
+        logger.error(s"""API Definition for "${newApiDefn.name}" was published but not saved due to error: ${e.getMessage}""", e)
         failed(e)
     }
 
     for {
-      events                   <- checkAPIDefinitionForChanges(apiDefinition)
-      _                        <- apiEventRepository.createAll(events)
-      _                        <- notificationService.process(events)
+      existingApiDefn <- apiDefinitionRepository.fetchByContext(newApiDefn.context)
+
+      events = checkAPIDefinitionForChanges(newApiDefn, existingApiDefn)
+      _     <- apiEventRepository.createAll(events)
+      _     <- notificationService.process(events)
+
       _                        <- publish()
-      definitionWithPublishTime = apiDefinition.copy(lastPublishedAt = Some(instant))
+      definitionWithPublishTime = newApiDefn.copy(lastPublishedAt = Some(instant))
       _                        <- apiDefinitionRepository.save(definitionWithPublishTime) recoverWith recoverSave
     } yield ()
   }
@@ -142,13 +168,11 @@ class APIDefinitionService @Inject() (
     listOfEndpoints.exists(e => (e.method == endpoint.method && e.uriPattern == endpoint.uriPattern))
   }
 
-  private def checkAPIDefinitionForChanges(apiDefinition: StoredApiDefinition): Future[List[ApiEvent]] = {
-    apiDefinitionRepository.fetchByContext(apiDefinition.context)
-      .map {
-        case Some(existingAPIDefinition) =>
-          val events = findApiEvents(apiDefinition.name, apiDefinition.serviceName, existingAPIDefinition.versions, apiDefinition.versions)
-          if (events.isEmpty) List(ApiPublishedNoChange(ApiEventId.random, apiDefinition.name, apiDefinition.serviceName, instant)) else events
-        case None                        => List(ApiCreated(ApiEventId.random, apiDefinition.name, apiDefinition.serviceName, instant))
+  private def checkAPIDefinitionForChanges(apiDefinition: StoredApiDefinition, existingApiDefn: Option[StoredApiDefinition]): List[ApiEvent] = {
+    existingApiDefn
+      .fold(List[ApiEvent](ApiCreated(ApiEventId.random, apiDefinition.name, apiDefinition.serviceName, instant))) { defn =>
+        val events = findApiEvents(apiDefinition.name, apiDefinition.serviceName, defn.versions, apiDefinition.versions)
+        if (events.isEmpty) List(ApiPublishedNoChange(ApiEventId.random, apiDefinition.name, apiDefinition.serviceName, instant)) else events
       }
   }
 

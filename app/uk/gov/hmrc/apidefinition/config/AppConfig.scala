@@ -19,29 +19,27 @@ package uk.gov.hmrc.apidefinition.config
 import javax.inject.{Inject, Singleton}
 import scala.jdk.CollectionConverters._
 
-import play.api.{Configuration, Environment, Mode}
+import play.api.Configuration
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ServiceName
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 @Singleton
-class AppConfig @Inject() (val runModeConfiguration: Configuration, environment: Environment, servicesConfig: ServicesConfig) {
-  def mode: Mode = environment.mode
+class AppConfig @Inject() (val configuration: Configuration, servicesConfig: ServicesConfig) {
+  lazy val buildProductionUrlForPrototypedAPIs: Boolean = configuration.getOptional[Boolean]("buildProductionUrlForPrototypedAPIs").getOrElse(false)
+  lazy val isSandbox: Boolean                           = configuration.getOptional[Boolean]("isSandbox").getOrElse(false)
 
-  lazy val buildProductionUrlForPrototypedAPIs: Boolean = runModeConfiguration.getOptional[Boolean]("buildProductionUrlForPrototypedAPIs").getOrElse(false)
-  lazy val isSandbox: Boolean                           = runModeConfiguration.getOptional[Boolean]("isSandbox").getOrElse(false)
+  lazy val fetchByContextTtlInSeconds: String = configuration.underlying.getString("fetchByContextTtlInSeconds")
 
-  lazy val fetchByContextTtlInSeconds: String = runModeConfiguration.underlying.getString("fetchByContextTtlInSeconds")
+  lazy val serviceBaseUrl = configuration.getOptional[String]("serviceBaseUrl").getOrElse("http://localhost")
 
-  lazy val serviceBaseUrl = runModeConfiguration.getOptional[String]("serviceBaseUrl").getOrElse("http://localhost")
+  lazy val apisToRemove = configuration.get[Seq[String]]("apisToRemove").toList
 
-  lazy val apisToRemove = runModeConfiguration.get[Seq[String]]("apisToRemove").toList
+  lazy val apisToRetire = configuration.get[Seq[String]]("apisToRetire").toList
 
-  lazy val apisToRetire = runModeConfiguration.get[Seq[String]]("apisToRetire").toList
-
-  lazy val skipContextValidationAllowlist: List[ServiceName] = runModeConfiguration.underlying.getStringList("skipContextValidationAllowlist").asScala.toList.map(ServiceName(_))
+  lazy val skipContextValidationAllowlist: List[ServiceName] = configuration.underlying.getStringList("skipContextValidationAllowlist").asScala.toList.map(ServiceName(_))
 
   def baseUrl(serviceName: String): String = {
-    val context = runModeConfiguration.getOptional[String](s"$serviceName.context").getOrElse("")
+    val context = configuration.getOptional[String](s"$serviceName.context").getOrElse("")
 
     if (context.nonEmpty) s"${servicesConfig.baseUrl(serviceName)}/$context"
     else servicesConfig.baseUrl(serviceName)
