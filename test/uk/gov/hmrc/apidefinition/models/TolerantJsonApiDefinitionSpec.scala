@@ -85,7 +85,7 @@ class TolerantJsonApiDefinitionSpec extends BaseJsonFormattersSpec {
         requiresTrust = Some(true)
       )
 
-      apiDefinition.versions.head.access shouldBe ApiAccess.Private(true)
+      apiDefinition.versions.head.access shouldBe ApiAccess.CONTROLLED
     }
 
     "read from JSON when the API categories are defined but empty" in {
