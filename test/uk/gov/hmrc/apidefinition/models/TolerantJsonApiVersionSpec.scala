@@ -37,7 +37,7 @@ class TolerantJsonApiVersionSpec extends BaseJsonFormattersSpec {
 
   val endpoints = List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED, None, List.empty))
 
-  val baseApiVersion = ApiVersion(ApiVersionNbr("1.0"), ApiStatus.STABLE, ApiAccess.PUBLIC, endpoints, true, None, ApiVersionSource.OAS)
+  val baseApiVersion = ApiVersion(ApiVersionNbr("1.0"), ApiStatus.STABLE, ApiAccessType.PUBLIC, endpoints, true, None, ApiVersionSource.OAS)
 
   "TolerantJsonApiVersion" should {
 

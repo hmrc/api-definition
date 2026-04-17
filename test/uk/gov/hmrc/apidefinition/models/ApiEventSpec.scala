@@ -17,7 +17,7 @@
 package uk.gov.hmrc.apidefinition.models
 
 import play.api.libs.json.Json
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiAccess, ApiStatus, ServiceName}
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiAccessType, ApiStatus, ServiceName}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.utils.{FixedClock, HmrcSpec}
 
@@ -31,13 +31,13 @@ class ApiEventSpec extends HmrcSpec with FixedClock {
   val apiStatus      = ApiStatus.ALPHA
   val otherApiStatus = ApiStatus.BETA
   val apiVersion     = ApiVersionNbr("1.0")
-  val apiAccess      = ApiAccess.PUBLIC
-  val otherApiAccess = ApiAccess.Private(true)
+  val apiAccess      = ApiAccessType.PUBLIC
+  val otherApiAccess = ApiAccessType.CONTROLLED
 
   "ApiEvent" when {
     "ApiCreated" should {
       val event: ApiEvent = ApiEvents.ApiCreated(eventId, apiName, serviceName, instant)
-      val json            = s"{\"id\":\"${eventId.value}\",\"apiName\":\"$apiName\",\"serviceName\":\"$serviceName\",\"eventDateTime\":\"$nowAsText\",\"eventType\":\"API_CREATED\"}"
+      val json            = s"""{"id":"${eventId.value}","apiName":"$apiName","serviceName":"$serviceName","eventDateTime":"$nowAsText","eventType":"API_CREATED"}"""
       "Serialise to valid JSON" in {
         Json.toJson(event).toString shouldBe json
       }
@@ -54,7 +54,7 @@ class ApiEventSpec extends HmrcSpec with FixedClock {
     "NewApiVersion" should {
       val event: ApiEvent = ApiEvents.NewApiVersion(eventId, apiName, serviceName, instant, apiStatus, apiVersion)
       val json            =
-        s"{\"id\":\"${eventId.value}\",\"apiName\":\"$apiName\",\"serviceName\":\"$serviceName\",\"eventDateTime\":\"$nowAsText\",\"apiStatus\":\"ALPHA\",\"versionNbr\":\"1.0\",\"eventType\":\"NEW_API_VERSION\"}"
+        s"""{"id":"${eventId.value}","apiName":"$apiName","serviceName":"$serviceName","eventDateTime":"$nowAsText","apiStatus":"ALPHA","versionNbr":"1.0","eventType":"NEW_API_VERSION"}"""
       "Serialise to valid JSON" in {
         Json.toJson(event).toString shouldBe json
       }
@@ -71,7 +71,7 @@ class ApiEventSpec extends HmrcSpec with FixedClock {
     "ApiVersionStatusChange" should {
       val event: ApiEvent = ApiEvents.ApiVersionStatusChange(eventId, apiName, serviceName, instant, apiStatus, otherApiStatus, apiVersion)
       val json            =
-        s"{\"id\":\"${eventId.value}\",\"apiName\":\"$apiName\",\"serviceName\":\"$serviceName\",\"eventDateTime\":\"$nowAsText\",\"oldApiStatus\":\"ALPHA\",\"newApiStatus\":\"BETA\",\"versionNbr\":\"1.0\",\"eventType\":\"API_VERSION_STATUS_CHANGE\"}"
+        s"""{"id":"${eventId.value}","apiName":"$apiName","serviceName":"$serviceName","eventDateTime":"$nowAsText","oldApiStatus":"ALPHA","newApiStatus":"BETA","versionNbr":"1.0","eventType":"API_VERSION_STATUS_CHANGE"}"""
       "Serialise to valid JSON" in {
         Json.toJson(event).toString shouldBe json
       }
@@ -88,7 +88,7 @@ class ApiEventSpec extends HmrcSpec with FixedClock {
     "ApiVersionAccessChange" should {
       val event: ApiEvent = ApiEvents.ApiVersionAccessChange(eventId, apiName, serviceName, instant, apiAccess, otherApiAccess, apiVersion)
       val json            =
-        s"{\"id\":\"${eventId.value}\",\"apiName\":\"$apiName\",\"serviceName\":\"$serviceName\",\"eventDateTime\":\"$nowAsText\",\"oldApiAccess\":{\"type\":\"PUBLIC\"},\"newApiAccess\":{\"isTrial\":true,\"type\":\"PRIVATE\"},\"versionNbr\":\"1.0\",\"eventType\":\"API_VERSION_ACCESS_CHANGE\"}"
+        s"""{"id":"${eventId.value}","apiName":"$apiName","serviceName":"$serviceName","eventDateTime":"$nowAsText","oldApiAccess":"PUBLIC","newApiAccess":"CONTROLLED","versionNbr":"1.0","eventType":"API_VERSION_ACCESS_CHANGE"}"""
       "Serialise to valid JSON" in {
         Json.toJson(event).toString shouldBe json
       }
@@ -98,14 +98,14 @@ class ApiEventSpec extends HmrcSpec with FixedClock {
       }
 
       "Have metadata" in {
-        event.asMetaData() shouldBe ("Api Version Access Change", List("Version: 1.0", "Old Api Access: Public", "New Api Access: Private Trial"))
+        event.asMetaData() shouldBe ("Api Version Access Change", List("Version: 1.0", "Old Api Access: Public", "New Api Access: Controlled"))
       }
     }
 
     "ApiPublishedNoChange" should {
       val event: ApiEvent = ApiEvents.ApiPublishedNoChange(eventId, apiName, serviceName, instant)
       val json            =
-        s"{\"id\":\"${eventId.value}\",\"apiName\":\"$apiName\",\"serviceName\":\"$serviceName\",\"eventDateTime\":\"$nowAsText\",\"eventType\":\"API_PUBLISHED_NO_CHANGE\"}"
+        s"""{"id":"${eventId.value}","apiName":"$apiName","serviceName":"$serviceName","eventDateTime":"$nowAsText","eventType":"API_PUBLISHED_NO_CHANGE"}"""
       "Serialise to valid JSON" in {
         Json.toJson(event).toString shouldBe json
       }

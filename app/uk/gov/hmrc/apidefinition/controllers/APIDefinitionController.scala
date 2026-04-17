@@ -104,10 +104,10 @@ class APIDefinitionController @Inject() (
     lazy val errorInParams: Future[Result] = successful(BadRequest("Invalid query parameter or parameters"))
 
     queryParameters match {
-      case Nil | ("options", _) :: Nil                  => fetchAllPublicAPIs(options.alsoIncludePrivateTrials)
+      case Nil | ("options", _) :: Nil                  => fetchAllPublicAPIs(options.alsoIncludeControlledApis)
       case ("context", context) :: Nil                  => fetchByContext(ApiContext(context))
-      case ("type", typeValue) :: Nil                   => fetchDefinitionsByType(typeValue, options.alsoIncludePrivateTrials)
-      case ("options", _) :: ("type", typeValue) :: Nil => fetchDefinitionsByType(typeValue, options.alsoIncludePrivateTrials)
+      case ("type", typeValue) :: Nil                   => fetchDefinitionsByType(typeValue, options.alsoIncludeControlledApis)
+      case ("options", _) :: ("type", typeValue) :: Nil => fetchDefinitionsByType(typeValue, options.alsoIncludeControlledApis)
       case _                                            => errorInParams
     }
   }
@@ -136,14 +136,14 @@ class APIDefinitionController @Inject() (
     Ok(Json.toJson(result))
   }
 
-  private def fetchAllPrivateAPIs() = {
-    apiDefinitionService.fetchAllPrivateAPIs()
+  private def fetchAllNonPublicAPIs() = {
+    apiDefinitionService.fetchAllNonPublicAPIs()
       .map(apiDefinitionToResult) recover recovery
   }
 
-  private def fetchAllPublicAPIs(alsoIncludePrivateTrials: Boolean) = {
+  private def fetchAllPublicAPIs(alsoIncludeControlledApis: Boolean) = {
     apiDefinitionService
-      .fetchAllPublicAPIs(alsoIncludePrivateTrials)
+      .fetchAllPublicAPIs(alsoIncludeControlledApis)
       .map(apiDefinitionToResult) recover recovery
   }
 
@@ -159,10 +159,10 @@ class APIDefinitionController @Inject() (
       } recover recovery
   }
 
-  private def fetchDefinitionsByType(typeParam: String, alsoIncludePrivateTrials: Boolean) = {
+  private def fetchDefinitionsByType(typeParam: String, alsoIncludeControlledApis: Boolean) = {
     typeParam match {
-      case "public"  => fetchAllPublicAPIs(alsoIncludePrivateTrials)
-      case "private" => fetchAllPrivateAPIs()
+      case "public"  => fetchAllPublicAPIs(alsoIncludeControlledApis)
+      case "private" => fetchAllNonPublicAPIs()
       case "all"     => fetchAll
       case _         => Future(BadRequest(error(UNSUPPORTED_ACCESS_TYPE, s"$typeParam is not a supported access type")))
     }

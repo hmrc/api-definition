@@ -55,14 +55,14 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
   private val helloApiVersion = ApiVersion(
     versionNbr = ApiVersionNbr("1.0"),
     status = ApiStatus.BETA,
-    access = ApiAccess.PUBLIC,
+    access = ApiAccessType.PUBLIC,
     endpoints = List(Endpoint("/world", "Say Hello to the World!", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
   )
 
   private val calendarApiVersion = ApiVersion(
     versionNbr = ApiVersionNbr("2.0"),
     status = ApiStatus.STABLE,
-    access = ApiAccess.PUBLIC,
+    access = ApiAccessType.PUBLIC,
     endpoints = List(Endpoint("/date", "Check current date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
   )
 
@@ -93,7 +93,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
   private val individualIncomeTaxApiVersion = ApiVersion(
     versionNbr = ApiVersionNbr("1.0"),
     status = ApiStatus.STABLE,
-    access = ApiAccess.PUBLIC,
+    access = ApiAccessType.PUBLIC,
     endpoints = List(Endpoint("/submit", "Submit Income Tax Return", HttpMethod.POST, AuthType.USER, ResourceThrottlingTier.UNLIMITED))
   )
 
@@ -112,7 +112,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
   private val individualNIApiVersion = ApiVersion(
     versionNbr = ApiVersionNbr("1.0"),
     status = ApiStatus.STABLE,
-    access = ApiAccess.PUBLIC,
+    access = ApiAccessType.PUBLIC,
     endpoints = List(Endpoint("/submit", "Submit National Insurance", HttpMethod.POST, AuthType.USER, ResourceThrottlingTier.UNLIMITED)),
     endpointsEnabled = true,
     awsRequestId = None,
@@ -419,7 +419,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
       records.head.isTestSupport shouldBe false
       records.head.lastPublishedAt shouldBe None
 
-      records.head.versions.head.access shouldBe ApiAccess.PUBLIC
+      records.head.versions.head.access shouldBe ApiAccessType.PUBLIC
       records.head.versions.head.awsRequestId shouldBe None
       records.head.versions.head.endpointsEnabled shouldBe true
       records.head.versions.head.versionSource shouldBe ApiVersionSource.UNKNOWN

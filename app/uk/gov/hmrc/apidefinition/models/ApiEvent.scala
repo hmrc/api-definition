@@ -20,7 +20,7 @@ import java.time.Instant
 import java.util.UUID
 
 import play.api.libs.json.{Format, Json, OFormat}
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiAccess, ApiStatus, Endpoint, ServiceName}
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiAccessType, ApiStatus, Endpoint, ServiceName}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiVersionNbr
 import uk.gov.hmrc.play.json.Union
 
@@ -83,17 +83,15 @@ object ApiEvents {
       apiName: String,
       serviceName: ServiceName,
       eventDateTime: Instant,
-      oldApiAccess: ApiAccess,
-      newApiAccess: ApiAccess,
+      oldApiAccess: ApiAccessType,
+      newApiAccess: ApiAccessType,
       versionNbr: ApiVersionNbr
     ) extends ApiEvent {
 
-    private def accessDisplay(access: ApiAccess) = access match {
-      case ApiAccess.PUBLIC         => "Public"
-      case ApiAccess.Private(true)  => "Private Trial"
-      case ApiAccess.Private(false) => "Private"
-      case ApiAccess.CONTROLLED     => "Controlled"
-      case ApiAccess.INTERNAL       => "Internal"
+    private def accessDisplay(access: ApiAccessType) = access match {
+      case ApiAccessType.PUBLIC     => "Public"
+      case ApiAccessType.CONTROLLED => "Controlled"
+      case ApiAccessType.INTERNAL   => "Internal"
     }
 
     override def asMetaData(): MetaData =

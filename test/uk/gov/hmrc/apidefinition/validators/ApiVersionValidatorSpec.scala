@@ -158,7 +158,7 @@ class ApiVersionValidatorSpec extends AbstractValidatorSpec with TableDrivenProp
           ApiVersion(
             versionNbr = ApiVersionNbr(""),
             status = ApiStatus.ALPHA,
-            access = ApiAccess.PUBLIC,
+            access = ApiAccessType.PUBLIC,
             endpoints = List(
               Endpoint(
                 uriPattern = "/bad.pattern/{paramA}/abc",
@@ -186,7 +186,7 @@ class ApiVersionValidatorSpec extends AbstractValidatorSpec with TableDrivenProp
         ApiVersion(
           versionNbr = ApiVersionNbr("1.0"),
           status = ApiStatus.ALPHA,
-          access = ApiAccess.PUBLIC,
+          access = ApiAccessType.PUBLIC,
           endpoints = List(
             Endpoint(
               uriPattern = "/.goodpattern/{paramA}/abc",

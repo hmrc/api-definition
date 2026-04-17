@@ -24,7 +24,7 @@ class ApiDefinitionValidatorSpec extends AbstractValidatorSpec {
   private val calendarVersion = ApiVersion(
     ApiVersionNbr("1.0"),
     ApiStatus.BETA,
-    ApiAccess.PUBLIC,
+    ApiAccessType.PUBLIC,
     List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
     endpointsEnabled = true
   )

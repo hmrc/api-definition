@@ -53,28 +53,28 @@ class DocumentationServiceSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wi
 
   val productionV1Availability: ApiAvailability = ApiAvailability(
     endpointsEnabled = true,
-    ApiAccess.Private(),
+    ApiAccessType.INTERNAL,
     loggedIn = false,
     authorised = false
   )
 
   val productionV2Availability: ApiAvailability = ApiAvailability(
     endpointsEnabled = true,
-    ApiAccess.Private(),
+    ApiAccessType.INTERNAL,
     loggedIn = false,
     authorised = false
   )
 
   val sandboxV2Availability: ApiAvailability = ApiAvailability(
     endpointsEnabled = true,
-    ApiAccess.PUBLIC,
+    ApiAccessType.PUBLIC,
     loggedIn = false,
     authorised = false
   )
 
   val sandboxV3Availability: ApiAvailability = ApiAvailability(
     endpointsEnabled = false,
-    ApiAccess.PUBLIC,
+    ApiAccessType.PUBLIC,
     loggedIn = false,
     authorised = false
   )

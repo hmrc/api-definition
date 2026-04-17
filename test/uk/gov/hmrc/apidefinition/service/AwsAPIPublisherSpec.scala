@@ -38,7 +38,7 @@ class AwsAPIPublisherSpec extends AsyncHmrcSpec {
   private def anAPIVersion(version: String, status: ApiStatus = ApiStatus.BETA, queryParams: List[QueryParameter] = Nil) = ApiVersion(
     ApiVersionNbr(version),
     status,
-    ApiAccess.PUBLIC,
+    ApiAccessType.PUBLIC,
     List(
       Endpoint(
         "/today/{id}",
