@@ -43,21 +43,21 @@ class ApiRetirerSpec extends AsyncHmrcSpec {
   private val testApiVersion1 = ApiVersion(
     versionNbr = ApiVersionNbr("1.0"),
     status = ApiStatus.STABLE,
-    access = ApiAccess.PUBLIC,
+    access = ApiAccessType.PUBLIC,
     endpoints = List(Endpoint("/date", "Check current date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
   )
 
   private val testApiVersion2 = ApiVersion(
     versionNbr = ApiVersionNbr("2.0"),
     status = ApiStatus.STABLE,
-    access = ApiAccess.PUBLIC,
+    access = ApiAccessType.PUBLIC,
     endpoints = List(Endpoint("/date", "Check current date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
   )
 
   private val testApiVersion3 = ApiVersion(
     versionNbr = ApiVersionNbr("3.0"),
     status = ApiStatus.STABLE,
-    access = ApiAccess.PUBLIC,
+    access = ApiAccessType.PUBLIC,
     endpoints = List(Endpoint("/date", "Check current date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
   )
 
@@ -88,21 +88,21 @@ class ApiRetirerSpec extends AsyncHmrcSpec {
   private val expectedApiVersion1 = ApiVersion(
     versionNbr = ApiVersionNbr("1.0"),
     status = ApiStatus.RETIRED,
-    access = ApiAccess.PUBLIC,
+    access = ApiAccessType.PUBLIC,
     endpoints = List(Endpoint("/date", "Check current date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
   )
 
   private val expectedApiVersion2 = ApiVersion(
     versionNbr = ApiVersionNbr("2.0"),
     status = ApiStatus.RETIRED,
-    access = ApiAccess.PUBLIC,
+    access = ApiAccessType.PUBLIC,
     endpoints = List(Endpoint("/date", "Check current date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
   )
 
   private val expectedApiVersion3 = ApiVersion(
     versionNbr = ApiVersionNbr("3.0"),
     status = ApiStatus.RETIRED,
-    access = ApiAccess.PUBLIC,
+    access = ApiAccessType.PUBLIC,
     endpoints = List(Endpoint("/date", "Check current date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
   )
 

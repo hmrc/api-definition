@@ -59,7 +59,7 @@ class AWSPayloadHelperSpec extends AsyncHmrcSpec {
     val apiVersion = ApiVersion(
       versionNbr = ApiVersionNbr("1.0"),
       status = ApiStatus.STABLE,
-      access = ApiAccess.PUBLIC,
+      access = ApiAccessType.PUBLIC,
       endpoints = List(populatedEndpoint),
       endpointsEnabled = true,
       awsRequestId = None,

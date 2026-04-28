@@ -21,7 +21,7 @@ import play.api.libs.json._
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiVersionNbr
 
-trait TolerantJsonApiVersion extends TolerantJsonApiAccess with TolerantJsonEndpoint with TolerantJsonApiStatus {
+trait TolerantJsonApiVersion extends TolerantJsonEndpoint with TolerantJsonApiStatus {
 
   private val readsApiVersion: Reads[ApiVersion] = (
     (
@@ -29,7 +29,7 @@ trait TolerantJsonApiVersion extends TolerantJsonApiAccess with TolerantJsonEndp
         (JsPath \ "versionNbr").read[ApiVersionNbr] // TODO - Future aim to be this field name
     ) and
       (JsPath \ "status").read[ApiStatus] and
-      ((JsPath \ "access").readNullable[ApiAccess].map(_.getOrElse(ApiAccess.PUBLIC))) and
+      ((JsPath \ "access").readNullable[ApiAccessType].map(_.getOrElse(ApiAccessType.PUBLIC))) and
       (JsPath \ "endpoints").read[List[Endpoint]] and
       ((JsPath \ "endpointsEnabled").readNullable[Boolean].map(_.getOrElse(true))) and
       (JsPath \ "awsRequestId").readNullable[String] and
@@ -39,7 +39,7 @@ trait TolerantJsonApiVersion extends TolerantJsonApiAccess with TolerantJsonEndp
   private val writesApiVersion: OWrites[ApiVersion] = (
     (JsPath \ "version").write[ApiVersionNbr] and // TODO - change to versionNbr once all readers are safe
       (JsPath \ "status").write[ApiStatus] and
-      (JsPath \ "access").write[ApiAccess] and
+      (JsPath \ "access").write[ApiAccessType] and
       (JsPath \ "endpoints").write[List[Endpoint]] and
       (JsPath \ "endpointsEnabled").write[Boolean] and
       (JsPath \ "awsRequestId").writeNullable[String] and

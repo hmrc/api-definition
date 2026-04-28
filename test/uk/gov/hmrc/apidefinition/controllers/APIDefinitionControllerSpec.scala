@@ -79,7 +79,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec
 
     ApiDefinitionServiceMock.FetchByContext.success(apiDefinitions.head)
     ApiDefinitionServiceMock.FetchAllPublicAPIs.success(apiDefinitions)
-    ApiDefinitionServiceMock.FetchAllPrivateAPIs.success(apiDefinitions)
+    ApiDefinitionServiceMock.FetchAllNonPublicAPIs.success(apiDefinitions)
     ApiDefinitionServiceMock.FetchAll.success(apiDefinitions)
 
     def verifyApiDefinitionsReturnedOkWithNoCacheControl(result: Future[Result]) = {
@@ -144,7 +144,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec
         versions = Map(ApiVersionNbr("1.0") -> ApiVersion(
           ApiVersionNbr("1.0"),
           ApiStatus.BETA,
-          ApiAccess.PUBLIC,
+          ApiAccessType.PUBLIC,
           List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
           true
         )),
@@ -181,7 +181,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec
   "queryDispatcher" should {
 
     "fail with a 500 (internal server error) when the fetchAllPublicAPIs throws an exception" in new QueryDispatcherSetup {
-      ApiDefinitionServiceMock.FetchAllPublicAPIs.thenFails(alsoIncludePrivateTrials = false)
+      ApiDefinitionServiceMock.FetchAllPublicAPIs.thenFails(alsoIncludeControlledApis = false)
 
       private val result = underTest.queryDispatcher()(request)
 
@@ -189,17 +189,17 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec
       header(HeaderNames.CACHE_CONTROL, result) shouldBe None
     }
 
-    "return all Private APIs when the type parameter is defined as private" in new QueryDispatcherSetup {
+    "return all NonPublic APIs when the type parameter is defined as private" in new QueryDispatcherSetup {
 
       private val result = underTest.queryDispatcher()(FakeRequest("GET", s"?type=private"))
 
       verifyApiDefinitionsReturnedOkWithNoCacheControl(result)
 
-      verify(ApiDefinitionServiceMock.aMock).fetchAllPrivateAPIs()
+      verify(ApiDefinitionServiceMock.aMock).fetchAllNonPublicAPIs()
     }
 
     "fail with a 500 (internal server error) when private is defined and the service throws an exception" in new QueryDispatcherSetup {
-      ApiDefinitionServiceMock.FetchAllPrivateAPIs.thenFails()
+      ApiDefinitionServiceMock.FetchAllNonPublicAPIs.thenFails()
 
       private val result = underTest.queryDispatcher()(FakeRequest("GET", s"?type=private"))
 
@@ -263,64 +263,64 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec
 
     }
 
-    "accept an options parameter where alsoIncludePrivateTrials can be specified" when {
+    "accept an options parameter where alsoIncludeControlledApis can be specified" when {
 
-      "alsoIncludePrivateTrials is not specified" should {
+      "alsoIncludeControlledApis is not specified" should {
 
-        val alsoIncludePrivateTrials = false
+        val alsoIncludeControlledApis = false
 
-        "return all the Public APIs (without private trials)" in new QueryDispatcherSetup {
+        "return all the Public APIs (without controlled APIs)" in new QueryDispatcherSetup {
 
           private val result = underTest.queryDispatcher()(request)
 
           verifyApiDefinitionsReturnedOkWithNoCacheControl(result)
 
-          ApiDefinitionServiceMock.FetchAllPublicAPIs.verifyCalled(alsoIncludePrivateTrials)
+          ApiDefinitionServiceMock.FetchAllPublicAPIs.verifyCalled(alsoIncludeControlledApis)
         }
 
-        "return all Public APIs (without private trials) when the type parameter is defined as public" in new QueryDispatcherSetup {
+        "return all Public APIs (without controlled APIs) when the type parameter is defined as public" in new QueryDispatcherSetup {
 
           private val result = underTest.queryDispatcher()(FakeRequest("GET", s"?type=public"))
 
           verifyApiDefinitionsReturnedOkWithNoCacheControl(result)
 
-          ApiDefinitionServiceMock.FetchAllPublicAPIs.verifyCalled(alsoIncludePrivateTrials)
+          ApiDefinitionServiceMock.FetchAllPublicAPIs.verifyCalled(alsoIncludeControlledApis)
         }
       }
 
-      "alsoIncludePrivateTrials is specified" should {
+      "alsoIncludeControlledApis is specified" should {
 
-        val alsoIncludePrivateTrialsQueryParameter = "options=alsoIncludePrivateTrials"
-        val alsoIncludePrivateTrials               = true
+        val alsoIncludeControlledApisQueryParameter = "options=alsoIncludeControlledApis"
+        val alsoIncludeControlledApis               = true
 
-        "return all the Public APIs and private trial APIs" in new QueryDispatcherSetup {
+        "return all the Public APIs and controlled APIs" in new QueryDispatcherSetup {
           ApiDefinitionServiceMock.FetchAllPublicAPIs.success(apiDefinitions)
 
-          private val result = underTest.queryDispatcher()(FakeRequest("GET", s"?$alsoIncludePrivateTrialsQueryParameter"))
+          private val result = underTest.queryDispatcher()(FakeRequest("GET", s"?$alsoIncludeControlledApisQueryParameter"))
 
           verifyApiDefinitionsReturnedOkWithNoCacheControl(result)
 
-          ApiDefinitionServiceMock.FetchAllPublicAPIs.verifyCalled(alsoIncludePrivateTrials)
+          ApiDefinitionServiceMock.FetchAllPublicAPIs.verifyCalled(alsoIncludeControlledApis)
         }
 
-        "return all Public APIs and private trial APIs when the type parameter is defined as public" in new QueryDispatcherSetup {
+        "return all Public APIs and controlled APIs when the type parameter is defined as public" in new QueryDispatcherSetup {
           ApiDefinitionServiceMock.FetchAllPublicAPIs.success(apiDefinitions)
 
-          private val result = underTest.queryDispatcher()(FakeRequest("GET", s"?type=public&$alsoIncludePrivateTrialsQueryParameter"))
+          private val result = underTest.queryDispatcher()(FakeRequest("GET", s"?type=public&$alsoIncludeControlledApisQueryParameter"))
 
           verifyApiDefinitionsReturnedOkWithNoCacheControl(result)
 
-          ApiDefinitionServiceMock.FetchAllPublicAPIs.verifyCalled(alsoIncludePrivateTrials)
+          ApiDefinitionServiceMock.FetchAllPublicAPIs.verifyCalled(alsoIncludeControlledApis)
         }
 
         "be tolerant of query parameters being passed in any order" in new QueryDispatcherSetup {
           ApiDefinitionServiceMock.FetchAllPublicAPIs.success(apiDefinitions)
 
-          private val result = underTest.queryDispatcher()(FakeRequest("GET", s"?$alsoIncludePrivateTrialsQueryParameter&type=public"))
+          private val result = underTest.queryDispatcher()(FakeRequest("GET", s"?$alsoIncludeControlledApisQueryParameter&type=public"))
 
           verifyApiDefinitionsReturnedOkWithNoCacheControl(result)
 
-          ApiDefinitionServiceMock.FetchAllPublicAPIs.verifyCalled(alsoIncludePrivateTrials)
+          ApiDefinitionServiceMock.FetchAllPublicAPIs.verifyCalled(alsoIncludeControlledApis)
         }
       }
     }
@@ -414,19 +414,19 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec
   }
 
   "parse query options" should {
-    "set alsoIncludePrivateTrials to false if options not specified" in {
+    "set alsoIncludeControlledApis to false if options not specified" in {
       val parsed = QueryOptions(None)
-      parsed.alsoIncludePrivateTrials shouldBe false
+      parsed.alsoIncludeControlledApis shouldBe false
     }
 
-    "set alsoIncludePrivateTrials to true if set in the query options" in {
-      val parsed = QueryOptions(Some("alsoIncludePrivateTrials"))
-      parsed.alsoIncludePrivateTrials shouldBe true
+    "set alsoIncludeControlledApis to true if set in the query options" in {
+      val parsed = QueryOptions(Some("alsoIncludeControlledApis"))
+      parsed.alsoIncludeControlledApis shouldBe true
     }
 
-    "set alsoIncludePrivateTrials to false if blank in the query options" in {
+    "set alsoIncludeControlledApis to false if blank in the query options" in {
       val parsed = QueryOptions(Some(""))
-      parsed.alsoIncludePrivateTrials shouldBe false
+      parsed.alsoIncludeControlledApis shouldBe false
     }
 
     "throw error if invalid option specified" in {

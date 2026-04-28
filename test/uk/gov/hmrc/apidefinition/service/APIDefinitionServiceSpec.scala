@@ -75,20 +75,20 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
     val applicationId = ApplicationId.random
     val otherAppId    = ApplicationId.random
 
-    val publicVersion1: ApiVersion = aVersion(version = ApiVersionNbr("1.0"), access = ApiAccess.PUBLIC)
-    val publicVersion2             = aVersion(version = ApiVersionNbr("2.0"), access = ApiAccess.PUBLIC)
-    val privateVersion: ApiVersion = aVersion(version = ApiVersionNbr("3.1"), access = ApiAccess.Private())
-    val privateTrialVersion        = aVersion(version = ApiVersionNbr("4.0"), access = ApiAccess.Private(isTrial = true))
+    val publicVersion1: ApiVersion  = aVersion(version = ApiVersionNbr("1.0"), access = ApiAccessType.PUBLIC)
+    val publicVersion2              = aVersion(version = ApiVersionNbr("2.0"), access = ApiAccessType.PUBLIC)
+    val internalVersion: ApiVersion = aVersion(version = ApiVersionNbr("3.1"), access = ApiAccessType.INTERNAL)
+    val controlledVersion           = aVersion(version = ApiVersionNbr("4.0"), access = ApiAccessType.CONTROLLED)
 
     val allVersions = List(
       publicVersion1,
       publicVersion2,
-      privateVersion,
-      privateTrialVersion
+      internalVersion,
+      controlledVersion
     )
 
     val publicVersion1Availability =
-      ApiAvailability(publicVersion1.endpointsEnabled, ApiAccess.PUBLIC, loggedIn = false, authorised = true)
+      ApiAvailability(publicVersion1.endpointsEnabled, ApiAccessType.PUBLIC, loggedIn = false, authorised = true)
 
     val publicVersionAvailability = ApiAvailability(
       publicVersion2.endpointsEnabled,
@@ -98,8 +98,8 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
     )
 
     val privateVersionAvailability = ApiAvailability(
-      privateVersion.endpointsEnabled,
-      privateVersion.access,
+      internalVersion.endpointsEnabled,
+      internalVersion.access,
       loggedIn = false,
       authorised = false
     )
@@ -120,8 +120,8 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
     val versions         = Seq(
       publicVersion1,
       publicVersion2,
-      privateVersion,
-      privateTrialVersion
+      internalVersion,
+      controlledVersion
     )
     val storedDefinition = aStoredApiDefinition(context, versions: _*)
     val definition       = anApiDefinition(context, versions: _*)
@@ -403,8 +403,8 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
       val apiContext                                              = ApiContext("foo")
       val existingStatus: ApiStatus                               = ApiStatus.ALPHA
       val updatedStatus: ApiStatus                                = ApiStatus.BETA
-      val existingAPIDefinition: StoredApiDefinition              = aStoredApiDefinition(apiContext, aVersion(apiVersion, existingStatus, ApiAccess.PUBLIC))
-      val updatedAPIDefinition: StoredApiDefinition               = aStoredApiDefinition(apiContext, aVersion(apiVersion, updatedStatus, ApiAccess.PUBLIC))
+      val existingAPIDefinition: StoredApiDefinition              = aStoredApiDefinition(apiContext, aVersion(apiVersion, existingStatus, ApiAccessType.PUBLIC))
+      val updatedAPIDefinition: StoredApiDefinition               = aStoredApiDefinition(apiContext, aVersion(apiVersion, updatedStatus, ApiAccessType.PUBLIC))
       val updatedAPIDefinitionWithSavingTime: StoredApiDefinition = updatedAPIDefinition.copy(lastPublishedAt = Some(instant))
 
       when(mockAPIDefinitionRepository.fetchByContext(apiContext)).thenReturn(successful(Some(existingAPIDefinition)))
@@ -439,35 +439,35 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
 
   "fetchAllPublicAPIs" when {
 
-    "the alsoIncludePrivateTrials option is false" should {
+    "the alsoIncludeControlledApis option is false" should {
 
-      val alsoIncludePrivateTrials = false
+      val alsoIncludeControlledApis = false
 
       "return all Public API Definitions and filter out private versions" in new Setup {
 
         when(mockAPIDefinitionRepository.fetchAll()).thenReturn(successful(Seq(apiDefinitionWithAllVersions)))
 
-        val result = await(underTest.fetchAllPublicAPIs(alsoIncludePrivateTrials))
+        val result = await(underTest.fetchAllPublicAPIs(alsoIncludeControlledApis))
 
         result shouldBe List(anApiDefinition(context, publicVersion1, publicVersion2))
       }
     }
 
-    "the alsoIncludePrivateTrials option is true" should {
+    "the alsoIncludeControlledApis option is true" should {
 
-      val alsoIncludePrivateTrials = true
+      val alsoIncludeControlledApis = true
 
-      "return all Public and Private Trial API Definitions" in new Setup {
+      "return all Public and Controlled API Definitions" in new Setup {
 
         when(mockAPIDefinitionRepository.fetchAll()).thenReturn(successful(Seq(apiDefinitionWithAllVersions)))
 
-        val result = await(underTest.fetchAllPublicAPIs(alsoIncludePrivateTrials))
+        val result = await(underTest.fetchAllPublicAPIs(alsoIncludeControlledApis))
 
         result shouldBe List(anApiDefinition(
           context,
           publicVersion1,
           publicVersion2,
-          privateTrialVersion
+          controlledVersion
         ))
       }
     }
@@ -484,26 +484,26 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
     }
   }
 
-  "fetchAllPrivateAPIs" should {
+  "fetchAllNonPublicAPIs" should {
 
-    "return all Private API Definitions" in new Setup {
+    "return all NonPublic API Definitions" in new Setup {
 
       val api = aStoredApiDefinition(
         context,
         publicVersion2,
         publicVersion1,
-        privateVersion,
-        privateTrialVersion
+        internalVersion,
+        controlledVersion
       )
 
       when(mockAPIDefinitionRepository.fetchAll()).thenReturn(successful(Seq(api)))
 
-      val result = await(underTest.fetchAllPrivateAPIs())
+      val result = await(underTest.fetchAllNonPublicAPIs())
 
       result shouldBe List(anApiDefinition(
         context,
-        privateVersion,
-        privateTrialVersion
+        internalVersion,
+        controlledVersion
       ))
     }
   }
@@ -619,7 +619,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
     }
   }
 
-  private def aVersion(version: ApiVersionNbr, status: ApiStatus = ApiStatus.BETA, access: ApiAccess) =
+  private def aVersion(version: ApiVersionNbr, status: ApiStatus = ApiStatus.BETA, access: ApiAccessType) =
     ApiVersion(version, status, access, List(Endpoint("/test", "test", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)))
 
   private def someAPIDefinition: StoredApiDefinition =
@@ -633,7 +633,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
         ApiVersion(
           ApiVersionNbr("1.0"),
           ApiStatus.BETA,
-          ApiAccess.PUBLIC,
+          ApiAccessType.PUBLIC,
           List(
             Endpoint(
               "/today",
@@ -663,7 +663,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
         ApiVersion(
           ApiVersionNbr("1.0"),
           ApiStatus.BETA,
-          ApiAccess.PUBLIC,
+          ApiAccessType.PUBLIC,
           List(
             Endpoint(
               "/today",
@@ -679,7 +679,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
         ApiVersion(
           ApiVersionNbr("2.0"),
           ApiStatus.BETA,
-          ApiAccess.PUBLIC,
+          ApiAccessType.PUBLIC,
           v2Endpoints
         )
       ),

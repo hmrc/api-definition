@@ -101,23 +101,23 @@ trait ApiDefinitionServiceMockModule extends MockitoSugar with ArgumentMatchersS
         when(aMock.fetchAllPublicAPIs(*)).thenReturn(successful(apiDefinitions))
       }
 
-      def thenFails(alsoIncludePrivateTrials: Boolean) = {
-        when(aMock.fetchAllPublicAPIs(eqTo(alsoIncludePrivateTrials))).thenReturn(failed(new RuntimeException(s"Something went wrong")))
+      def thenFails(alsoIncludeControlledApis: Boolean) = {
+        when(aMock.fetchAllPublicAPIs(eqTo(alsoIncludeControlledApis))).thenReturn(failed(new RuntimeException(s"Something went wrong")))
       }
 
-      def verifyCalled(alsoIncludePrivateTrials: Boolean) = {
-        verify(aMock).fetchAllPublicAPIs(eqTo(alsoIncludePrivateTrials))
+      def verifyCalled(alsoIncludeControlledApis: Boolean) = {
+        verify(aMock).fetchAllPublicAPIs(eqTo(alsoIncludeControlledApis))
       }
     }
 
-    object FetchAllPrivateAPIs {
+    object FetchAllNonPublicAPIs {
 
       def success(apiDefinitions: List[ApiDefinition]) = {
-        when(aMock.fetchAllPrivateAPIs()).thenReturn(successful(apiDefinitions))
+        when(aMock.fetchAllNonPublicAPIs()).thenReturn(successful(apiDefinitions))
       }
 
       def thenFails() = {
-        when(aMock.fetchAllPrivateAPIs()).thenReturn(failed(new RuntimeException(s"Something went wrong")))
+        when(aMock.fetchAllNonPublicAPIs()).thenReturn(failed(new RuntimeException(s"Something went wrong")))
       }
     }
 

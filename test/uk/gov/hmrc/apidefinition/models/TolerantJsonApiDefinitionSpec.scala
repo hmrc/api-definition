@@ -75,7 +75,7 @@ class TolerantJsonApiDefinitionSpec extends BaseJsonFormattersSpec {
     "read from JSON when the API access type is PUBLIC and there is no whitelist" in {
       val apiDefinition = anApiDefinition()
 
-      apiDefinition.versions.head.access shouldBe ApiAccess.PUBLIC
+      apiDefinition.versions.head.access shouldBe ApiAccessType.PUBLIC
     }
 
     "read from JSON when the API access type is PRIVATE and isTrial is true" in {
@@ -85,7 +85,7 @@ class TolerantJsonApiDefinitionSpec extends BaseJsonFormattersSpec {
         requiresTrust = Some(true)
       )
 
-      apiDefinition.versions.head.access shouldBe ApiAccess.Private(true)
+      apiDefinition.versions.head.access shouldBe ApiAccessType.CONTROLLED
     }
 
     "read from JSON when the API categories are defined but empty" in {
@@ -101,7 +101,7 @@ class TolerantJsonApiDefinitionSpec extends BaseJsonFormattersSpec {
     }
 
     "read from JSON when the API categories are defined with correct values" in {
-      val apiDefinition = anApiDefinition(categories = Some("[\"CUSTOMS\", \"VAT\"]"))
+      val apiDefinition = anApiDefinition(categories = Some("""["CUSTOMS", "VAT"]"""))
 
       apiDefinition.categories shouldBe Seq(ApiCategory.CUSTOMS, ApiCategory.VAT)
     }
@@ -114,7 +114,7 @@ class TolerantJsonApiDefinitionSpec extends BaseJsonFormattersSpec {
 
     "fail to read from JSON when the API categories are defined with incorrect values" in {
       intercept[RuntimeException] {
-        anApiDefinition(categories = Some("[\"NOT_A_VALID_CATEGORY\"]"))
+        anApiDefinition(categories = Some("""["NOT_A_VALID_CATEGORY"]"""))
       }
     }
   }

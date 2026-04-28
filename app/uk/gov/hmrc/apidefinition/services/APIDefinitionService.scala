@@ -203,9 +203,9 @@ class APIDefinitionService @Inject() (
     }
   }
 
-  def fetchAllPublicAPIs(alsoIncludePrivateTrials: Boolean): Future[List[ApiDefinition]] = {
+  def fetchAllPublicAPIs(alsoIncludeControlledApis: Boolean): Future[List[ApiDefinition]] = {
     apiDefinitionRepository.fetchAll()
-      .map(filterApisExcludingPrivate(alsoIncludePrivateTrials))
+      .map(filterApisExcludingNonPublic(alsoIncludeControlledApis))
       .map(convertMany)
   }
 
@@ -213,28 +213,26 @@ class APIDefinitionService @Inject() (
     apiDefinitionRepository.fetchAll().map(convertMany)
   }
 
-  def fetchAllPrivateAPIs(): Future[List[ApiDefinition]] = {
+  def fetchAllNonPublicAPIs(): Future[List[ApiDefinition]] = {
 
-    def hasPrivateAccess(apiVersion: ApiVersion) = apiVersion.access match {
-      case ApiAccess.Private(_) => true
-      case _                    => false
-    }
+    def hasNonPublicAccess(apiVersion: ApiVersion) = !apiVersion.access.isPublic
 
     def removePublicVersions(api: StoredApiDefinition) =
-      api.copy(versions = api.versions.filter(hasPrivateAccess))
+      api.copy(versions = api.versions.filter(hasNonPublicAccess))
 
     for {
-      apiDefinitions     <- apiDefinitionRepository.fetchAll()
-      includesPrivateApis = apiDefinitions.filter(d => d.versions.exists(hasPrivateAccess))
-      onlyPrivateApis     = includesPrivateApis.map(removePublicVersions)
-    } yield onlyPrivateApis.toList.map(convertOne)
+      apiDefinitions       <- apiDefinitionRepository.fetchAll()
+      includesNonPublicApis = apiDefinitions.filter(d => d.versions.exists(hasNonPublicAccess))
+      onlyNonPublicApis     = includesNonPublicApis.map(removePublicVersions)
+    } yield onlyNonPublicApis.toList.map(convertOne)
   }
 
-  private def filterApisExcludingPrivate(alsoIncludePrivateTrials: Boolean): Seq[StoredApiDefinition] => Seq[StoredApiDefinition] = apis => {
+  private def filterApisExcludingNonPublic(alsoIncludeControlledApis: Boolean): Seq[StoredApiDefinition] => Seq[StoredApiDefinition] = apis => {
     val innerFilter: StoredApiDefinition => Option[StoredApiDefinition] = api => {
       val filteredVersions = api.versions.filter(_.access match {
-        case ApiAccess.Private(isTrial) => (isTrial && alsoIncludePrivateTrials)
-        case _                          => true
+        case ApiAccessType.PUBLIC     => true
+        case ApiAccessType.INTERNAL   => false
+        case ApiAccessType.CONTROLLED => alsoIncludeControlledApis
       })
 
       if (filteredVersions.isEmpty) None

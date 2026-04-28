@@ -28,9 +28,8 @@ import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiAccess.{PUBLIC, Private}
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiStatus.{ALPHA, BETA}
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiAccessType, _}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiVersionNbr
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.mongo.play.json.Codecs
@@ -62,7 +61,7 @@ class APIEventRepositorySpec extends AsyncHmrcSpec
   val apiCreated                 = ApiCreated(ApiEventId.random, apiName, serviceName, instant)
   val newApiVersion              = NewApiVersion(ApiEventId.random, apiName, serviceName, instant, ALPHA, version1)
   val apiVersionStatusChange     = ApiVersionStatusChange(ApiEventId.random, apiName, serviceName, instant, ALPHA, BETA, version1)
-  val apiVersionAccessChange     = ApiVersionAccessChange(ApiEventId.random, apiName, serviceName, instant, PUBLIC, Private(true), version1)
+  val apiVersionAccessChange     = ApiVersionAccessChange(ApiEventId.random, apiName, serviceName, instant, ApiAccessType.PUBLIC, ApiAccessType.CONTROLLED, version1)
   val apiVersionEndpointsAdded   = ApiVersionEndpointsAdded(ApiEventId.random, apiName, serviceName, instant, List(endpoint), version1)
   val apiVersionEndpointsRemoved = ApiVersionEndpointsRemoved(ApiEventId.random, apiName, serviceName, instant, List(endpoint), version1)
   val publishedNoChange          = ApiPublishedNoChange(ApiEventId.random, apiName, serviceName, instant)
