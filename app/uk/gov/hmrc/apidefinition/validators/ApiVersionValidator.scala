@@ -27,8 +27,7 @@ object ApiVersionValidator extends Validator[ApiVersion] {
     (
       validateVersionNumber(version.versionNbr),
       validateStatusAndEndpointsEnabled(version.endpointsEnabled, version.status),
-      validateAllEndpoints(version.endpoints),
-      validateUniqueEndpointPaths(version.endpoints.map(_.uriPattern))
+      validateAllEndpoints(version.endpoints)
     )
       .mapN { case _ => version }
       .leftMap(_.map(s => s"Version ${version.versionNbr} - $s"))
