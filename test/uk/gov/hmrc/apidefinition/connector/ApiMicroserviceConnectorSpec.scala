@@ -22,7 +22,7 @@ import org.apache.pekko.util.ByteString
 import org.scalatest.BeforeAndAfterAll
 
 import play.api.http.HttpEntity
-import play.api.http.Status._
+import play.api.http.Status.*
 import play.api.mvc.{ResponseHeader, Result, Results}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiVersionNbr
 import uk.gov.hmrc.http.HeaderCarrier
@@ -44,7 +44,7 @@ class ApiMicroserviceConnectorSpec extends AsyncHmrcSpec with Utils with MockWSH
   val resourceNotFoundUrl = s"$serviceUrl/api/conf/$version/resourceNotThere"
 
   val testFileName                  = "hello"
-  val source: Source[ByteString, _] = createSourceFrom(testFileName)
+  val source: Source[ByteString, ?] = createSourceFrom(testFileName)
   val sourceContents                = contentsFrom(testFileName)
 
   val mockWS = MockWS {

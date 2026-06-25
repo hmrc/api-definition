@@ -22,6 +22,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 import com.mongodb.MongoWriteException
+import org.mongodb.scala.ObservableFuture
 import org.mongodb.scala.bson.collection.immutable.Document
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.{IndexModel, IndexOptions}
@@ -32,8 +33,10 @@ import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{StoredApiDefinition, _}
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiDefinition.ServiceBaseUrl
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.Endpoint.*
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
@@ -54,81 +57,90 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
 
   private val helloApiVersion = ApiVersion(
     versionNbr = ApiVersionNbr("1.0"),
-    status = ApiStatus.BETA,
-    access = ApiAccessType.PUBLIC,
-    endpoints = List(Endpoint("/world", "Say Hello to the World!", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
+    status = ApiStatus.Beta,
+    access = ApiAccessType.Public,
+    endpoints = List(Endpoint(UriPattern("/world"), Name("Say Hello to the World!"), HttpMethod.Get, AuthType.None, ResourceThrottlingTier.Unlimited, None, List.empty)),
+    true,
+    None,
+    ApiVersionSource.OAS
   )
 
   private val calendarApiVersion = ApiVersion(
     versionNbr = ApiVersionNbr("2.0"),
-    status = ApiStatus.STABLE,
-    access = ApiAccessType.PUBLIC,
-    endpoints = List(Endpoint("/date", "Check current date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
+    status = ApiStatus.Stable,
+    access = ApiAccessType.Public,
+    endpoints = List(Endpoint(UriPattern("/date"), Name("Check current date"), HttpMethod.Get, AuthType.None, ResourceThrottlingTier.Unlimited, None, List.empty)),
+    true,
+    None,
+    ApiVersionSource.OAS
   )
 
   private val helloApiDefinition = StoredApiDefinition(
     serviceName = ServiceName("hello-service"),
-    serviceBaseUrl = "hello.com",
-    name = "Hello",
-    description = "This is the Hello API",
+    serviceBaseUrl = ServiceBaseUrl("hello.com"),
+    name = ApiDefinition.Name("Hello"),
+    description = ApiDefinition.Description("This is the Hello API"),
     context = ApiContext("hello"),
     versions = List(helloApiVersion),
     isTestSupport = false,
     lastPublishedAt = None,
-    categories = List(ApiCategory.AGENTS)
+    categories = List(ApiCategory.Agents)
   )
 
   private val calendarApiDefinition = StoredApiDefinition(
     serviceName = ServiceName("calendar-service"),
-    serviceBaseUrl = "calendar.com",
-    name = "Calendar",
-    description = "This is the Calendar API",
+    serviceBaseUrl = ServiceBaseUrl("calendar.com"),
+    name = ApiDefinition.Name("Calendar"),
+    description = ApiDefinition.Description("This is the Calendar API"),
     context = ApiContext("calendar"),
     versions = List(calendarApiVersion),
     isTestSupport = false,
     lastPublishedAt = None,
-    categories = List(ApiCategory.AGENTS)
+    categories = List(ApiCategory.Agents)
   )
 
   private val individualIncomeTaxApiVersion = ApiVersion(
     versionNbr = ApiVersionNbr("1.0"),
-    status = ApiStatus.STABLE,
-    access = ApiAccessType.PUBLIC,
-    endpoints = List(Endpoint("/submit", "Submit Income Tax Return", HttpMethod.POST, AuthType.USER, ResourceThrottlingTier.UNLIMITED))
+    status = ApiStatus.Stable,
+    access = ApiAccessType.Public,
+    endpoints = List(Endpoint(UriPattern("/submit"), Name("Submit Income Tax Return"), HttpMethod.Post, AuthType.User, ResourceThrottlingTier.Unlimited, None, List.empty)),
+    true,
+    None,
+    ApiVersionSource.OAS
   )
 
   private val individualIncomeTaxApiDefinition = StoredApiDefinition(
     serviceName = ServiceName("income-tax"),
-    serviceBaseUrl = "income-tax.protected.mdtp",
-    name = "Individual Income Tax",
-    description = "This is the Individual Income Tax API",
+    serviceBaseUrl = ServiceBaseUrl("income-tax.protected.mdtp"),
+    name = ApiDefinition.Name("Individual Income Tax"),
+    description = ApiDefinition.Description("This is the Individual Income Tax API"),
     context = ApiContext("individuals/income-tax"),
     versions = List(individualIncomeTaxApiVersion),
     isTestSupport = false,
     lastPublishedAt = None,
-    categories = List(ApiCategory.AGENTS)
+    categories = List(ApiCategory.Agents)
   )
 
   private val individualNIApiVersion = ApiVersion(
     versionNbr = ApiVersionNbr("1.0"),
-    status = ApiStatus.STABLE,
-    access = ApiAccessType.PUBLIC,
-    endpoints = List(Endpoint("/submit", "Submit National Insurance", HttpMethod.POST, AuthType.USER, ResourceThrottlingTier.UNLIMITED)),
+    status = ApiStatus.Stable,
+    access = ApiAccessType.Public,
+    endpoints = List(Endpoint(UriPattern("/submit"), Name("Submit National Insurance"), HttpMethod.Post, AuthType.User, ResourceThrottlingTier.Unlimited, None, List.empty)),
     endpointsEnabled = true,
     awsRequestId = None,
-    versionSource = ApiVersionSource.UNKNOWN
+    versionSource = ApiVersionSource.Unknown
   )
 
   private val individualNIApiDefinition = StoredApiDefinition(
     serviceName = ServiceName("ni"),
-    serviceBaseUrl = "ni.protected.mdtp",
-    name = "Individual National Insurance",
-    description = "This is the Individual National Insurance API",
+    serviceBaseUrl = ServiceBaseUrl("ni.protected.mdtp"),
+    name = ApiDefinition.Name("Individual National Insurance"),
+    description = ApiDefinition.Description("This is the Individual National Insurance API"),
     context = ApiContext("individuals/ni"),
     versions = List(individualNIApiVersion),
     isTestSupport = false,
     lastPublishedAt = None,
-    categories = List(ApiCategory.AGENTS)
+    categories = List(ApiCategory.Agents)
   )
 
   override val repository: APIDefinitionRepository = app.injector.instanceOf[APIDefinitionRepository]
@@ -164,7 +176,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
 
       await(repository.save(helloApiDefinition))
 
-      val updatedAPIDefinition = helloApiDefinition.copy(name = "Ciao", description = "Ciao API", versions = List(calendarApiVersion))
+      val updatedAPIDefinition = helloApiDefinition.copy(name = ApiDefinition.Name("Ciao"), description = ApiDefinition.Description("Ciao API"), versions = List(calendarApiVersion))
       await(repository.save(updatedAPIDefinition))
 
       val retrieved = await(repository.fetchByServiceName(helloApiDefinition.serviceName)).get
@@ -217,7 +229,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
     }
 
     "return None when there are no APIs with that service name" in {
-      await(repository.save(calendarApiDefinition.copy(serviceBaseUrl = "abc")))
+      await(repository.save(calendarApiDefinition.copy(serviceBaseUrl = ServiceBaseUrl("abc"))))
 
       val retrieved = await(repository.fetchByServiceBaseUrl(calendarApiDefinition.serviceBaseUrl))
       retrieved shouldBe None
@@ -236,7 +248,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
     }
 
     "return None when there are no APIs with that name" in {
-      await(repository.save(calendarApiDefinition.copy(name = "abc")))
+      await(repository.save(calendarApiDefinition.copy(name = ApiDefinition.Name("abc"))))
 
       val retrieved = await(repository.fetchByName(calendarApiDefinition.name))
       retrieved shouldBe None
@@ -291,7 +303,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
       await(repository.delete(calendarApiDefinition.serviceName))
 
       val retrieved = await(repository.fetchAll())
-      retrieved shouldBe List(defnWithSource(ApiVersionSource.UNKNOWN)(helloApiDefinition))
+      retrieved shouldBe List(defnWithSource(ApiVersionSource.Unknown)(helloApiDefinition))
     }
 
   }
@@ -317,7 +329,10 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
       collectionSize shouldBe 1
 
       val caught = intercept[MongoWriteException] {
-        val inError = saveApi(repository, helloApiDefinition.copy(serviceName = ServiceName("newServiceName"), name = "newName", serviceBaseUrl = "newServiceBaseUrl"))
+        val inError = saveApi(
+          repository,
+          helloApiDefinition.copy(serviceName = ServiceName("newServiceName"), name = ApiDefinition.Name("newName"), serviceBaseUrl = ServiceBaseUrl("newServiceBaseUrl"))
+        )
         await(inError)
       }
       assertMongoError(caught, "context", helloApiDefinition.context.value)
@@ -331,7 +346,10 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
 
       val caught = intercept[MongoWriteException] {
         val inError =
-          saveApi(repository, helloApiDefinition.copy(context = ApiContext("newContext"), serviceName = ServiceName("newServiceName"), serviceBaseUrl = "newServiceBaseUrl"))
+          saveApi(
+            repository,
+            helloApiDefinition.copy(context = ApiContext("newContext"), serviceName = ServiceName("newServiceName"), serviceBaseUrl = ServiceBaseUrl("newServiceBaseUrl"))
+          )
         await(inError)
       }
       assertMongoError(caught, "name", helloApiDefinition.name)
@@ -344,10 +362,13 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
       collectionSize shouldBe 1
 
       val caught = intercept[MongoWriteException] {
-        val inError = saveApi(repository, helloApiDefinition.copy(name = "newName", context = ApiContext("newContext"), serviceBaseUrl = "newServiceBaseUrl"))
+        val inError = saveApi(
+          repository,
+          helloApiDefinition.copy(name = ApiDefinition.Name("newName"), context = ApiContext("newContext"), serviceBaseUrl = ServiceBaseUrl("newServiceBaseUrl"))
+        )
         await(inError)
       }
-      assertMongoError(caught, "serviceName", helloApiDefinition.serviceName.value)
+      assertMongoError(caught, "serviceName", helloApiDefinition.serviceName)
 
       collectionSize shouldBe 1
     }
@@ -357,7 +378,8 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
       collectionSize shouldBe 1
 
       val caught = intercept[MongoWriteException] {
-        val inError = saveApi(repository, helloApiDefinition.copy(name = "newName", context = ApiContext("newContext"), serviceName = ServiceName("newServiceName")))
+        val inError =
+          saveApi(repository, helloApiDefinition.copy(name = ApiDefinition.Name("newName"), context = ApiContext("newContext"), serviceName = ServiceName("newServiceName")))
         await(inError)
       }
       assertMongoError(caught, "serviceBaseUrl", helloApiDefinition.serviceBaseUrl)
@@ -399,8 +421,8 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
             "status"    -> "STABLE",
             "endpoints" -> Seq(
               Json.obj(
-                "uriPattern"     -> "/today",
-                "endpointName"   -> "Get Today's Date",
+                "uriPattern"     -> UriPattern("/today"),
+                "endpointName"   -> Name("Get Today's Date"),
                 "method"         -> "GET",
                 "authType"       -> "NONE",
                 "throttlingTier" -> "UNLIMITED"
@@ -419,10 +441,10 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
       records.head.isTestSupport shouldBe false
       records.head.lastPublishedAt shouldBe None
 
-      records.head.versions.head.access shouldBe ApiAccessType.PUBLIC
+      records.head.versions.head.access shouldBe ApiAccessType.Public
       records.head.versions.head.awsRequestId shouldBe None
       records.head.versions.head.endpointsEnabled shouldBe true
-      records.head.versions.head.versionSource shouldBe ApiVersionSource.UNKNOWN
+      records.head.versions.head.versionSource shouldBe ApiVersionSource.Unknown
 
       records.head.versions.head.endpoints.head.queryParameters shouldBe List.empty
 

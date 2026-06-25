@@ -22,14 +22,13 @@ import play.api.inject.{Binding, Module}
 import play.api.{Configuration, Environment, Mode}
 import uk.gov.hmrc.http.StringContextOps
 import uk.gov.hmrc.http.client.HttpClientV2
-import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
 import uk.gov.hmrc.apidefinition.services.{EmailNotificationService, LoggingNotificationService, NotificationService}
 import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
 
 class ConfigurationModule extends Module {
 
-  override def bindings(environment: Environment, configuration: Configuration): Seq[Binding[_]] = {
+  override def bindings(environment: Environment, configuration: Configuration): Seq[Binding[?]] = {
     Seq(
       bind[NotificationService].toProvider[NotificationServiceConfigProvider]
     )
@@ -37,7 +36,7 @@ class ConfigurationModule extends Module {
 }
 
 @Singleton
-class NotificationServiceConfigProvider @Inject() (val runModeConfiguration: Configuration, environment: Environment, httpClient: HttpClientV2, servicesConfig: ServicesConfig)
+class NotificationServiceConfigProvider @Inject() (val runModeConfiguration: Configuration, environment: Environment, httpClient: HttpClientV2)
     extends Provider[NotificationService] with ApplicationLogger {
 
   private val LoggerNotificationType = "LOG"

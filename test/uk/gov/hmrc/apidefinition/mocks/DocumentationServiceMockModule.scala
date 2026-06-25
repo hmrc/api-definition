@@ -21,7 +21,7 @@ import scala.concurrent.Future.{failed, successful}
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
 import play.api.http.HeaderNames.CONTENT_TYPE
-import play.api.mvc.Results._
+import play.api.mvc.Results.*
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ServiceName
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiVersionNbr
 

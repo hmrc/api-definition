@@ -17,28 +17,32 @@
 package uk.gov.hmrc.apidefinition.service
 
 import play.api.libs.json.Json
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.Endpoint.*
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApiContext, ApiVersionNbr}
 
-import uk.gov.hmrc.apidefinition.models.JsonFormatters._
 import uk.gov.hmrc.apidefinition.utils.{AWSPayloadHelper, AsyncHmrcSpec}
 
 class APIDefinitionToAWSJsonSpec extends AsyncHmrcSpec {
 
-  private def anAPIVersion(version: String, status: ApiStatus = ApiStatus.STABLE, queryParams: List[QueryParameter] = Nil) = ApiVersion(
+  private def anAPIVersion(version: String, status: ApiStatus = ApiStatus.Stable, queryParams: List[QueryParameter] = Nil) = ApiVersion(
     ApiVersionNbr(version),
     status,
-    ApiAccessType.PUBLIC,
+    ApiAccessType.Public,
     List(
       Endpoint(
-        "/today/{id}",
-        "Get Today's Date",
-        HttpMethod.GET,
-        AuthType.NONE,
-        ResourceThrottlingTier.UNLIMITED,
+        UriPattern("/today/{id}"),
+        Name("Get Today's Date"),
+        HttpMethod.Get,
+        AuthType.None,
+        ResourceThrottlingTier.Unlimited,
+        None,
         queryParameters = queryParams
       )
-    )
+    ),
+    true,
+    None,
+    ApiVersionSource.OAS
   )
 
   trait Setup {}
@@ -71,6 +75,8 @@ class APIDefinitionToAWSJsonSpec extends AsyncHmrcSpec {
                                |  "basePath":"//my-path",
                                |  "host":"host"
                                |}""".stripMargin
+
+      import uk.gov.hmrc.apidefinition.models.JsonFormatters.given
       Json.toJson(swaggerDetails) shouldBe Json.parse(expectedJsonText)
     }
   }

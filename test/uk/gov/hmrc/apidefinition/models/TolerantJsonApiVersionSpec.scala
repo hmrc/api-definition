@@ -17,8 +17,9 @@
 package uk.gov.hmrc.apidefinition.models
 
 import play.api.libs.json.OFormat
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.Endpoint.*
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.common.utils.BaseJsonFormattersSpec
 
 class TolerantJsonApiVersionSpec extends BaseJsonFormattersSpec {
@@ -27,17 +28,17 @@ class TolerantJsonApiVersionSpec extends BaseJsonFormattersSpec {
 
   val endpointsText = """ "endpoints": [
                         |  {
-                        |    "uriPattern":"/today",
-                        |    "endpointName":"Get Today's Date",
+                        |    "uriPattern":UriPattern("/today"),
+                        |    "endpointName":Name("Get Today's Date"),
                         |    "method":"GET",
                         |    "authType":"NONE",
                         |    "throttlingTier":"UNLIMITED"
                         |  }
                         |]""".stripMargin
 
-  val endpoints = List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED, None, List.empty))
+  val endpoints = List(Endpoint(UriPattern("/today"), Name("Get Today's Date"), HttpMethod.Get, AuthType.None, ResourceThrottlingTier.Unlimited, None, List.empty))
 
-  val baseApiVersion = ApiVersion(ApiVersionNbr("1.0"), ApiStatus.STABLE, ApiAccessType.PUBLIC, endpoints, true, None, ApiVersionSource.OAS)
+  val baseApiVersion = ApiVersion(ApiVersionNbr("1.0"), ApiStatus.Stable, ApiAccessType.Public, endpoints, true, None, ApiVersionSource.OAS)
 
   "TolerantJsonApiVersion" should {
 
@@ -76,7 +77,7 @@ class TolerantJsonApiVersionSpec extends BaseJsonFormattersSpec {
                     |    ${endpointsText}
                     |}""".stripMargin
 
-      testFromJson[ApiVersion](json)(baseApiVersion.copy(versionSource = ApiVersionSource.UNKNOWN))
+      testFromJson[ApiVersion](json)(baseApiVersion.copy(versionSource = ApiVersionSource.Unknown))
     }
 
     "fail to read private access from Json when bad endpoints enabled type" in {

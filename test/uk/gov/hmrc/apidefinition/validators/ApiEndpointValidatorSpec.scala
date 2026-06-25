@@ -18,7 +18,8 @@ package uk.gov.hmrc.apidefinition.validators
 
 import org.scalactic.source.Position
 
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{AuthType, Endpoint, HttpMethod, QueryParameter, ResourceThrottlingTier}
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.Endpoint.UriPattern
 
 class ApiEndpointValidatorSpec extends AbstractValidatorSpec {
   "ApiEndpointValidator" when {
@@ -70,9 +71,10 @@ class ApiEndpointValidatorSpec extends AbstractValidatorSpec {
           '<', '>', '"', '?', '!', ',', '.', ':', '&', '[', ']', '(', ')'
         )
 
-        specialChars.foreach { char: Char =>
-          val endpointUri = s"/payments/${char}account"
-          failsToValidateWithBadValue(endpointUri, clue = Some(s"Invalid char '$char' should not be allowed"))
+        specialChars.foreach {
+          (char: Char) =>
+            val endpointUri = s"/payments/${char}account"
+            failsToValidateWithBadValue(endpointUri, clue = Some(s"Invalid char '$char' should not be allowed"))
         }
       }
 
@@ -188,12 +190,12 @@ class ApiEndpointValidatorSpec extends AbstractValidatorSpec {
         failsToValidate(
           ApiEndpointValidator.validate(
             Endpoint(
-              uriPattern = "/bad.pattern/{paramA}/abc",
-              endpointName = " ",
-              method = HttpMethod.GET,
-              authType = AuthType.USER,
+              uriPattern = UriPattern("/bad.pattern/{paramA}/abc"),
+              endpointName = Endpoint.Name(" "),
+              method = HttpMethod.Get,
+              authType = AuthType.User,
               scope = None,
-              throttlingTier = ResourceThrottlingTier.UNLIMITED,
+              throttlingTier = ResourceThrottlingTier.Unlimited,
               queryParameters = List(
                 "paramA",
                 " ",
@@ -209,12 +211,12 @@ class ApiEndpointValidatorSpec extends AbstractValidatorSpec {
       "succeed with a good USER endpoint" in {
         validates(
           Endpoint(
-            uriPattern = "/.goodpattern/{paramA}/abc",
-            endpointName = "fred",
-            method = HttpMethod.GET,
-            authType = AuthType.USER,
-            scope = Some("xyz"),
-            throttlingTier = ResourceThrottlingTier.UNLIMITED,
+            uriPattern = UriPattern("/.goodpattern/{paramA}/abc"),
+            endpointName = Endpoint.Name("fred"),
+            method = HttpMethod.Get,
+            authType = AuthType.User,
+            scope = Some(Scope("xyz")),
+            throttlingTier = ResourceThrottlingTier.Unlimited,
             queryParameters = List(
               "param1",
               "param2",
@@ -227,12 +229,12 @@ class ApiEndpointValidatorSpec extends AbstractValidatorSpec {
       "succeed with a good APP endpoint without a scope" in {
         validates(
           Endpoint(
-            uriPattern = "/.goodpattern/{paramA}/abc",
-            endpointName = "fred",
-            method = HttpMethod.GET,
-            authType = AuthType.APPLICATION,
+            uriPattern = UriPattern("/.goodpattern/{paramA}/abc"),
+            endpointName = Endpoint.Name("fred"),
+            method = HttpMethod.Get,
+            authType = AuthType.Application,
             scope = None,
-            throttlingTier = ResourceThrottlingTier.UNLIMITED,
+            throttlingTier = ResourceThrottlingTier.Unlimited,
             queryParameters = List(
               "param1",
               "param2",
@@ -245,12 +247,12 @@ class ApiEndpointValidatorSpec extends AbstractValidatorSpec {
       "succeed with a good APP endpoint with a scope" in {
         validates(
           Endpoint(
-            uriPattern = "/.goodpattern/{paramA}/abc",
-            endpointName = "fred",
-            method = HttpMethod.GET,
-            authType = AuthType.APPLICATION,
-            scope = Some("xyz"),
-            throttlingTier = ResourceThrottlingTier.UNLIMITED,
+            uriPattern = UriPattern("/.goodpattern/{paramA}/abc"),
+            endpointName = Endpoint.Name("fred"),
+            method = HttpMethod.Get,
+            authType = AuthType.Application,
+            scope = Some(Scope("xyz")),
+            throttlingTier = ResourceThrottlingTier.Unlimited,
             queryParameters = List(
               "param1",
               "param2",

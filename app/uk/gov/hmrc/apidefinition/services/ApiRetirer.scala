@@ -46,7 +46,7 @@ class ApiRetirer @Inject() (apiDefinitionRepository: APIDefinitionRepository)
           version =>
             {
               if (version.versionNbr == ApiVersionNbr(versionToRetire)) {
-                listOfVersions += version.copy(status = ApiStatus.RETIRED)
+                listOfVersions += version.copy(status = ApiStatus.Retired)
               } else {
                 listOfVersions += version
               }

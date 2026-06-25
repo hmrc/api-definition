@@ -19,7 +19,7 @@ package uk.gov.hmrc.apidefinition.validators
 import scala.util.matching.Regex
 
 import cats.data.{NonEmptyList, ValidatedNel}
-import cats.implicits._
+import cats.implicits.*
 
 trait BaseValidator {
 

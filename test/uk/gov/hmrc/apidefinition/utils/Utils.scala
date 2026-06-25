@@ -17,7 +17,7 @@
 package uk.gov.hmrc.apidefinition.utils
 
 import java.nio.file.Paths
-import scala.concurrent.duration.{FiniteDuration, _}
+import scala.concurrent.duration.{FiniteDuration, *}
 import scala.concurrent.{Await, Future}
 import scala.language.postfixOps
 
@@ -48,7 +48,7 @@ trait Utils {
     contentsFrom(response.body)
   }
 
-  def contentsFrom(source: Source[ByteString, _]): String = {
+  def contentsFrom(source: Source[ByteString, ?]): String = {
     val sink = Sink.fold[String, ByteString]("") { (content, bytes) =>
       content + bytes.utf8String
     }

@@ -17,25 +17,18 @@
 package uk.gov.hmrc.apidefinition.models
 
 import play.api.libs.json.{Format, Json, OFormat}
-import uk.gov.hmrc.apiplatform.modules.common.domain.services.SealedTraitJsonFormatting
+import uk.gov.hmrc.apiplatform.modules.common.domain.services.SimpleEnumJsonFormatting
 
-sealed trait ErrorCode
+enum ErrorCode {
+  case INVALID_REQUEST_PAYLOAD, INTERNAL_SERVER_ERROR, API_DEFINITION_NOT_FOUND, API_INVALID_JSON, CONTEXT_ALREADY_DEFINED, UNSUPPORTED_ACCESS_TYPE,
+}
 
 object ErrorCode {
-  case object INVALID_REQUEST_PAYLOAD  extends ErrorCode
-  case object INTERNAL_SERVER_ERROR    extends ErrorCode
-  case object API_DEFINITION_NOT_FOUND extends ErrorCode
-  case object API_INVALID_JSON         extends ErrorCode
-  case object CONTEXT_ALREADY_DEFINED  extends ErrorCode
-  case object UNSUPPORTED_ACCESS_TYPE  extends ErrorCode
-
-  val values = Set(INTERNAL_SERVER_ERROR, INVALID_REQUEST_PAYLOAD, API_DEFINITION_NOT_FOUND, API_INVALID_JSON, CONTEXT_ALREADY_DEFINED, UNSUPPORTED_ACCESS_TYPE)
-
-  def apply(text: String): Option[ErrorCode] = ErrorCode.values.find(_.toString() == text.toUpperCase)
+  def apply(text: String): Option[ErrorCode] = ErrorCode.values.find(_.toString().equalsIgnoreCase(text))
 
   def unsafeApply(text: String): ErrorCode = apply(text).getOrElse(throw new RuntimeException(s"$text is not a valid Error Code"))
 
-  implicit val format: Format[ErrorCode] = SealedTraitJsonFormatting.createFormatFor[ErrorCode]("Error Code", apply)
+  given Format[ErrorCode] = SimpleEnumJsonFormatting.createEnumFormatFor[ErrorCode]("Error Code", apply)
 }
 
 case class ValidationErrors(code: ErrorCode, messages: Seq[String])

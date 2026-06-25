@@ -24,7 +24,8 @@ import scala.util.matching.Regex
 
 import com.google.inject.Singleton
 
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{StoredApiDefinition, _}
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiDefinition.ServiceBaseUrl
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{StoredApiDefinition, *}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiContext
 import uk.gov.hmrc.http.{HeaderCarrier, InternalServerException}
 
@@ -51,7 +52,7 @@ class AwsApiPublisher @Inject() (val awsAPIPublisherConnector: AWSAPIPublisherCo
         val apiName = awsApiGatewayName(apiVersion.versionNbr, apiDefinition)
 
         apiVersion.status match {
-          case ApiStatus.RETIRED => deleteAPIVersion(apiName)
+          case ApiStatus.Retired => deleteAPIVersion(apiName)
           case _                 => publishAPIVersion(apiName, apiDefinition.name, apiDefinition.serviceBaseUrl, apiDefinition.context, apiVersion)
         }
       }
@@ -68,8 +69,8 @@ class AwsApiPublisher @Inject() (val awsAPIPublisherConnector: AWSAPIPublisherCo
 
   private def publishAPIVersion(
       apiName: String,
-      apiDefinitionName: String,
-      serviceBaseUrl: String,
+      apiDefinitionName: ApiDefinition.Name,
+      serviceBaseUrl: ServiceBaseUrl,
       context: ApiContext,
       apiVersion: ApiVersion
     )(implicit hc: HeaderCarrier

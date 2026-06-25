@@ -18,7 +18,7 @@ package uk.gov.hmrc.apidefinition.service
 
 import java.util
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future._
+import scala.concurrent.Future.*
 import scala.util.Random
 
 import org.apache.pekko.stream.Materializer
@@ -34,11 +34,11 @@ import play.api.mvc.Result
 import play.shaded.ahc.io.netty.handler.codec.http.DefaultHttpHeaders
 import play.shaded.ahc.org.asynchttpclient.uri.Uri
 import play.shaded.ahc.org.asynchttpclient.{AsyncHttpClientConfig, DefaultAsyncHttpClientConfig}
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiDefinition.ServiceBaseUrl
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
 import uk.gov.hmrc.http.{HeaderCarrier, InternalServerException, NotFoundException}
 
-import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.connector.ApiMicroserviceConnector
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.services.DocumentationService
@@ -53,51 +53,63 @@ class DocumentationServiceSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wi
 
   val productionV1Availability: ApiAvailability = ApiAvailability(
     endpointsEnabled = true,
-    ApiAccessType.INTERNAL,
+    ApiAccessType.Internal,
     loggedIn = false,
     authorised = false
   )
 
   val productionV2Availability: ApiAvailability = ApiAvailability(
     endpointsEnabled = true,
-    ApiAccessType.INTERNAL,
+    ApiAccessType.Internal,
     loggedIn = false,
     authorised = false
   )
 
   val sandboxV2Availability: ApiAvailability = ApiAvailability(
     endpointsEnabled = true,
-    ApiAccessType.PUBLIC,
+    ApiAccessType.Public,
     loggedIn = false,
     authorised = false
   )
 
   val sandboxV3Availability: ApiAvailability = ApiAvailability(
     endpointsEnabled = false,
-    ApiAccessType.PUBLIC,
+    ApiAccessType.Public,
     loggedIn = false,
     authorised = false
   )
 
+  def makeApiVersion(versionNbr: ApiVersionNbr, status: ApiStatus, enabled: Boolean = true): ApiVersion = {
+    ApiVersion(
+      versionNbr,
+      status,
+      ApiAccessType.Public,
+      Nil,
+      enabled,
+      None,
+      ApiVersionSource.OAS
+    )
+  }
+
   val apiDefinition: StoredApiDefinition = StoredApiDefinition(
     serviceName = serviceName,
-    serviceBaseUrl = serviceUrl,
-    name = "Hello World",
-    description = "Example",
+    serviceBaseUrl = ServiceBaseUrl(serviceUrl),
+    name = ApiDefinition.Name("Hello World"),
+    description = ApiDefinition.Description("Example"),
     context = ApiContext("hello"),
     isTestSupport = false,
     versions = List(
-      ApiVersion(ApiVersionNbr("1.0"), ApiStatus.STABLE, endpoints = Nil, endpointsEnabled = false),
-      ApiVersion(ApiVersionNbr("2.0"), ApiStatus.BETA, endpoints = Nil),
-      ApiVersion(ApiVersionNbr("3.0"), ApiStatus.ALPHA, endpoints = Nil)
+      makeApiVersion(ApiVersionNbr("1.0"), ApiStatus.Stable, false),
+      makeApiVersion(ApiVersionNbr("2.0"), ApiStatus.Beta),
+      makeApiVersion(ApiVersionNbr("3.0"), ApiStatus.Alpha)
     ),
     lastPublishedAt = None,
-    categories = List(ApiCategory.OTHER)
+    categories = List(ApiCategory.Other)
   )
 
-  private val sampleFileSource: Source[ByteString, _] = createSourceFrom("hello")
+  private val sampleFileSource: Source[ByteString, ?] = createSourceFrom("hello")
 
-  def createResponse(statusCode: Int, headers: Map[String, String], fileSource: Source[ByteString, _]): WSResponse = {
+  def createResponse(statusCode: Int, headers: Map[String, String], fileSource: Source[ByteString, ?]): WSResponse = {
     val uri: Uri       = Uri.create(serviceUrl)
     val status         = new CacheableHttpResponseStatus(uri, statusCode, "", "")
     val defaultHeaders = new DefaultHttpHeaders()
@@ -124,17 +136,15 @@ class DocumentationServiceSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wi
 
     val mockAPIDefinitionRepository: APIDefinitionRepository   = mock[APIDefinitionRepository]
     val mockApiMicroserviceConnector: ApiMicroserviceConnector = mock[ApiMicroserviceConnector]
-    val mockServiceConfig: AppConfig                           = mock[AppConfig]
 
     val underTest = new DocumentationService(
       mockAPIDefinitionRepository,
-      mockApiMicroserviceConnector,
-      mockServiceConfig
+      mockApiMicroserviceConnector
     )
 
     def generateRandomVersion: String = s"${Random.nextInt().abs}.${Random.nextInt().abs}"
 
-    def theServiceIsRunningInSandboxMode() = when(mockServiceConfig.isSandbox).thenReturn(true)
+    // def theServiceIsRunningInSandboxMode() = when(mockServiceConfig.isSandbox).thenReturn(true)
 
     def theApiDefinitionWillBeReturned() = {
       when(mockAPIDefinitionRepository.fetchByServiceName(*[ServiceName]))

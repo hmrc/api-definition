@@ -17,7 +17,7 @@
 package uk.gov.hmrc.apidefinition.models
 
 import play.api.libs.json.{Json, OFormat}
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.utils.BaseJsonFormattersSpec
 
@@ -58,8 +58,8 @@ class TolerantJsonApiDefinitionSpec extends BaseJsonFormattersSpec {
            |         },
            |         "endpoints":[
            |            {
-           |               "uriPattern":"/today",
-           |               "endpointName":"Get Today's Date",
+           |               "uriPattern":UriPattern("/today"),
+           |               "endpointName":Name("Get Today's Date"),
            |               "method":"GET",
            |               "authType":"NONE",
            |               "throttlingTier":"UNLIMITED"
@@ -75,7 +75,7 @@ class TolerantJsonApiDefinitionSpec extends BaseJsonFormattersSpec {
     "read from JSON when the API access type is PUBLIC and there is no whitelist" in {
       val apiDefinition = anApiDefinition()
 
-      apiDefinition.versions.head.access shouldBe ApiAccessType.PUBLIC
+      apiDefinition.versions.head.access shouldBe ApiAccessType.Public
     }
 
     "read from JSON when the API access type is PRIVATE and isTrial is true" in {
@@ -85,7 +85,7 @@ class TolerantJsonApiDefinitionSpec extends BaseJsonFormattersSpec {
         requiresTrust = Some(true)
       )
 
-      apiDefinition.versions.head.access shouldBe ApiAccessType.CONTROLLED
+      apiDefinition.versions.head.access shouldBe ApiAccessType.Controlled
     }
 
     "read from JSON when the API categories are defined but empty" in {
@@ -103,7 +103,7 @@ class TolerantJsonApiDefinitionSpec extends BaseJsonFormattersSpec {
     "read from JSON when the API categories are defined with correct values" in {
       val apiDefinition = anApiDefinition(categories = Some("""["CUSTOMS", "VAT"]"""))
 
-      apiDefinition.categories shouldBe Seq(ApiCategory.CUSTOMS, ApiCategory.VAT)
+      apiDefinition.categories shouldBe Seq(ApiCategory.Customs, ApiCategory.Vat)
     }
 
     "read from JSON when there is no isTestSupport" in {

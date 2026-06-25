@@ -34,11 +34,11 @@ import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
 class DocumentationController @Inject() (service: DocumentationService, cc: ControllerComponents)(implicit val ec: ExecutionContext)
     extends BackendController(cc) with ApplicationLogger {
 
-  def fetchApiDocumentationResource(serviceName: ServiceName, version: ApiVersionNbr, resource: String): Action[AnyContent] = Action.async {
+  def fetchApiDocumentationResource(rawServiceName: String, rawVersion: String, resource: String): Action[AnyContent] = Action.async {
     _ =>
       {
-        logger.info(s"API Documentation received request for resource: $serviceName, $version, $resource")
-        service.fetchApiDocumentationResource(serviceName, version, resource)
+        logger.info(s"API Documentation received request for resource: $rawServiceName, $rawVersion, $resource")
+        service.fetchApiDocumentationResource(ServiceName(rawServiceName), ApiVersionNbr(rawVersion), resource)
       } recover recovery
   }
 

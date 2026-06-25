@@ -8,21 +8,21 @@ lazy val appName = "api-definition"
 Global / bloopAggregateSourceDependencies := true
 Global / bloopExportJarClassifiers := Some(Set("sources"))
 
-ThisBuild / scalaVersion := "2.13.18"
+ThisBuild / scalaVersion := "3.7.4"
 ThisBuild / libraryDependencySchemes += "org.scala-lang.modules" %% "scala-xml" % VersionScheme.Always
 ThisBuild / semanticdbEnabled := true
 ThisBuild / semanticdbVersion := scalafixSemanticdb.revision
 ThisBuild / majorVersion := 1
 
-lazy val playSettings: Seq[Setting[_]] = Seq.empty
+lazy val playSettings: Seq[Setting[?]] = Seq.empty
 
 lazy val microservice = Project(appName, file("."))
   .enablePlugins(PlayScala, SbtDistributablesPlugin)
   .disablePlugins(JUnitXmlReportPlugin)
-  .settings(playSettings: _*)
-  .settings(scalaSettings: _*)
+  .settings(playSettings*)
+  .settings(scalaSettings*)
   .settings(ScoverageSettings())
-  .settings(defaultSettings(): _*)
+  .settings(defaultSettings()*)
   .settings(
     name := appName,
     libraryDependencies ++= AppDependencies(),
@@ -43,10 +43,11 @@ lazy val microservice = Project(appName, file("."))
   )
   .settings(
     scalacOptions ++= Seq(
-      "-Wconf:cat=unused&src=views/.*\\.scala:s",
-      "-Wconf:cat=unused&src=.*RoutesPrefix\\.scala:s",
-      "-Wconf:cat=unused&src=.*Routes\\.scala:s",
-      "-Wconf:cat=unused&src=.*ReverseRoutes\\.scala:s"
+      "-Wconf:msg=Implicit parameters should be provided with a `using` clause:s", // TODO - remove once Play is really Scala 3
+      "-Wconf:msg=unused import&src=html/.*:s"
+    ),
+    Test / scalacOptions ++= Seq(
+      "-Wconf:msg=Implicit parameters should be provided with a `using` clause:s"
     )
   )
 

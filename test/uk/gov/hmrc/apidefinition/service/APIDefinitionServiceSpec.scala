@@ -22,13 +22,15 @@ import scala.concurrent.Future.{failed, successful}
 
 import cats.data.NonEmptyList
 import cats.data.Validated.Valid
-import cats.implicits._
+import cats.implicits.*
 
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiStatus, _}
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiDefinition.{Name as ApiName, *}
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.Endpoint.*
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiStatus, *}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.http.HeaderNames._
+import uk.gov.hmrc.http.HeaderNames.*
 
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.mocks.APIEventRepositoryMockModule
@@ -45,10 +47,30 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
   def unitSuccess: Future[Unit] = successful { () }
 
   private def aStoredApiDefinition(context: ApiContext, versions: ApiVersion*) =
-    StoredApiDefinition(ServiceName("service"), "http://service", "name", "description", context, versions.toList, false, None, List(ApiCategory.OTHER))
+    StoredApiDefinition(
+      ServiceName("service"),
+      ServiceBaseUrl("http://service"),
+      ApiName("name"),
+      Description("description"),
+      context,
+      versions.toList,
+      false,
+      None,
+      List(ApiCategory.Other)
+    )
 
   private def anApiDefinition(context: ApiContext, versions: ApiVersion*) =
-    ApiDefinition(ServiceName("service"), "http://service", "name", "description", context, versions.map(v => v.versionNbr -> v).toMap, false, None, List(ApiCategory.OTHER))
+    ApiDefinition(
+      ServiceName("service"),
+      ServiceBaseUrl("http://service"),
+      ApiName("name"),
+      Description("description"),
+      context,
+      versions.map(v => v.versionNbr -> v).toMap,
+      false,
+      None,
+      List(ApiCategory.Other)
+    )
 
   trait Setup extends APIEventRepositoryMockModule {
 
@@ -75,10 +97,10 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
     val applicationId = ApplicationId.random
     val otherAppId    = ApplicationId.random
 
-    val publicVersion1: ApiVersion  = aVersion(version = ApiVersionNbr("1.0"), access = ApiAccessType.PUBLIC)
-    val publicVersion2              = aVersion(version = ApiVersionNbr("2.0"), access = ApiAccessType.PUBLIC)
-    val internalVersion: ApiVersion = aVersion(version = ApiVersionNbr("3.1"), access = ApiAccessType.INTERNAL)
-    val controlledVersion           = aVersion(version = ApiVersionNbr("4.0"), access = ApiAccessType.CONTROLLED)
+    val publicVersion1: ApiVersion  = aVersion(version = ApiVersionNbr("1.0"), access = ApiAccessType.Public)
+    val publicVersion2              = aVersion(version = ApiVersionNbr("2.0"), access = ApiAccessType.Public)
+    val internalVersion: ApiVersion = aVersion(version = ApiVersionNbr("3.1"), access = ApiAccessType.Internal)
+    val controlledVersion           = aVersion(version = ApiVersionNbr("4.0"), access = ApiAccessType.Controlled)
 
     val allVersions = List(
       publicVersion1,
@@ -88,7 +110,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
     )
 
     val publicVersion1Availability =
-      ApiAvailability(publicVersion1.endpointsEnabled, ApiAccessType.PUBLIC, loggedIn = false, authorised = true)
+      ApiAvailability(publicVersion1.endpointsEnabled, ApiAccessType.Public, loggedIn = false, authorised = true)
 
     val publicVersionAvailability = ApiAvailability(
       publicVersion2.endpointsEnabled,
@@ -104,7 +126,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
       authorised = false
     )
 
-    val apiDefinitionWithAllVersions = aStoredApiDefinition(context, allVersions: _*)
+    val apiDefinitionWithAllVersions = aStoredApiDefinition(context, allVersions*)
     val apiDefinition                = someAPIDefinition
     val apiDefinitionWithSavingTime  = apiDefinition.copy(lastPublishedAt = Some(instant))
 
@@ -123,15 +145,15 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
       internalVersion,
       controlledVersion
     )
-    val storedDefinition = aStoredApiDefinition(context, versions: _*)
-    val definition       = anApiDefinition(context, versions: _*)
+    val storedDefinition = aStoredApiDefinition(context, versions*)
+    val definition       = anApiDefinition(context, versions*)
 
     when(mockAPIDefinitionRepository.fetchByServiceName(serviceName)).thenReturn(successful(Some(storedDefinition)))
   }
 
   "validate" should {
     "fail when keys are not present" in new Setup {
-      val defectiveDefinition = apiDefinition.copy(serviceName = ServiceName(""), context = ApiContext(""), serviceBaseUrl = "", name = "")
+      val defectiveDefinition = apiDefinition.copy(serviceName = ServiceName(""), context = ApiContext(""), serviceBaseUrl = ServiceBaseUrl(""), name = ApiDefinition.Name(""))
 
       val result = await(underTest.validate(defectiveDefinition))
 
@@ -192,11 +214,11 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
     "create or update the API Definition where a new endpoint has been added" in new Setup {
       val oldEndpoints = List(
         Endpoint(
-          "/today",
-          "Get Today's Date",
-          HttpMethod.GET,
-          AuthType.NONE,
-          ResourceThrottlingTier.UNLIMITED,
+          UriPattern("/today"),
+          Name("Get Today's Date"),
+          HttpMethod.Get,
+          AuthType.None,
+          ResourceThrottlingTier.Unlimited,
           None,
           queryParameters = List.empty
         )
@@ -204,20 +226,20 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
 
       val newEndpoints = List(
         Endpoint(
-          "/today",
-          "Get Today's Date",
-          HttpMethod.GET,
-          AuthType.NONE,
-          ResourceThrottlingTier.UNLIMITED,
+          UriPattern("/today"),
+          Name("Get Today's Date"),
+          HttpMethod.Get,
+          AuthType.None,
+          ResourceThrottlingTier.Unlimited,
           None,
           queryParameters = List.empty
         ),
         Endpoint(
-          "/tomorrow",
-          "Get Tomorrow's Date",
-          HttpMethod.GET,
-          AuthType.USER,
-          ResourceThrottlingTier.UNLIMITED,
+          UriPattern("/tomorrow"),
+          Name("Get Tomorrow's Date"),
+          HttpMethod.Get,
+          AuthType.User,
+          ResourceThrottlingTier.Unlimited,
           None,
           queryParameters = List.empty
         )
@@ -246,20 +268,20 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
     "create or update the API Definition where an endpoint has been removed" in new Setup {
       val oldEndpoints = List(
         Endpoint(
-          "/today",
-          "Get Today's Date",
-          HttpMethod.GET,
-          AuthType.NONE,
-          ResourceThrottlingTier.UNLIMITED,
+          UriPattern("/today"),
+          Name("Get Today's Date"),
+          HttpMethod.Get,
+          AuthType.None,
+          ResourceThrottlingTier.Unlimited,
           None,
           queryParameters = List.empty
         ),
         Endpoint(
-          "/yesterday",
-          "Get Yesterday's Date",
-          HttpMethod.GET,
-          AuthType.APPLICATION,
-          ResourceThrottlingTier.UNLIMITED,
+          UriPattern("/yesterday"),
+          Endpoint.Name("Get Yesterday's Date"),
+          HttpMethod.Get,
+          AuthType.Application,
+          ResourceThrottlingTier.Unlimited,
           None,
           queryParameters = List.empty
         )
@@ -267,11 +289,11 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
 
       val newEndpoints = List(
         Endpoint(
-          "/today",
-          "Get Today's Date",
-          HttpMethod.GET,
-          AuthType.NONE,
-          ResourceThrottlingTier.UNLIMITED,
+          UriPattern("/today"),
+          Name("Get Today's Date"),
+          HttpMethod.Get,
+          AuthType.None,
+          ResourceThrottlingTier.Unlimited,
           None,
           queryParameters = List.empty
         )
@@ -300,20 +322,20 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
     "create or update the API Definition with both additions and removals" in new Setup {
       val oldEndpoints = List(
         Endpoint(
-          "/today",
-          "Get Today's Date",
-          HttpMethod.GET,
-          AuthType.NONE,
-          ResourceThrottlingTier.UNLIMITED,
+          UriPattern("/today"),
+          Name("Get Today's Date"),
+          HttpMethod.Get,
+          AuthType.None,
+          ResourceThrottlingTier.Unlimited,
           None,
           queryParameters = List.empty
         ),
         Endpoint(
-          "/tomorrow",
-          "Get Tomorrow's Date",
-          HttpMethod.GET,
-          AuthType.APPLICATION,
-          ResourceThrottlingTier.UNLIMITED,
+          UriPattern("/tomorrow"),
+          Endpoint.Name("Get Tomorrow's Date"),
+          HttpMethod.Get,
+          AuthType.Application,
+          ResourceThrottlingTier.Unlimited,
           None,
           queryParameters = List.empty
         )
@@ -321,29 +343,29 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
 
       val newEndpoints = List(
         Endpoint(
-          "/nextweeks",
-          "Get Next Week's Date",
-          HttpMethod.POST,
-          AuthType.NONE,
-          ResourceThrottlingTier.UNLIMITED,
+          UriPattern("/nextweeks"),
+          Endpoint.Name("Get Next Week's Date"),
+          HttpMethod.Post,
+          AuthType.None,
+          ResourceThrottlingTier.Unlimited,
           None,
           queryParameters = List.empty
         ),
         Endpoint(
-          "/tomorrow",
-          "Get Tomorrow's Date",
-          HttpMethod.GET,
-          AuthType.USER,
-          ResourceThrottlingTier.UNLIMITED,
+          UriPattern("/tomorrow"),
+          Endpoint.Name("Get Tomorrow's Date"),
+          HttpMethod.Get,
+          AuthType.User,
+          ResourceThrottlingTier.Unlimited,
           None,
           queryParameters = List.empty
         ),
         Endpoint(
-          "/yesterday",
-          "Get Yesterday's Date",
-          HttpMethod.GET,
-          AuthType.APPLICATION,
-          ResourceThrottlingTier.UNLIMITED,
+          UriPattern("/yesterday"),
+          Endpoint.Name("Get Yesterday's Date"),
+          HttpMethod.Get,
+          AuthType.Application,
+          ResourceThrottlingTier.Unlimited,
           None,
           queryParameters = List.empty
         )
@@ -401,10 +423,10 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
     "send notifications when version of API has changed status" in new Setup {
       val apiVersion                                              = ApiVersionNbr("1.0")
       val apiContext                                              = ApiContext("foo")
-      val existingStatus: ApiStatus                               = ApiStatus.ALPHA
-      val updatedStatus: ApiStatus                                = ApiStatus.BETA
-      val existingAPIDefinition: StoredApiDefinition              = aStoredApiDefinition(apiContext, aVersion(apiVersion, existingStatus, ApiAccessType.PUBLIC))
-      val updatedAPIDefinition: StoredApiDefinition               = aStoredApiDefinition(apiContext, aVersion(apiVersion, updatedStatus, ApiAccessType.PUBLIC))
+      val existingStatus: ApiStatus                               = ApiStatus.Alpha
+      val updatedStatus: ApiStatus                                = ApiStatus.Beta
+      val existingAPIDefinition: StoredApiDefinition              = aStoredApiDefinition(apiContext, aVersion(apiVersion, existingStatus, ApiAccessType.Public))
+      val updatedAPIDefinition: StoredApiDefinition               = aStoredApiDefinition(apiContext, aVersion(apiVersion, updatedStatus, ApiAccessType.Public))
       val updatedAPIDefinitionWithSavingTime: StoredApiDefinition = updatedAPIDefinition.copy(lastPublishedAt = Some(instant))
 
       when(mockAPIDefinitionRepository.fetchByContext(apiContext)).thenReturn(successful(Some(existingAPIDefinition)))
@@ -619,72 +641,89 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
     }
   }
 
-  private def aVersion(version: ApiVersionNbr, status: ApiStatus = ApiStatus.BETA, access: ApiAccessType) =
-    ApiVersion(version, status, access, List(Endpoint("/test", "test", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)))
+  private def aVersion(version: ApiVersionNbr, status: ApiStatus = ApiStatus.Beta, access: ApiAccessType) =
+    ApiVersion(
+      version,
+      status,
+      access,
+      List(Endpoint(UriPattern("/test"), Endpoint.Name("test"), HttpMethod.Get, AuthType.None, ResourceThrottlingTier.Unlimited, None, Nil)),
+      true,
+      None,
+      ApiVersionSource.OAS
+    )
 
   private def someAPIDefinition: StoredApiDefinition =
     StoredApiDefinition(
       serviceName,
-      "http://calendar",
-      "Calendar API",
-      "My Calendar API",
+      ServiceBaseUrl("http://calendar"),
+      ApiDefinition.Name("Calendar API"),
+      ApiDefinition.Description("My Calendar API"),
       context,
       List(
         ApiVersion(
           ApiVersionNbr("1.0"),
-          ApiStatus.BETA,
-          ApiAccessType.PUBLIC,
+          ApiStatus.Beta,
+          ApiAccessType.Public,
           List(
             Endpoint(
-              "/today",
-              "Get Today's Date",
-              HttpMethod.GET,
-              AuthType.NONE,
-              ResourceThrottlingTier.UNLIMITED,
+              UriPattern("/today"),
+              Name("Get Today's Date"),
+              HttpMethod.Get,
+              AuthType.None,
+              ResourceThrottlingTier.Unlimited,
               None,
               queryParameters = List.empty
             )
-          )
+          ),
+          true,
+          None,
+          ApiVersionSource.OAS
         )
       ),
       false,
       None,
-      List(ApiCategory.OTHER)
+      List(ApiCategory.Other)
     )
 
   private def multiVersionAndEndpointAPIDefinition(v2Endpoints: List[Endpoint]): StoredApiDefinition =
     StoredApiDefinition(
       serviceName,
-      "http://calendar",
-      "Calendar API",
-      "My Calendar API",
+      ServiceBaseUrl("http://calendar"),
+      ApiDefinition.Name("Calendar API"),
+      ApiDefinition.Description("My Calendar API"),
       context,
       List(
         ApiVersion(
           ApiVersionNbr("1.0"),
-          ApiStatus.BETA,
-          ApiAccessType.PUBLIC,
+          ApiStatus.Beta,
+          ApiAccessType.Public,
           List(
             Endpoint(
-              "/today",
-              "Get Today's Date",
-              HttpMethod.GET,
-              AuthType.NONE,
-              ResourceThrottlingTier.UNLIMITED,
+              UriPattern("/today"),
+              Name("Get Today's Date"),
+              HttpMethod.Get,
+              AuthType.None,
+              ResourceThrottlingTier.Unlimited,
               None,
               queryParameters = List.empty
             )
-          )
+          ),
+          true,
+          None,
+          ApiVersionSource.OAS
         ),
         ApiVersion(
           ApiVersionNbr("2.0"),
-          ApiStatus.BETA,
-          ApiAccessType.PUBLIC,
-          v2Endpoints
+          ApiStatus.Beta,
+          ApiAccessType.Public,
+          v2Endpoints,
+          true,
+          None,
+          ApiVersionSource.OAS
         )
       ),
       false,
       None,
-      List(ApiCategory.OTHER)
+      List(ApiCategory.Other)
     )
 }

@@ -18,7 +18,7 @@ package uk.gov.hmrc.apidefinition.validators
 
 import scala.util.matching.Regex
 
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.*
 
 object QueryParameterValidator extends Validator[QueryParameter] {
 

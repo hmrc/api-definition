@@ -24,15 +24,15 @@ import scala.util.control.NonFatal
 import cats.data.NonEmptyList
 
 import play.api.http.HeaderNames
-import play.api.libs.json._
-import play.api.mvc._
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{StoredApiDefinition, _}
+import play.api.libs.json.*
+import play.api.mvc.*
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{StoredApiDefinition, *}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiContext
 import uk.gov.hmrc.http.UnauthorizedException
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import uk.gov.hmrc.apidefinition.config.AppConfig
-import uk.gov.hmrc.apidefinition.models.ErrorCode._
+import uk.gov.hmrc.apidefinition.models.ErrorCode.*
 import uk.gov.hmrc.apidefinition.models.{DisplayApiEvent, ErrorCode, TolerantJsonApiDefinition, ValidationErrors}
 import uk.gov.hmrc.apidefinition.services.APIDefinitionService
 import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
@@ -68,14 +68,14 @@ class APIDefinitionController @Inject() (
     }
   }
 
-  def delete(serviceName: ServiceName): Action[AnyContent] = Action.async { implicit request =>
-    apiDefinitionService.delete(serviceName).map { _ => NoContent } recover {
+  def delete(rawServiceName: String): Action[AnyContent] = Action.async { implicit request =>
+    apiDefinitionService.delete(ServiceName(rawServiceName)).map { _ => NoContent } recover {
       case e: UnauthorizedException => Forbidden(e.getMessage)
     } recover recovery
   }
 
-  def fetch(serviceName: ServiceName): Action[AnyContent] = Action.async { _ =>
-    apiDefinitionService.fetchByServiceName(serviceName) map {
+  def fetch(rawServiceName: String): Action[AnyContent] = Action.async { _ =>
+    apiDefinitionService.fetchByServiceName(ServiceName(rawServiceName)) map {
       case Some(apiDefinition) => Ok(Json.toJson(apiDefinition))
       case _                   => NotFound(error(API_DEFINITION_NOT_FOUND, "No API Definition was found"))
     } recover recovery
@@ -116,14 +116,14 @@ class APIDefinitionController @Inject() (
     apiDefinitionService.publishAllToAws().map { _ => NoContent } recover recovery
   }
 
-  def fetchEvents(serviceName: ServiceName, includeNoChange: Boolean = true): Action[AnyContent] = Action.async { _ =>
-    apiDefinitionService.fetchEventsByServiceName(serviceName, includeNoChange) map { apiEvents =>
+  def fetchEvents(rawServiceName: String, includeNoChange: Boolean = true): Action[AnyContent] = Action.async { _ =>
+    apiDefinitionService.fetchEventsByServiceName(ServiceName(rawServiceName), includeNoChange) map { apiEvents =>
       Ok(Json.toJson(apiEvents.map(DisplayApiEvent(_))))
     } recover recovery
   }
 
-  def deleteEvents(serviceName: ServiceName): Action[AnyContent] = Action.async { _ =>
-    apiDefinitionService.deleteEventsByServiceName(serviceName) map { _ =>
+  def deleteEvents(rawServiceName: String): Action[AnyContent] = Action.async { _ =>
+    apiDefinitionService.deleteEventsByServiceName(ServiceName(rawServiceName)) map { _ =>
       Ok("")
     } recover recovery
   }

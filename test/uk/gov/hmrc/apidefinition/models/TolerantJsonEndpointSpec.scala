@@ -17,7 +17,8 @@
 package uk.gov.hmrc.apidefinition.models
 
 import play.api.libs.json.Format
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.Endpoint.{Name, UriPattern}
 import uk.gov.hmrc.apiplatform.modules.common.utils.BaseJsonFormattersSpec
 
 class TolerantJsonEndpointSpec extends BaseJsonFormattersSpec {
@@ -27,20 +28,20 @@ class TolerantJsonEndpointSpec extends BaseJsonFormattersSpec {
 
     "read endpoint from Json" in {
       val json = """{
-                   |  "uriPattern":"/today",
-                   |  "endpointName":"Get Today's Date",
+                   |  "uriPattern":UriPattern("/today"),
+                   |  "endpointName":Name("Get Today's Date"),
                    |  "method":"GET",
                    |  "authType":"NONE",
                    |  "throttlingTier":"UNLIMITED"
                    |}""".stripMargin
 
-      testFromJson[Endpoint](json)(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED, None, List.empty))
+      testFromJson[Endpoint](json)(Endpoint(UriPattern("/today"), Name("Get Today's Date"), HttpMethod.Get, AuthType.None, ResourceThrottlingTier.Unlimited, None, List.empty))
     }
 
     "read endpoint from Json with all fields" in {
       val json = """{
-                   |  "uriPattern":"/today",
-                   |  "endpointName":"Get Today's Date",
+                   |  "uriPattern":UriPattern("/today"),
+                   |  "endpointName":Name("Get Today's Date"),
                    |  "method":"GET",
                    |  "authType":"NONE",
                    |  "throttlingTier":"UNLIMITED",
@@ -48,13 +49,21 @@ class TolerantJsonEndpointSpec extends BaseJsonFormattersSpec {
                    |  "queryParameters": []
                    |}""".stripMargin
 
-      testFromJson[Endpoint](json)(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED, Some("hello"), List.empty))
+      testFromJson[Endpoint](json)(Endpoint(
+        UriPattern(UriPattern("/today")),
+        Name(Name("Get Today's Date")),
+        HttpMethod.Get,
+        AuthType.None,
+        ResourceThrottlingTier.Unlimited,
+        Some(Scope("hello")),
+        List.empty
+      ))
     }
 
     "fail to read private access from Json when bad scope type" in {
       val json = """{
-                   |  "uriPattern":"/today",
-                   |  "endpointName":"Get Today's Date",
+                   |  "uriPattern":UriPattern("/today"),
+                   |  "endpointName":Name("Get Today's Date"),
                    |  "method":"GET",
                    |  "authType":"NONE",
                    |  "throttlingTier":"UNLIMITED",
@@ -62,7 +71,7 @@ class TolerantJsonEndpointSpec extends BaseJsonFormattersSpec {
                    |  "queryParameters": []
                    |}""".stripMargin
 
-      val ignoreMe = Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED, None, List.empty)
+      val ignoreMe = Endpoint(UriPattern("/today"), Name("Get Today's Date"), HttpMethod.Get, AuthType.None, ResourceThrottlingTier.Unlimited, None, List.empty)
 
       intercept[RuntimeException] {
         testFromJson[Endpoint](json)(ignoreMe)
@@ -71,15 +80,15 @@ class TolerantJsonEndpointSpec extends BaseJsonFormattersSpec {
 
     "fail to read private access from Json when bad query parameters type" in {
       val json = """{
-                   |  "uriPattern":"/today",
-                   |  "endpointName":"Get Today's Date",
+                   |  "uriPattern":UriPattern("/today"),
+                   |  "endpointName":Name("Get Today's Date"),
                    |  "method":"GET",
                    |  "authType":"NONE",
                    |  "throttlingTier":"UNLIMITED",
                    |  "queryParameters": [ "123" ]
                    |}""".stripMargin
 
-      val ignoreMe = Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED, None, List.empty)
+      val ignoreMe = Endpoint(UriPattern("/today"), Name("Get Today's Date"), HttpMethod.Get, AuthType.None, ResourceThrottlingTier.Unlimited, None, List.empty)
 
       intercept[RuntimeException] {
         testFromJson[Endpoint](json)(ignoreMe)

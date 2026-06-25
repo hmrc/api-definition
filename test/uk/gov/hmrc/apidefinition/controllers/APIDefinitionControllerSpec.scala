@@ -23,20 +23,20 @@ import cats.data.NonEmptyList
 
 import play.api.libs.json.Json
 import play.api.mvc.{AnyContentAsEmpty, Request, Result}
-import play.api.test.Helpers._
+import play.api.test.Helpers.*
 import play.api.test.{FakeRequest, StubControllerComponentsFactory}
 import play.mvc.Http.HeaderNames
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiStatus.ALPHA
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.Endpoint.*
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.http.{BadRequestException, UnauthorizedException}
 
 import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.mocks.{APIEventRepositoryMockModule, ApiDefinitionServiceMockModule}
+import uk.gov.hmrc.apidefinition.models.*
 import uk.gov.hmrc.apidefinition.models.ApiEvents.{ApiCreated, NewApiVersion}
 import uk.gov.hmrc.apidefinition.models.ErrorCode.{API_INVALID_JSON, INVALID_REQUEST_PAYLOAD}
-import uk.gov.hmrc.apidefinition.models._
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 
@@ -66,14 +66,14 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec
       Array.fill(2)(
         ApiDefinition(
           ServiceName("MyApiDefinitionServiceName1"),
-          "MyUrl",
-          "MyName",
-          "My description",
+          ApiDefinition.ServiceBaseUrl("MyUrl"),
+          ApiDefinition.Name("MyName"),
+          ApiDefinition.Description("My description"),
           ApiContext("MyContext"),
           Map.empty,
           false,
           None,
-          List(ApiCategory.AGENTS)
+          List(ApiCategory.Agents)
         )
       ).toList
 
@@ -137,20 +137,22 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec
     "succeed with a 200 (ok) when a public API exists for the given serviceName" in new Setup {
       val apiDefinition = ApiDefinition(
         serviceName,
-        "http://calendar",
-        "Calendar API",
-        "My Calendar API",
+        ApiDefinition.ServiceBaseUrl("http://calendar"),
+        ApiDefinition.Name("Calendar API"),
+        ApiDefinition.Description("My Calendar API"),
         ApiContext("calendar"),
         versions = Map(ApiVersionNbr("1.0") -> ApiVersion(
           ApiVersionNbr("1.0"),
-          ApiStatus.BETA,
-          ApiAccessType.PUBLIC,
-          List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
-          true
+          ApiStatus.Beta,
+          ApiAccessType.Public,
+          List(Endpoint(UriPattern("/today"), Name("Get Today's Date"), HttpMethod.Get, AuthType.None, ResourceThrottlingTier.Unlimited, None, List.empty)),
+          true,
+          None,
+          ApiVersionSource.OAS
         )),
         false,
         None,
-        List(ApiCategory.AGENTS)
+        List(ApiCategory.Agents)
       )
 
       ApiDefinitionServiceMock.FetchByServiceName.success(serviceName, apiDefinition)
@@ -443,7 +445,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec
       val version1                = ApiVersionNbr("1.0")
       val apiName                 = "Api 123"
       val apiCreated              = ApiCreated(ApiEventId.random, apiName, serviceName, instant)
-      val newApiVersion           = NewApiVersion(ApiEventId.random, apiName, serviceName, instant, ALPHA, version1)
+      val newApiVersion           = NewApiVersion(ApiEventId.random, apiName, serviceName, instant, ApiStatus.Alpha, version1)
       val apiList: List[ApiEvent] = List(apiCreated, newApiVersion)
 
       ApiDefinitionServiceMock.FetchEventsByServiceName.success(serviceName, apiList)
@@ -480,7 +482,7 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec
       val version1                = ApiVersionNbr("1.0")
       val apiName                 = "Api 123"
       val apiCreated              = ApiCreated(ApiEventId.random, apiName, serviceName, instant)
-      val newApiVersion           = NewApiVersion(ApiEventId.random, apiName, serviceName, instant, ALPHA, version1)
+      val newApiVersion           = NewApiVersion(ApiEventId.random, apiName, serviceName, instant, ApiStatus.Alpha, version1)
       val apiList: List[ApiEvent] = List(apiCreated, newApiVersion)
 
       ApiDefinitionServiceMock.FetchEventsByServiceName.success(serviceName, apiList, includeNoChange = false)
@@ -556,8 +558,8 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec
       |    "status" : "STABLE",
       |    "endpoints": [
       |    {
-      |      "uriPattern": "/today",
-      |      "endpointName":"Get Today's Date",
+      |      "uriPattern": UriPattern("/today"),
+      |      "endpointName":Name("Get Today's Date"),
       |      "method": "GET",
       |      "authType": "NONE",
       |      "throttlingTier": "UNLIMITED"
@@ -580,8 +582,8 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec
       |    "status" : "STABLE",
       |    "endpoints": [
       |    {
-      |      "uriPattern": "/today",
-      |      "endpointName":"Get Today's Date",
+      |      "uriPattern": UriPattern("/today"),
+      |      "endpointName":Name("Get Today's Date"),
       |      "method": "GET",
       |      "authType": "NONE",
       |      "throttlingTier": "UNLIMITED"

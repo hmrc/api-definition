@@ -16,21 +16,22 @@
 
 package uk.gov.hmrc.apidefinition.models
 
-import play.api.libs.functional.syntax._
-import play.api.libs.json._
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import play.api.libs.functional.syntax.*
+import play.api.libs.json.*
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.Endpoint.*
 
 trait TolerantJsonEndpoint {
 
   private val endpointReads: Reads[Endpoint] = (
-    (JsPath \ "uriPattern").read[String] and
-      (JsPath \ "endpointName").read[String] and
+    (JsPath \ "uriPattern").read[UriPattern] and
+      (JsPath \ "endpointName").read[Name] and
       (JsPath \ "method").read[HttpMethod] and
       (JsPath \ "authType").read[AuthType] and
       (JsPath \ "throttlingTier").read[ResourceThrottlingTier] and
-      (JsPath \ "scope").readNullable[String] and
+      (JsPath \ "scope").readNullable[Scope] and
       ((JsPath \ "queryParameters").readNullable[List[QueryParameter]].map(_.getOrElse(List.empty)))
-  )(Endpoint.apply _)
+  )(Endpoint.apply)
 
   private val endpointWrites: OWrites[Endpoint] = Json.writes[Endpoint]
 

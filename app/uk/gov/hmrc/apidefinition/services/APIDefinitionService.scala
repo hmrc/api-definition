@@ -22,13 +22,13 @@ import scala.concurrent.Future.{failed, successful}
 import scala.concurrent.{ExecutionContext, Future}
 
 import play.api.libs.json.OFormat
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.common.services.ClockNow
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apidefinition.config.AppConfig
-import uk.gov.hmrc.apidefinition.models.ApiEvents._
+import uk.gov.hmrc.apidefinition.models.ApiEvents.*
 import uk.gov.hmrc.apidefinition.models.{ApiEvent, ApiEventId, TolerantJsonApiDefinition}
 import uk.gov.hmrc.apidefinition.repository.{APIDefinitionRepository, APIEventRepository}
 import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
@@ -230,9 +230,9 @@ class APIDefinitionService @Inject() (
   private def filterApisExcludingNonPublic(alsoIncludeControlledApis: Boolean): Seq[StoredApiDefinition] => Seq[StoredApiDefinition] = apis => {
     val innerFilter: StoredApiDefinition => Option[StoredApiDefinition] = api => {
       val filteredVersions = api.versions.filter(_.access match {
-        case ApiAccessType.PUBLIC     => true
-        case ApiAccessType.INTERNAL   => false
-        case ApiAccessType.CONTROLLED => alsoIncludeControlledApis
+        case ApiAccessType.Public     => true
+        case ApiAccessType.Internal   => false
+        case ApiAccessType.Controlled => alsoIncludeControlledApis
       })
 
       if (filteredVersions.isEmpty) None

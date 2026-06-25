@@ -28,7 +28,7 @@ import org.mongodb.scala.model.Filters.{equal, regex}
 import org.mongodb.scala.model.{FindOneAndReplaceOptions, ReturnDocument}
 
 import play.api.Logging
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiContext
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, CollectionFactory, PlayMongoRepository}
@@ -62,7 +62,7 @@ class APIDefinitionRepository @Inject() (mongoComponent: MongoComponent)(implici
       )
 
   private def serviceNameSelector(serviceName: ServiceName): Bson = {
-    equal("serviceName", Codecs.toBson(serviceName.value))
+    equal("serviceName", Codecs.toBson(serviceName))
   }
 
   def save(apiDefinition: StoredApiDefinition): Future[StoredApiDefinition] = {

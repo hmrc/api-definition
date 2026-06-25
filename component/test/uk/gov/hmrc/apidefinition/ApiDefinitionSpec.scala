@@ -19,7 +19,7 @@ package uk.gov.hmrc.apidefinition
 import java.util.UUID
 
 import com.github.tomakehurst.wiremock.client.WireMock
-import com.github.tomakehurst.wiremock.client.WireMock._
+import com.github.tomakehurst.wiremock.client.WireMock.*
 
 import play.api.http.HeaderNames.CONTENT_TYPE
 import play.api.http.Status.{NO_CONTENT, OK}
@@ -27,10 +27,10 @@ import play.api.http.Status.{NO_CONTENT, OK}
 class ApiDefinitionSpec extends ComponentSpec {
 
   val validDefinition1AsString =
-    """{"serviceName":"calendar","serviceBaseUrl":"http://calendar","name":"Calendar API","description":"My Calendar API","context":"individuals/calendar","versions":[{"version":"1.0","status":"STABLE","access":{"type":"PUBLIC"},"endpoints":[{"uriPattern":"/today","endpointName":"Get Today's Date","method":"GET","authType":"NONE","throttlingTier":"UNLIMITED","queryParameters":[]}],"endpointsEnabled":true,"versionSource":"UNKNOWN"}],"requiresTrust":true,"isTestSupport":false,"categories":["OTHER"]}"""
+    """{"serviceName":"calendar","serviceBaseUrl":"http://calendar","name":"Calendar API","description":"My Calendar API","context":"individuals/calendar","versions":[{"version":"1.0","status":"STABLE","access":{"type":"PUBLIC"},"endpoints":[{"uriPattern":UriPattern("/today"),"endpointName":Name("Get Today's Date"),"method":"GET","authType":"NONE","throttlingTier":"UNLIMITED","queryParameters":[]}],"endpointsEnabled":true,"versionSource":"UNKNOWN"}],"requiresTrust":true,"isTestSupport":false,"categories":["OTHER"]}"""
 
   val validDefinition2AsString =
-    """{"serviceName":"calendar","serviceBaseUrl":"http://calendar","name":"Calendar API","description":"My Calendar API","context":"individuals/calendar","versions":[{"version":"1.0","status":"PUBLISHED","endpoints":[{"uriPattern":"/today","endpointName":"Get Today's Date","method":"GET","authType":"NONE","throttlingTier":"UNLIMITED"}]}],"isTestSupport":false,"categories":["OTHER"]}"""
+    """{"serviceName":"calendar","serviceBaseUrl":"http://calendar","name":"Calendar API","description":"My Calendar API","context":"individuals/calendar","versions":[{"version":"1.0","status":"PUBLISHED","endpoints":[{"uriPattern":UriPattern("/today"),"endpointName":Name("Get Today's Date"),"method":"GET","authType":"NONE","throttlingTier":"UNLIMITED"}]}],"isTestSupport":false,"categories":["OTHER"]}"""
 
   val validHeaders = List(CONTENT_TYPE -> "application/json")
 

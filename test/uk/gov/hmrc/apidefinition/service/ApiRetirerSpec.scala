@@ -18,7 +18,9 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future.{failed, successful}
 
 import play.api.Logger
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiDefinition.ServiceBaseUrl
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.Endpoint.UriPattern
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApiContext, ApiVersionNbr}
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 
@@ -42,104 +44,122 @@ class ApiRetirerSpec extends AsyncHmrcSpec {
 
   private val testApiVersion1 = ApiVersion(
     versionNbr = ApiVersionNbr("1.0"),
-    status = ApiStatus.STABLE,
-    access = ApiAccessType.PUBLIC,
-    endpoints = List(Endpoint("/date", "Check current date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
+    status = ApiStatus.Stable,
+    access = ApiAccessType.Public,
+    endpoints = List(Endpoint(UriPattern("/date"), Endpoint.Name("Check current date"), HttpMethod.Get, AuthType.None, ResourceThrottlingTier.Unlimited, None, List.empty)),
+    true,
+    None,
+    ApiVersionSource.OAS
   )
 
   private val testApiVersion2 = ApiVersion(
     versionNbr = ApiVersionNbr("2.0"),
-    status = ApiStatus.STABLE,
-    access = ApiAccessType.PUBLIC,
-    endpoints = List(Endpoint("/date", "Check current date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
+    status = ApiStatus.Stable,
+    access = ApiAccessType.Public,
+    endpoints = List(Endpoint(UriPattern("/date"), Endpoint.Name("Check current date"), HttpMethod.Get, AuthType.None, ResourceThrottlingTier.Unlimited, None, List.empty)),
+    true,
+    None,
+    ApiVersionSource.OAS
   )
 
   private val testApiVersion3 = ApiVersion(
     versionNbr = ApiVersionNbr("3.0"),
-    status = ApiStatus.STABLE,
-    access = ApiAccessType.PUBLIC,
-    endpoints = List(Endpoint("/date", "Check current date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
+    status = ApiStatus.Stable,
+    access = ApiAccessType.Public,
+    endpoints = List(Endpoint(UriPattern("/date"), Endpoint.Name("Check current date"), HttpMethod.Get, AuthType.None, ResourceThrottlingTier.Unlimited, None, List.empty)),
+    true,
+    None,
+    ApiVersionSource.OAS
   )
 
   private val testApiDefinition = StoredApiDefinition(
     serviceName = ServiceName("api1"),
-    serviceBaseUrl = "test.com",
-    name = "Test",
-    description = "This is the Test API",
+    serviceBaseUrl = ServiceBaseUrl("test.com"),
+    name = ApiDefinition.Name("Test"),
+    description = ApiDefinition.Description("This is the Test API"),
     context = ApiContext("test"),
     versions = List(testApiVersion1, testApiVersion2, testApiVersion3),
     isTestSupport = false,
     lastPublishedAt = None,
-    categories = List(ApiCategory.AGENTS)
+    categories = List(ApiCategory.Agents)
   )
 
   private val testApiDefinition2 = StoredApiDefinition(
     serviceName = ServiceName("api2"),
-    serviceBaseUrl = "test.com",
-    name = "Test2",
-    description = "This is the Test API2",
+    serviceBaseUrl = ServiceBaseUrl("test.com"),
+    name = ApiDefinition.Name("Test2"),
+    description = ApiDefinition.Description("This is the Test API2"),
     context = ApiContext("test2"),
     versions = List(testApiVersion1, testApiVersion2, testApiVersion3),
     isTestSupport = false,
     lastPublishedAt = None,
-    categories = List(ApiCategory.AGENTS)
+    categories = List(ApiCategory.Agents)
   )
 
   private val expectedApiVersion1 = ApiVersion(
     versionNbr = ApiVersionNbr("1.0"),
-    status = ApiStatus.RETIRED,
-    access = ApiAccessType.PUBLIC,
-    endpoints = List(Endpoint("/date", "Check current date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
+    status = ApiStatus.Retired,
+    access = ApiAccessType.Public,
+    endpoints = List(Endpoint(UriPattern("/date"), Endpoint.Name("Check current date"), HttpMethod.Get, AuthType.None, ResourceThrottlingTier.Unlimited, None, List.empty)),
+    true,
+    None,
+    ApiVersionSource.OAS
   )
 
   private val expectedApiVersion2 = ApiVersion(
     versionNbr = ApiVersionNbr("2.0"),
-    status = ApiStatus.RETIRED,
-    access = ApiAccessType.PUBLIC,
-    endpoints = List(Endpoint("/date", "Check current date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
+    status = ApiStatus.Retired,
+    access = ApiAccessType.Public,
+    endpoints = List(Endpoint(UriPattern("/date"), Endpoint.Name("Check current date"), HttpMethod.Get, AuthType.None, ResourceThrottlingTier.Unlimited, None, List.empty)),
+    true,
+    None,
+    ApiVersionSource.OAS
   )
 
   private val expectedApiVersion3 = ApiVersion(
     versionNbr = ApiVersionNbr("3.0"),
-    status = ApiStatus.RETIRED,
-    access = ApiAccessType.PUBLIC,
-    endpoints = List(Endpoint("/date", "Check current date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
+    status = ApiStatus.Retired,
+    access = ApiAccessType.Public,
+    endpoints = List(Endpoint(UriPattern("/date"), Endpoint.Name("Check current date"), HttpMethod.Get, AuthType.None, ResourceThrottlingTier.Unlimited, None, List.empty)),
+    true,
+    None,
+    ApiVersionSource.OAS
   )
 
   private val expectedApiDefinition = StoredApiDefinition(
     serviceName = ServiceName("api1"),
-    serviceBaseUrl = "test.com",
-    name = "Test",
-    description = "This is the Test API",
+    serviceBaseUrl = ServiceBaseUrl("test.com"),
+    name = ApiDefinition.Name("Test2"),
+    description = ApiDefinition.Description("This is the Test API2"),
     context = ApiContext("test"),
     versions = List(testApiVersion1, expectedApiVersion2, testApiVersion3),
     isTestSupport = false,
     lastPublishedAt = None,
-    categories = List(ApiCategory.AGENTS)
+    categories = List(ApiCategory.Agents)
   )
 
   private val expectedApiDefinition2 = StoredApiDefinition(
     serviceName = ServiceName("api2"),
-    serviceBaseUrl = "test.com",
-    name = "Test2",
-    description = "This is the Test API2",
+    serviceBaseUrl = ServiceBaseUrl("test.com"),
+    name = ApiDefinition.Name("Test2"),
+    description = ApiDefinition.Description("This is the Test API2"),
     context = ApiContext("test2"),
     versions = List(testApiVersion1, testApiVersion2, expectedApiVersion3),
     isTestSupport = false,
     lastPublishedAt = None,
-    categories = List(ApiCategory.AGENTS)
+    categories = List(ApiCategory.Agents)
   )
 
   private val expectedApiDefinition3 = StoredApiDefinition(
     serviceName = ServiceName("api2"),
-    serviceBaseUrl = "test.com",
-    name = "Test2",
-    description = "This is the Test API2",
+    serviceBaseUrl = ServiceBaseUrl("test.com"),
+    name = ApiDefinition.Name("Test2"),
+    description = ApiDefinition.Description("This is the Test API2"),
     context = ApiContext("test2"),
     versions = List(expectedApiVersion1, testApiVersion2, testApiVersion3),
     isTestSupport = false,
     lastPublishedAt = None,
-    categories = List(ApiCategory.AGENTS)
+    categories = List(ApiCategory.Agents)
   )
   "retireApis" should {
     "fetch a single api to retire and set it to retired" in new Setup {

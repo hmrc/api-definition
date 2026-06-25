@@ -19,7 +19,7 @@ package uk.gov.hmrc.apidefinition.validators
 import java.nio.file.{Path, Paths}
 import scala.util.matching.Regex
 
-import cats.implicits._
+import cats.implicits.*
 
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiContext
 

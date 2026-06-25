@@ -16,9 +16,9 @@
 
 package uk.gov.hmrc.apidefinition.validators
 
-import cats.implicits._
+import cats.implicits.*
 
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiVersionNbr
 
 object ApiVersionValidator extends Validator[ApiVersion] {
@@ -39,7 +39,7 @@ object ApiVersionValidator extends Validator[ApiVersion] {
   }
 
   def validateStatusAndEndpointsEnabled(endpointsEnabled: Boolean, status: ApiStatus): HMRCValidatedNel[ApiStatus] = {
-    status.valid.ensure("Field 'versions.endpointsEnabled' must be false for ALPHA status")(_ => !(endpointsEnabled && status == ApiStatus.ALPHA)).toValidatedNel
+    status.valid.ensure("Field 'versions.endpointsEnabled' must be false for ALPHA status")(_ => !(endpointsEnabled && status == ApiStatus.Alpha)).toValidatedNel
   }
 
   def validateAllEndpoints(endpoints: List[Endpoint]): HMRCValidatedNel[List[Endpoint]] = {

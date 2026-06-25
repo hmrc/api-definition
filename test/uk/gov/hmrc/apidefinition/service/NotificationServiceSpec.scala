@@ -19,11 +19,11 @@ package uk.gov.hmrc.apidefinition.service
 import java.net.URL
 import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future._
+import scala.concurrent.Future.*
 
 import play.api.http.Status.{INTERNAL_SERVER_ERROR, NOT_FOUND, OK}
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiStatus
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
 import uk.gov.hmrc.http.client.{HttpClientV2, RequestBuilder}
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps}
 
@@ -36,20 +36,20 @@ class NotificationServiceSpec extends AsyncHmrcSpec {
 
     def httpCallIsSuccessful(): Unit = {
       when(mockHTTPClient.post(eqTo(emailServiceURL))(*)).thenReturn(mockRequestBuilder)
-      when(mockRequestBuilder.withBody(*)(*, *, *)).thenReturn(mockRequestBuilder)
-      when(mockRequestBuilder.execute[HttpResponse](*, *)).thenReturn(successful(HttpResponse(OK, "")))
+      when(mockRequestBuilder.withBody(*)(using *)).thenReturn(mockRequestBuilder)
+      when(mockRequestBuilder.execute[HttpResponse](using *)).thenReturn(successful(HttpResponse(OK, "")))
     }
 
     def emailServiceIsUnavailable(): Unit = {
       when(mockHTTPClient.post(eqTo(emailServiceURL))(*)).thenReturn(mockRequestBuilder)
-      when(mockRequestBuilder.withBody(*)(*, *, *)).thenReturn(mockRequestBuilder)
-      when(mockRequestBuilder.execute[HttpResponse](*, *)).thenReturn(successful(HttpResponse(NOT_FOUND, "")))
+      when(mockRequestBuilder.withBody(*)(using *)).thenReturn(mockRequestBuilder)
+      when(mockRequestBuilder.execute[HttpResponse](using *)).thenReturn(successful(HttpResponse(NOT_FOUND, "")))
     }
 
     def callToEmailServiceFails(body: String): Unit = {
       when(mockHTTPClient.post(eqTo(emailServiceURL))(*)).thenReturn(mockRequestBuilder)
-      when(mockRequestBuilder.withBody(*)(*, *, *)).thenReturn(mockRequestBuilder)
-      when(mockRequestBuilder.execute[HttpResponse](*, *)).thenReturn(successful(HttpResponse(INTERNAL_SERVER_ERROR, body)))
+      when(mockRequestBuilder.withBody(*)(using *)).thenReturn(mockRequestBuilder)
+      when(mockRequestBuilder.execute[HttpResponse](using *)).thenReturn(successful(HttpResponse(INTERNAL_SERVER_ERROR, body)))
     }
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
@@ -70,8 +70,8 @@ class NotificationServiceSpec extends AsyncHmrcSpec {
     val apiVersion = ApiVersionNbr("1.0")
 
     "make appropriate HTTP call email service to send message" in new EmailNotificationSetup {
-      private val existingApiStatus = ApiStatus.ALPHA
-      private val newApiStatus      = ApiStatus.BETA
+      private val existingApiStatus = ApiStatus.Alpha
+      private val newApiStatus      = ApiStatus.Beta
 
       httpCallIsSuccessful()
 
@@ -82,7 +82,7 @@ class NotificationServiceSpec extends AsyncHmrcSpec {
       emailServiceIsUnavailable()
 
       val err: RuntimeException = intercept[RuntimeException] {
-        await(underTest.notifyOfStatusChange(apiName, apiVersion, ApiStatus.ALPHA, ApiStatus.BETA))
+        await(underTest.notifyOfStatusChange(apiName, apiVersion, ApiStatus.Alpha, ApiStatus.Beta))
       }
       err.getMessage shouldBe s"Unable to send email. Downstream endpoint not found: $emailServiceURL"
     }
@@ -91,7 +91,7 @@ class NotificationServiceSpec extends AsyncHmrcSpec {
       callToEmailServiceFails("""{"message":"Internal Error Occurred"}""")
 
       val err: RuntimeException = intercept[RuntimeException] {
-        await(underTest.notifyOfStatusChange(apiName, apiVersion, ApiStatus.ALPHA, ApiStatus.BETA))
+        await(underTest.notifyOfStatusChange(apiName, apiVersion, ApiStatus.Alpha, ApiStatus.Beta))
       }
       err.getMessage shouldBe "Internal Error Occurred"
     }
@@ -100,7 +100,7 @@ class NotificationServiceSpec extends AsyncHmrcSpec {
       callToEmailServiceFails("This is some other error message")
 
       val err: RuntimeException = intercept[RuntimeException] {
-        await(underTest.notifyOfStatusChange(apiName, apiVersion, ApiStatus.ALPHA, ApiStatus.BETA))
+        await(underTest.notifyOfStatusChange(apiName, apiVersion, ApiStatus.Alpha, ApiStatus.Beta))
       }
       err.getMessage shouldBe s"Unable send email. Unexpected error for url=$emailServiceURL status=500 response=This is some other error message"
     }

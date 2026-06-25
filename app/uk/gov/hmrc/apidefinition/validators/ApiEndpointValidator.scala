@@ -18,9 +18,9 @@ package uk.gov.hmrc.apidefinition.validators
 
 import scala.util.matching.Regex
 
-import cats.implicits._
+import cats.implicits.*
 
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.*
 
 object ApiEndpointValidator extends Validator[Endpoint] {
   private val uriRegex: Regex           = """^/[.]?[a-zA-Z0-9_\-\/{}]*$""".r
@@ -30,7 +30,7 @@ object ApiEndpointValidator extends Validator[Endpoint] {
     (
       validateEndpointName(endpoint.endpointName),
       validateUriPattern(endpoint.uriPattern),
-      if (endpoint.authType == AuthType.USER) validateScope(endpoint.scope) else endpoint.scope.validNel,
+      if (endpoint.authType == AuthType.User) validateScope(endpoint.scope) else endpoint.scope.validNel,
       validatePathParameters(endpoint.uriPattern),
       validateQueryParameters(endpoint.queryParameters),
       validateUniqueParameterNames(endpoint.uriPattern, endpoint.queryParameters)
@@ -62,7 +62,7 @@ object ApiEndpointValidator extends Validator[Endpoint] {
   }
 
   def validatePathParameters(uriPattern: String): HMRCValidatedNel[String] = {
-    val isPathParam: String => Boolean = { segment: String => segment.contains("{") || segment.contains("}") }
+    val isPathParam: String => Boolean = { (segment: String) => segment.contains("{") || segment.contains("}") }
     val segments                       = uriPattern.split("/").toList
 
     val pathParamValidationError: String => String = s => s"Curly-bracketed segment '$s' should match regular expression '$pathParameterRegex'"

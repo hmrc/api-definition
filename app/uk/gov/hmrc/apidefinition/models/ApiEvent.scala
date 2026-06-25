@@ -25,7 +25,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiVersionNbr
 import uk.gov.hmrc.play.json.Union
 
 import uk.gov.hmrc.apidefinition.models.ApiEvent.MetaData
-import uk.gov.hmrc.apidefinition.models.ApiEvents._
+import uk.gov.hmrc.apidefinition.models.ApiEvents.*
 
 final case class ApiEventId(value: UUID) extends AnyVal
 
@@ -61,7 +61,7 @@ object ApiEvents {
   }
 
   case class NewApiVersion(id: ApiEventId, apiName: String, serviceName: ServiceName, eventDateTime: Instant, apiStatus: ApiStatus, versionNbr: ApiVersionNbr) extends ApiEvent {
-    override def asMetaData(): MetaData = ("New Api Version Published", List(s"Version: $versionNbr", s"Api Status: ${apiStatus.displayText}"))
+    override def asMetaData(): MetaData = ("New Api Version Published", List(s"Version: $versionNbr", s"Api Status: ${apiStatus}"))
   }
 
   case class ApiVersionStatusChange(
@@ -75,7 +75,7 @@ object ApiEvents {
     ) extends ApiEvent {
 
     override def asMetaData(): MetaData =
-      ("Api Version Status Change", List(s"Version: $versionNbr", s"Old Api Status: ${oldApiStatus.displayText}", s"New Api Status: ${newApiStatus.displayText}"))
+      ("Api Version Status Change", List(s"Version: $versionNbr", s"Old Api Status: ${oldApiStatus}", s"New Api Status: ${newApiStatus}"))
   }
 
   case class ApiVersionAccessChange(
@@ -89,9 +89,9 @@ object ApiEvents {
     ) extends ApiEvent {
 
     private def accessDisplay(access: ApiAccessType) = access match {
-      case ApiAccessType.PUBLIC     => "Public"
-      case ApiAccessType.CONTROLLED => "Controlled"
-      case ApiAccessType.INTERNAL   => "Internal"
+      case ApiAccessType.Public     => "Public"
+      case ApiAccessType.Controlled => "Controlled"
+      case ApiAccessType.Internal   => "Internal"
     }
 
     override def asMetaData(): MetaData =

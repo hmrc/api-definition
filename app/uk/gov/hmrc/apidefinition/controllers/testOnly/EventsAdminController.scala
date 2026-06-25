@@ -20,9 +20,9 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 import scala.util.control.NonFatal
 
-import play.api.libs.json._
-import play.api.mvc._
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import play.api.libs.json.*
+import play.api.mvc.*
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.*
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import uk.gov.hmrc.apidefinition.controllers.error
@@ -45,8 +45,8 @@ class EventsAdminController @Inject() (
       InternalServerError(error(ErrorCode.INTERNAL_SERVER_ERROR, e.getMessage))
   }
 
-  def deleteEvents(serviceName: ServiceName): Action[AnyContent] = Action.async { _ =>
-    apiDefinitionService.deleteEventsByServiceName(serviceName) map { _ =>
+  def deleteEvents(rawServiceName: String): Action[AnyContent] = Action.async { _ =>
+    apiDefinitionService.deleteEventsByServiceName(ServiceName(rawServiceName)) map { _ =>
       Ok("")
     } recover recovery
   }

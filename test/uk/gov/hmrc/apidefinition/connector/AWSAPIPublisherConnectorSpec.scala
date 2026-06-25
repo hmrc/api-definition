@@ -22,8 +22,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import com.codahale.metrics.SharedMetricRegistries
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
-import com.github.tomakehurst.wiremock.client.WireMock._
-import com.github.tomakehurst.wiremock.core.WireMockConfiguration._
+import com.github.tomakehurst.wiremock.client.WireMock.*
+import com.github.tomakehurst.wiremock.core.WireMockConfiguration.*
 import org.scalatest.BeforeAndAfterAll
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 
@@ -74,7 +74,7 @@ class AWSAPIPublisherConnectorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuit
     val appContext: AppConfig               = app.injector.instanceOf[AppConfig]
     val servicesConfig                      = mock[ServicesConfig]
 
-    val underTest: AWSAPIPublisherConnector = new AWSAPIPublisherConnector(http, environment, appContext, runModeConfiguration, servicesConfig) {
+    val underTest: AWSAPIPublisherConnector = new AWSAPIPublisherConnector(http, environment, runModeConfiguration, servicesConfig) {
       override val serviceBaseUrl = s"$wireMockUrl/api"
     }
   }

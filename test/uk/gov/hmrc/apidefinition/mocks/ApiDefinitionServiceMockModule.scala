@@ -19,7 +19,7 @@ package uk.gov.hmrc.apidefinition.mocks
 import scala.concurrent.Future.{failed, successful}
 
 import cats.data.NonEmptyList
-import cats.implicits._
+import cats.implicits.*
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiDefinition, ServiceName, StoredApiDefinition}
