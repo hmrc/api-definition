@@ -224,16 +224,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
         )
       )
 
-      val newEndpoints = List(
-        Endpoint(
-          UriPattern("/today"),
-          Name("Get Today's Date"),
-          HttpMethod.Get,
-          AuthType.None,
-          ResourceThrottlingTier.Unlimited,
-          None,
-          queryParameters = List.empty
-        ),
+      val newEndpoints = oldEndpoints :+
         Endpoint(
           UriPattern("/tomorrow"),
           Name("Get Tomorrow's Date"),
@@ -243,7 +234,6 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
           None,
           queryParameters = List.empty
         )
-      )
 
       val oldApiDefinition               = multiVersionAndEndpointAPIDefinition(oldEndpoints)
       val newApiDefinition               = multiVersionAndEndpointAPIDefinition(newEndpoints)

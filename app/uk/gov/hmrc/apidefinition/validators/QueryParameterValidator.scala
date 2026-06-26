@@ -25,7 +25,7 @@ object QueryParameterValidator extends Validator[QueryParameter] {
   private val queryParameterNameRegex: Regex = "^[a-zA-Z0-9_\\-]+$".r
 
   def validate(queryParameter: QueryParameter): HMRCValidatedNel[QueryParameter] = {
-    import cats.implicits._
+    import cats.implicits.*
     queryParameter.valid
       .ensure("Field 'queryParameters.name' is required")(_.name.nonBlank)
       .ensure(s"Field 'queryParameters.name' with value '${queryParameter.name}' should match regular expression '$queryParameterNameRegex'")(_.name.matches(queryParameterNameRegex))

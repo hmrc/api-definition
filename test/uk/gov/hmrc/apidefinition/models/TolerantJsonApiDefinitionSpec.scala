@@ -58,8 +58,8 @@ class TolerantJsonApiDefinitionSpec extends BaseJsonFormattersSpec {
            |         },
            |         "endpoints":[
            |            {
-           |               "uriPattern":UriPattern("/today"),
-           |               "endpointName":Name("Get Today's Date"),
+           |               "uriPattern":"/today",
+           |               "endpointName":"Get Today's Date",
            |               "method":"GET",
            |               "authType":"NONE",
            |               "throttlingTier":"UNLIMITED"

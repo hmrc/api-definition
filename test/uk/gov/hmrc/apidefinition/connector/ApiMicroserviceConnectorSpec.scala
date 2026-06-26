@@ -24,6 +24,7 @@ import org.scalatest.BeforeAndAfterAll
 import play.api.http.HttpEntity
 import play.api.http.Status.*
 import play.api.mvc.{ResponseHeader, Result, Results}
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiDefinition.ServiceBaseUrl
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiVersionNbr
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -35,7 +36,7 @@ class ApiMicroserviceConnectorSpec extends AsyncHmrcSpec with Utils with MockWSH
     shutdownHelpers()
   }
 
-  val serviceUrl = "http://localhost"
+  val serviceUrl = ServiceBaseUrl("http://localhost")
 
   val serviceName         = "hello-world"
   val version             = ApiVersionNbr("1.0")

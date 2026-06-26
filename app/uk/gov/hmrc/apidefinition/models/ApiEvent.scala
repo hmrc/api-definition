@@ -108,7 +108,7 @@ object ApiEvents {
     ) extends ApiEvent {
 
     override def asMetaData(): MetaData =
-      ("Api Version Endpoints Added", List(s"Version: $versionNbr") ++ endpoints.map(e => s"Endpoint: ${e.method}: ${e.uriPattern}"))
+      ("Api Version Endpoints Added", List(s"Version: $versionNbr") ++ endpoints.map(e => s"Endpoint: ${e.method.toString.toUpperCase()}: ${e.uriPattern}"))
   }
 
   case class ApiVersionEndpointsRemoved(
@@ -121,7 +121,7 @@ object ApiEvents {
     ) extends ApiEvent {
 
     override def asMetaData(): MetaData =
-      ("Api Version Endpoints Removed", List(s"Version: $versionNbr") ++ endpoints.map(e => s"Endpoint: ${e.method}: ${e.uriPattern}"))
+      ("Api Version Endpoints Removed", List(s"Version: $versionNbr") ++ endpoints.map(e => s"Endpoint: ${e.method.toString.toUpperCase()}: ${e.uriPattern}"))
   }
 
   case class ApiPublishedNoChange(id: ApiEventId, apiName: String, serviceName: ServiceName, eventDateTime: Instant) extends ApiEvent {

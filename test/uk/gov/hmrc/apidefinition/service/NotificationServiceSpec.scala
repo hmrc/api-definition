@@ -36,20 +36,20 @@ class NotificationServiceSpec extends AsyncHmrcSpec {
 
     def httpCallIsSuccessful(): Unit = {
       when(mockHTTPClient.post(eqTo(emailServiceURL))(*)).thenReturn(mockRequestBuilder)
-      when(mockRequestBuilder.withBody(*)(using *)).thenReturn(mockRequestBuilder)
-      when(mockRequestBuilder.execute[HttpResponse](using *)).thenReturn(successful(HttpResponse(OK, "")))
+      when(mockRequestBuilder.withBody(*[String])(using *, *, *)).thenReturn(mockRequestBuilder)
+      when(mockRequestBuilder.execute[HttpResponse](using *, *)).thenReturn(successful(HttpResponse(OK, "")))
     }
 
     def emailServiceIsUnavailable(): Unit = {
       when(mockHTTPClient.post(eqTo(emailServiceURL))(*)).thenReturn(mockRequestBuilder)
-      when(mockRequestBuilder.withBody(*)(using *)).thenReturn(mockRequestBuilder)
-      when(mockRequestBuilder.execute[HttpResponse](using *)).thenReturn(successful(HttpResponse(NOT_FOUND, "")))
+      when(mockRequestBuilder.withBody(*[String])(using *, *, *)).thenReturn(mockRequestBuilder)
+      when(mockRequestBuilder.execute[HttpResponse](using *, *)).thenReturn(successful(HttpResponse(NOT_FOUND, "")))
     }
 
     def callToEmailServiceFails(body: String): Unit = {
       when(mockHTTPClient.post(eqTo(emailServiceURL))(*)).thenReturn(mockRequestBuilder)
-      when(mockRequestBuilder.withBody(*)(using *)).thenReturn(mockRequestBuilder)
-      when(mockRequestBuilder.execute[HttpResponse](using *)).thenReturn(successful(HttpResponse(INTERNAL_SERVER_ERROR, body)))
+      when(mockRequestBuilder.withBody(*[String])(using *, *, *)).thenReturn(mockRequestBuilder)
+      when(mockRequestBuilder.execute[HttpResponse](using *, *)).thenReturn(successful(HttpResponse(INTERNAL_SERVER_ERROR, body)))
     }
 
     implicit val hc: HeaderCarrier = HeaderCarrier()

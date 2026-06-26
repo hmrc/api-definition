@@ -43,7 +43,7 @@ class TolerantJsonApiStatusSpec extends BaseJsonFormattersSpec with TableDrivenP
 
     "convert to string correctly" in {
       forAll(values) { (s, t) =>
-        s.toString() shouldBe t.toUpperCase()
+        s.toString() shouldBe t
       }
     }
 

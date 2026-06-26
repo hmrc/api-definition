@@ -1,4 +1,4 @@
-import sbt._
+import sbt.*
 
 object AppDependencies {
   def apply(): Seq[ModuleID] = dependencies ++ testDependencies

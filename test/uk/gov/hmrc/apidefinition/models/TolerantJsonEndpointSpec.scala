@@ -28,8 +28,8 @@ class TolerantJsonEndpointSpec extends BaseJsonFormattersSpec {
 
     "read endpoint from Json" in {
       val json = """{
-                   |  "uriPattern":UriPattern("/today"),
-                   |  "endpointName":Name("Get Today's Date"),
+                   |  "uriPattern":"/today",
+                   |  "endpointName":"Get Today's Date",
                    |  "method":"GET",
                    |  "authType":"NONE",
                    |  "throttlingTier":"UNLIMITED"
@@ -40,8 +40,8 @@ class TolerantJsonEndpointSpec extends BaseJsonFormattersSpec {
 
     "read endpoint from Json with all fields" in {
       val json = """{
-                   |  "uriPattern":UriPattern("/today"),
-                   |  "endpointName":Name("Get Today's Date"),
+                   |  "uriPattern":"/today",
+                   |  "endpointName":"Get Today's Date",
                    |  "method":"GET",
                    |  "authType":"NONE",
                    |  "throttlingTier":"UNLIMITED",
@@ -62,8 +62,8 @@ class TolerantJsonEndpointSpec extends BaseJsonFormattersSpec {
 
     "fail to read private access from Json when bad scope type" in {
       val json = """{
-                   |  "uriPattern":UriPattern("/today"),
-                   |  "endpointName":Name("Get Today's Date"),
+                   |  "uriPattern":"/today",
+                   |  "endpointName":"Get Today's Date",
                    |  "method":"GET",
                    |  "authType":"NONE",
                    |  "throttlingTier":"UNLIMITED",
@@ -80,8 +80,8 @@ class TolerantJsonEndpointSpec extends BaseJsonFormattersSpec {
 
     "fail to read private access from Json when bad query parameters type" in {
       val json = """{
-                   |  "uriPattern":UriPattern("/today"),
-                   |  "endpointName":Name("Get Today's Date"),
+                   |  "uriPattern":"/today",
+                   |  "endpointName":"Get Today's Date",
                    |  "method":"GET",
                    |  "authType":"NONE",
                    |  "throttlingTier":"UNLIMITED",

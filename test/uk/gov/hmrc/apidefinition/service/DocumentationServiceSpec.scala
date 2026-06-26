@@ -144,8 +144,6 @@ class DocumentationServiceSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wi
 
     def generateRandomVersion: String = s"${Random.nextInt().abs}.${Random.nextInt().abs}"
 
-    // def theServiceIsRunningInSandboxMode() = when(mockServiceConfig.isSandbox).thenReturn(true)
-
     def theApiDefinitionWillBeReturned() = {
       when(mockAPIDefinitionRepository.fetchByServiceName(*[ServiceName]))
         .thenReturn(successful(Some(apiDefinition)))
@@ -157,7 +155,7 @@ class DocumentationServiceSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wi
     }
 
     def theApiMicroserviceWillReturnTheResource(response: WSResponse) = {
-      when(mockApiMicroserviceConnector.fetchApiDocumentationResourceByUrl(*, *[ApiVersionNbr], *))
+      when(mockApiMicroserviceConnector.fetchApiDocumentationResourceByUrl(*[ServiceBaseUrl], *[ApiVersionNbr], *))
         .thenReturn(successful(response))
     }
   }

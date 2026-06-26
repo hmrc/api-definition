@@ -1,5 +1,5 @@
 import play.sbt.PlayScala
-import uk.gov.hmrc.DefaultBuildSettings._
+import uk.gov.hmrc.DefaultBuildSettings.*
 import uk.gov.hmrc.{DefaultBuildSettings, SbtAutoBuildPlugin}
 import bloop.integrations.sbt.BloopDefaults
 

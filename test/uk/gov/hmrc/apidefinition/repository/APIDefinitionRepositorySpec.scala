@@ -62,7 +62,7 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
     endpoints = List(Endpoint(UriPattern("/world"), Name("Say Hello to the World!"), HttpMethod.Get, AuthType.None, ResourceThrottlingTier.Unlimited, None, List.empty)),
     true,
     None,
-    ApiVersionSource.OAS
+    ApiVersionSource.Unknown
   )
 
   private val calendarApiVersion = ApiVersion(

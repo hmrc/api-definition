@@ -26,7 +26,7 @@ class ErrorCodeSpec extends BaseJsonFormattersSpec with TableDrivenPropertyCheck
   // Simpler than most tests - no real toString overriding or displayText
 
   "ErrorCode" should {
-    import ErrorCode._
+    import ErrorCode.*
     val values =
       Table(
         ("Type"),
