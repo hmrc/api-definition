@@ -68,14 +68,14 @@ class APIDefinitionController @Inject() (
     }
   }
 
-  def delete(rawServiceName: String): Action[AnyContent] = Action.async { implicit request =>
-    apiDefinitionService.delete(ServiceName(rawServiceName)).map { _ => NoContent } recover {
+  def delete(serviceName: ServiceName): Action[AnyContent] = Action.async { implicit request =>
+    apiDefinitionService.delete(serviceName).map { _ => NoContent } recover {
       case e: UnauthorizedException => Forbidden(e.getMessage)
     } recover recovery
   }
 
-  def fetch(rawServiceName: String): Action[AnyContent] = Action.async { _ =>
-    apiDefinitionService.fetchByServiceName(ServiceName(rawServiceName)) map {
+  def fetch(serviceName: ServiceName): Action[AnyContent] = Action.async { _ =>
+    apiDefinitionService.fetchByServiceName(serviceName) map {
       case Some(apiDefinition) => Ok(Json.toJson(apiDefinition))
       case _                   => NotFound(error(API_DEFINITION_NOT_FOUND, "No API Definition was found"))
     } recover recovery
@@ -116,14 +116,14 @@ class APIDefinitionController @Inject() (
     apiDefinitionService.publishAllToAws().map { _ => NoContent } recover recovery
   }
 
-  def fetchEvents(rawServiceName: String, includeNoChange: Boolean = true): Action[AnyContent] = Action.async { _ =>
-    apiDefinitionService.fetchEventsByServiceName(ServiceName(rawServiceName), includeNoChange) map { apiEvents =>
+  def fetchEvents(serviceName: ServiceName, includeNoChange: Boolean = true): Action[AnyContent] = Action.async { _ =>
+    apiDefinitionService.fetchEventsByServiceName(serviceName, includeNoChange) map { apiEvents =>
       Ok(Json.toJson(apiEvents.map(DisplayApiEvent(_))))
     } recover recovery
   }
 
-  def deleteEvents(rawServiceName: String): Action[AnyContent] = Action.async { _ =>
-    apiDefinitionService.deleteEventsByServiceName(ServiceName(rawServiceName)) map { _ =>
+  def deleteEvents(serviceName: ServiceName): Action[AnyContent] = Action.async { _ =>
+    apiDefinitionService.deleteEventsByServiceName(serviceName) map { _ =>
       Ok("")
     } recover recovery
   }

@@ -45,8 +45,8 @@ class EventsAdminController @Inject() (
       InternalServerError(error(ErrorCode.INTERNAL_SERVER_ERROR, e.getMessage))
   }
 
-  def deleteEvents(rawServiceName: String): Action[AnyContent] = Action.async { _ =>
-    apiDefinitionService.deleteEventsByServiceName(ServiceName(rawServiceName)) map { _ =>
+  def deleteEvents(serviceName: ServiceName): Action[AnyContent] = Action.async { _ =>
+    apiDefinitionService.deleteEventsByServiceName(serviceName) map { _ =>
       Ok("")
     } recover recovery
   }

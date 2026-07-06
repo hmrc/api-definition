@@ -65,7 +65,7 @@ class DocumentationControllerSpec extends AsyncHmrcSpec with StubControllerCompo
     "call the service to get the resource" in new Setup {
       DocumentationServiceMock.FetchApiDocumentationResource.success(body)
 
-      await(underTest.fetchApiDocumentationResource(serviceName.toString(), version.value, resourceName)(request))
+      await(underTest.fetchApiDocumentationResource(serviceName, version, resourceName)(request))
 
       DocumentationServiceMock.FetchApiDocumentationResource.verifyCalled(serviceName, version, resourceName)
     }
@@ -73,7 +73,7 @@ class DocumentationControllerSpec extends AsyncHmrcSpec with StubControllerCompo
     "return the resource with a Content-type header when the content type is known" in new Setup {
       DocumentationServiceMock.FetchApiDocumentationResource.success(body, contentType)
 
-      private val result = underTest.fetchApiDocumentationResource(serviceName.toString(), version.value, resourceName)(request)
+      private val result = underTest.fetchApiDocumentationResource(serviceName, version, resourceName)(request)
 
       status(result) shouldBe OK
 
@@ -85,7 +85,7 @@ class DocumentationControllerSpec extends AsyncHmrcSpec with StubControllerCompo
     "return the resource with no Content-type header when the content type is unknown" in new Setup {
       DocumentationServiceMock.FetchApiDocumentationResource.success(body)
 
-      private val result = underTest.fetchApiDocumentationResource(serviceName, version.value, resourceName)(request)
+      private val result = underTest.fetchApiDocumentationResource(serviceName, version, resourceName)(request)
 
       status(result) shouldBe OK
 
@@ -95,7 +95,7 @@ class DocumentationControllerSpec extends AsyncHmrcSpec with StubControllerCompo
     "return internal server error when the service fails to return the resource" in new Setup {
       DocumentationServiceMock.FetchApiDocumentationResource.errors(new RuntimeException("Some message"))
 
-      private val result = underTest.fetchApiDocumentationResource(serviceName, version.value, resourceName)(request)
+      private val result = underTest.fetchApiDocumentationResource(serviceName, version, resourceName)(request)
 
       status(result) shouldBe INTERNAL_SERVER_ERROR
     }
@@ -103,7 +103,7 @@ class DocumentationControllerSpec extends AsyncHmrcSpec with StubControllerCompo
     "return not found when the service is unable to find the api or version" in new Setup {
       DocumentationServiceMock.FetchApiDocumentationResource.errors(new NotFoundException("some message"))
 
-      private val result = underTest.fetchApiDocumentationResource(serviceName, version.value, resourceName)(request)
+      private val result = underTest.fetchApiDocumentationResource(serviceName, version, resourceName)(request)
 
       status(result) shouldBe NOT_FOUND
     }

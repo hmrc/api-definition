@@ -44,82 +44,82 @@ class ConfigurationProvidersSpec extends AsyncHmrcSpec with BeforeAndAfterEach {
     def notificationConfigReturnsValidLoggingConfiguration(environmentName: String): Unit = {
       val notificationsConfiguration: Configuration = mock[Configuration]
 
-      when(notificationsConfiguration.getAndValidate[String](eqTo("type"), *)(*)).thenReturn("LOG")
-      when(notificationsConfiguration.getOptional[String](eqTo("environmentName"))(*)).thenReturn(Some(environmentName))
+      when(notificationsConfiguration.getAndValidate[String](eqTo("type"), *)(using *)).thenReturn("LOG")
+      when(notificationsConfiguration.getOptional[String](eqTo("environmentName"))(using *)).thenReturn(Some(environmentName))
 
-      when(mockRunModeConfiguration.getOptional[Configuration](eqTo("notifications"))(*)).thenReturn(Some(notificationsConfiguration))
+      when(mockRunModeConfiguration.getOptional[Configuration](eqTo("notifications"))(using *)).thenReturn(Some(notificationsConfiguration))
     }
 
     def notificationConfigReturnsUnknownNotificationType(): Unit = {
       val notificationsConfiguration: Configuration = mock[Configuration]
-      when(notificationsConfiguration.getAndValidate[String](eqTo("type"), *)(*)).thenReturn("FOO")
-      when(notificationsConfiguration.getOptional[String](eqTo("environmentName"))(*)).thenReturn(Some(environmentName))
+      when(notificationsConfiguration.getAndValidate[String](eqTo("type"), *)(using *)).thenReturn("FOO")
+      when(notificationsConfiguration.getOptional[String](eqTo("environmentName"))(using *)).thenReturn(Some(environmentName))
 
-      when(mockRunModeConfiguration.getOptional[Configuration](eqTo("notifications"))(*)).thenReturn(Some(notificationsConfiguration))
+      when(mockRunModeConfiguration.getOptional[Configuration](eqTo("notifications"))(using *)).thenReturn(Some(notificationsConfiguration))
     }
 
     def notificationsConfigReturnsValidEmailConfiguration(emailServiceURL: String, emailTemplateId: String, emailAddresses: List[String] = List.empty): Unit = {
       val notificationsConfiguration: Configuration = mock[Configuration]
       val emailConfiguration: Configuration         = mock[Configuration]
 
-      when(notificationsConfiguration.getAndValidate[String](eqTo("type"), *)(*)).thenReturn("EMAIL")
-      when(notificationsConfiguration.getOptional[String](eqTo("environmentName"))(*)).thenReturn(Some(environmentName))
-      when(notificationsConfiguration.getOptional[Configuration](eqTo("email"))(*)).thenReturn(Some(emailConfiguration))
+      when(notificationsConfiguration.getAndValidate[String](eqTo("type"), *)(using *)).thenReturn("EMAIL")
+      when(notificationsConfiguration.getOptional[String](eqTo("environmentName"))(using *)).thenReturn(Some(environmentName))
+      when(notificationsConfiguration.getOptional[Configuration](eqTo("email"))(using *)).thenReturn(Some(emailConfiguration))
 
-      when(emailConfiguration.getOptional[String](eqTo("serviceURL"))(*)).thenReturn(Some(emailServiceURL))
-      when(emailConfiguration.getOptional[String](eqTo("templateId"))(*)).thenReturn(Some(emailTemplateId))
+      when(emailConfiguration.getOptional[String](eqTo("serviceURL"))(using *)).thenReturn(Some(emailServiceURL))
+      when(emailConfiguration.getOptional[String](eqTo("templateId"))(using *)).thenReturn(Some(emailTemplateId))
 
       when(emailConfiguration.get[Seq[String]]("addresses")).thenReturn(emailAddresses.toSeq)
 
-      when(mockRunModeConfiguration.getOptional[Configuration](eqTo("notifications"))(*)).thenReturn(Some(notificationsConfiguration))
+      when(mockRunModeConfiguration.getOptional[Configuration](eqTo("notifications"))(using *)).thenReturn(Some(notificationsConfiguration))
     }
 
     def notificationsConfigReturnsMissingEmailConfiguration(): Unit = {
       val notificationsConfiguration: Configuration = mock[Configuration]
 
-      when(notificationsConfiguration.getAndValidate[String](eqTo("type"), *)(*)).thenReturn("EMAIL")
-      when(notificationsConfiguration.getOptional[String](eqTo("environmentName"))(*)).thenReturn(Some(environmentName))
-      when(notificationsConfiguration.getOptional[Configuration](eqTo("email"))(*)).thenReturn(None)
+      when(notificationsConfiguration.getAndValidate[String](eqTo("type"), *)(using *)).thenReturn("EMAIL")
+      when(notificationsConfiguration.getOptional[String](eqTo("environmentName"))(using *)).thenReturn(Some(environmentName))
+      when(notificationsConfiguration.getOptional[Configuration](eqTo("email"))(using *)).thenReturn(None)
 
-      when(mockRunModeConfiguration.getOptional[Configuration](eqTo("notifications"))(*)).thenReturn(Some(notificationsConfiguration))
+      when(mockRunModeConfiguration.getOptional[Configuration](eqTo("notifications"))(using *)).thenReturn(Some(notificationsConfiguration))
     }
 
     def notificationsConfigReturnsInvalidEmailConfiguration(): Unit = {
       val notificationsConfiguration: Configuration = mock[Configuration]
       val emailConfiguration: Configuration         = mock[Configuration]
 
-      when(notificationsConfiguration.getAndValidate[String](eqTo("type"), *)(*)).thenReturn("EMAIL")
-      when(notificationsConfiguration.getOptional[String](eqTo("environmentName"))(*)).thenReturn(Some(environmentName))
-      when(notificationsConfiguration.getOptional[Configuration](eqTo("email"))(*)).thenReturn(Some(emailConfiguration))
+      when(notificationsConfiguration.getAndValidate[String](eqTo("type"), *)(using *)).thenReturn("EMAIL")
+      when(notificationsConfiguration.getOptional[String](eqTo("environmentName"))(using *)).thenReturn(Some(environmentName))
+      when(notificationsConfiguration.getOptional[Configuration](eqTo("email"))(using *)).thenReturn(Some(emailConfiguration))
 
-      when(emailConfiguration.getOptional[String](eqTo("serviceURL"))(*)).thenReturn(None)
-      when(emailConfiguration.getOptional[String](eqTo("templateId"))(*)).thenReturn(None)
+      when(emailConfiguration.getOptional[String](eqTo("serviceURL"))(using *)).thenReturn(None)
+      when(emailConfiguration.getOptional[String](eqTo("templateId"))(using *)).thenReturn(None)
       when(emailConfiguration.get[Seq[String]]("addresses")).thenReturn(null)
 
-      when(mockRunModeConfiguration.getOptional[Configuration](eqTo("notifications"))(*)).thenReturn(Some(notificationsConfiguration))
+      when(mockRunModeConfiguration.getOptional[Configuration](eqTo("notifications"))(using *)).thenReturn(Some(notificationsConfiguration))
     }
 
     def loggingNotificationsConfigReturnsMissingEnvironmentName(): Unit = {
       val notificationsConfiguration: Configuration = mock[Configuration]
-      when(notificationsConfiguration.getOptional[String](eqTo("type"))(*)).thenReturn(Some("LOG"))
-      when(notificationsConfiguration.getOptional[String](eqTo("environmentName"))(*)).thenReturn(None)
+      when(notificationsConfiguration.getOptional[String](eqTo("type"))(using *)).thenReturn(Some("LOG"))
+      when(notificationsConfiguration.getOptional[String](eqTo("environmentName"))(using *)).thenReturn(None)
 
-      when(mockRunModeConfiguration.getOptional[Configuration](eqTo("notifications"))(*)).thenReturn(Some(notificationsConfiguration))
+      when(mockRunModeConfiguration.getOptional[Configuration](eqTo("notifications"))(using *)).thenReturn(Some(notificationsConfiguration))
     }
 
     def emailNotificationsConfigReturnsMissingEnvironmentName(emailServiceURL: String, emailTemplateId: String, emailAddresses: List[String] = List.empty): Unit = {
       val notificationsConfiguration: Configuration = mock[Configuration]
       val emailConfiguration: Configuration         = mock[Configuration]
 
-      when(notificationsConfiguration.getAndValidate[String](eqTo("type"), *)(*)).thenReturn("EMAIL")
-      when(notificationsConfiguration.getOptional[String](eqTo("environmentName"))(*)).thenReturn(None)
-      when(notificationsConfiguration.getOptional[Configuration](eqTo("email"))(*)).thenReturn(Some(emailConfiguration))
+      when(notificationsConfiguration.getAndValidate[String](eqTo("type"), *)(using *)).thenReturn("EMAIL")
+      when(notificationsConfiguration.getOptional[String](eqTo("environmentName"))(using *)).thenReturn(None)
+      when(notificationsConfiguration.getOptional[Configuration](eqTo("email"))(using *)).thenReturn(Some(emailConfiguration))
 
-      when(emailConfiguration.getOptional[String](eqTo("serviceURL"))(*)).thenReturn(Some(emailServiceURL))
-      when(emailConfiguration.getOptional[String](eqTo("templateId"))(*)).thenReturn(Some(emailTemplateId))
+      when(emailConfiguration.getOptional[String](eqTo("serviceURL"))(using *)).thenReturn(Some(emailServiceURL))
+      when(emailConfiguration.getOptional[String](eqTo("templateId"))(using *)).thenReturn(Some(emailTemplateId))
       when(emailConfiguration.get[Seq[String]]("addresses")).thenReturn(emailAddresses.toSeq)
 
-      when(mockRunModeConfiguration.getOptional[Configuration](eqTo("notifications"))(*)).thenReturn(Some(notificationsConfiguration))
+      when(mockRunModeConfiguration.getOptional[Configuration](eqTo("notifications"))(using *)).thenReturn(Some(notificationsConfiguration))
     }
 
     val mockHttpClient: HttpClientV2 = mock[HttpClientV2]
@@ -175,7 +175,7 @@ class ConfigurationProvidersSpec extends AsyncHmrcSpec with BeforeAndAfterEach {
     }
 
     "default to LoggingNotificationService if not configuration specified" in new NotificationServiceConfigProviderSetup {
-      when(mockRunModeConfiguration.getOptional[Configuration](eqTo("notifications"))(*)).thenReturn(None)
+      when(mockRunModeConfiguration.getOptional[Configuration](eqTo("notifications"))(using *)).thenReturn(None)
 
       val returnedNotificationService: NotificationService = underTest.get()
 

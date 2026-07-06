@@ -199,7 +199,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
   "createOrUpdate" should {
 
     "create or update the API Definition in all AWS and the repository" in new Setup {
-      when(mockNotificationService.process(*)(*, *)).thenReturn(unitSuccess)
+      when(mockNotificationService.process(*)(using *, *)).thenReturn(unitSuccess)
       when(mockAPIDefinitionRepository.fetchByContext(apiDefinition.context)).thenReturn(successful(Some(apiDefinition)))
       when(mockAwsApiPublisher.publish(apiDefinition)).thenReturn(unitSuccess)
       when(mockAPIDefinitionRepository.save(apiDefinitionWithSavingTime)).thenReturn(successful(apiDefinitionWithSavingTime))
@@ -239,7 +239,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
       val newApiDefinition               = multiVersionAndEndpointAPIDefinition(newEndpoints)
       val newApiDefinitionWithSavingTime = newApiDefinition.copy(lastPublishedAt = Some(instant))
 
-      when(mockNotificationService.process(*)(*, *)).thenReturn(unitSuccess)
+      when(mockNotificationService.process(*)(using *, *)).thenReturn(unitSuccess)
       when(mockAPIDefinitionRepository.fetchByContext(newApiDefinition.context)).thenReturn(successful(Some(oldApiDefinition)))
       when(mockAwsApiPublisher.publish(newApiDefinition)).thenReturn(unitSuccess)
       when(mockAPIDefinitionRepository.save(newApiDefinitionWithSavingTime)).thenReturn(successful(newApiDefinitionWithSavingTime))
@@ -293,7 +293,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
       val newApiDefinition               = multiVersionAndEndpointAPIDefinition(newEndpoints)
       val newApiDefinitionWithSavingTime = newApiDefinition.copy(lastPublishedAt = Some(instant))
 
-      when(mockNotificationService.process(*)(*, *)).thenReturn(unitSuccess)
+      when(mockNotificationService.process(*)(using *, *)).thenReturn(unitSuccess)
       when(mockAPIDefinitionRepository.fetchByContext(newApiDefinition.context)).thenReturn(successful(Some(oldApiDefinition)))
       when(mockAwsApiPublisher.publish(newApiDefinition)).thenReturn(unitSuccess)
       when(mockAPIDefinitionRepository.save(newApiDefinitionWithSavingTime)).thenReturn(successful(newApiDefinitionWithSavingTime))
@@ -365,7 +365,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
       val newApiDefinition               = multiVersionAndEndpointAPIDefinition(newEndpoints)
       val newApiDefinitionWithSavingTime = newApiDefinition.copy(lastPublishedAt = Some(instant))
 
-      when(mockNotificationService.process(*)(*, *)).thenReturn(unitSuccess)
+      when(mockNotificationService.process(*)(using *, *)).thenReturn(unitSuccess)
       when(mockAPIDefinitionRepository.fetchByContext(newApiDefinition.context)).thenReturn(successful(Some(oldApiDefinition)))
       when(mockAwsApiPublisher.publish(newApiDefinition)).thenReturn(unitSuccess)
       when(mockAPIDefinitionRepository.save(newApiDefinitionWithSavingTime)).thenReturn(successful(newApiDefinitionWithSavingTime))
@@ -384,7 +384,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
     }
 
     "propagate unexpected errors that happen when trying to publish an API to AWS" in new Setup {
-      when(mockNotificationService.process(*)(*, *)).thenReturn(unitSuccess)
+      when(mockNotificationService.process(*)(using *, *)).thenReturn(unitSuccess)
       when(mockAPIDefinitionRepository.fetchByContext(apiDefinition.context)).thenReturn(successful(Some(apiDefinition)))
       when(mockAwsApiPublisher.publish(apiDefinition)).thenReturn(failed(new RuntimeException("Something went wrong")))
 
@@ -397,7 +397,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
     }
 
     "propagate unexpected errors that happen when trying to save the definition" in new Setup {
-      when(mockNotificationService.process(*)(*, *)).thenReturn(unitSuccess)
+      when(mockNotificationService.process(*)(using *, *)).thenReturn(unitSuccess)
       when(mockAPIDefinitionRepository.fetchByContext(apiDefinition.context)).thenReturn(successful(Some(apiDefinition)))
       when(mockAwsApiPublisher.publish(apiDefinition)).thenReturn(unitSuccess)
       when(mockAPIDefinitionRepository.save(apiDefinitionWithSavingTime)).thenReturn(failed(new RuntimeException("Something went wrong")))
@@ -420,7 +420,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
       val updatedAPIDefinitionWithSavingTime: StoredApiDefinition = updatedAPIDefinition.copy(lastPublishedAt = Some(instant))
 
       when(mockAPIDefinitionRepository.fetchByContext(apiContext)).thenReturn(successful(Some(existingAPIDefinition)))
-      when(mockNotificationService.process(*)(*, *)).thenReturn(unitSuccess)
+      when(mockNotificationService.process(*)(using *, *)).thenReturn(unitSuccess)
       when(mockAwsApiPublisher.publish(updatedAPIDefinition)).thenReturn(unitSuccess)
       when(mockAPIDefinitionRepository.save(updatedAPIDefinitionWithSavingTime)).thenReturn(successful(updatedAPIDefinitionWithSavingTime))
 
@@ -428,7 +428,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
 
       verify(mockAwsApiPublisher, times(1)).publish(updatedAPIDefinition)
       verify(mockAPIDefinitionRepository, times(1)).save(updatedAPIDefinitionWithSavingTime)
-      verify(mockNotificationService).process(*)(*, *)
+      verify(mockNotificationService).process(*)(using *, *)
 
     }
   }
@@ -559,7 +559,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
       when(mockAppConfig.apisToRetire).thenReturn(List.empty)
       when(mockApiRemover.deleteUnusedApis()).thenReturn(successful(()))
       when(mockAPIDefinitionRepository.fetchAll()).thenReturn(successful(Seq(apiDefinition1, apiDefinition2)))
-      when(mockAwsApiPublisher.publishAll(*)(*)).thenReturn(successful(()))
+      when(mockAwsApiPublisher.publishAll(*)(using *)).thenReturn(successful(()))
 
       await(underTest.publishAllToAws())
 
@@ -572,7 +572,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
       when(mockAppConfig.apisToRetire).thenReturn(List.empty)
       when(mockApiRemover.deleteUnusedApis()).thenReturn(successful(()))
       when(mockAPIDefinitionRepository.fetchAll()).thenReturn(successful(Seq(apiDefinition1, apiDefinition2)))
-      when(mockAwsApiPublisher.publishAll(*)(*)).thenReturn(successful(()))
+      when(mockAwsApiPublisher.publishAll(*)(using *)).thenReturn(successful(()))
 
       await(underTest.publishAllToAws())
       verifyZeroInteractions(mockApiRetirer)
@@ -586,7 +586,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
       when(mockApiRetirer.retireApis(apisToRetire)).thenReturn(successful(()))
       when(mockApiRemover.deleteUnusedApis()).thenReturn(successful(()))
       when(mockAPIDefinitionRepository.fetchAll()).thenReturn(successful(Seq(apiDefinition1, apiDefinition2)))
-      when(mockAwsApiPublisher.publishAll(*)(*)).thenReturn(successful(()))
+      when(mockAwsApiPublisher.publishAll(*)(using *)).thenReturn(successful(()))
 
       await(underTest.publishAllToAws())
       verify(mockApiRetirer, times(1)).retireApis(apisToRetire)

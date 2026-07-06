@@ -27,7 +27,7 @@ class ApiVersionValidatorSpec extends AbstractValidatorSpec with TableDrivenProp
   "ApiVersionValidator" when {
 
     "validateVersionNumber" should {
-      def validates(versionNbr: ApiVersionNbr)(implicit pos: Position): Unit =
+      def validates(versionNbr: ApiVersionNbr): Unit =
         super.validates(ApiVersionValidator.validateVersionNumber(versionNbr), clue = Some(versionNbr.value))
 
       def failsToValidateVersionNbr(versionNbr: ApiVersionNbr)(implicit pos: Position): Unit =
@@ -47,7 +47,7 @@ class ApiVersionValidatorSpec extends AbstractValidatorSpec with TableDrivenProp
     }
 
     "validateStatusAndEndpointsEnabled" should {
-      def validates(endpointsEnabled: Boolean, status: ApiStatus)(implicit pos: Position): Unit            = super.validates(
+      def validates(endpointsEnabled: Boolean, status: ApiStatus): Unit                                    = super.validates(
         ApiVersionValidator.validateStatusAndEndpointsEnabled(endpointsEnabled, status),
         clue = Some(s"""Should be invalid for a status of $status to be ${if (endpointsEnabled) "enabled" else "disabled"}""")
       )
@@ -110,7 +110,7 @@ class ApiVersionValidatorSpec extends AbstractValidatorSpec with TableDrivenProp
     }
 
     "validateUniqueEndpointPaths" should {
-      def validates(uris: String*)(implicit pos: Position): Unit = super.validates(ApiVersionValidator.validateUniqueEndpointPaths(uris.toList))
+      def validates(uris: String*): Unit = super.validates(ApiVersionValidator.validateUniqueEndpointPaths(uris.toList))
       "succeed when there is only one URI pattern" in {
         validates("/{alpha}")
       }

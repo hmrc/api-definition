@@ -150,17 +150,6 @@ class ApiRetirerSpec extends AsyncHmrcSpec {
     categories = List(ApiCategory.Agents)
   )
 
-  private val expectedApiDefinition3 = StoredApiDefinition(
-    serviceName = ServiceName("api3"),
-    serviceBaseUrl = ServiceBaseUrl("test.com"),
-    name = ApiDefinition.Name("Test3"),
-    description = ApiDefinition.Description("This is the Test API3"),
-    context = ApiContext("test2"),
-    versions = List(retiredApiVersion1, testApiVersion2, testApiVersion3),
-    isTestSupport = false,
-    lastPublishedAt = None,
-    categories = List(ApiCategory.Agents)
-  )
   "retireApis" should {
     "fetch a single api to retire and set it to retired" in new Setup {
       val apisToRetire = List("api1,2.0")

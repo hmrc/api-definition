@@ -36,15 +36,18 @@ lazy val microservice = Project(appName, file("."))
   )
   .settings(
       routesImport ++= Seq(
-      "uk.gov.hmrc.apidefinition.controllers.binders._",
-      "uk.gov.hmrc.apiplatform.modules.common.domain.models._",
-      "uk.gov.hmrc.apiplatform.modules.apis.domain.models._"
+      "uk.gov.hmrc.apidefinition.controllers.binders.*",
+      "uk.gov.hmrc.apiplatform.modules.common.domain.models.*",
+      "uk.gov.hmrc.apiplatform.modules.apis.domain.models.*",
+      "uk.gov.hmrc.apidefinition.controllers.binders.RouteModels.*",
+      "uk.gov.hmrc.apidefinition.controllers.binders.RouteModels.Conversions.given"
     )
   )
   .settings(
     scalacOptions ++= Seq(
       "-Wconf:msg=Implicit parameters should be provided with a `using` clause:s", // TODO - remove once Play is really Scala 3
-      "-Wconf:msg=unused import&src=html/.*:s"
+      "-Wconf:msg=unused import&src=html/.*:s",
+      "-Wconf:msg=unused import&src=*.routes:s"
     ),
     Test / scalacOptions ++= Seq(
       "-Wconf:msg=Implicit parameters should be provided with a `using` clause:s"

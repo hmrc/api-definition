@@ -24,7 +24,7 @@ import uk.gov.hmrc.apiplatform.modules.apis.domain.models.Endpoint.UriPattern
 class ApiEndpointValidatorSpec extends AbstractValidatorSpec {
   "ApiEndpointValidator" when {
     "validateEndpointName" should {
-      def validates(name: String)(implicit pos: Position): Unit                 = super.validates(ApiEndpointValidator.validateEndpointName(name))
+      def validates(name: String): Unit                                         = super.validates(ApiEndpointValidator.validateEndpointName(name))
       def failsToValidateWithNoName(name: String)(implicit pos: Position): Unit =
         failsToValidate(ApiEndpointValidator.validateEndpointName(name))("Field 'endpoints.endpointName' is required")
 
@@ -46,11 +46,11 @@ class ApiEndpointValidatorSpec extends AbstractValidatorSpec {
     }
 
     "validateUriPattern" should {
-      def validates(value: String, clue: Option[String] = Some(s"should validate $value"))(implicit pos: Position): Unit =
+      def validates(value: String, clue: Option[String] = Some(s"should validate $value")): Unit         =
         super.validates(ApiEndpointValidator.validateUriPattern(value), clue = clue)
-      def failsToValidateWithEmptyValue(value: String)(implicit pos: Position): Unit                                     =
+      def failsToValidateWithEmptyValue(value: String)(implicit pos: Position): Unit                     =
         failsToValidate(ApiEndpointValidator.validateUriPattern(value))("Field 'endpoints.uriPattern' is required")
-      def failsToValidateWithBadValue(value: String, clue: Option[String])(implicit pos: Position): Unit                 = failsToValidate(
+      def failsToValidateWithBadValue(value: String, clue: Option[String])(implicit pos: Position): Unit = failsToValidate(
         ApiEndpointValidator.validateUriPattern(value),
         clue = clue
       )(s"Field 'endpoints.uriPattern' with value '$value' should match regular expression")
@@ -137,7 +137,7 @@ class ApiEndpointValidatorSpec extends AbstractValidatorSpec {
     }
 
     "validatePathParameters" should {
-      def validates(uriPattern: String)(implicit pos: Position): Unit                                              =
+      def validates(uriPattern: String): Unit                                                                      =
         super.validates(ApiEndpointValidator.validatePathParameters(uriPattern), clue = Some(s"Valid uri pattern of $uriPattern"))
       def failsToValidate(uriPattern: String, numberOfErrors: Int = 1, clue: String)(implicit pos: Position): Unit =
         super.failsToValidate(ApiEndpointValidator.validatePathParameters(uriPattern), numberOfErrors, Some(clue))() // TODO Check message?
@@ -164,7 +164,7 @@ class ApiEndpointValidatorSpec extends AbstractValidatorSpec {
     }
 
     "validateUniqueParameterNames" should {
-      def validates(uriPattern: String, queryParameters: List[QueryParameter])(implicit pos: Position): Unit                     =
+      def validates(uriPattern: String, queryParameters: List[QueryParameter]): Unit                                             =
         super.validates(ApiEndpointValidator.validateUniqueParameterNames(uriPattern, queryParameters), clue = Some(s"Valid uri pattern of $uriPattern"))
       def failsToValidate(uriPattern: String, queryParameters: List[QueryParameter], clue: String)(implicit pos: Position): Unit =
         super.failsToValidate(ApiEndpointValidator.validateUniqueParameterNames(uriPattern, queryParameters), clue = Some(clue))()
@@ -184,7 +184,7 @@ class ApiEndpointValidatorSpec extends AbstractValidatorSpec {
     }
 
     "validate" should {
-      def validates(endpoint: Endpoint)(implicit pos: Position): Unit = super.validates(ApiEndpointValidator.validate(endpoint))
+      def validates(endpoint: Endpoint): Unit = super.validates(ApiEndpointValidator.validate(endpoint))
 
       "collect all errors when failing" in {
         failsToValidate(

@@ -23,7 +23,7 @@ import scala.util.{Failure, Success, Try}
 
 import play.api.libs.json.{Json, OFormat}
 import play.mvc.Http.Status.NOT_FOUND
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{*, given}
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiVersionNbr
 import uk.gov.hmrc.http.HttpReads.Implicits.*
 import uk.gov.hmrc.http.client.HttpClientV2
