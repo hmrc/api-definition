@@ -40,9 +40,9 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
 import uk.gov.hmrc.http.{HeaderCarrier, InternalServerException, NotFoundException}
 
 import uk.gov.hmrc.apidefinition.connector.ApiMicroserviceConnector
+import uk.gov.hmrc.apidefinition.mocks.ApiDefinitionRepositoryMockModule
 import uk.gov.hmrc.apidefinition.services.DocumentationService
 import uk.gov.hmrc.apidefinition.utils.{AsyncHmrcSpec, Utils}
-import uk.gov.hmrc.apidefinition.mocks.ApiDefinitionRepositoryMockModule
 
 class DocumentationServiceSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite with Utils {
   import DocumentationService.PROXY_SAFE_CONTENT_TYPE

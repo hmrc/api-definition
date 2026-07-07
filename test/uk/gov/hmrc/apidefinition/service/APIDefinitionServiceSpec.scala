@@ -33,10 +33,9 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HeaderNames.*
 
 import uk.gov.hmrc.apidefinition.config.AppConfig
-import uk.gov.hmrc.apidefinition.mocks.{APIEventRepositoryMockModule, ApiDefinitionRepositoryMockModule}
+import uk.gov.hmrc.apidefinition.mocks.{APIEventRepositoryMockModule, ApiDefinitionRepositoryMockModule, NotificationServiceMockModule}
 import uk.gov.hmrc.apidefinition.models.{ApiEventId, ApiEvents}
-import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
-import uk.gov.hmrc.apidefinition.services.{APIDefinitionService, ApiRemover, ApiRetirer, AwsApiPublisher, NotificationService}
+import uk.gov.hmrc.apidefinition.services.{APIDefinitionService, ApiRemover, ApiRetirer, AwsApiPublisher}
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 
 class APIDefinitionServiceSpec
@@ -74,15 +73,14 @@ class APIDefinitionServiceSpec
       List(ApiCategory.Other)
     )
 
-  trait Setup extends APIEventRepositoryMockModule with ApiDefinitionRepositoryMockModule {
+  trait Setup extends APIEventRepositoryMockModule with ApiDefinitionRepositoryMockModule with NotificationServiceMockModule {
 
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
 
-    val mockAwsApiPublisher: AwsApiPublisher         = mock[AwsApiPublisher]
-    val mockNotificationService: NotificationService = mock[NotificationService]
-    val mockAppConfig: AppConfig                     = mock[AppConfig]
-    val mockApiRemover: ApiRemover                   = mock[ApiRemover]
-    val mockApiRetirer: ApiRetirer                   = mock[ApiRetirer]
+    val mockAwsApiPublisher: AwsApiPublisher = mock[AwsApiPublisher]
+    val mockAppConfig: AppConfig             = mock[AppConfig]
+    val mockApiRemover: ApiRemover           = mock[ApiRemover]
+    val mockApiRetirer: ApiRetirer           = mock[ApiRetirer]
 
     val underTest = new APIDefinitionService(
       FixedClock.clock,
@@ -91,7 +89,7 @@ class APIDefinitionServiceSpec
       APIEventRepositoryMock.aMock,
       mockApiRemover,
       mockApiRetirer,
-      mockNotificationService,
+      NotificationServiceMock.aMock,
       mockAppConfig
     )
 
@@ -198,7 +196,7 @@ class APIDefinitionServiceSpec
   "createOrUpdate" should {
 
     "create or update the API Definition in all AWS and the repository" in new Setup {
-      when(mockNotificationService.process(*)(using *, *)).thenReturn(unitSuccess)
+      NotificationServiceMock.Process.succeeds()
       ApiDefinitionRepositoryMock.FetchByContext.returnsFor(apiDefinition.context)(apiDefinition)
       when(mockAwsApiPublisher.publish(apiDefinition)).thenReturn(unitSuccess)
       ApiDefinitionRepositoryMock.Save.returnsFor(apiDefinitionWithSavingTime)(apiDefinitionWithSavingTime)
@@ -238,7 +236,7 @@ class APIDefinitionServiceSpec
       val newApiDefinition               = multiVersionAndEndpointAPIDefinition(newEndpoints)
       val newApiDefinitionWithSavingTime = newApiDefinition.copy(lastPublishedAt = Some(instant))
 
-      when(mockNotificationService.process(*)(using *, *)).thenReturn(unitSuccess)
+      NotificationServiceMock.Process.succeeds()
       ApiDefinitionRepositoryMock.FetchByContext.returnsFor(newApiDefinition.context)(oldApiDefinition)
       when(mockAwsApiPublisher.publish(newApiDefinition)).thenReturn(unitSuccess)
       ApiDefinitionRepositoryMock.Save.returnsFor(newApiDefinitionWithSavingTime)(newApiDefinitionWithSavingTime)
@@ -292,7 +290,7 @@ class APIDefinitionServiceSpec
       val newApiDefinition               = multiVersionAndEndpointAPIDefinition(newEndpoints)
       val newApiDefinitionWithSavingTime = newApiDefinition.copy(lastPublishedAt = Some(instant))
 
-      when(mockNotificationService.process(*)(using *, *)).thenReturn(unitSuccess)
+      NotificationServiceMock.Process.succeeds()
       ApiDefinitionRepositoryMock.FetchByContext.returnsFor(newApiDefinition.context)(oldApiDefinition)
       when(mockAwsApiPublisher.publish(newApiDefinition)).thenReturn(unitSuccess)
       ApiDefinitionRepositoryMock.Save.returnsFor(newApiDefinitionWithSavingTime)(newApiDefinitionWithSavingTime)
@@ -364,7 +362,7 @@ class APIDefinitionServiceSpec
       val newApiDefinition               = multiVersionAndEndpointAPIDefinition(newEndpoints)
       val newApiDefinitionWithSavingTime = newApiDefinition.copy(lastPublishedAt = Some(instant))
 
-      when(mockNotificationService.process(*)(using *, *)).thenReturn(unitSuccess)
+      NotificationServiceMock.Process.succeeds()
       ApiDefinitionRepositoryMock.FetchByContext.returnsFor(newApiDefinition.context)(oldApiDefinition)
       when(mockAwsApiPublisher.publish(newApiDefinition)).thenReturn(unitSuccess)
       ApiDefinitionRepositoryMock.Save.returnsFor(newApiDefinitionWithSavingTime)(newApiDefinitionWithSavingTime)
@@ -383,7 +381,7 @@ class APIDefinitionServiceSpec
     }
 
     "propagate unexpected errors that happen when trying to publish an API to AWS" in new Setup {
-      when(mockNotificationService.process(*)(using *, *)).thenReturn(unitSuccess)
+      NotificationServiceMock.Process.succeeds()
       ApiDefinitionRepositoryMock.FetchByContext.returnsFor(apiDefinition.context)(apiDefinition)
       when(mockAwsApiPublisher.publish(apiDefinition)).thenReturn(failed(new RuntimeException("Something went wrong")))
 
@@ -396,7 +394,7 @@ class APIDefinitionServiceSpec
     }
 
     "propagate unexpected errors that happen when trying to save the definition" in new Setup {
-      when(mockNotificationService.process(*)(using *, *)).thenReturn(unitSuccess)
+      NotificationServiceMock.Process.succeeds()
       ApiDefinitionRepositoryMock.FetchByContext.returnsFor(apiDefinition.context)(apiDefinition)
       when(mockAwsApiPublisher.publish(apiDefinition)).thenReturn(unitSuccess)
       ApiDefinitionRepositoryMock.Save.failsFor(apiDefinitionWithSavingTime)(new RuntimeException("Something went wrong"))
@@ -419,7 +417,7 @@ class APIDefinitionServiceSpec
       val updatedAPIDefinitionWithSavingTime: StoredApiDefinition = updatedAPIDefinition.copy(lastPublishedAt = Some(instant))
 
       ApiDefinitionRepositoryMock.FetchByContext.returnsFor(apiContext)(existingAPIDefinition)
-      when(mockNotificationService.process(*)(using *, *)).thenReturn(unitSuccess)
+      NotificationServiceMock.Process.succeeds()
       when(mockAwsApiPublisher.publish(updatedAPIDefinition)).thenReturn(unitSuccess)
       ApiDefinitionRepositoryMock.Save.returnsFor(updatedAPIDefinitionWithSavingTime)(updatedAPIDefinitionWithSavingTime)
 
@@ -427,7 +425,7 @@ class APIDefinitionServiceSpec
 
       verify(mockAwsApiPublisher, times(1)).publish(updatedAPIDefinition)
       ApiDefinitionRepositoryMock.Save.verifySaved(updatedAPIDefinitionWithSavingTime)
-      verify(mockNotificationService).process(*)(using *, *)
+      NotificationServiceMock.Process.verifyCalled()
 
     }
   }

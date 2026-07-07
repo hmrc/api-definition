@@ -56,7 +56,7 @@ class APIDefinitionControllerSpec
 
     val apiDefinitionOne = Json.parse(calendarApiDefinition).as[StoredApiDefinition]
 
-    val mockAppContext: AppConfig                            = mock[AppConfig]
+    val mockAppContext: AppConfig = mock[AppConfig]
     when(mockAppContext.fetchByContextTtlInSeconds).thenReturn("1234")
     when(mockAppContext.skipContextValidationAllowlist).thenReturn(List())
 
