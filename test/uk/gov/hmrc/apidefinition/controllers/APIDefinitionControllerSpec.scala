@@ -37,13 +37,17 @@ import uk.gov.hmrc.apidefinition.mocks.{APIEventRepositoryMockModule, ApiDefinit
 import uk.gov.hmrc.apidefinition.models.*
 import uk.gov.hmrc.apidefinition.models.ApiEvents.{ApiCreated, NewApiVersion}
 import uk.gov.hmrc.apidefinition.models.ErrorCode.{API_INVALID_JSON, INVALID_REQUEST_PAYLOAD}
-import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 
-class APIDefinitionControllerSpec extends AsyncHmrcSpec
-    with StubControllerComponentsFactory with TolerantJsonApiDefinition with FixedClock {
+class APIDefinitionControllerSpec
+    extends AsyncHmrcSpec
+    with StubControllerComponentsFactory
+    with TolerantJsonApiDefinition
+    with FixedClock {
 
-  trait Setup extends ApiDefinitionServiceMockModule with APIEventRepositoryMockModule {
+  trait Setup
+      extends ApiDefinitionServiceMockModule
+      with APIEventRepositoryMockModule {
 
     implicit lazy val request: Request[AnyContentAsEmpty.type] = FakeRequest()
 
@@ -52,7 +56,6 @@ class APIDefinitionControllerSpec extends AsyncHmrcSpec
 
     val apiDefinitionOne = Json.parse(calendarApiDefinition).as[StoredApiDefinition]
 
-    val mockApiDefinitionRepository: APIDefinitionRepository = mock[APIDefinitionRepository]
     val mockAppContext: AppConfig                            = mock[AppConfig]
     when(mockAppContext.fetchByContextTtlInSeconds).thenReturn("1234")
     when(mockAppContext.skipContextValidationAllowlist).thenReturn(List())

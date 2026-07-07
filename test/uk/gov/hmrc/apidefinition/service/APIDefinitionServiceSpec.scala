@@ -33,13 +33,15 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HeaderNames.*
 
 import uk.gov.hmrc.apidefinition.config.AppConfig
-import uk.gov.hmrc.apidefinition.mocks.APIEventRepositoryMockModule
+import uk.gov.hmrc.apidefinition.mocks.{APIEventRepositoryMockModule, ApiDefinitionRepositoryMockModule}
 import uk.gov.hmrc.apidefinition.models.{ApiEventId, ApiEvents}
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.services.{APIDefinitionService, ApiRemover, ApiRetirer, AwsApiPublisher, NotificationService}
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 
-class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
+class APIDefinitionServiceSpec
+    extends AsyncHmrcSpec
+    with FixedClock {
 
   private val context     = ApiContext("agents/calendar")
   private val serviceName = ServiceName("calendar-service")
@@ -72,21 +74,20 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
       List(ApiCategory.Other)
     )
 
-  trait Setup extends APIEventRepositoryMockModule {
+  trait Setup extends APIEventRepositoryMockModule with ApiDefinitionRepositoryMockModule {
 
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
 
-    val mockAwsApiPublisher: AwsApiPublisher                 = mock[AwsApiPublisher]
-    val mockAPIDefinitionRepository: APIDefinitionRepository = mock[APIDefinitionRepository]
-    val mockNotificationService: NotificationService         = mock[NotificationService]
-    val mockAppConfig: AppConfig                             = mock[AppConfig]
-    val mockApiRemover: ApiRemover                           = mock[ApiRemover]
-    val mockApiRetirer: ApiRetirer                           = mock[ApiRetirer]
+    val mockAwsApiPublisher: AwsApiPublisher         = mock[AwsApiPublisher]
+    val mockNotificationService: NotificationService = mock[NotificationService]
+    val mockAppConfig: AppConfig                     = mock[AppConfig]
+    val mockApiRemover: ApiRemover                   = mock[ApiRemover]
+    val mockApiRetirer: ApiRetirer                   = mock[ApiRetirer]
 
     val underTest = new APIDefinitionService(
       FixedClock.clock,
       mockAwsApiPublisher,
-      mockAPIDefinitionRepository,
+      ApiDefinitionRepositoryMock.aMock,
       APIEventRepositoryMock.aMock,
       mockApiRemover,
       mockApiRetirer,
@@ -130,9 +131,9 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
     val apiDefinition                = someAPIDefinition
     val apiDefinitionWithSavingTime  = apiDefinition.copy(lastPublishedAt = Some(instant))
 
-    when(mockAPIDefinitionRepository.fetchByServiceName(apiDefinition.serviceName)).thenReturn(successful(Some(apiDefinition)))
+    ApiDefinitionRepositoryMock.FetchByServiceName.returnsFor(apiDefinition.serviceName)(apiDefinition)
     when(mockAwsApiPublisher.delete(apiDefinition)).thenReturn(successful(()))
-    when(mockAPIDefinitionRepository.delete(apiDefinition.serviceName)).thenReturn(successful(()))
+    ApiDefinitionRepositoryMock.Delete.suceedsFor(apiDefinition.serviceName)
     APIEventRepositoryMock.CreateAll.success()
 
   }
@@ -148,7 +149,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
     val storedDefinition = aStoredApiDefinition(context, versions*)
     val definition       = anApiDefinition(context, versions*)
 
-    when(mockAPIDefinitionRepository.fetchByServiceName(serviceName)).thenReturn(successful(Some(storedDefinition)))
+    ApiDefinitionRepositoryMock.FetchByServiceName.returnsFor(serviceName)(storedDefinition)
   }
 
   "validate" should {
@@ -167,11 +168,11 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
 
     "succeed when ApiDefinitionValidator succeeds" in new Setup {
       when(mockAppConfig.skipContextValidationAllowlist).thenReturn(List.empty)
-      when(mockAPIDefinitionRepository.fetchByServiceName(apiDefinition.serviceName)).thenReturn(successful(Some(apiDefinition)))
-      when(mockAPIDefinitionRepository.fetchByContext(apiDefinition.context)).thenReturn(successful(Some(apiDefinition)))
-      when(mockAPIDefinitionRepository.fetchByServiceBaseUrl(apiDefinition.serviceBaseUrl)).thenReturn(successful(Some(apiDefinition)))
-      when(mockAPIDefinitionRepository.fetchByName(apiDefinition.name)).thenReturn(successful(Some(apiDefinition)))
-      when(mockAPIDefinitionRepository.fetchAllByTopLevelContext(apiDefinition.context.topLevelContext())).thenReturn(successful(Nil))
+      ApiDefinitionRepositoryMock.FetchByServiceName.returnsFor(apiDefinition.serviceName)(apiDefinition)
+      ApiDefinitionRepositoryMock.FetchByContext.returnsFor(apiDefinition.context)(apiDefinition)
+      ApiDefinitionRepositoryMock.FetchByServiceBaseUrl.returnsFor(apiDefinition.serviceBaseUrl)(apiDefinition)
+      ApiDefinitionRepositoryMock.FetchByName.returnsFor(apiDefinition.name)(apiDefinition)
+      ApiDefinitionRepositoryMock.FetchAllByTopLevelContext.returnsNilFor(apiDefinition.context.topLevelContext())
 
       val result = await(underTest.validate(apiDefinition))
 
@@ -180,13 +181,11 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
 
     "fail when ApiDefinitionValidator fails when there is a new api with an overlapping context" in new Setup {
       when(mockAppConfig.skipContextValidationAllowlist).thenReturn(List.empty)
-      when(mockAPIDefinitionRepository.fetchByServiceName(apiDefinition.serviceName)).thenReturn(successful(None))
-      when(mockAPIDefinitionRepository.fetchByContext(apiDefinition.context)).thenReturn(successful(None))
-      when(mockAPIDefinitionRepository.fetchByServiceBaseUrl(apiDefinition.serviceBaseUrl)).thenReturn(successful(None))
-      when(mockAPIDefinitionRepository.fetchByName(apiDefinition.name)).thenReturn(successful(None))
-      when(mockAPIDefinitionRepository.fetchAllByTopLevelContext(apiDefinition.context.topLevelContext())).thenReturn(successful(
-        List(apiDefinition.copy(context = ApiContext("agents/calendar/events")))
-      ))
+      ApiDefinitionRepositoryMock.FetchByServiceName.returnsNoneFor(apiDefinition.serviceName)
+      ApiDefinitionRepositoryMock.FetchByContext.returnsNoneFor(apiDefinition.context)
+      ApiDefinitionRepositoryMock.FetchByServiceBaseUrl.returnsNoneFor(apiDefinition.serviceBaseUrl)
+      ApiDefinitionRepositoryMock.FetchByName.returnsNoneFor(apiDefinition.name)
+      ApiDefinitionRepositoryMock.FetchAllByTopLevelContext.returnsFor(apiDefinition.context.topLevelContext())(apiDefinition.copy(context = ApiContext("agents/calendar/events")))
 
       val result = await(underTest.validate(apiDefinition))
 
@@ -200,14 +199,14 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
 
     "create or update the API Definition in all AWS and the repository" in new Setup {
       when(mockNotificationService.process(*)(using *, *)).thenReturn(unitSuccess)
-      when(mockAPIDefinitionRepository.fetchByContext(apiDefinition.context)).thenReturn(successful(Some(apiDefinition)))
+      ApiDefinitionRepositoryMock.FetchByContext.returnsFor(apiDefinition.context)(apiDefinition)
       when(mockAwsApiPublisher.publish(apiDefinition)).thenReturn(unitSuccess)
-      when(mockAPIDefinitionRepository.save(apiDefinitionWithSavingTime)).thenReturn(successful(apiDefinitionWithSavingTime))
+      ApiDefinitionRepositoryMock.Save.returnsFor(apiDefinitionWithSavingTime)(apiDefinitionWithSavingTime)
 
       await(underTest.createOrUpdate(apiDefinition))
 
       verify(mockAwsApiPublisher, times(1)).publish(apiDefinition)
-      verify(mockAPIDefinitionRepository, times(1)).save(apiDefinitionWithSavingTime)
+      ApiDefinitionRepositoryMock.Save.verifySaved(apiDefinitionWithSavingTime)
       // verifyZeroInteractions(mockNotificationService)
     }
 
@@ -240,14 +239,14 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
       val newApiDefinitionWithSavingTime = newApiDefinition.copy(lastPublishedAt = Some(instant))
 
       when(mockNotificationService.process(*)(using *, *)).thenReturn(unitSuccess)
-      when(mockAPIDefinitionRepository.fetchByContext(newApiDefinition.context)).thenReturn(successful(Some(oldApiDefinition)))
+      ApiDefinitionRepositoryMock.FetchByContext.returnsFor(newApiDefinition.context)(oldApiDefinition)
       when(mockAwsApiPublisher.publish(newApiDefinition)).thenReturn(unitSuccess)
-      when(mockAPIDefinitionRepository.save(newApiDefinitionWithSavingTime)).thenReturn(successful(newApiDefinitionWithSavingTime))
+      ApiDefinitionRepositoryMock.Save.returnsFor(newApiDefinitionWithSavingTime)(newApiDefinitionWithSavingTime)
 
       await(underTest.createOrUpdate(newApiDefinition))
 
       verify(mockAwsApiPublisher, times(1)).publish(newApiDefinition)
-      verify(mockAPIDefinitionRepository, times(1)).save(newApiDefinitionWithSavingTime)
+      ApiDefinitionRepositoryMock.Save.verifySaved(newApiDefinitionWithSavingTime)
 
       val capture = APIEventRepositoryMock.CreateAll.verifyCall()
       capture.size shouldBe 1
@@ -294,14 +293,14 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
       val newApiDefinitionWithSavingTime = newApiDefinition.copy(lastPublishedAt = Some(instant))
 
       when(mockNotificationService.process(*)(using *, *)).thenReturn(unitSuccess)
-      when(mockAPIDefinitionRepository.fetchByContext(newApiDefinition.context)).thenReturn(successful(Some(oldApiDefinition)))
+      ApiDefinitionRepositoryMock.FetchByContext.returnsFor(newApiDefinition.context)(oldApiDefinition)
       when(mockAwsApiPublisher.publish(newApiDefinition)).thenReturn(unitSuccess)
-      when(mockAPIDefinitionRepository.save(newApiDefinitionWithSavingTime)).thenReturn(successful(newApiDefinitionWithSavingTime))
+      ApiDefinitionRepositoryMock.Save.returnsFor(newApiDefinitionWithSavingTime)(newApiDefinitionWithSavingTime)
 
       await(underTest.createOrUpdate(newApiDefinition))
 
       verify(mockAwsApiPublisher, times(1)).publish(newApiDefinition)
-      verify(mockAPIDefinitionRepository, times(1)).save(newApiDefinitionWithSavingTime)
+      ApiDefinitionRepositoryMock.Save.verifySaved(newApiDefinitionWithSavingTime)
 
       val capture = APIEventRepositoryMock.CreateAll.verifyCall()
       capture.size shouldBe 1
@@ -366,14 +365,14 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
       val newApiDefinitionWithSavingTime = newApiDefinition.copy(lastPublishedAt = Some(instant))
 
       when(mockNotificationService.process(*)(using *, *)).thenReturn(unitSuccess)
-      when(mockAPIDefinitionRepository.fetchByContext(newApiDefinition.context)).thenReturn(successful(Some(oldApiDefinition)))
+      ApiDefinitionRepositoryMock.FetchByContext.returnsFor(newApiDefinition.context)(oldApiDefinition)
       when(mockAwsApiPublisher.publish(newApiDefinition)).thenReturn(unitSuccess)
-      when(mockAPIDefinitionRepository.save(newApiDefinitionWithSavingTime)).thenReturn(successful(newApiDefinitionWithSavingTime))
+      ApiDefinitionRepositoryMock.Save.returnsFor(newApiDefinitionWithSavingTime)(newApiDefinitionWithSavingTime)
 
       await(underTest.createOrUpdate(newApiDefinition))
 
       verify(mockAwsApiPublisher, times(1)).publish(newApiDefinition)
-      verify(mockAPIDefinitionRepository, times(1)).save(newApiDefinitionWithSavingTime)
+      ApiDefinitionRepositoryMock.Save.verifySaved(newApiDefinitionWithSavingTime)
 
       val capture = APIEventRepositoryMock.CreateAll.verifyCall()
       capture.size shouldBe 2
@@ -385,7 +384,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
 
     "propagate unexpected errors that happen when trying to publish an API to AWS" in new Setup {
       when(mockNotificationService.process(*)(using *, *)).thenReturn(unitSuccess)
-      when(mockAPIDefinitionRepository.fetchByContext(apiDefinition.context)).thenReturn(successful(Some(apiDefinition)))
+      ApiDefinitionRepositoryMock.FetchByContext.returnsFor(apiDefinition.context)(apiDefinition)
       when(mockAwsApiPublisher.publish(apiDefinition)).thenReturn(failed(new RuntimeException("Something went wrong")))
 
       val thrown = intercept[RuntimeException] {
@@ -398,9 +397,9 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
 
     "propagate unexpected errors that happen when trying to save the definition" in new Setup {
       when(mockNotificationService.process(*)(using *, *)).thenReturn(unitSuccess)
-      when(mockAPIDefinitionRepository.fetchByContext(apiDefinition.context)).thenReturn(successful(Some(apiDefinition)))
+      ApiDefinitionRepositoryMock.FetchByContext.returnsFor(apiDefinition.context)(apiDefinition)
       when(mockAwsApiPublisher.publish(apiDefinition)).thenReturn(unitSuccess)
-      when(mockAPIDefinitionRepository.save(apiDefinitionWithSavingTime)).thenReturn(failed(new RuntimeException("Something went wrong")))
+      ApiDefinitionRepositoryMock.Save.failsFor(apiDefinitionWithSavingTime)(new RuntimeException("Something went wrong"))
 
       val thrown = intercept[RuntimeException] {
         await(underTest.createOrUpdate(apiDefinition))
@@ -419,15 +418,15 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
       val updatedAPIDefinition: StoredApiDefinition               = aStoredApiDefinition(apiContext, aVersion(apiVersion, updatedStatus, ApiAccessType.Public))
       val updatedAPIDefinitionWithSavingTime: StoredApiDefinition = updatedAPIDefinition.copy(lastPublishedAt = Some(instant))
 
-      when(mockAPIDefinitionRepository.fetchByContext(apiContext)).thenReturn(successful(Some(existingAPIDefinition)))
+      ApiDefinitionRepositoryMock.FetchByContext.returnsFor(apiContext)(existingAPIDefinition)
       when(mockNotificationService.process(*)(using *, *)).thenReturn(unitSuccess)
       when(mockAwsApiPublisher.publish(updatedAPIDefinition)).thenReturn(unitSuccess)
-      when(mockAPIDefinitionRepository.save(updatedAPIDefinitionWithSavingTime)).thenReturn(successful(updatedAPIDefinitionWithSavingTime))
+      ApiDefinitionRepositoryMock.Save.returnsFor(updatedAPIDefinitionWithSavingTime)(updatedAPIDefinitionWithSavingTime)
 
       await(underTest.createOrUpdate(updatedAPIDefinition))
 
       verify(mockAwsApiPublisher, times(1)).publish(updatedAPIDefinition)
-      verify(mockAPIDefinitionRepository, times(1)).save(updatedAPIDefinitionWithSavingTime)
+      ApiDefinitionRepositoryMock.Save.verifySaved(updatedAPIDefinitionWithSavingTime)
       verify(mockNotificationService).process(*)(using *, *)
 
     }
@@ -441,7 +440,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
     }
 
     "return None when there is no matching API definition" in new FetchSetup {
-      when(mockAPIDefinitionRepository.fetchByServiceName(serviceName)).thenReturn(successful(None))
+      ApiDefinitionRepositoryMock.FetchByServiceName.returnsNoneFor(serviceName)
 
       val response = await(underTest.fetchByServiceName(serviceName))
 
@@ -457,7 +456,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
 
       "return all Public API Definitions and filter out private versions" in new Setup {
 
-        when(mockAPIDefinitionRepository.fetchAll()).thenReturn(successful(Seq(apiDefinitionWithAllVersions)))
+        ApiDefinitionRepositoryMock.FetchAll.returns(apiDefinitionWithAllVersions)
 
         val result = await(underTest.fetchAllPublicAPIs(alsoIncludeControlledApis))
 
@@ -471,7 +470,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
 
       "return all Public and Controlled API Definitions" in new Setup {
 
-        when(mockAPIDefinitionRepository.fetchAll()).thenReturn(successful(Seq(apiDefinitionWithAllVersions)))
+        ApiDefinitionRepositoryMock.FetchAll.returns(apiDefinitionWithAllVersions)
 
         val result = await(underTest.fetchAllPublicAPIs(alsoIncludeControlledApis))
 
@@ -487,7 +486,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
 
   "fetchAll" should {
     "return all APIs" in new Setup {
-      when(mockAPIDefinitionRepository.fetchAll()).thenReturn(successful(List(apiDefinitionWithAllVersions, apiDefinition)))
+      ApiDefinitionRepositoryMock.FetchAll.returns(apiDefinitionWithAllVersions, apiDefinition)
 
       val result: List[ApiDefinition] = await(underTest.fetchAll)
 
@@ -508,7 +507,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
         controlledVersion
       )
 
-      when(mockAPIDefinitionRepository.fetchAll()).thenReturn(successful(Seq(api)))
+      ApiDefinitionRepositoryMock.FetchAll.returns(api)
 
       val result = await(underTest.fetchAllNonPublicAPIs())
 
@@ -526,11 +525,11 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
       await(underTest.delete(apiDefinition.serviceName))
 
       verify(mockAwsApiPublisher).delete(apiDefinition)
-      verify(mockAPIDefinitionRepository).delete(apiDefinition.serviceName)
+      ApiDefinitionRepositoryMock.Delete.verifyDeletedBy(apiDefinition.serviceName)
     }
 
     "return success when the API doesnt exist" in new Setup {
-      when(mockAPIDefinitionRepository.fetchByServiceName(ServiceName("service"))).thenReturn(successful(None))
+      ApiDefinitionRepositoryMock.FetchByServiceName.returnsNoneFor(ServiceName("service"))
 
       await(underTest.delete(ServiceName("service")))
     }
@@ -544,7 +543,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
     }
 
     "fail when repository delete fails" in new Setup {
-      when(mockAPIDefinitionRepository.delete(apiDefinition.serviceName)).thenReturn(failed(new RuntimeException()))
+      ApiDefinitionRepositoryMock.Delete.failsFor(apiDefinition.serviceName)
 
       intercept[RuntimeException] {
         await(underTest.delete(apiDefinition.serviceName))
@@ -558,7 +557,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
       val apiDefinition2: StoredApiDefinition = someAPIDefinition
       when(mockAppConfig.apisToRetire).thenReturn(List.empty)
       when(mockApiRemover.deleteUnusedApis()).thenReturn(successful(()))
-      when(mockAPIDefinitionRepository.fetchAll()).thenReturn(successful(Seq(apiDefinition1, apiDefinition2)))
+      ApiDefinitionRepositoryMock.FetchAll.returns(apiDefinition1, apiDefinition2)
       when(mockAwsApiPublisher.publishAll(*)(using *)).thenReturn(successful(()))
 
       await(underTest.publishAllToAws())
@@ -571,7 +570,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
       val apiDefinition2: StoredApiDefinition = someAPIDefinition
       when(mockAppConfig.apisToRetire).thenReturn(List.empty)
       when(mockApiRemover.deleteUnusedApis()).thenReturn(successful(()))
-      when(mockAPIDefinitionRepository.fetchAll()).thenReturn(successful(Seq(apiDefinition1, apiDefinition2)))
+      ApiDefinitionRepositoryMock.FetchAll.returns(apiDefinition1, apiDefinition2)
       when(mockAwsApiPublisher.publishAll(*)(using *)).thenReturn(successful(()))
 
       await(underTest.publishAllToAws())
@@ -585,7 +584,7 @@ class APIDefinitionServiceSpec extends AsyncHmrcSpec with FixedClock {
       when(mockAppConfig.apisToRetire).thenReturn(List("api1,2.0", "api2,3.0", "api2,1.0"))
       when(mockApiRetirer.retireApis(apisToRetire)).thenReturn(successful(()))
       when(mockApiRemover.deleteUnusedApis()).thenReturn(successful(()))
-      when(mockAPIDefinitionRepository.fetchAll()).thenReturn(successful(Seq(apiDefinition1, apiDefinition2)))
+      ApiDefinitionRepositoryMock.FetchAll.returns(apiDefinition1, apiDefinition2)
       when(mockAwsApiPublisher.publishAll(*)(using *)).thenReturn(successful(()))
 
       await(underTest.publishAllToAws())

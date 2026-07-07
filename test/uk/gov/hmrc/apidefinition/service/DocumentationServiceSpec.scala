@@ -40,9 +40,9 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
 import uk.gov.hmrc.http.{HeaderCarrier, InternalServerException, NotFoundException}
 
 import uk.gov.hmrc.apidefinition.connector.ApiMicroserviceConnector
-import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.services.DocumentationService
 import uk.gov.hmrc.apidefinition.utils.{AsyncHmrcSpec, Utils}
+import uk.gov.hmrc.apidefinition.mocks.ApiDefinitionRepositoryMockModule
 
 class DocumentationServiceSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite with Utils {
   import DocumentationService.PROXY_SAFE_CONTENT_TYPE
@@ -131,27 +131,24 @@ class DocumentationServiceSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wi
 
   implicit val materializer: Materializer = app.materializer
 
-  trait Setup {
+  trait Setup extends ApiDefinitionRepositoryMockModule {
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val mockAPIDefinitionRepository: APIDefinitionRepository   = mock[APIDefinitionRepository]
     val mockApiMicroserviceConnector: ApiMicroserviceConnector = mock[ApiMicroserviceConnector]
 
     val underTest = new DocumentationService(
-      mockAPIDefinitionRepository,
+      ApiDefinitionRepositoryMock.aMock,
       mockApiMicroserviceConnector
     )
 
     def generateRandomVersion: String = s"${Random.nextInt().abs}.${Random.nextInt().abs}"
 
     def theApiDefinitionWillBeReturned() = {
-      when(mockAPIDefinitionRepository.fetchByServiceName(*[ServiceName]))
-        .thenReturn(successful(Some(apiDefinition)))
+      ApiDefinitionRepositoryMock.FetchByServiceName.returns(apiDefinition)
     }
 
     def noApiDefinitionWillBeReturned() = {
-      when(mockAPIDefinitionRepository.fetchByServiceName(*[ServiceName]))
-        .thenReturn(successful(None))
+      ApiDefinitionRepositoryMock.FetchByServiceName.returnsNone()
     }
 
     def theApiMicroserviceWillReturnTheResource(response: WSResponse) = {
