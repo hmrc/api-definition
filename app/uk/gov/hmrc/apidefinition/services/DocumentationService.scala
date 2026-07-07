@@ -100,7 +100,6 @@ class DocumentationService @Inject() (
      */
     for {
       api <- getApiDefinitionOrThrow
-      _    = println(api)
       _   <- getApiVersionOrThrow(api)
 
       serviceBaseUrl = api.serviceBaseUrl
