@@ -40,7 +40,7 @@ trait TolerantJsonApiDefinition extends TolerantJsonApiVersion {
 
   private val apiDefinitionWrites: OWrites[StoredApiDefinition] = Json.writes[StoredApiDefinition]
 
-  implicit val tolerantFormatApiDefinition: OFormat[StoredApiDefinition] = OFormat[StoredApiDefinition](apiDefinitionReads, apiDefinitionWrites)
+  given tolerantFormatApiDefinition: OFormat[StoredApiDefinition] = OFormat[StoredApiDefinition](apiDefinitionReads, apiDefinitionWrites)
 }
 
 object TolerantJsonApiDefinition extends TolerantJsonApiDefinition

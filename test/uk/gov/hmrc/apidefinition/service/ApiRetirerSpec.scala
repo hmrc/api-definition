@@ -30,8 +30,8 @@ import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 class ApiRetirerSpec extends AsyncHmrcSpec {
 
   trait Setup extends ApiDefinitionRepositoryMockModule {
-    implicit val ec: ExecutionContext = ExecutionContext.global
-    implicit val hc: HeaderCarrier    = HeaderCarrier()
+    given ExecutionContext = ExecutionContext.global
+    given HeaderCarrier    = HeaderCarrier()
 
     val mockLogger: Logger = mock[Logger]
 

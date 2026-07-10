@@ -32,7 +32,7 @@ final case class ApiEventId(value: UUID) extends AnyVal
 object ApiEventId {
   def random: ApiEventId = ApiEventId(UUID.randomUUID())
 
-  implicit val eventIdJf: Format[ApiEventId] = Json.valueFormat[ApiEventId]
+  given Format[ApiEventId] = Json.valueFormat[ApiEventId]
 }
 
 sealed trait ApiEvent {
@@ -47,7 +47,7 @@ sealed trait ApiEvent {
 object ApiEvent {
   type MetaData = (String, List[String])
 
-  implicit val orderEvents: Ordering[ApiEvent] = new Ordering[ApiEvent]() {
+  given Ordering[ApiEvent] = new Ordering[ApiEvent]() {
 
     override def compare(x: ApiEvent, y: ApiEvent): Int =
       y.eventDateTime.compareTo(x.eventDateTime)
@@ -131,15 +131,15 @@ object ApiEvents {
 }
 
 object ApiEventFormatter {
-  implicit val apiCreatedFormatter: OFormat[ApiCreated]                                 = Json.format[ApiCreated]
-  implicit val newApiVersionFormatter: OFormat[NewApiVersion]                           = Json.format[NewApiVersion]
-  implicit val apiVersionStatusFormatter: OFormat[ApiVersionStatusChange]               = Json.format[ApiVersionStatusChange]
-  implicit val apiVersionAccessChangeFormatter: OFormat[ApiVersionAccessChange]         = Json.format[ApiVersionAccessChange]
-  implicit val apiVersionEndpointsAddedFormatter: OFormat[ApiVersionEndpointsAdded]     = Json.format[ApiVersionEndpointsAdded]
-  implicit val apiVersionEndpointsRemovedFormatter: OFormat[ApiVersionEndpointsRemoved] = Json.format[ApiVersionEndpointsRemoved]
-  implicit val apiPublishedNoChangeFormatter: OFormat[ApiPublishedNoChange]             = Json.format[ApiPublishedNoChange]
+  given OFormat[ApiCreated]                 = Json.format[ApiCreated]
+  given OFormat[NewApiVersion]              = Json.format[NewApiVersion]
+  given OFormat[ApiVersionStatusChange]     = Json.format[ApiVersionStatusChange]
+  given OFormat[ApiVersionAccessChange]     = Json.format[ApiVersionAccessChange]
+  given OFormat[ApiVersionEndpointsAdded]   = Json.format[ApiVersionEndpointsAdded]
+  given OFormat[ApiVersionEndpointsRemoved] = Json.format[ApiVersionEndpointsRemoved]
+  given OFormat[ApiPublishedNoChange]       = Json.format[ApiPublishedNoChange]
 
-  implicit val apiEventsFormats: OFormat[ApiEvent] = Union.from[ApiEvent]("eventType")
+  given OFormat[ApiEvent] = Union.from[ApiEvent]("eventType")
     .and[ApiCreated]("API_CREATED")
     .and[NewApiVersion]("NEW_API_VERSION")
     .and[ApiVersionStatusChange]("API_VERSION_STATUS_CHANGE")

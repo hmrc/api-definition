@@ -24,7 +24,7 @@ import uk.gov.hmrc.apiplatform.modules.common.utils.BaseJsonFormattersSpec
 
 class TolerantJsonApiVersionSpec extends BaseJsonFormattersSpec {
 
-  implicit val useMe: OFormat[ApiVersion] = TolerantJsonApiVersion.tolerantFormatApiVersion
+  given OFormat[ApiVersion] = TolerantJsonApiVersion.given_OFormat_ApiVersion
 
   val endpointsText = """ "endpoints": [
                         |  {

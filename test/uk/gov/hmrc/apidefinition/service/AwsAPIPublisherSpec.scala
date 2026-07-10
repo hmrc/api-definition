@@ -79,7 +79,7 @@ class AwsAPIPublisherSpec extends AsyncHmrcSpec {
   }
 
   private trait Setup {
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+    given HeaderCarrier = HeaderCarrier()
 
     val underTest = new AwsApiPublisher(mock[AWSAPIPublisherConnector], mock[APIDefinitionRepository])
     when(underTest.apiDefinitionRepository.fetchByServiceName(*[ServiceName])).thenReturn(successful(None))
@@ -155,7 +155,7 @@ class AwsAPIPublisherSpec extends AsyncHmrcSpec {
 
       await(underTest.publish(apiDefinition))
 
-      verify(underTest.awsAPIPublisherConnector).deleteAPI(s"${apiDefinition.context}--1.0")(using hc)
+      verify(underTest.awsAPIPublisherConnector).deleteAPI(s"${apiDefinition.context}--1.0")
       verify(underTest.awsAPIPublisherConnector)
         .createOrUpdateAPI(ArgumentMatchers.eq(s"${apiDefinition.context}--2.0"), *)(using *)
     }
@@ -177,7 +177,7 @@ class AwsAPIPublisherSpec extends AsyncHmrcSpec {
 
       await(underTest.delete(apiDefinition))
 
-      verify(underTest.awsAPIPublisherConnector).deleteAPI(s"${apiDefinition.context}--2.0")(using hc)
+      verify(underTest.awsAPIPublisherConnector).deleteAPI(s"${apiDefinition.context}--2.0")
     }
 
     "delete multiple versions of the API in AWS" in new Setup {
@@ -186,8 +186,8 @@ class AwsAPIPublisherSpec extends AsyncHmrcSpec {
 
       await(underTest.delete(apiDefinition))
 
-      verify(underTest.awsAPIPublisherConnector).deleteAPI(s"${apiDefinition.context}--1.0")(using hc)
-      verify(underTest.awsAPIPublisherConnector).deleteAPI(s"${apiDefinition.context}--2.0")(using hc)
+      verify(underTest.awsAPIPublisherConnector).deleteAPI(s"${apiDefinition.context}--1.0")
+      verify(underTest.awsAPIPublisherConnector).deleteAPI(s"${apiDefinition.context}--2.0")
     }
 
     "return unit if deletion fails" in new Setup {

@@ -46,7 +46,7 @@ trait TolerantJsonApiVersion extends TolerantJsonEndpoint with TolerantJsonApiSt
       (JsPath \ "versionSource").write[ApiVersionSource]
   )(v => (v.versionNbr, v.status, v.access, v.endpoints, v.endpointsEnabled, v.awsRequestId, v.versionSource))
 
-  implicit val tolerantFormatApiVersion: OFormat[ApiVersion] = OFormat[ApiVersion](readsApiVersion, writesApiVersion)
+  given OFormat[ApiVersion] = OFormat[ApiVersion](readsApiVersion, writesApiVersion)
 }
 
 object TolerantJsonApiVersion extends TolerantJsonApiVersion

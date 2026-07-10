@@ -27,9 +27,7 @@ import org.apache.pekko.util.ByteString
 
 import play.api.libs.ws.WSResponse
 
-trait Utils {
-
-  implicit val materializer: Materializer
+trait Utils(using Materializer) {
 
   private val defaultTimeout: FiniteDuration = 5 seconds
 
@@ -54,5 +52,4 @@ trait Utils {
     }
     Await.result(source.runWith(sink), defaultTimeout)
   }
-
 }

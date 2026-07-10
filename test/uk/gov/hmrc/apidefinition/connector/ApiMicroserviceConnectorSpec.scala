@@ -18,6 +18,7 @@ package uk.gov.hmrc.apidefinition.connector
 
 import mockws.{MockWS, MockWSHelpers}
 import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.stream.testkit.NoMaterializer
 import org.apache.pekko.util.ByteString
 import org.scalatest.BeforeAndAfterAll
 
@@ -30,11 +31,14 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apidefinition.utils.{AsyncHmrcSpec, Utils}
 
-class ApiMicroserviceConnectorSpec extends AsyncHmrcSpec with Utils with MockWSHelpers with BeforeAndAfterAll {
+class ApiMicroserviceConnectorSpec extends AsyncHmrcSpec with MockWSHelpers with BeforeAndAfterAll {
 
   override def afterAll(): Unit = {
     shutdownHelpers()
   }
+
+  val utils = new Utils(using NoMaterializer) {}
+  import utils.*
 
   val serviceUrl = ServiceBaseUrl("http://localhost")
 
@@ -58,10 +62,8 @@ class ApiMicroserviceConnectorSpec extends AsyncHmrcSpec with Utils with MockWSH
   }
 
   trait Setup {
-    import scala.concurrent.ExecutionContext.Implicits.global
-
-    implicit val hc: HeaderCarrier = HeaderCarrier()
-    val underTest                  = new ApiMicroserviceConnector(mockWS)
+    given HeaderCarrier = HeaderCarrier()
+    val underTest       = new ApiMicroserviceConnector(mockWS)
   }
 
   "fetchApiDocumentationResourceByUrl" should {

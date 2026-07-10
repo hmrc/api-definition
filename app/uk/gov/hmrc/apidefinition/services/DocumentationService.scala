@@ -19,8 +19,6 @@ package uk.gov.hmrc.apidefinition.services
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
-import org.apache.pekko.stream.Materializer
-
 import play.api.http.HttpEntity
 import play.api.http.Status.*
 import play.api.libs.ws.WSResponse
@@ -42,8 +40,7 @@ object DocumentationService {
 class DocumentationService @Inject() (
     apiDefinitionRepository: APIDefinitionRepository,
     apiMicroserviceConnector: ApiMicroserviceConnector
-  )(implicit val ec: ExecutionContext,
-    val mat: Materializer
+  )(using ExecutionContext
   ) {
 
   import DocumentationService.*

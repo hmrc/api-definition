@@ -23,7 +23,8 @@ import uk.gov.hmrc.apiplatform.modules.common.utils.BaseJsonFormattersSpec
 
 class TolerantJsonEndpointSpec extends BaseJsonFormattersSpec {
 
-  implicit val useMe: Format[Endpoint] = TolerantJsonEndpoint.tolerantFormatEndpoint
+  given Format[Endpoint] = TolerantJsonEndpoint.given_Format_Endpoint
+
   "TolerantJsonEndpoint" should {
 
     "read endpoint from Json" in {

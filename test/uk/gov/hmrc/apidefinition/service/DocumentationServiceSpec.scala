@@ -23,6 +23,7 @@ import scala.util.Random
 
 import org.apache.pekko.stream.Materializer
 import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.stream.testkit.NoMaterializer
 import org.apache.pekko.util.ByteString
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 
@@ -44,8 +45,11 @@ import uk.gov.hmrc.apidefinition.mocks.ApiDefinitionRepositoryMockModule
 import uk.gov.hmrc.apidefinition.services.DocumentationService
 import uk.gov.hmrc.apidefinition.utils.{AsyncHmrcSpec, Utils}
 
-class DocumentationServiceSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite with Utils {
+class DocumentationServiceSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite {
   import DocumentationService.PROXY_SAFE_CONTENT_TYPE
+
+  val utils = new Utils(using NoMaterializer) {}
+  import utils.*
 
   val serviceName = ServiceName("hello-world")
   val version     = "1.0"
@@ -129,10 +133,10 @@ class DocumentationServiceSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite wi
   private val notFoundResponse: WSResponse            = createResponse(Status.NOT_FOUND, Map.empty, sampleFileSource)
   private val internalServerErrorResponse: WSResponse = createResponse(Status.INTERNAL_SERVER_ERROR, Map.empty, sampleFileSource)
 
-  implicit val materializer: Materializer = app.materializer
+  given Materializer = app.materializer
 
   trait Setup extends ApiDefinitionRepositoryMockModule {
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+    given HeaderCarrier = HeaderCarrier()
 
     val mockApiMicroserviceConnector: ApiMicroserviceConnector = mock[ApiMicroserviceConnector]
 

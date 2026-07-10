@@ -66,7 +66,7 @@ class AWSAPIPublisherConnectorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuit
   trait Setup {
     SharedMetricRegistries.clear()
     WireMock.reset()
-    implicit val hc: HeaderCarrier = HeaderCarrier(authorization = Some(Authorization("foo")))
+    given HeaderCarrier = HeaderCarrier(authorization = Some(Authorization("foo")))
 
     val http                                = app.injector.instanceOf[HttpClientV2]
     val environment: Environment            = app.injector.instanceOf[Environment]

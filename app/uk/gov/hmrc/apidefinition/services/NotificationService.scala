@@ -129,5 +129,5 @@ class EmailNotificationService(
 case class SendEmailRequest(to: Set[String], templateId: String, parameters: Map[String, String])
 
 object SendEmailRequest {
-  implicit val sendEmailRequestFormat: OFormat[SendEmailRequest] = Json.format[SendEmailRequest]
+  given OFormat[SendEmailRequest] = Json.format[SendEmailRequest]
 }

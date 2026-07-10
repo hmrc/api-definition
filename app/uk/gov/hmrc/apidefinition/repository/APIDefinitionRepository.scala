@@ -37,7 +37,7 @@ import uk.gov.hmrc.apidefinition.models.TolerantJsonApiDefinition
 import uk.gov.hmrc.apidefinition.utils.IndexHelper.createUniqueBackgroundSingleFieldAscendingIndex
 
 @Singleton
-class APIDefinitionRepository @Inject() (mongoComponent: MongoComponent)(implicit val ec: ExecutionContext)
+class APIDefinitionRepository @Inject() (mongoComponent: MongoComponent)(using ExecutionContext)
     extends PlayMongoRepository[StoredApiDefinition](
       collectionName = "api",
       mongoComponent = mongoComponent,

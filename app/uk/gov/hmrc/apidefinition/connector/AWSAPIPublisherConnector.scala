@@ -44,7 +44,7 @@ class AWSAPIPublisherConnector @Inject() (
     environment: Environment,
     val runModeConfiguration: Configuration,
     servicesConfig: ServicesConfig
-  )(implicit val ec: ExecutionContext
+  )(using ExecutionContext
   ) {
   import AWSAPIPublisherConnector.*
 

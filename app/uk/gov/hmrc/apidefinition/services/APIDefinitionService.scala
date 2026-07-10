@@ -49,10 +49,10 @@ class APIDefinitionService @Inject() (
     apiRetirer: ApiRetirer,
     notificationService: NotificationService,
     config: AppConfig
-  )(implicit val ec: ExecutionContext
+  )(using ExecutionContext
   ) extends ApplicationLogger with ClockNow with Validator[StoredApiDefinition] {
 
-  implicit val useThisFormatter: OFormat[StoredApiDefinition] = TolerantJsonApiDefinition.tolerantFormatApiDefinition
+  given OFormat[StoredApiDefinition] = TolerantJsonApiDefinition.tolerantFormatApiDefinition
 
   private def convertOne(stored: StoredApiDefinition): ApiDefinition = {
     ApiDefinition.fromStored(stored)

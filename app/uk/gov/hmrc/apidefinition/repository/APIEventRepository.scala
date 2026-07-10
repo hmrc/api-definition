@@ -33,11 +33,11 @@ import uk.gov.hmrc.apidefinition.models.ApiEvents.*
 import uk.gov.hmrc.apidefinition.models.{ApiEvent, ApiEventFormatter}
 
 @Singleton
-class APIEventRepository @Inject() (mongoComponent: MongoComponent)(implicit val ec: ExecutionContext)
+class APIEventRepository @Inject() (mongoComponent: MongoComponent)(using ExecutionContext)
     extends PlayMongoRepository[ApiEvent](
       collectionName = "api-events",
       mongoComponent = mongoComponent,
-      domainFormat = ApiEventFormatter.apiEventsFormats,
+      domainFormat = ApiEventFormatter.given_OFormat_ApiEvent,
       indexes = Seq(
         IndexModel(
           ascending("id"),
@@ -54,7 +54,7 @@ class APIEventRepository @Inject() (mongoComponent: MongoComponent)(implicit val
             .background(true)
         )
       ),
-      extraCodecs = Codecs.playFormatCodecsBuilder(ApiEventFormatter.apiEventsFormats)
+      extraCodecs = Codecs.playFormatCodecsBuilder(ApiEventFormatter.given_OFormat_ApiEvent)
         .forType[ApiCreated]
         .forType[NewApiVersion]
         .forType[ApiVersionStatusChange]

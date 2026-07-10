@@ -52,7 +52,7 @@ class NotificationServiceSpec extends AsyncHmrcSpec {
       when(mockRequestBuilder.execute[HttpResponse](using *, *)).thenReturn(successful(HttpResponse(INTERNAL_SERVER_ERROR, body)))
     }
 
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+    given HeaderCarrier = HeaderCarrier()
 
     val emailServiceURL: URL        = url"https://localhost:9876/hmrc/email"
     val emailTemplateId: String     = UUID.randomUUID().toString

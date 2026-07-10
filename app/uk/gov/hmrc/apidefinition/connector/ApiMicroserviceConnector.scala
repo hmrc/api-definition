@@ -17,7 +17,7 @@
 package uk.gov.hmrc.apidefinition.connector
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
 import play.api.libs.ws.{WSClient, WSResponse}
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiDefinition.ServiceBaseUrl
@@ -26,7 +26,7 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiVersionNbr
 import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
 
 @Singleton
-class ApiMicroserviceConnector @Inject() (ws: WSClient)(implicit val ec: ExecutionContext) extends ApplicationLogger {
+class ApiMicroserviceConnector @Inject() (ws: WSClient) extends ApplicationLogger {
 
   // TODO : Migrate to new hmrc WS client
   def fetchApiDocumentationResourceByUrl(serviceUrl: ServiceBaseUrl, version: ApiVersionNbr, resource: String): Future[WSResponse] = {

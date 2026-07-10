@@ -28,7 +28,7 @@ trait TolerantJsonApiStatus {
 
   private val writesApiStatus: Writes[ApiStatus] = ApiStatus.given_Format_ApiStatus
 
-  implicit val tolerantFormatApiStatus: Format[ApiStatus] = Format[ApiStatus](readsApiStatus, writesApiStatus)
+  given Format[ApiStatus] = Format[ApiStatus](readsApiStatus, writesApiStatus)
 
 }
 

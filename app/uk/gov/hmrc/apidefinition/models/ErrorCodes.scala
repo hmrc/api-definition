@@ -34,18 +34,18 @@ object ErrorCode {
 case class ValidationErrors(code: ErrorCode, messages: Seq[String])
 
 object ValidationErrors {
-  implicit val format2: OFormat[ValidationErrors] = Json.format[ValidationErrors]
+  given OFormat[ValidationErrors] = Json.format[ValidationErrors]
 }
 
 case class ErrorResponse(code: ErrorCode, message: String, details: Option[Seq[FieldErrorDescription]] = None)
 
 object ErrorResponse {
-  implicit val format1: Format[FieldErrorDescription] = Json.format[FieldErrorDescription]
-  implicit val format3: Format[ErrorResponse]         = Json.format[ErrorResponse]
+  given Format[FieldErrorDescription] = Json.format[FieldErrorDescription]
+  given Format[ErrorResponse]         = Json.format[ErrorResponse]
 }
 
 case class FieldErrorDescription(field: String, message: String)
 
 object FieldErrorDescription {
-  implicit val format: Format[FieldErrorDescription] = Json.format[FieldErrorDescription]
+  given Format[FieldErrorDescription] = Json.format[FieldErrorDescription]
 }

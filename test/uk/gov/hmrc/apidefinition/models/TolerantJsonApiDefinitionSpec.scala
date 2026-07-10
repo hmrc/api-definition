@@ -22,8 +22,8 @@ import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.utils.BaseJsonFormattersSpec
 
 class TolerantJsonApiDefinitionSpec extends BaseJsonFormattersSpec {
-  implicit val useMe: OFormat[StoredApiDefinition] = TolerantJsonApiDefinition.tolerantFormatApiDefinition
-  val appId                                        = ApplicationId.random
+  given OFormat[StoredApiDefinition] = TolerantJsonApiDefinition.tolerantFormatApiDefinition
+  val appId                          = ApplicationId.random
 
   "TolerantJsonApiDefinition" should {
     def anApiDefinition(

@@ -17,13 +17,14 @@
 package uk.gov.hmrc.apidefinition.models
 
 import play.api.libs.json.Json
+import play.api.libs.ws.JsonBodyWritables
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiAccessType, ApiStatus, ServiceName}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.common.utils.{FixedClock, HmrcSpec}
 
-import uk.gov.hmrc.apidefinition.models.ApiEventFormatter.*
+import uk.gov.hmrc.apidefinition.models.ApiEventFormatter.given
 
-class ApiEventSpec extends HmrcSpec with FixedClock {
+class ApiEventSpec extends HmrcSpec with FixedClock with JsonBodyWritables {
 
   val eventId        = ApiEventId.random
   val apiName        = "Api 123"

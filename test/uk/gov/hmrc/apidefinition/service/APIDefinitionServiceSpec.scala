@@ -75,7 +75,7 @@ class APIDefinitionServiceSpec
 
   trait Setup extends APIEventRepositoryMockModule with ApiDefinitionRepositoryMockModule with NotificationServiceMockModule {
 
-    implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
+    given HeaderCarrier = HeaderCarrier().withExtraHeaders(xRequestId -> "requestId")
 
     val mockAwsApiPublisher: AwsApiPublisher = mock[AwsApiPublisher]
     val mockAppConfig: AppConfig             = mock[AppConfig]

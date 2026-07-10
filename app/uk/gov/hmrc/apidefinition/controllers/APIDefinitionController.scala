@@ -42,15 +42,15 @@ class APIDefinitionController @Inject() (
     apiDefinitionService: APIDefinitionService,
     appContext: AppConfig,
     cc: ControllerComponents
-  )(implicit val ec: ExecutionContext
+  )(using ExecutionContext
   ) extends BackendController(cc) with ApplicationLogger {
 
-  implicit val useTolerantReaders: Format[StoredApiDefinition] = TolerantJsonApiDefinition.tolerantFormatApiDefinition
+  given Format[StoredApiDefinition] = TolerantJsonApiDefinition.tolerantFormatApiDefinition
 
   val fetchByContextTtlInSeconds: String = appContext.fetchByContextTtlInSeconds
 
   def createOrUpdate(): Action[JsValue] = Action.async(parse.json) { implicit request =>
-    implicit val useTolerantReaders = TolerantJsonApiDefinition.tolerantFormatApiDefinition
+    given OFormat[StoredApiDefinition] = TolerantJsonApiDefinition.tolerantFormatApiDefinition
 
     handleRequest[StoredApiDefinition](request) { requestBody =>
       val asFailureResult: (NonEmptyList[String]) => Result = (in) => UnprocessableEntity(Json.toJson(ValidationErrors(INVALID_REQUEST_PAYLOAD, in.toList)))

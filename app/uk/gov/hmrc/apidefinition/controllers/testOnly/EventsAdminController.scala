@@ -34,10 +34,10 @@ import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
 class EventsAdminController @Inject() (
     apiDefinitionService: APIDefinitionService,
     cc: ControllerComponents
-  )(implicit val ec: ExecutionContext
+  )(using ExecutionContext
   ) extends BackendController(cc) with ApplicationLogger {
 
-  implicit val useTolerantReaders: Format[StoredApiDefinition] = TolerantJsonApiDefinition.tolerantFormatApiDefinition
+  given Format[StoredApiDefinition] = TolerantJsonApiDefinition.tolerantFormatApiDefinition
 
   private def recovery: PartialFunction[Throwable, Result] = {
     case NonFatal(e) =>
