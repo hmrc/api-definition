@@ -126,9 +126,3 @@ class APIDefinitionRepository @Inject() (mongoComponent: MongoComponent)(using E
       throw e
   }
 }
-
-/*
-
-StoredApiDefinition("api1", "test.com", "Test2", "This is the Test API2", "test", List(ApiVersion("1.0", Stable, Public, List(Endpoint("/date", "Check current date", Get, None, Unlimited, None, List())), true, None, OAS), ApiVersion("2.0", Retired, Public, List(Endpoint("/date", "Check current date", Get, None, Unlimited, None, List())), true, None, OAS), ApiVersion("3.0", Stable, Public, List(Endpoint("/date", "Check current date", Get, None, Unlimited, None, List())), true, None, OAS)), false, None, List(Agents))
-
- */
