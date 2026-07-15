@@ -24,7 +24,7 @@ import uk.gov.hmrc.apidefinition.validators.BaseValidator.HMRCValidatedNel
 
 class AbstractValidatorSpec extends AsyncHmrcSpec {
 
-  def validates[T](test: => HMRCValidatedNel[T], clue: Option[String] = None)(implicit pos: Position): Unit = {
+  def validates[T](test: => HMRCValidatedNel[T], clue: Option[String] = None): Unit = {
     def testIt() =
       test match {
         case Invalid(errs) => fail(s"Unexpected errors occurred: ${errs.toList}")

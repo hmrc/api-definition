@@ -24,31 +24,29 @@ import play.api.http.ContentTypes.JSON
 import play.api.http.HeaderNames.CONTENT_TYPE
 import play.api.libs.json.{Json, Reads}
 import play.api.{Configuration, Environment, Mode}
-import uk.gov.hmrc.http.HttpReads.Implicits._
+import uk.gov.hmrc.http.HttpReads.Implicits.*
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.{HeaderCarrier, StringContextOps, UpstreamErrorResponse}
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 
-import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.models.AWSSwaggerDetails
-import uk.gov.hmrc.apidefinition.models.JsonFormatters._
+import uk.gov.hmrc.apidefinition.models.JsonFormatters.given
 
 object AWSAPIPublisherConnector {
   // Deliberately upper case RequestId !
   case class RequestId(RequestId: String)
 
-  implicit val requestIdReads: Reads[RequestId] = Json.reads[RequestId]
+  given Reads[RequestId] = Json.reads[RequestId]
 }
 
 class AWSAPIPublisherConnector @Inject() (
     http: HttpClientV2,
     environment: Environment,
-    appContext: AppConfig,
     val runModeConfiguration: Configuration,
     servicesConfig: ServicesConfig
-  )(implicit val ec: ExecutionContext
+  )(using ExecutionContext
   ) {
-  import AWSAPIPublisherConnector._
+  import AWSAPIPublisherConnector.*
 
   protected def mode: Mode = environment.mode
 
@@ -57,11 +55,13 @@ class AWSAPIPublisherConnector @Inject() (
   val apiKeyHeaderName               = "x-api-key"
   val headers: Seq[(String, String)] = Seq(CONTENT_TYPE -> JSON, apiKeyHeaderName -> awsApiKey)
 
-  def createOrUpdateAPI(apiName: String, awsSwaggerDetails: AWSSwaggerDetails)(implicit hc: HeaderCarrier): Future[String] = {
+  def createOrUpdateAPI(apiName: String, awsSwaggerDetails: AWSSwaggerDetails)(using hc: HeaderCarrier): Future[String] = {
     val headersWithoutAuthorization: HeaderCarrier = hc.copy(authorization = None)
 
-    http.put(url"$serviceBaseUrl/$apiName")(headersWithoutAuthorization)
-      .setHeader(headers: _*)
+    import play.api.libs.ws.JsonBodyWritables.writeableOf_JsValue
+
+    http.put(url"$serviceBaseUrl/$apiName")(using headersWithoutAuthorization)
+      .setHeader(headers*)
       .withBody(Json.toJson(awsSwaggerDetails))
       .execute[Either[UpstreamErrorResponse, RequestId]].flatMap {
         case Right(RequestId(value)) => successful(value)
@@ -69,12 +69,12 @@ class AWSAPIPublisherConnector @Inject() (
       }
   }
 
-  def deleteAPI(apiName: String)(implicit hc: HeaderCarrier): Future[String] = {
+  def deleteAPI(apiName: String)(using hc: HeaderCarrier): Future[String] = {
     val headersWithoutAuthorization: HeaderCarrier = hc
       .copy(authorization = None)
       .withExtraHeaders(apiKeyHeaderName -> awsApiKey)
 
-    http.delete(url"$serviceBaseUrl/$apiName")(headersWithoutAuthorization)
+    http.delete(url"$serviceBaseUrl/$apiName")(using headersWithoutAuthorization)
       .execute[Either[UpstreamErrorResponse, RequestId]].flatMap {
         case Right(RequestId(value)) => successful(value)
         case Left(err)               => failed(err)

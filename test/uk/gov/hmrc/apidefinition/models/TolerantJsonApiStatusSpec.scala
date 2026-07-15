@@ -19,8 +19,8 @@ package uk.gov.hmrc.apidefinition.models
 import org.scalatest.prop.TableDrivenPropertyChecks
 
 import play.api.libs.json.{JsString, Json}
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
-import uk.gov.hmrc.apiplatform.modules.common.utils._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.common.utils.*
 
 class TolerantJsonApiStatusSpec extends BaseJsonFormattersSpec with TableDrivenPropertyChecks with TolerantJsonApiStatus {
 
@@ -28,22 +28,22 @@ class TolerantJsonApiStatusSpec extends BaseJsonFormattersSpec with TableDrivenP
     val values =
       Table(
         ("Status", "text"),
-        (ApiStatus.ALPHA, "Alpha"),
-        (ApiStatus.BETA, "Beta"),
-        (ApiStatus.STABLE, "Stable"),
-        (ApiStatus.DEPRECATED, "Deprecated"),
-        (ApiStatus.RETIRED, "Retired")
+        (ApiStatus.Alpha, "Alpha"),
+        (ApiStatus.Beta, "Beta"),
+        (ApiStatus.Stable, "Stable"),
+        (ApiStatus.Deprecated, "Deprecated"),
+        (ApiStatus.Retired, "Retired")
       )
 
     "display text correctly" in {
       forAll(values) { (s, t) =>
-        s.displayText shouldBe t
+        s.toString() shouldBe t
       }
     }
 
     "convert to string correctly" in {
       forAll(values) { (s, t) =>
-        s.toString() shouldBe t.toUpperCase()
+        s.toString() shouldBe t
       }
     }
 
@@ -79,11 +79,11 @@ class TolerantJsonApiStatusSpec extends BaseJsonFormattersSpec with TableDrivenP
     }
 
     "read PUBLISHED from Json" in {
-      testFromJson[ApiStatus](""" "PUBLISHED" """)(ApiStatus.STABLE)
+      testFromJson[ApiStatus](""" "PUBLISHED" """)(ApiStatus.Stable)
     }
 
     "read PROTOTYPE from Json" in {
-      testFromJson[ApiStatus](""" "PROTOTYPED" """)(ApiStatus.BETA)
+      testFromJson[ApiStatus](""" "PROTOTYPED" """)(ApiStatus.Beta)
     }
 
     "write to Json" in {

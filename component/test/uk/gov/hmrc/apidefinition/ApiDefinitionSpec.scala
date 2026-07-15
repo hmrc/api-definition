@@ -19,7 +19,7 @@ package uk.gov.hmrc.apidefinition
 import java.util.UUID
 
 import com.github.tomakehurst.wiremock.client.WireMock
-import com.github.tomakehurst.wiremock.client.WireMock._
+import com.github.tomakehurst.wiremock.client.WireMock.*
 
 import play.api.http.HeaderNames.CONTENT_TYPE
 import play.api.http.Status.{NO_CONTENT, OK}

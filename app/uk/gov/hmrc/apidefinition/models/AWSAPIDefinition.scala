@@ -16,8 +16,8 @@
 
 package uk.gov.hmrc.apidefinition.models
 
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{StoredApiDefinition, _}
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{StoredApiDefinition, *}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
 
 case class AWSAPIDefinition(name: String, context: ApiContext, version: ApiVersionNbr, subscribersCount: Int, endpointConfig: AWSEndpointConfig, swagger: Option[AWSSwaggerDetails])
 
@@ -74,20 +74,20 @@ case class AWSPathParameter(
 object AWSAPIDefinition {
 
   private val statusMap = Map[ApiStatus, String](
-    ApiStatus.ALPHA      -> "PUBLISHED",
-    ApiStatus.BETA       -> "PUBLISHED",
-    ApiStatus.STABLE     -> "PUBLISHED",
-    ApiStatus.DEPRECATED -> "DEPRECATED",
-    ApiStatus.RETIRED    -> "RETIRED"
+    ApiStatus.Alpha      -> "PUBLISHED",
+    ApiStatus.Beta       -> "PUBLISHED",
+    ApiStatus.Stable     -> "PUBLISHED",
+    ApiStatus.Deprecated -> "DEPRECATED",
+    ApiStatus.Retired    -> "RETIRED"
   )
 
   private val authTypeMap = Map[AuthType, String](
-    AuthType.NONE        -> "None",
-    AuthType.APPLICATION -> "Application %26 Application User",
-    AuthType.USER        -> "Application User"
+    AuthType.None        -> "None",
+    AuthType.Application -> "Application %26 Application User",
+    AuthType.User        -> "Application User"
   )
 
-  private val resourceThrottlingTierMap = Map[ResourceThrottlingTier, String](ResourceThrottlingTier.UNLIMITED -> "Unlimited")
+  private val resourceThrottlingTierMap = Map[ResourceThrottlingTier, String](ResourceThrottlingTier.Unlimited -> "Unlimited")
 
   def awsAuthType(authType: AuthType): String = {
     authTypeMap.getOrElse(authType, throw new IllegalArgumentException(s"Unknown Auth Type: $authType"))

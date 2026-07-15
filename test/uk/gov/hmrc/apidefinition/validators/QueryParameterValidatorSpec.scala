@@ -21,7 +21,7 @@ import org.scalactic.source.Position
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.QueryParameter
 
 class QueryParameterValidatorSpec extends AbstractValidatorSpec {
-  def validates(name: String)(implicit pos: Position): Unit = validates(QueryParameterValidator.validate(QueryParameter(name, false)), clue = Some(name))
+  def validates(name: String): Unit = validates(QueryParameterValidator.validate(QueryParameter(name, false)), clue = Some(name))
 
   def failsToValidateWithNoName(name: String)(implicit pos: Position): Unit =
     failsToValidate(QueryParameterValidator.validate(QueryParameter(name, false)))("Field 'queryParameters.name' is required")

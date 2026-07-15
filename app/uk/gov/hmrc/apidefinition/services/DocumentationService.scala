@@ -19,18 +19,16 @@ package uk.gov.hmrc.apidefinition.services
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
-import org.apache.pekko.stream.Materializer
-
 import play.api.http.HttpEntity
-import play.api.http.Status._
+import play.api.http.Status.*
 import play.api.libs.ws.WSResponse
 import play.api.mvc.Result
-import play.api.mvc.Results._
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{StoredApiDefinition, _}
+import play.api.mvc.Results.*
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiDefinition.ServiceBaseUrl
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{StoredApiDefinition, *}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiVersionNbr
 import uk.gov.hmrc.http.{InternalServerException, NotFoundException}
 
-import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.connector.ApiMicroserviceConnector
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 
@@ -41,13 +39,11 @@ object DocumentationService {
 @Singleton
 class DocumentationService @Inject() (
     apiDefinitionRepository: APIDefinitionRepository,
-    apiMicroserviceConnector: ApiMicroserviceConnector,
-    config: AppConfig
-  )(implicit val ec: ExecutionContext,
-    val mat: Materializer
+    apiMicroserviceConnector: ApiMicroserviceConnector
+  )(using ExecutionContext
   ) {
 
-  import DocumentationService._
+  import DocumentationService.*
 
   def fetchApiDocumentationResource(serviceName: ServiceName, version: ApiVersionNbr, resource: String): Future[Result] = {
     def createProxySafeContentType(contentType: String): (String, String) = ((PROXY_SAFE_CONTENT_TYPE, contentType))
@@ -59,24 +55,24 @@ class DocumentationService @Inject() (
         val contentType = streamedResponse.contentType
 
         streamedResponse.headers.get("Content-Length") match {
-          case Some(Seq(length)) => Ok.sendEntity(HttpEntity.Streamed(streamedResponse.bodyAsSource, Some(length.toLong), Some(contentType)))
+          case Some(Seq(length: String)) => Ok.sendEntity(HttpEntity.Streamed(streamedResponse.bodyAsSource, Some(length.toLong), Some(contentType)))
               .withHeaders(createProxySafeContentType(contentType))
 
           case _ => Ok.chunked(streamedResponse.bodyAsSource).as(contentType)
               .withHeaders(createProxySafeContentType(contentType))
         }
-      case NOT_FOUND => throw newNotFoundException(serviceName.value, version, resource)
-      case status    => throw newInternalServerException(serviceName.value, version, resource, status)
+      case NOT_FOUND => throw newNotFoundException(serviceName, version, resource)
+      case status    => throw newInternalServerException(serviceName, version, resource, status)
     }
   }
 
   private def fetchResource(serviceName: ServiceName, version: ApiVersionNbr, resource: String): Future[WSResponse] = {
 
-    def fetchResourceFromMicroservice(serviceBaseUrl: String): Future[WSResponse] =
+    def fetchResourceFromMicroservice(serviceBaseUrl: ServiceBaseUrl): Future[WSResponse] =
       apiMicroserviceConnector.fetchApiDocumentationResourceByUrl(serviceBaseUrl, version, resource)
 
     def getApiDefinitionOrThrow: Future[StoredApiDefinition] = {
-      import cats.implicits._
+      import cats.implicits.*
 
       lazy val failure = Future.failed[StoredApiDefinition](new NotFoundException(s"$serviceName not found"))
 
@@ -84,13 +80,13 @@ class DocumentationService @Inject() (
     }
 
     def getApiVersionOrThrow(apiDefinition: StoredApiDefinition): Future[Option[ApiVersion]] = {
-      import cats.implicits._
+      import cats.implicits.*
 
       val failure = Future.failed[Option[ApiVersion]](new NotFoundException(s"Version $version of $serviceName not found"))
 
       version match {
-        case ApiVersionNbr("common") => None.pure[Future]
-        case v                       =>
+        case vn: ApiVersionNbr if vn.value == "common" => None.pure[Future]
+        case _                                         =>
           val oVersion = apiDefinition.versions.find(_.versionNbr == version)
           oVersion.fold(failure)(v => Some(v).pure[Future])
       }

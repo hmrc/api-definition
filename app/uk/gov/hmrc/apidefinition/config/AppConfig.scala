@@ -17,7 +17,7 @@
 package uk.gov.hmrc.apidefinition.config
 
 import javax.inject.{Inject, Singleton}
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 import play.api.Configuration
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ServiceName

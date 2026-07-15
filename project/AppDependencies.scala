@@ -1,12 +1,12 @@
-import sbt._
+import sbt.*
 
 object AppDependencies {
   def apply(): Seq[ModuleID] = dependencies ++ testDependencies
 
   private val bootstrapVersion    = "10.7.0"
   private val mongoPlayVersion    = "2.12.0"
-  private val apiDomainVersion    = "1.4.0"
-  private val mockitoScalaVersion = "2.0.0"
+  private val apiDomainVersion    = "1.5.0"
+  private val mockitoScalaVersion = "2.2.1"
 
   private lazy val dependencies = Seq(
     "uk.gov.hmrc"       %% "bootstrap-backend-play-30" % bootstrapVersion,

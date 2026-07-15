@@ -32,7 +32,7 @@ case class DisplayApiEvent(
   )
 
 object DisplayApiEvent {
-  implicit val format: OFormat[DisplayApiEvent] = Json.format[DisplayApiEvent]
+  given OFormat[DisplayApiEvent] = Json.format[DisplayApiEvent]
 
   def apply(evt: ApiEvent): DisplayApiEvent = {
     val (eventType, metaData) = evt.asMetaData()

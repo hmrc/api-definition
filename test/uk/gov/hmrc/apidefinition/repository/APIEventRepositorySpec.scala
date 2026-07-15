@@ -19,6 +19,7 @@ package uk.gov.hmrc.apidefinition.repository
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
+import org.mongodb.scala.ObservableFuture
 import org.mongodb.scala.model.Filters
 import org.scalatest.concurrent.Eventually
 import org.scalatest.prop.TableDrivenPropertyChecks.forAll
@@ -28,14 +29,14 @@ import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiStatus.{ALPHA, BETA}
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiAccessType, _}
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.Endpoint.*
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiAccessType, ApiStatus, *}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiVersionNbr
 import uk.gov.hmrc.apiplatform.modules.common.utils.FixedClock
 import uk.gov.hmrc.mongo.play.json.Codecs
 import uk.gov.hmrc.mongo.test.DefaultPlayMongoRepositorySupport
 
-import uk.gov.hmrc.apidefinition.models.ApiEvents._
+import uk.gov.hmrc.apidefinition.models.ApiEvents.*
 import uk.gov.hmrc.apidefinition.models.{ApiEvent, ApiEventId}
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 
@@ -57,11 +58,11 @@ class APIEventRepositorySpec extends AsyncHmrcSpec
   val version1                   = ApiVersionNbr("1.0")
   val serviceName                = ServiceName("api-event-test")
   val apiName                    = "Api 123"
-  val endpoint                   = Endpoint("/endpoint/url", "Endpoint name", HttpMethod.GET, AuthType.APPLICATION, ResourceThrottlingTier.UNLIMITED, None, List.empty)
+  val endpoint                   = Endpoint(UriPattern("/endpoint/url"), Name("Endpoint name"), HttpMethod.Get, AuthType.Application, ResourceThrottlingTier.Unlimited, None, List.empty)
   val apiCreated                 = ApiCreated(ApiEventId.random, apiName, serviceName, instant)
-  val newApiVersion              = NewApiVersion(ApiEventId.random, apiName, serviceName, instant, ALPHA, version1)
-  val apiVersionStatusChange     = ApiVersionStatusChange(ApiEventId.random, apiName, serviceName, instant, ALPHA, BETA, version1)
-  val apiVersionAccessChange     = ApiVersionAccessChange(ApiEventId.random, apiName, serviceName, instant, ApiAccessType.PUBLIC, ApiAccessType.CONTROLLED, version1)
+  val newApiVersion              = NewApiVersion(ApiEventId.random, apiName, serviceName, instant, ApiStatus.Alpha, version1)
+  val apiVersionStatusChange     = ApiVersionStatusChange(ApiEventId.random, apiName, serviceName, instant, ApiStatus.Alpha, ApiStatus.Beta, version1)
+  val apiVersionAccessChange     = ApiVersionAccessChange(ApiEventId.random, apiName, serviceName, instant, ApiAccessType.Public, ApiAccessType.Controlled, version1)
   val apiVersionEndpointsAdded   = ApiVersionEndpointsAdded(ApiEventId.random, apiName, serviceName, instant, List(endpoint), version1)
   val apiVersionEndpointsRemoved = ApiVersionEndpointsRemoved(ApiEventId.random, apiName, serviceName, instant, List(endpoint), version1)
   val publishedNoChange          = ApiPublishedNoChange(ApiEventId.random, apiName, serviceName, instant)
@@ -71,7 +72,7 @@ class APIEventRepositorySpec extends AsyncHmrcSpec
 
   "APIEventRepository" when {
     "createEvent()" should {
-      val eventTable = Table("Event to use", apiList: _*)
+      val eventTable = Table("Event to use", apiList*)
 
       "create a Api Event in Mongo" in forAll(eventTable) { event =>
         {

@@ -19,7 +19,7 @@ package uk.gov.hmrc.apidefinition.mocks
 import scala.concurrent.Future.{failed, successful}
 
 import cats.data.NonEmptyList
-import cats.implicits._
+import cats.implicits.*
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiDefinition, ServiceName, StoredApiDefinition}
@@ -47,15 +47,15 @@ trait ApiDefinitionServiceMockModule extends MockitoSugar with ArgumentMatchersS
     object CreateOrUpdate {
 
       def success() = {
-        when(aMock.createOrUpdate(*)(*)).thenReturn(successful(()))
+        when(aMock.createOrUpdate(*)(using *)).thenReturn(successful(()))
       }
 
       def thenFails() = {
-        when(aMock.createOrUpdate(*)(*)).thenReturn(failed(new RuntimeException(s"Could not publish API: [TEST]")))
+        when(aMock.createOrUpdate(*)(using *)).thenReturn(failed(new RuntimeException(s"Could not publish API: [TEST]")))
       }
 
       def verifyCall(apiDefinition: StoredApiDefinition) = {
-        verify(aMock).createOrUpdate(eqTo(apiDefinition))(*)
+        verify(aMock).createOrUpdate(eqTo(apiDefinition))(using *)
       }
 
     }
@@ -63,11 +63,11 @@ trait ApiDefinitionServiceMockModule extends MockitoSugar with ArgumentMatchersS
     object Delete {
 
       def success(serviceName: ServiceName) = {
-        when(aMock.delete(eqTo(serviceName))(*)).thenReturn(successful(()))
+        when(aMock.delete(eqTo(serviceName))(using *)).thenReturn(successful(()))
       }
 
       def thenFailsWith(exception: Throwable) = {
-        when(aMock.delete(*[ServiceName])(*)).thenReturn(failed(exception))
+        when(aMock.delete(*[ServiceName])(using *)).thenReturn(failed(exception))
       }
 
     }
@@ -176,11 +176,11 @@ trait ApiDefinitionServiceMockModule extends MockitoSugar with ArgumentMatchersS
     object PublishAllToAws {
 
       def success() = {
-        when(aMock.publishAllToAws()(*)).thenReturn(successful(()))
+        when(aMock.publishAllToAws()(using *)).thenReturn(successful(()))
       }
 
       def thenFailsWith(message: String) = {
-        when(aMock.publishAllToAws()(*)).thenReturn(failed(new RuntimeException(message)))
+        when(aMock.publishAllToAws()(using *)).thenReturn(failed(new RuntimeException(message)))
       }
 
     }

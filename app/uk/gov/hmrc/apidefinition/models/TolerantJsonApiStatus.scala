@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.apidefinition.models
 
-import play.api.libs.json._
+import play.api.libs.json.*
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiStatus
 
 trait TolerantJsonApiStatus {
@@ -24,11 +24,11 @@ trait TolerantJsonApiStatus {
   private val readsApiStatus: Reads[ApiStatus] = Reads.JsStringReads.preprocess {
     case JsString("PUBLISHED")  => JsString("STABLE")
     case JsString("PROTOTYPED") => JsString("BETA")
-  }.andThen(ApiStatus.format)
+  }.andThen(ApiStatus.given_Format_ApiStatus)
 
-  private val writesApiStatus: Writes[ApiStatus] = ApiStatus.format
+  private val writesApiStatus: Writes[ApiStatus] = ApiStatus.given_Format_ApiStatus
 
-  implicit val tolerantFormatApiStatus: Format[ApiStatus] = Format[ApiStatus](readsApiStatus, writesApiStatus)
+  given Format[ApiStatus] = Format[ApiStatus](readsApiStatus, writesApiStatus)
 
 }
 

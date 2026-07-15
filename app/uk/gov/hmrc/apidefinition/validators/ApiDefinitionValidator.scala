@@ -16,16 +16,16 @@
 
 package uk.gov.hmrc.apidefinition.validators
 
-import cats.implicits._
+import cats.implicits.*
 
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{StoredApiDefinition, _}
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{StoredApiDefinition, *}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApiContext, ApiVersionNbr}
 
 object ApiDefinitionValidator extends Validator[StoredApiDefinition] {
 
   def validateKeysArePresent(apiDefinition: StoredApiDefinition): HMRCValidatedNel[StoredApiDefinition] = {
     (
-      apiDefinition.serviceName.validNel.ensure("Field 'serviceName' should not be empty".nel)(_.value.nonBlank),
+      apiDefinition.serviceName.validNel.ensure("Field 'serviceName' should not be empty".nel)(_.nonBlank),
       apiDefinition.context.validNel.ensure("Field 'context' should not be empty".nel)(_.value.nonBlank),
       apiDefinition.serviceBaseUrl.validNel.ensure("Field 'serviceBaseUrl' should not be empty".nel)(_.nonBlank),
       apiDefinition.name.validNel.ensure("Field 'name' should not be empty".nel)(_.nonBlank)

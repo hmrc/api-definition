@@ -20,24 +20,24 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 import org.mongodb.scala.bson.conversions.Bson
-import org.mongodb.scala.model.Filters._
+import org.mongodb.scala.model.*
+import org.mongodb.scala.model.Filters.*
 import org.mongodb.scala.model.Indexes.ascending
-import org.mongodb.scala.model._
 
 import play.api.Logging
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ServiceName
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 
-import uk.gov.hmrc.apidefinition.models.ApiEvents._
+import uk.gov.hmrc.apidefinition.models.ApiEvents.*
 import uk.gov.hmrc.apidefinition.models.{ApiEvent, ApiEventFormatter}
 
 @Singleton
-class APIEventRepository @Inject() (mongoComponent: MongoComponent)(implicit val ec: ExecutionContext)
+class APIEventRepository @Inject() (mongoComponent: MongoComponent)(using ExecutionContext)
     extends PlayMongoRepository[ApiEvent](
       collectionName = "api-events",
       mongoComponent = mongoComponent,
-      domainFormat = ApiEventFormatter.apiEventsFormats,
+      domainFormat = ApiEventFormatter.given_OFormat_ApiEvent,
       indexes = Seq(
         IndexModel(
           ascending("id"),
@@ -54,7 +54,7 @@ class APIEventRepository @Inject() (mongoComponent: MongoComponent)(implicit val
             .background(true)
         )
       ),
-      extraCodecs = Codecs.playFormatCodecsBuilder(ApiEventFormatter.apiEventsFormats)
+      extraCodecs = Codecs.playFormatCodecsBuilder(ApiEventFormatter.given_OFormat_ApiEvent)
         .forType[ApiCreated]
         .forType[NewApiVersion]
         .forType[ApiVersionStatusChange]
@@ -94,6 +94,6 @@ class APIEventRepository @Inject() (mongoComponent: MongoComponent)(implicit val
   }
 
   private def serviceNameSelector(serviceName: ServiceName): Bson = {
-    equal("serviceName", Codecs.toBson(serviceName.value))
+    equal("serviceName", Codecs.toBson(serviceName))
   }
 }

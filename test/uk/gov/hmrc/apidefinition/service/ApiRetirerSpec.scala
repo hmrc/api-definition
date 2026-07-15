@@ -15,170 +15,185 @@
  */
 
 import scala.concurrent.ExecutionContext
-import scala.concurrent.Future.{failed, successful}
 
 import play.api.Logger
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiDefinition.ServiceBaseUrl
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.Endpoint.UriPattern
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApiContext, ApiVersionNbr}
-import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
+import uk.gov.hmrc.http.HeaderCarrier
 
-import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
+import uk.gov.hmrc.apidefinition.mocks.ApiDefinitionRepositoryMockModule
 import uk.gov.hmrc.apidefinition.services.ApiRetirer
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 
 class ApiRetirerSpec extends AsyncHmrcSpec {
 
-  trait Setup {
-    implicit val ec: ExecutionContext = ExecutionContext.global
-    implicit val hc: HeaderCarrier    = HeaderCarrier()
+  trait Setup extends ApiDefinitionRepositoryMockModule {
+    given ExecutionContext = ExecutionContext.global
+    given HeaderCarrier    = HeaderCarrier()
 
-    val mockLogger: Logger                                   = mock[Logger]
-    val mockAPIDefinitionRepository: APIDefinitionRepository = mock[APIDefinitionRepository]
+    val mockLogger: Logger = mock[Logger]
 
-    val underTest = new ApiRetirer(mockAPIDefinitionRepository) {
+    val underTest = new ApiRetirer(ApiDefinitionRepositoryMock.aMock) {
       override val logger: Logger = mockLogger
     }
   }
 
   private val testApiVersion1 = ApiVersion(
     versionNbr = ApiVersionNbr("1.0"),
-    status = ApiStatus.STABLE,
-    access = ApiAccessType.PUBLIC,
-    endpoints = List(Endpoint("/date", "Check current date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
+    status = ApiStatus.Stable,
+    access = ApiAccessType.Public,
+    endpoints = List(Endpoint(UriPattern("/date"), Endpoint.Name("Check current date"), HttpMethod.Get, AuthType.None, ResourceThrottlingTier.Unlimited, None, List.empty)),
+    true,
+    None,
+    ApiVersionSource.OAS
   )
 
   private val testApiVersion2 = ApiVersion(
     versionNbr = ApiVersionNbr("2.0"),
-    status = ApiStatus.STABLE,
-    access = ApiAccessType.PUBLIC,
-    endpoints = List(Endpoint("/date", "Check current date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
+    status = ApiStatus.Stable,
+    access = ApiAccessType.Public,
+    endpoints = List(Endpoint(UriPattern("/date"), Endpoint.Name("Check current date"), HttpMethod.Get, AuthType.None, ResourceThrottlingTier.Unlimited, None, List.empty)),
+    true,
+    None,
+    ApiVersionSource.OAS
   )
 
   private val testApiVersion3 = ApiVersion(
     versionNbr = ApiVersionNbr("3.0"),
-    status = ApiStatus.STABLE,
-    access = ApiAccessType.PUBLIC,
-    endpoints = List(Endpoint("/date", "Check current date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
+    status = ApiStatus.Stable,
+    access = ApiAccessType.Public,
+    endpoints = List(Endpoint(UriPattern("/date"), Endpoint.Name("Check current date"), HttpMethod.Get, AuthType.None, ResourceThrottlingTier.Unlimited, None, List.empty)),
+    true,
+    None,
+    ApiVersionSource.OAS
   )
 
-  private val testApiDefinition = StoredApiDefinition(
+  private val testApiDefinition1 = StoredApiDefinition(
     serviceName = ServiceName("api1"),
-    serviceBaseUrl = "test.com",
-    name = "Test",
-    description = "This is the Test API",
+    serviceBaseUrl = ServiceBaseUrl("test.com"),
+    name = ApiDefinition.Name("Test"),
+    description = ApiDefinition.Description("This is the Test API"),
     context = ApiContext("test"),
     versions = List(testApiVersion1, testApiVersion2, testApiVersion3),
     isTestSupport = false,
     lastPublishedAt = None,
-    categories = List(ApiCategory.AGENTS)
+    categories = List(ApiCategory.Agents)
   )
 
   private val testApiDefinition2 = StoredApiDefinition(
     serviceName = ServiceName("api2"),
-    serviceBaseUrl = "test.com",
-    name = "Test2",
-    description = "This is the Test API2",
+    serviceBaseUrl = ServiceBaseUrl("test.com"),
+    name = ApiDefinition.Name("Test2"),
+    description = ApiDefinition.Description("This is the Test API2"),
     context = ApiContext("test2"),
     versions = List(testApiVersion1, testApiVersion2, testApiVersion3),
     isTestSupport = false,
     lastPublishedAt = None,
-    categories = List(ApiCategory.AGENTS)
+    categories = List(ApiCategory.Agents)
   )
 
-  private val expectedApiVersion1 = ApiVersion(
+  private val retiredApiVersion1 = ApiVersion(
     versionNbr = ApiVersionNbr("1.0"),
-    status = ApiStatus.RETIRED,
-    access = ApiAccessType.PUBLIC,
-    endpoints = List(Endpoint("/date", "Check current date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
+    status = ApiStatus.Retired,
+    access = ApiAccessType.Public,
+    endpoints = List(Endpoint(UriPattern("/date"), Endpoint.Name("Check current date"), HttpMethod.Get, AuthType.None, ResourceThrottlingTier.Unlimited, None, List.empty)),
+    true,
+    None,
+    ApiVersionSource.OAS
   )
 
-  private val expectedApiVersion2 = ApiVersion(
+  private val retiredApiVersion2 = ApiVersion(
     versionNbr = ApiVersionNbr("2.0"),
-    status = ApiStatus.RETIRED,
-    access = ApiAccessType.PUBLIC,
-    endpoints = List(Endpoint("/date", "Check current date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
+    status = ApiStatus.Retired,
+    access = ApiAccessType.Public,
+    endpoints = List(Endpoint(UriPattern("/date"), Endpoint.Name("Check current date"), HttpMethod.Get, AuthType.None, ResourceThrottlingTier.Unlimited, None, List.empty)),
+    true,
+    None,
+    ApiVersionSource.OAS
   )
 
-  private val expectedApiVersion3 = ApiVersion(
+  private val retiredApiVersion3 = ApiVersion(
     versionNbr = ApiVersionNbr("3.0"),
-    status = ApiStatus.RETIRED,
-    access = ApiAccessType.PUBLIC,
-    endpoints = List(Endpoint("/date", "Check current date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED))
+    status = ApiStatus.Retired,
+    access = ApiAccessType.Public,
+    endpoints = List(Endpoint(UriPattern("/date"), Endpoint.Name("Check current date"), HttpMethod.Get, AuthType.None, ResourceThrottlingTier.Unlimited, None, List.empty)),
+    true,
+    None,
+    ApiVersionSource.OAS
   )
 
   private val expectedApiDefinition = StoredApiDefinition(
     serviceName = ServiceName("api1"),
-    serviceBaseUrl = "test.com",
-    name = "Test",
-    description = "This is the Test API",
+    serviceBaseUrl = ServiceBaseUrl("test.com"),
+    name = ApiDefinition.Name("Test"),
+    description = ApiDefinition.Description("This is the Test API"),
     context = ApiContext("test"),
-    versions = List(testApiVersion1, expectedApiVersion2, testApiVersion3),
+    versions = List(testApiVersion1, retiredApiVersion2, testApiVersion3),
     isTestSupport = false,
     lastPublishedAt = None,
-    categories = List(ApiCategory.AGENTS)
+    categories = List(ApiCategory.Agents)
   )
 
   private val expectedApiDefinition2 = StoredApiDefinition(
     serviceName = ServiceName("api2"),
-    serviceBaseUrl = "test.com",
-    name = "Test2",
-    description = "This is the Test API2",
+    serviceBaseUrl = ServiceBaseUrl("test.com"),
+    name = ApiDefinition.Name("Test2"),
+    description = ApiDefinition.Description("This is the Test API2"),
     context = ApiContext("test2"),
-    versions = List(testApiVersion1, testApiVersion2, expectedApiVersion3),
+    versions = List(retiredApiVersion1, testApiVersion2, retiredApiVersion3),
     isTestSupport = false,
     lastPublishedAt = None,
-    categories = List(ApiCategory.AGENTS)
+    categories = List(ApiCategory.Agents)
   )
 
-  private val expectedApiDefinition3 = StoredApiDefinition(
-    serviceName = ServiceName("api2"),
-    serviceBaseUrl = "test.com",
-    name = "Test2",
-    description = "This is the Test API2",
-    context = ApiContext("test2"),
-    versions = List(expectedApiVersion1, testApiVersion2, testApiVersion3),
-    isTestSupport = false,
-    lastPublishedAt = None,
-    categories = List(ApiCategory.AGENTS)
-  )
   "retireApis" should {
     "fetch a single api to retire and set it to retired" in new Setup {
       val apisToRetire = List("api1,2.0")
-      when(mockAPIDefinitionRepository.fetchByServiceName(ServiceName("api1"))).thenReturn(successful(Some(testApiDefinition)))
+      ApiDefinitionRepositoryMock.FetchByServiceName.returnsFor(ServiceName("api1"))(testApiDefinition1)
+      ApiDefinitionRepositoryMock.Save.returns(expectedApiDefinition)
 
       await(underTest.retireApis(apisToRetire))
       verify(mockLogger).info(s"Attempting to retire 1 API versions.")
       verify(mockLogger).debug(s"api1 version 2.0 saved.")
       verifyNoMoreInteractions(mockLogger)
 
-      verify(mockAPIDefinitionRepository, times(1)).fetchByServiceName(ServiceName("api1"))
-      verify(mockAPIDefinitionRepository, times(1)).save(expectedApiDefinition)
-      verifyNoMoreInteractions(mockAPIDefinitionRepository)
+      ApiDefinitionRepositoryMock.FetchByServiceName.verifyCalledFor(ServiceName("api1"))
+      ApiDefinitionRepositoryMock.Save.verifySaved(expectedApiDefinition)
+      verifyNoMoreInteractions(ApiDefinitionRepositoryMock.aMock)
     }
 
     "fetch multiple apis and versions and set them to retired" in new Setup {
       val apisToRetire = List("api1,2.0", "api2,3.0", "api2,1.0")
-      when(mockAPIDefinitionRepository.fetchByServiceName(ServiceName("api1"))).thenReturn(successful(Some(testApiDefinition)))
-      when(mockAPIDefinitionRepository.fetchByServiceName(ServiceName("api2"))).thenReturn(successful(Some(testApiDefinition2)))
+
+      val afterRetiring3    = testApiDefinition2.copy(versions = List(testApiVersion1, testApiVersion2, retiredApiVersion3))
+      val afterRetiringBoth = afterRetiring3.copy(versions = List(retiredApiVersion1, testApiVersion2, retiredApiVersion3))
+
+      ApiDefinitionRepositoryMock.FetchByServiceName.returnsFor(ServiceName("api1"))(testApiDefinition1)
+      ApiDefinitionRepositoryMock.FetchByServiceName.returnsFor(ServiceName("api2"))(afterRetiring3)
+      ApiDefinitionRepositoryMock.FetchByServiceName.returnsFor(ServiceName("api2"))(afterRetiringBoth)
+      ApiDefinitionRepositoryMock.Save.returnsFor(expectedApiDefinition)(expectedApiDefinition)
+      ApiDefinitionRepositoryMock.Save.returnsFor(afterRetiring3)(afterRetiring3)
+      ApiDefinitionRepositoryMock.Save.returnsFor(afterRetiringBoth)(afterRetiringBoth)
 
       await(underTest.retireApis(apisToRetire))
+
       verify(mockLogger).info(s"Attempting to retire 3 API versions.")
       verify(mockLogger).debug(s"api1 version 2.0 saved.")
       verify(mockLogger).debug(s"api2 version 3.0 saved.")
       verify(mockLogger).debug(s"api2 version 1.0 saved.")
 
-      verify(mockAPIDefinitionRepository, times(1)).fetchByServiceName(ServiceName("api1"))
-      verify(mockAPIDefinitionRepository, times(2)).fetchByServiceName(ServiceName("api2"))
+      ApiDefinitionRepositoryMock.FetchByServiceName.verifyCalledFor(ServiceName("api1"))
+      ApiDefinitionRepositoryMock.FetchByServiceName.verifyCalledFor(ServiceName("api2"), times(2))
 
-      verify(mockAPIDefinitionRepository, times(1)).save(expectedApiDefinition)
-      verify(mockAPIDefinitionRepository, times(1)).save(expectedApiDefinition2)
-      verify(mockAPIDefinitionRepository, times(1)).save(expectedApiDefinition3)
-      verifyNoMoreInteractions(mockAPIDefinitionRepository)
+      ApiDefinitionRepositoryMock.Save.verifySaved(expectedApiDefinition)
+      ApiDefinitionRepositoryMock.Save.verifySaved(expectedApiDefinition2, times(2))
     }
 
     "log an appropriate message when the api can not be found in the collection" in new Setup {
       val apisToRetire = List("api6,2.0")
-      when(mockAPIDefinitionRepository.fetchByServiceName(ServiceName("api6"))).thenReturn(successful(None))
+      ApiDefinitionRepositoryMock.FetchByServiceName.returnsNoneFor(ServiceName("api6"))
 
       await(underTest.retireApis(apisToRetire))
       verify(mockLogger).warn(s"api6 version 2.0 can not be found")
@@ -186,28 +201,28 @@ class ApiRetirerSpec extends AsyncHmrcSpec {
 
     "ignore when api name is invalid" in new Setup {
       val apisToRetire = List("api1,2.0", "someInvalidFormat,", ",anotherInvalidFormat", "yetanotherInvalidFormat")
-      when(mockAPIDefinitionRepository.fetchByServiceName(ServiceName("api1"))).thenReturn(successful(Some(testApiDefinition)))
+      ApiDefinitionRepositoryMock.FetchByServiceName.returnsFor(ServiceName("api1"))(testApiDefinition1)
 
       await(underTest.retireApis(apisToRetire))
-      verify(mockAPIDefinitionRepository, times(1)).fetchByServiceName(ServiceName("api1"))
-      verify(mockAPIDefinitionRepository, times(1)).save(expectedApiDefinition)
-      verifyNoMoreInteractions(mockAPIDefinitionRepository)
+      ApiDefinitionRepositoryMock.FetchByServiceName.verifyCalledFor(ServiceName("api1"))
+      ApiDefinitionRepositoryMock.Save.verifySaved(expectedApiDefinition)
+      verifyNoMoreInteractions(ApiDefinitionRepositoryMock.aMock)
     }
 
     "save unchanged api versions" in new Setup {
       val apisToRetire = List("api1,2.0")
-      when(mockAPIDefinitionRepository.fetchByServiceName(ServiceName("api1"))).thenReturn(successful(Some(testApiDefinition)))
+      ApiDefinitionRepositoryMock.FetchByServiceName.returnsFor(ServiceName("api1"))(testApiDefinition1)
 
       await(underTest.retireApis(apisToRetire))
-      verify(mockAPIDefinitionRepository, times(1)).fetchByServiceName(ServiceName("api1"))
-      verify(mockAPIDefinitionRepository, times(1)).save(expectedApiDefinition)
-      verifyNoMoreInteractions(mockAPIDefinitionRepository)
+      ApiDefinitionRepositoryMock.FetchByServiceName.verifyCalledFor(ServiceName("api1"))
+      ApiDefinitionRepositoryMock.Save.verifySaved(expectedApiDefinition)
+      verifyNoMoreInteractions(ApiDefinitionRepositoryMock.aMock)
     }
 
     "log an appropriate message on failure" in new Setup {
-      val error        = UpstreamErrorResponse.apply("error1", 500, 1)
+      val error        = RuntimeException("Bang")
       val apisToRetire = List("api1,2.0")
-      when(mockAPIDefinitionRepository.fetchByServiceName(ServiceName("api1"))).thenReturn(failed(error))
+      ApiDefinitionRepositoryMock.FetchByServiceName.failsFor(ServiceName("api1"))(error)
 
       await(underTest.retireApis(apisToRetire))
       verify(mockLogger).warn(s"api1 retire failed.", error)

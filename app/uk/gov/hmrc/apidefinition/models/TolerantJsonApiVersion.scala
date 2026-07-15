@@ -16,9 +16,9 @@
 
 package uk.gov.hmrc.apidefinition.models
 
-import play.api.libs.functional.syntax._
-import play.api.libs.json._
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import play.api.libs.functional.syntax.*
+import play.api.libs.json.*
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiVersionNbr
 
 trait TolerantJsonApiVersion extends TolerantJsonEndpoint with TolerantJsonApiStatus {
@@ -29,12 +29,12 @@ trait TolerantJsonApiVersion extends TolerantJsonEndpoint with TolerantJsonApiSt
         (JsPath \ "versionNbr").read[ApiVersionNbr] // TODO - Future aim to be this field name
     ) and
       (JsPath \ "status").read[ApiStatus] and
-      ((JsPath \ "access").readNullable[ApiAccessType].map(_.getOrElse(ApiAccessType.PUBLIC))) and
+      ((JsPath \ "access").readNullable[ApiAccessType].map(_.getOrElse(ApiAccessType.Public))) and
       (JsPath \ "endpoints").read[List[Endpoint]] and
       ((JsPath \ "endpointsEnabled").readNullable[Boolean].map(_.getOrElse(true))) and
       (JsPath \ "awsRequestId").readNullable[String] and
-      ((JsPath \ "versionSource").readNullable[ApiVersionSource].map(_.getOrElse(ApiVersionSource.UNKNOWN)))
-  )(ApiVersion.apply _)
+      ((JsPath \ "versionSource").readNullable[ApiVersionSource].map(_.getOrElse(ApiVersionSource.Unknown)))
+  )(ApiVersion.apply)
 
   private val writesApiVersion: OWrites[ApiVersion] = (
     (JsPath \ "version").write[ApiVersionNbr] and // TODO - change to versionNbr once all readers are safe
@@ -44,9 +44,9 @@ trait TolerantJsonApiVersion extends TolerantJsonEndpoint with TolerantJsonApiSt
       (JsPath \ "endpointsEnabled").write[Boolean] and
       (JsPath \ "awsRequestId").writeNullable[String] and
       (JsPath \ "versionSource").write[ApiVersionSource]
-  )(unlift(ApiVersion.unapply))
+  )(v => (v.versionNbr, v.status, v.access, v.endpoints, v.endpointsEnabled, v.awsRequestId, v.versionSource))
 
-  implicit val tolerantFormatApiVersion: OFormat[ApiVersion] = OFormat[ApiVersion](readsApiVersion, writesApiVersion)
+  given OFormat[ApiVersion] = OFormat[ApiVersion](readsApiVersion, writesApiVersion)
 }
 
 object TolerantJsonApiVersion extends TolerantJsonApiVersion

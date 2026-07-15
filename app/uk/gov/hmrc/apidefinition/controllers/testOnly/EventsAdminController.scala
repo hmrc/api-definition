@@ -20,9 +20,9 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 import scala.util.control.NonFatal
 
-import play.api.libs.json._
-import play.api.mvc._
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import play.api.libs.json.*
+import play.api.mvc.*
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.*
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import uk.gov.hmrc.apidefinition.controllers.error
@@ -34,10 +34,10 @@ import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
 class EventsAdminController @Inject() (
     apiDefinitionService: APIDefinitionService,
     cc: ControllerComponents
-  )(implicit val ec: ExecutionContext
+  )(using ExecutionContext
   ) extends BackendController(cc) with ApplicationLogger {
 
-  implicit val useTolerantReaders: Format[StoredApiDefinition] = TolerantJsonApiDefinition.tolerantFormatApiDefinition
+  given Format[StoredApiDefinition] = TolerantJsonApiDefinition.tolerantFormatApiDefinition
 
   private def recovery: PartialFunction[Throwable, Result] = {
     case NonFatal(e) =>

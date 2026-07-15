@@ -18,24 +18,29 @@ package uk.gov.hmrc.apidefinition.connector
 
 import mockws.{MockWS, MockWSHelpers}
 import org.apache.pekko.stream.scaladsl.Source
+import org.apache.pekko.stream.testkit.NoMaterializer
 import org.apache.pekko.util.ByteString
 import org.scalatest.BeforeAndAfterAll
 
 import play.api.http.HttpEntity
-import play.api.http.Status._
+import play.api.http.Status.*
 import play.api.mvc.{ResponseHeader, Result, Results}
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiDefinition.ServiceBaseUrl
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiVersionNbr
 import uk.gov.hmrc.http.HeaderCarrier
 
 import uk.gov.hmrc.apidefinition.utils.{AsyncHmrcSpec, Utils}
 
-class ApiMicroserviceConnectorSpec extends AsyncHmrcSpec with Utils with MockWSHelpers with BeforeAndAfterAll {
+class ApiMicroserviceConnectorSpec extends AsyncHmrcSpec with MockWSHelpers with BeforeAndAfterAll {
 
   override def afterAll(): Unit = {
     shutdownHelpers()
   }
 
-  val serviceUrl = "http://localhost"
+  val utils = new Utils(using NoMaterializer) {}
+  import utils.*
+
+  val serviceUrl = ServiceBaseUrl("http://localhost")
 
   val serviceName         = "hello-world"
   val version             = ApiVersionNbr("1.0")
@@ -44,7 +49,7 @@ class ApiMicroserviceConnectorSpec extends AsyncHmrcSpec with Utils with MockWSH
   val resourceNotFoundUrl = s"$serviceUrl/api/conf/$version/resourceNotThere"
 
   val testFileName                  = "hello"
-  val source: Source[ByteString, _] = createSourceFrom(testFileName)
+  val source: Source[ByteString, ?] = createSourceFrom(testFileName)
   val sourceContents                = contentsFrom(testFileName)
 
   val mockWS = MockWS {
@@ -57,10 +62,8 @@ class ApiMicroserviceConnectorSpec extends AsyncHmrcSpec with Utils with MockWSH
   }
 
   trait Setup {
-    import scala.concurrent.ExecutionContext.Implicits.global
-
-    implicit val hc: HeaderCarrier = HeaderCarrier()
-    val underTest                  = new ApiMicroserviceConnector(mockWS)
+    given HeaderCarrier = HeaderCarrier()
+    val underTest       = new ApiMicroserviceConnector(mockWS)
   }
 
   "fetchApiDocumentationResourceByUrl" should {

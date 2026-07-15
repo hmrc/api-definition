@@ -19,11 +19,11 @@ package uk.gov.hmrc.apidefinition.utils
 import scala.collection.immutable.TreeMap
 import scala.language.postfixOps
 
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiContext
 
-import uk.gov.hmrc.apidefinition.models.AWSAPIDefinition._
-import uk.gov.hmrc.apidefinition.models._
+import uk.gov.hmrc.apidefinition.models.*
+import uk.gov.hmrc.apidefinition.models.AWSAPIDefinition.*
 
 object AWSPayloadHelper {
 
@@ -49,8 +49,8 @@ object AWSPayloadHelper {
     }
 
     def buildHttpVerbsDetails(resourceToEndpoints: Map[String, Seq[Endpoint]]): Map[String, Map[String, AWSHttpVerbDetails]] = {
-      resourceToEndpoints.view.mapValues { endpoints: Seq[Endpoint] =>
-        endpoints.map { e: Endpoint =>
+      resourceToEndpoints.view.mapValues { (endpoints: Seq[Endpoint]) =>
+        endpoints.map { (e: Endpoint) =>
           (e.method.toString.toLowerCase, buildAWSHttpVerbDetails(e))
         }.groupBy(_._1).view.mapValues(_.head._2).toMap
       } toMap
@@ -71,13 +71,13 @@ object AWSPayloadHelper {
 
   def buildAWSPathParameters(endpoint: Endpoint): Seq[AWSPathParameter] = {
     RegexHelper.extractPathParameters(endpoint.uriPattern).map {
-      param: String => AWSPathParameter(name = param)
+      (param: String) => AWSPathParameter(name = param)
     }
   }
 
   def buildAWSQueryParameters(endpoint: Endpoint): Seq[AWSQueryParameter] = {
     endpoint.queryParameters.map {
-      p: QueryParameter => AWSQueryParameter(name = p.name, required = p.required)
+      (p: QueryParameter) => AWSQueryParameter(name = p.name, required = p.required)
     }.sortBy(_.name)
   }
 }

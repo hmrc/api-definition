@@ -30,7 +30,7 @@ import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 class ApiRemoverSpec extends AsyncHmrcSpec {
 
   trait Setup {
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+    given HeaderCarrier = HeaderCarrier()
 
     val mockLogger: Logger       = mock[Logger]
     val mockPublisherConnector   = mock[AWSAPIPublisherConnector]
@@ -43,15 +43,15 @@ class ApiRemoverSpec extends AsyncHmrcSpec {
   "deleteUnusedApis" should {
     "call AWSAPIPublisherConnector.deleteAPI for each unused API and log message on success" in new Setup {
       when(mockAppConfig.apisToRemove).thenReturn(List("api1", "api2", "api3"))
-      when(mockPublisherConnector.deleteAPI(*)(*)).thenReturn(successful("request ID"))
+      when(mockPublisherConnector.deleteAPI(*)(using *)).thenReturn(successful("request ID"))
 
       val result: Unit = await(underTest.deleteUnusedApis())
       result shouldBe ()
 
-      verify(mockPublisherConnector, times(3)).deleteAPI(*)(*)
-      verify(mockPublisherConnector).deleteAPI("api1")(hc)
-      verify(mockPublisherConnector).deleteAPI("api2")(hc)
-      verify(mockPublisherConnector).deleteAPI("api3")(hc)
+      verify(mockPublisherConnector, times(3)).deleteAPI(*)(using *)
+      verify(mockPublisherConnector).deleteAPI(eqTo("api1"))(using *)
+      verify(mockPublisherConnector).deleteAPI(eqTo("api2"))(using *)
+      verify(mockPublisherConnector).deleteAPI(eqTo("api3"))(using *)
       verifyNoMoreInteractions(mockPublisherConnector)
 
       verify(mockLogger).info(s"Attempting to delete 3 unused APIs.")
@@ -66,15 +66,15 @@ class ApiRemoverSpec extends AsyncHmrcSpec {
       val error = UpstreamErrorResponse.apply("error1", 500, 1)
 
       when(mockAppConfig.apisToRemove).thenReturn(List("api1", "api2", "api3"))
-      when(mockPublisherConnector.deleteAPI(*)(*)).thenReturn(failed(error))
+      when(mockPublisherConnector.deleteAPI(*)(using *)).thenReturn(failed(error))
 
       val result: Unit = await(underTest.deleteUnusedApis())
       result shouldBe ()
 
-      verify(mockPublisherConnector).deleteAPI("api1")(hc)
-      verify(mockPublisherConnector).deleteAPI("api2")(hc)
-      verify(mockPublisherConnector).deleteAPI("api3")(hc)
-      verify(mockPublisherConnector, times(3)).deleteAPI(*)(*)
+      verify(mockPublisherConnector).deleteAPI(eqTo("api1"))(using *)
+      verify(mockPublisherConnector).deleteAPI(eqTo("api2"))(using *)
+      verify(mockPublisherConnector).deleteAPI(eqTo("api3"))(using *)
+      verify(mockPublisherConnector, times(3)).deleteAPI(*)(using *)
       verifyNoMoreInteractions(mockPublisherConnector)
 
       verify(mockLogger).info(s"Attempting to delete 3 unused APIs.")
@@ -87,14 +87,14 @@ class ApiRemoverSpec extends AsyncHmrcSpec {
     "do nothing when the list of APIs to remove is empty" in new Setup {
       when(mockAppConfig.apisToRemove).thenReturn(List())
 
-      underTest.deleteUnusedApis()
+      await(underTest.deleteUnusedApis())
 
       verifyZeroInteractions(mockPublisherConnector)
     }
 
     "log the number of APIs to be removed" in new Setup {
       when(mockAppConfig.apisToRemove).thenReturn(List("1", "2", "3", "4"))
-      when(mockPublisherConnector.deleteAPI(*)(*)).thenReturn(successful(""))
+      when(mockPublisherConnector.deleteAPI(*)(using *)).thenReturn(successful(""))
 
       underTest.deleteUnusedApis()
 

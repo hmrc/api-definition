@@ -18,12 +18,13 @@ package uk.gov.hmrc.apidefinition.validators
 
 import org.scalactic.source.Position
 
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{AuthType, Endpoint, HttpMethod, QueryParameter, ResourceThrottlingTier}
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.Endpoint.UriPattern
 
 class ApiEndpointValidatorSpec extends AbstractValidatorSpec {
   "ApiEndpointValidator" when {
     "validateEndpointName" should {
-      def validates(name: String)(implicit pos: Position): Unit                 = super.validates(ApiEndpointValidator.validateEndpointName(name))
+      def validates(name: String): Unit                                         = super.validates(ApiEndpointValidator.validateEndpointName(name))
       def failsToValidateWithNoName(name: String)(implicit pos: Position): Unit =
         failsToValidate(ApiEndpointValidator.validateEndpointName(name))("Field 'endpoints.endpointName' is required")
 
@@ -45,11 +46,11 @@ class ApiEndpointValidatorSpec extends AbstractValidatorSpec {
     }
 
     "validateUriPattern" should {
-      def validates(value: String, clue: Option[String] = Some(s"should validate $value"))(implicit pos: Position): Unit =
+      def validates(value: String, clue: Option[String] = Some(s"should validate $value")): Unit         =
         super.validates(ApiEndpointValidator.validateUriPattern(value), clue = clue)
-      def failsToValidateWithEmptyValue(value: String)(implicit pos: Position): Unit                                     =
+      def failsToValidateWithEmptyValue(value: String)(implicit pos: Position): Unit                     =
         failsToValidate(ApiEndpointValidator.validateUriPattern(value))("Field 'endpoints.uriPattern' is required")
-      def failsToValidateWithBadValue(value: String, clue: Option[String])(implicit pos: Position): Unit                 = failsToValidate(
+      def failsToValidateWithBadValue(value: String, clue: Option[String])(implicit pos: Position): Unit = failsToValidate(
         ApiEndpointValidator.validateUriPattern(value),
         clue = clue
       )(s"Field 'endpoints.uriPattern' with value '$value' should match regular expression")
@@ -70,9 +71,10 @@ class ApiEndpointValidatorSpec extends AbstractValidatorSpec {
           '<', '>', '"', '?', '!', ',', '.', ':', '&', '[', ']', '(', ')'
         )
 
-        specialChars.foreach { char: Char =>
-          val endpointUri = s"/payments/${char}account"
-          failsToValidateWithBadValue(endpointUri, clue = Some(s"Invalid char '$char' should not be allowed"))
+        specialChars.foreach {
+          (char: Char) =>
+            val endpointUri = s"/payments/${char}account"
+            failsToValidateWithBadValue(endpointUri, clue = Some(s"Invalid char '$char' should not be allowed"))
         }
       }
 
@@ -135,7 +137,7 @@ class ApiEndpointValidatorSpec extends AbstractValidatorSpec {
     }
 
     "validatePathParameters" should {
-      def validates(uriPattern: String)(implicit pos: Position): Unit                                              =
+      def validates(uriPattern: String): Unit                                                                      =
         super.validates(ApiEndpointValidator.validatePathParameters(uriPattern), clue = Some(s"Valid uri pattern of $uriPattern"))
       def failsToValidate(uriPattern: String, numberOfErrors: Int = 1, clue: String)(implicit pos: Position): Unit =
         super.failsToValidate(ApiEndpointValidator.validatePathParameters(uriPattern), numberOfErrors, Some(clue))() // TODO Check message?
@@ -162,7 +164,7 @@ class ApiEndpointValidatorSpec extends AbstractValidatorSpec {
     }
 
     "validateUniqueParameterNames" should {
-      def validates(uriPattern: String, queryParameters: List[QueryParameter])(implicit pos: Position): Unit                     =
+      def validates(uriPattern: String, queryParameters: List[QueryParameter]): Unit                                             =
         super.validates(ApiEndpointValidator.validateUniqueParameterNames(uriPattern, queryParameters), clue = Some(s"Valid uri pattern of $uriPattern"))
       def failsToValidate(uriPattern: String, queryParameters: List[QueryParameter], clue: String)(implicit pos: Position): Unit =
         super.failsToValidate(ApiEndpointValidator.validateUniqueParameterNames(uriPattern, queryParameters), clue = Some(clue))()
@@ -182,18 +184,18 @@ class ApiEndpointValidatorSpec extends AbstractValidatorSpec {
     }
 
     "validate" should {
-      def validates(endpoint: Endpoint)(implicit pos: Position): Unit = super.validates(ApiEndpointValidator.validate(endpoint))
+      def validates(endpoint: Endpoint): Unit = super.validates(ApiEndpointValidator.validate(endpoint))
 
       "collect all errors when failing" in {
         failsToValidate(
           ApiEndpointValidator.validate(
             Endpoint(
-              uriPattern = "/bad.pattern/{paramA}/abc",
-              endpointName = " ",
-              method = HttpMethod.GET,
-              authType = AuthType.USER,
+              uriPattern = UriPattern("/bad.pattern/{paramA}/abc"),
+              endpointName = Endpoint.Name(" "),
+              method = HttpMethod.Get,
+              authType = AuthType.User,
               scope = None,
-              throttlingTier = ResourceThrottlingTier.UNLIMITED,
+              throttlingTier = ResourceThrottlingTier.Unlimited,
               queryParameters = List(
                 "paramA",
                 " ",
@@ -209,12 +211,12 @@ class ApiEndpointValidatorSpec extends AbstractValidatorSpec {
       "succeed with a good USER endpoint" in {
         validates(
           Endpoint(
-            uriPattern = "/.goodpattern/{paramA}/abc",
-            endpointName = "fred",
-            method = HttpMethod.GET,
-            authType = AuthType.USER,
-            scope = Some("xyz"),
-            throttlingTier = ResourceThrottlingTier.UNLIMITED,
+            uriPattern = UriPattern("/.goodpattern/{paramA}/abc"),
+            endpointName = Endpoint.Name("fred"),
+            method = HttpMethod.Get,
+            authType = AuthType.User,
+            scope = Some(Scope("xyz")),
+            throttlingTier = ResourceThrottlingTier.Unlimited,
             queryParameters = List(
               "param1",
               "param2",
@@ -227,12 +229,12 @@ class ApiEndpointValidatorSpec extends AbstractValidatorSpec {
       "succeed with a good APP endpoint without a scope" in {
         validates(
           Endpoint(
-            uriPattern = "/.goodpattern/{paramA}/abc",
-            endpointName = "fred",
-            method = HttpMethod.GET,
-            authType = AuthType.APPLICATION,
+            uriPattern = UriPattern("/.goodpattern/{paramA}/abc"),
+            endpointName = Endpoint.Name("fred"),
+            method = HttpMethod.Get,
+            authType = AuthType.Application,
             scope = None,
-            throttlingTier = ResourceThrottlingTier.UNLIMITED,
+            throttlingTier = ResourceThrottlingTier.Unlimited,
             queryParameters = List(
               "param1",
               "param2",
@@ -245,12 +247,12 @@ class ApiEndpointValidatorSpec extends AbstractValidatorSpec {
       "succeed with a good APP endpoint with a scope" in {
         validates(
           Endpoint(
-            uriPattern = "/.goodpattern/{paramA}/abc",
-            endpointName = "fred",
-            method = HttpMethod.GET,
-            authType = AuthType.APPLICATION,
-            scope = Some("xyz"),
-            throttlingTier = ResourceThrottlingTier.UNLIMITED,
+            uriPattern = UriPattern("/.goodpattern/{paramA}/abc"),
+            endpointName = Endpoint.Name("fred"),
+            method = HttpMethod.Get,
+            authType = AuthType.Application,
+            scope = Some(Scope("xyz")),
+            throttlingTier = ResourceThrottlingTier.Unlimited,
             queryParameters = List(
               "param1",
               "param2",

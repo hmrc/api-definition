@@ -17,7 +17,7 @@
 package uk.gov.hmrc.apidefinition.utils
 
 import java.nio.file.Paths
-import scala.concurrent.duration.{FiniteDuration, _}
+import scala.concurrent.duration.{FiniteDuration, *}
 import scala.concurrent.{Await, Future}
 import scala.language.postfixOps
 
@@ -27,9 +27,7 @@ import org.apache.pekko.util.ByteString
 
 import play.api.libs.ws.WSResponse
 
-trait Utils {
-
-  implicit val materializer: Materializer
+trait Utils(using Materializer) {
 
   private val defaultTimeout: FiniteDuration = 5 seconds
 
@@ -48,11 +46,10 @@ trait Utils {
     contentsFrom(response.body)
   }
 
-  def contentsFrom(source: Source[ByteString, _]): String = {
+  def contentsFrom(source: Source[ByteString, ?]): String = {
     val sink = Sink.fold[String, ByteString]("") { (content, bytes) =>
       content + bytes.utf8String
     }
     Await.result(source.runWith(sink), defaultTimeout)
   }
-
 }

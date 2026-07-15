@@ -19,14 +19,15 @@ package uk.gov.hmrc.apidefinition.validators
 import org.scalactic.source.Position
 import org.scalatest.prop.TableDrivenPropertyChecks
 
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.Endpoint.UriPattern
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
 
 class ApiVersionValidatorSpec extends AbstractValidatorSpec with TableDrivenPropertyChecks {
   "ApiVersionValidator" when {
 
     "validateVersionNumber" should {
-      def validates(versionNbr: ApiVersionNbr)(implicit pos: Position): Unit =
+      def validates(versionNbr: ApiVersionNbr): Unit =
         super.validates(ApiVersionValidator.validateVersionNumber(versionNbr), clue = Some(versionNbr.value))
 
       def failsToValidateVersionNbr(versionNbr: ApiVersionNbr)(implicit pos: Position): Unit =
@@ -46,7 +47,7 @@ class ApiVersionValidatorSpec extends AbstractValidatorSpec with TableDrivenProp
     }
 
     "validateStatusAndEndpointsEnabled" should {
-      def validates(endpointsEnabled: Boolean, status: ApiStatus)(implicit pos: Position): Unit            = super.validates(
+      def validates(endpointsEnabled: Boolean, status: ApiStatus): Unit                                    = super.validates(
         ApiVersionValidator.validateStatusAndEndpointsEnabled(endpointsEnabled, status),
         clue = Some(s"""Should be invalid for a status of $status to be ${if (endpointsEnabled) "enabled" else "disabled"}""")
       )
@@ -56,16 +57,16 @@ class ApiVersionValidatorSpec extends AbstractValidatorSpec with TableDrivenProp
         )("Field 'versions.endpointsEnabled' must be false for ALPHA status")
 
       "succeed for alpha when disabled" in {
-        validates(false, ApiStatus.ALPHA)
+        validates(false, ApiStatus.Alpha)
       }
 
       "fail for alpha when enabled" in {
-        failsToValidateCombo(true, ApiStatus.ALPHA)
+        failsToValidateCombo(true, ApiStatus.Alpha)
       }
 
       "succeed for others when enabled" in {
         for {
-          status <- List(ApiStatus.BETA, ApiStatus.STABLE, ApiStatus.DEPRECATED, ApiStatus.RETIRED)
+          status <- List(ApiStatus.Beta, ApiStatus.Stable, ApiStatus.Deprecated, ApiStatus.Retired)
           bool   <- List(true, false)
           _       = validates(bool, status)
         } yield ()
@@ -75,21 +76,22 @@ class ApiVersionValidatorSpec extends AbstractValidatorSpec with TableDrivenProp
     "validateAllEndpoints" should {
       val goodEndpoint1 =
         Endpoint(
-          uriPattern = "/.goodpattern/{paramA}/abc",
-          endpointName = "fred",
-          method = HttpMethod.GET,
-          authType = AuthType.USER,
-          scope = Some("xyz"),
-          throttlingTier = ResourceThrottlingTier.UNLIMITED
+          uriPattern = UriPattern("/.goodpattern/{paramA}/abc"),
+          endpointName = Endpoint.Name("fred"),
+          method = HttpMethod.Get,
+          authType = AuthType.User,
+          scope = Some(Scope("xyz")),
+          throttlingTier = ResourceThrottlingTier.Unlimited,
+          Nil
         )
 
       val goodEndpoint2 = goodEndpoint1.copy(
-        uriPattern = "/abc/def",
-        endpointName = "bob"
+        uriPattern = UriPattern("/abc/def"),
+        endpointName = Endpoint.Name("bob")
       )
 
       val badEndpoint = goodEndpoint1.copy(
-        uriPattern = "/bad.pattern/{paramA}/abc"
+        uriPattern = UriPattern("/bad.pattern/{paramA}/abc")
       )
 
       "succeed" in {
@@ -108,7 +110,7 @@ class ApiVersionValidatorSpec extends AbstractValidatorSpec with TableDrivenProp
     }
 
     "validateUniqueEndpointPaths" should {
-      def validates(uris: String*)(implicit pos: Position): Unit = super.validates(ApiVersionValidator.validateUniqueEndpointPaths(uris.toList))
+      def validates(uris: String*): Unit = super.validates(ApiVersionValidator.validateUniqueEndpointPaths(uris.toList))
       "succeed when there is only one URI pattern" in {
         validates("/{alpha}")
       }
@@ -157,19 +159,22 @@ class ApiVersionValidatorSpec extends AbstractValidatorSpec with TableDrivenProp
         ApiVersionValidator.validate(
           ApiVersion(
             versionNbr = ApiVersionNbr(""),
-            status = ApiStatus.ALPHA,
-            access = ApiAccessType.PUBLIC,
+            status = ApiStatus.Alpha,
+            access = ApiAccessType.Public,
             endpoints = List(
               Endpoint(
-                uriPattern = "/bad.pattern/{paramA}/abc",
-                endpointName = "",
-                method = HttpMethod.GET,
-                authType = AuthType.APPLICATION
+                uriPattern = UriPattern("/bad.pattern/{paramA}/abc"),
+                endpointName = Endpoint.Name(""),
+                method = HttpMethod.Get,
+                authType = AuthType.Application,
+                ResourceThrottlingTier.Unlimited,
+                None,
+                Nil
               )
             ),
             endpointsEnabled = true,
             awsRequestId = None,
-            versionSource = ApiVersionSource.UNKNOWN
+            versionSource = ApiVersionSource.Unknown
           )
         ),
         numberOfErrors = 4
@@ -185,19 +190,22 @@ class ApiVersionValidatorSpec extends AbstractValidatorSpec with TableDrivenProp
       validates(ApiVersionValidator.validate(
         ApiVersion(
           versionNbr = ApiVersionNbr("1.0"),
-          status = ApiStatus.ALPHA,
-          access = ApiAccessType.PUBLIC,
+          status = ApiStatus.Alpha,
+          access = ApiAccessType.Public,
           endpoints = List(
             Endpoint(
-              uriPattern = "/.goodpattern/{paramA}/abc",
-              endpointName = "goodname",
-              method = HttpMethod.GET,
-              authType = AuthType.APPLICATION
+              uriPattern = UriPattern("/.goodpattern/{paramA}/abc"),
+              endpointName = Endpoint.Name("goodname"),
+              method = HttpMethod.Get,
+              authType = AuthType.Application,
+              ResourceThrottlingTier.Unlimited,
+              None,
+              Nil
             )
           ),
           endpointsEnabled = false,
           awsRequestId = None,
-          versionSource = ApiVersionSource.UNKNOWN
+          versionSource = ApiVersionSource.Unknown
         )
       ))
     }

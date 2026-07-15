@@ -16,22 +16,22 @@
 
 package uk.gov.hmrc.apidefinition.models
 
-import play.api.libs.json._
+import play.api.libs.json.*
 import uk.gov.hmrc.play.json.Union
 
 object JsonFormatters {
 
-  implicit val formatAWSQueryParameter: OFormat[AWSQueryParameter] = Json.format[AWSQueryParameter]
-  implicit val formatAWSPathParameter: OFormat[AWSPathParameter]   = Json.format[AWSPathParameter]
+  given OFormat[AWSQueryParameter] = Json.format[AWSQueryParameter]
+  given OFormat[AWSPathParameter]  = Json.format[AWSPathParameter]
 
-  implicit val formatAWSParameter: OFormat[AWSParameter] = Union.from[AWSParameter]("in")
+  given OFormat[AWSParameter] = Union.from[AWSParameter]("in")
     .and[AWSQueryParameter]("query")
     .and[AWSPathParameter]("path")
     .format
 
-  implicit val formatAWSResponse: Format[AWSResponse]               = Json.format[AWSResponse]
-  implicit val formatAWSHttpVerbDetails: Format[AWSHttpVerbDetails] = Json.format[AWSHttpVerbDetails]
-  implicit val formatAWSAPIInfo: Format[AWSAPIInfo]                 = Json.format[AWSAPIInfo]
-  implicit val formatAWSSwaggerDetails: Format[AWSSwaggerDetails]   = Json.format[AWSSwaggerDetails]
+  given Format[AWSResponse]        = Json.format[AWSResponse]
+  given Format[AWSHttpVerbDetails] = Json.format[AWSHttpVerbDetails]
+  given Format[AWSAPIInfo]         = Json.format[AWSAPIInfo]
+  given Format[AWSSwaggerDetails]  = Json.format[AWSSwaggerDetails]
 
 }

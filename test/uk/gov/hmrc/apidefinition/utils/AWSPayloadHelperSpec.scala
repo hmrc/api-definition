@@ -18,20 +18,21 @@ package uk.gov.hmrc.apidefinition.utils
 
 import scala.collection.immutable.List
 
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models._
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.*
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.Endpoint.*
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
 
-import uk.gov.hmrc.apidefinition.models._
-import uk.gov.hmrc.apidefinition.utils.AWSPayloadHelper._
+import uk.gov.hmrc.apidefinition.models.*
+import uk.gov.hmrc.apidefinition.utils.AWSPayloadHelper.*
 
 class AWSPayloadHelperSpec extends AsyncHmrcSpec {
 
   val endpoint: Endpoint = Endpoint(
-    uriPattern = "",
-    endpointName = "",
-    method = HttpMethod.GET,
-    authType = AuthType.NONE,
-    throttlingTier = ResourceThrottlingTier.UNLIMITED,
+    uriPattern = UriPattern(""),
+    endpointName = Name(""),
+    method = HttpMethod.Get,
+    authType = AuthType.None,
+    throttlingTier = ResourceThrottlingTier.Unlimited,
     scope = None,
     queryParameters = List()
   )
@@ -47,19 +48,19 @@ class AWSPayloadHelperSpec extends AsyncHmrcSpec {
   "buildAWSSwaggerDetails" should {
 
     val populatedEndpoint = Endpoint(
-      uriPattern = "/friend",
-      endpointName = "welcome my friend",
-      method = HttpMethod.GET,
-      authType = AuthType.USER,
-      throttlingTier = ResourceThrottlingTier.UNLIMITED,
-      scope = Some("read:user"),
+      uriPattern = UriPattern("/friend"),
+      endpointName = Name("welcome my friend"),
+      method = HttpMethod.Get,
+      authType = AuthType.User,
+      throttlingTier = ResourceThrottlingTier.Unlimited,
+      scope = Some(Scope("read:user")),
       queryParameters = List(QueryParameter(name = "surname", required = true))
     )
 
     val apiVersion = ApiVersion(
       versionNbr = ApiVersionNbr("1.0"),
-      status = ApiStatus.STABLE,
-      access = ApiAccessType.PUBLIC,
+      status = ApiStatus.Stable,
+      access = ApiAccessType.Public,
       endpoints = List(populatedEndpoint),
       endpointsEnabled = true,
       awsRequestId = None,
@@ -89,7 +90,7 @@ class AWSPayloadHelperSpec extends AsyncHmrcSpec {
 
     "correctly construct an AWSSwaggerDetails  Application Auth Type object" in {
 
-      val populatedEndpointApp = populatedEndpoint.copy(authType = AuthType.APPLICATION)
+      val populatedEndpointApp = populatedEndpoint.copy(authType = AuthType.Application)
       val updatedApiVersion    = apiVersion.copy(endpoints = List(populatedEndpointApp))
 
       val constructedSwaggerDetails: AWSSwaggerDetails = buildAWSSwaggerDetails("new-api", updatedApiVersion, ApiContext("foo/bar"), "https://test.mdtp")
@@ -114,10 +115,10 @@ class AWSPayloadHelperSpec extends AsyncHmrcSpec {
 
   "buildAWSPathParameters()" should {
 
-    val endpointWithPathParameters = endpoint.copy(uriPattern = "/hello/{surname}/{nickname}")
+    val endpointWithPathParameters = endpoint.copy(uriPattern = UriPattern("/hello/{surname}/{nickname}"))
 
     "return an empty sequence if there are no path parameters" in {
-      buildAWSPathParameters(endpoint.copy(uriPattern = "/hello/world")) shouldBe Seq()
+      buildAWSPathParameters(endpoint.copy(uriPattern = UriPattern("/hello/world"))) shouldBe Seq()
     }
 
     "return all path parameters sorted by segment precedence" in {
@@ -154,7 +155,7 @@ class AWSPayloadHelperSpec extends AsyncHmrcSpec {
     }
 
     "return path parameters first and then the query parameters sorted alphabetically" in {
-      val endpointWithManyParams = endpointWithQueryParameters.copy(uriPattern = "/hello/{surname}/{nickname}")
+      val endpointWithManyParams = endpointWithQueryParameters.copy(uriPattern = UriPattern("/hello/{surname}/{nickname}"))
 
       val expectedParameters = Seq(
         AWSPathParameter(name = "surname"),

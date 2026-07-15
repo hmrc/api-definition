@@ -24,15 +24,15 @@ import scala.util.control.NonFatal
 import cats.data.NonEmptyList
 
 import play.api.http.HeaderNames
-import play.api.libs.json._
-import play.api.mvc._
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{StoredApiDefinition, _}
+import play.api.libs.json.*
+import play.api.mvc.*
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{StoredApiDefinition, *}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.ApiContext
 import uk.gov.hmrc.http.UnauthorizedException
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import uk.gov.hmrc.apidefinition.config.AppConfig
-import uk.gov.hmrc.apidefinition.models.ErrorCode._
+import uk.gov.hmrc.apidefinition.models.ErrorCode.*
 import uk.gov.hmrc.apidefinition.models.{DisplayApiEvent, ErrorCode, TolerantJsonApiDefinition, ValidationErrors}
 import uk.gov.hmrc.apidefinition.services.APIDefinitionService
 import uk.gov.hmrc.apidefinition.utils.ApplicationLogger
@@ -42,15 +42,15 @@ class APIDefinitionController @Inject() (
     apiDefinitionService: APIDefinitionService,
     appContext: AppConfig,
     cc: ControllerComponents
-  )(implicit val ec: ExecutionContext
+  )(using ExecutionContext
   ) extends BackendController(cc) with ApplicationLogger {
 
-  implicit val useTolerantReaders: Format[StoredApiDefinition] = TolerantJsonApiDefinition.tolerantFormatApiDefinition
+  given Format[StoredApiDefinition] = TolerantJsonApiDefinition.tolerantFormatApiDefinition
 
   val fetchByContextTtlInSeconds: String = appContext.fetchByContextTtlInSeconds
 
   def createOrUpdate(): Action[JsValue] = Action.async(parse.json) { implicit request =>
-    implicit val useTolerantReaders = TolerantJsonApiDefinition.tolerantFormatApiDefinition
+    given OFormat[StoredApiDefinition] = TolerantJsonApiDefinition.tolerantFormatApiDefinition
 
     handleRequest[StoredApiDefinition](request) { requestBody =>
       val asFailureResult: (NonEmptyList[String]) => Result = (in) => UnprocessableEntity(Json.toJson(ValidationErrors(INVALID_REQUEST_PAYLOAD, in.toList)))

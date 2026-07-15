@@ -57,10 +57,11 @@ trait ComponentSpec
   }
 
   def post(endpoint: String, body: String, headers: List[(String, String)]): WSResponse = {
+    import play.api.libs.ws.DefaultBodyWritables.writeableOf_String
     await(
       wsClient
         .url(s"http://localhost:$port$endpoint")
-        .withHttpHeaders(headers: _*)
+        .withHttpHeaders(headers*)
         .withFollowRedirects(false)
         .post(body)
     )

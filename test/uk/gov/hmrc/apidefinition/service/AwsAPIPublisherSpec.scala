@@ -19,36 +19,42 @@ package uk.gov.hmrc.apidefinition.service
 import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.{failed, successful}
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 import org.mockito.{ArgumentCaptor, ArgumentMatchers}
 
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiStatus, StoredApiDefinition, _}
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiDefinition.ServiceBaseUrl
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.Endpoint.UriPattern
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiStatus, StoredApiDefinition, *}
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
 import uk.gov.hmrc.http.{HeaderCarrier, InternalServerException}
 
 import uk.gov.hmrc.apidefinition.connector.AWSAPIPublisherConnector
-import uk.gov.hmrc.apidefinition.models._
+import uk.gov.hmrc.apidefinition.models.*
 import uk.gov.hmrc.apidefinition.repository.APIDefinitionRepository
 import uk.gov.hmrc.apidefinition.services.AwsApiPublisher
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 
 class AwsAPIPublisherSpec extends AsyncHmrcSpec {
 
-  private def anAPIVersion(version: String, status: ApiStatus = ApiStatus.BETA, queryParams: List[QueryParameter] = Nil) = ApiVersion(
+  private def anAPIVersion(version: String, status: ApiStatus = ApiStatus.Beta, queryParams: List[QueryParameter] = Nil) = ApiVersion(
     ApiVersionNbr(version),
     status,
-    ApiAccessType.PUBLIC,
+    ApiAccessType.Public,
     List(
       Endpoint(
-        "/today/{id}",
-        "Get Today's Date",
-        HttpMethod.GET,
-        AuthType.NONE,
-        ResourceThrottlingTier.UNLIMITED,
+        UriPattern("/today/{id}"),
+        Endpoint.Name("Get Today's Date"),
+        HttpMethod.Get,
+        AuthType.None,
+        ResourceThrottlingTier.Unlimited,
+        None,
         queryParameters = queryParams
       )
-    )
+    ),
+    true,
+    None,
+    ApiVersionSource.OAS
   )
 
   private val host = UUID.randomUUID().toString
@@ -61,19 +67,19 @@ class AwsAPIPublisherSpec extends AsyncHmrcSpec {
     ): StoredApiDefinition = {
     StoredApiDefinition(
       ServiceName(UUID.randomUUID().toString),
-      serviceBaseUrl,
-      name,
-      UUID.randomUUID().toString,
+      ServiceBaseUrl(serviceBaseUrl),
+      ApiDefinition.Name(name),
+      ApiDefinition.Description(UUID.randomUUID().toString),
       context,
       versions,
       false,
       None,
-      List(ApiCategory.OTHER)
+      List(ApiCategory.Other)
     )
   }
 
   private trait Setup {
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+    given HeaderCarrier = HeaderCarrier()
 
     val underTest = new AwsApiPublisher(mock[AWSAPIPublisherConnector], mock[APIDefinitionRepository])
     when(underTest.apiDefinitionRepository.fetchByServiceName(*[ServiceName])).thenReturn(successful(None))
@@ -82,14 +88,14 @@ class AwsAPIPublisherSpec extends AsyncHmrcSpec {
   "publishAll" should {
     "create or update all the APIs in AWS" in new Setup {
       val swaggerDetailsCaptor: ArgumentCaptor[AWSSwaggerDetails] = ArgumentCaptor.forClass(classOf[AWSSwaggerDetails])
-      when(underTest.awsAPIPublisherConnector.createOrUpdateAPI(*, swaggerDetailsCaptor.capture())(*))
+      when(underTest.awsAPIPublisherConnector.createOrUpdateAPI(*, swaggerDetailsCaptor.capture())(using *))
         .thenReturn(successful(UUID.randomUUID().toString))
       val apiDefinition1: StoredApiDefinition                     = aStoredApiDefinition("API 1")
       val apiDefinition2: StoredApiDefinition                     = aStoredApiDefinition("API 2")
 
       await(underTest.publishAll(List(apiDefinition1, apiDefinition2)))
 
-      verify(underTest.awsAPIPublisherConnector, times(2)).createOrUpdateAPI(*, *[AWSSwaggerDetails])(*)
+      verify(underTest.awsAPIPublisherConnector, times(2)).createOrUpdateAPI(*, *[AWSSwaggerDetails])(using *)
       val swaggerDetails: Seq[AWSSwaggerDetails] = swaggerDetailsCaptor.getAllValues.asScala.toSeq
       swaggerDetails.head.info.title shouldBe apiDefinition1.name
       swaggerDetails(1).info.title shouldBe apiDefinition2.name
@@ -99,14 +105,14 @@ class AwsAPIPublisherSpec extends AsyncHmrcSpec {
   "publish" should {
     "create or update the API in AWS" in new Setup {
       val swaggerDetailsCaptor: ArgumentCaptor[AWSSwaggerDetails] = ArgumentCaptor.forClass(classOf[AWSSwaggerDetails])
-      when(underTest.awsAPIPublisherConnector.createOrUpdateAPI(*, swaggerDetailsCaptor.capture())(*))
+      when(underTest.awsAPIPublisherConnector.createOrUpdateAPI(*, swaggerDetailsCaptor.capture())(using *))
         .thenReturn(successful(UUID.randomUUID().toString))
       val apiDefinition: StoredApiDefinition                      = aStoredApiDefinition()
 
       await(underTest.publish(apiDefinition))
 
       verify(underTest.awsAPIPublisherConnector)
-        .createOrUpdateAPI(ArgumentMatchers.eq(s"${apiDefinition.context}--2.0"), *)(*)
+        .createOrUpdateAPI(ArgumentMatchers.eq(s"${apiDefinition.context}--2.0"), *)(using *)
       val swaggerDetails: AWSSwaggerDetails = swaggerDetailsCaptor.getValue
       swaggerDetails.host shouldBe Some(host)
       swaggerDetails.info.title shouldBe apiDefinition.name
@@ -115,13 +121,13 @@ class AwsAPIPublisherSpec extends AsyncHmrcSpec {
 
     "create or update the API in AWS with path and query params" in new Setup {
       val swaggerDetailsCaptor: ArgumentCaptor[AWSSwaggerDetails] = ArgumentCaptor.forClass(classOf[AWSSwaggerDetails])
-      when(underTest.awsAPIPublisherConnector.createOrUpdateAPI(*, swaggerDetailsCaptor.capture())(*))
+      when(underTest.awsAPIPublisherConnector.createOrUpdateAPI(*, swaggerDetailsCaptor.capture())(using *))
         .thenReturn(successful(UUID.randomUUID().toString))
-      val apiDefinition: StoredApiDefinition                      = aStoredApiDefinition(versions = List(anAPIVersion("2.0", ApiStatus.STABLE, List(QueryParameter("flag", true)))))
+      val apiDefinition: StoredApiDefinition                      = aStoredApiDefinition(versions = List(anAPIVersion("2.0", ApiStatus.Stable, List(QueryParameter("flag", true)))))
 
       await(underTest.publish(apiDefinition))
 
-      verify(underTest.awsAPIPublisherConnector).createOrUpdateAPI(ArgumentMatchers.eq(s"${apiDefinition.context}--2.0"), *)(*)
+      verify(underTest.awsAPIPublisherConnector).createOrUpdateAPI(ArgumentMatchers.eq(s"${apiDefinition.context}--2.0"), *)(using *)
       val swaggerDetails: AWSSwaggerDetails = swaggerDetailsCaptor.getValue
       swaggerDetails.host shouldBe Some(host)
       swaggerDetails.info.title shouldBe apiDefinition.name
@@ -130,7 +136,7 @@ class AwsAPIPublisherSpec extends AsyncHmrcSpec {
 
     "populate correctly the host from service base URLs using HTTP" in new Setup {
       val swaggerDetailsCaptor: ArgumentCaptor[AWSSwaggerDetails] = ArgumentCaptor.forClass(classOf[AWSSwaggerDetails])
-      when(underTest.awsAPIPublisherConnector.createOrUpdateAPI(*, swaggerDetailsCaptor.capture())(*))
+      when(underTest.awsAPIPublisherConnector.createOrUpdateAPI(*, swaggerDetailsCaptor.capture())(using *))
         .thenReturn(successful(UUID.randomUUID().toString))
 
       await(underTest.publish(aStoredApiDefinition(serviceBaseUrl = s"http://$host")))
@@ -140,22 +146,22 @@ class AwsAPIPublisherSpec extends AsyncHmrcSpec {
     }
 
     "call delete endpoint for RETIRED versions" in new Setup {
-      val apiDefinition: StoredApiDefinition = aStoredApiDefinition(versions = List(anAPIVersion("1.0", ApiStatus.RETIRED), anAPIVersion("2.0")))
+      val apiDefinition: StoredApiDefinition = aStoredApiDefinition(versions = List(anAPIVersion("1.0", ApiStatus.Retired), anAPIVersion("2.0")))
 
-      when(underTest.awsAPIPublisherConnector.deleteAPI(*)(*))
+      when(underTest.awsAPIPublisherConnector.deleteAPI(*)(using *))
         .thenReturn(successful(UUID.randomUUID().toString))
-      when(underTest.awsAPIPublisherConnector.createOrUpdateAPI(*, *)(*))
+      when(underTest.awsAPIPublisherConnector.createOrUpdateAPI(*, *)(using *))
         .thenReturn(successful(UUID.randomUUID().toString))
 
       await(underTest.publish(apiDefinition))
 
-      verify(underTest.awsAPIPublisherConnector).deleteAPI(s"${apiDefinition.context}--1.0")(hc)
+      verify(underTest.awsAPIPublisherConnector).deleteAPI(s"${apiDefinition.context}--1.0")
       verify(underTest.awsAPIPublisherConnector)
-        .createOrUpdateAPI(ArgumentMatchers.eq(s"${apiDefinition.context}--2.0"), *)(*)
+        .createOrUpdateAPI(ArgumentMatchers.eq(s"${apiDefinition.context}--2.0"), *)(using *)
     }
 
     "throw InternalServerException if creation of API in AWS returns a failure response" in new Setup {
-      when(underTest.awsAPIPublisherConnector.createOrUpdateAPI(*, *)(*)).thenReturn(failed(new RuntimeException("bang")))
+      when(underTest.awsAPIPublisherConnector.createOrUpdateAPI(*, *)(using *)).thenReturn(failed(new RuntimeException("bang")))
       val apiDefinition: StoredApiDefinition = aStoredApiDefinition()
 
       intercept[InternalServerException] {
@@ -166,26 +172,26 @@ class AwsAPIPublisherSpec extends AsyncHmrcSpec {
 
   "delete" should {
     "delete the API in AWS" in new Setup {
-      when(underTest.awsAPIPublisherConnector.deleteAPI(*)(*)).thenReturn(successful(UUID.randomUUID().toString))
+      when(underTest.awsAPIPublisherConnector.deleteAPI(*)(using *)).thenReturn(successful(UUID.randomUUID().toString))
       val apiDefinition: StoredApiDefinition = aStoredApiDefinition()
 
       await(underTest.delete(apiDefinition))
 
-      verify(underTest.awsAPIPublisherConnector).deleteAPI(s"${apiDefinition.context}--2.0")(hc)
+      verify(underTest.awsAPIPublisherConnector).deleteAPI(s"${apiDefinition.context}--2.0")
     }
 
     "delete multiple versions of the API in AWS" in new Setup {
-      when(underTest.awsAPIPublisherConnector.deleteAPI(*)(*)).thenReturn(successful(UUID.randomUUID().toString))
+      when(underTest.awsAPIPublisherConnector.deleteAPI(*)(using *)).thenReturn(successful(UUID.randomUUID().toString))
       val apiDefinition: StoredApiDefinition = aStoredApiDefinition(versions = List(anAPIVersion("1.0"), anAPIVersion("2.0")))
 
       await(underTest.delete(apiDefinition))
 
-      verify(underTest.awsAPIPublisherConnector).deleteAPI(s"${apiDefinition.context}--1.0")(hc)
-      verify(underTest.awsAPIPublisherConnector).deleteAPI(s"${apiDefinition.context}--2.0")(hc)
+      verify(underTest.awsAPIPublisherConnector).deleteAPI(s"${apiDefinition.context}--1.0")
+      verify(underTest.awsAPIPublisherConnector).deleteAPI(s"${apiDefinition.context}--2.0")
     }
 
     "return unit if deletion fails" in new Setup {
-      when(underTest.awsAPIPublisherConnector.deleteAPI(*)(*)).thenReturn(failed(new RuntimeException()))
+      when(underTest.awsAPIPublisherConnector.deleteAPI(*)(using *)).thenReturn(failed(new RuntimeException()))
 
       val result: Unit = await(underTest.delete(aStoredApiDefinition()))
 

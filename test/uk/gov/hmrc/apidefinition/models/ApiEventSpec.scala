@@ -17,22 +17,23 @@
 package uk.gov.hmrc.apidefinition.models
 
 import play.api.libs.json.Json
+import play.api.libs.ws.JsonBodyWritables
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{ApiAccessType, ApiStatus, ServiceName}
-import uk.gov.hmrc.apiplatform.modules.common.domain.models._
+import uk.gov.hmrc.apiplatform.modules.common.domain.models.*
 import uk.gov.hmrc.apiplatform.modules.common.utils.{FixedClock, HmrcSpec}
 
-import uk.gov.hmrc.apidefinition.models.ApiEventFormatter._
+import uk.gov.hmrc.apidefinition.models.ApiEventFormatter.given
 
-class ApiEventSpec extends HmrcSpec with FixedClock {
+class ApiEventSpec extends HmrcSpec with FixedClock with JsonBodyWritables {
 
   val eventId        = ApiEventId.random
   val apiName        = "Api 123"
   val serviceName    = ServiceName("api-123")
-  val apiStatus      = ApiStatus.ALPHA
-  val otherApiStatus = ApiStatus.BETA
+  val apiStatus      = ApiStatus.Alpha
+  val otherApiStatus = ApiStatus.Beta
   val apiVersion     = ApiVersionNbr("1.0")
-  val apiAccess      = ApiAccessType.PUBLIC
-  val otherApiAccess = ApiAccessType.CONTROLLED
+  val apiAccess      = ApiAccessType.Public
+  val otherApiAccess = ApiAccessType.Controlled
 
   "ApiEvent" when {
     "ApiCreated" should {

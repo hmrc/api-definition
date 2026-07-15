@@ -16,28 +16,33 @@
 
 package uk.gov.hmrc.apidefinition.validators
 
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{Endpoint, StoredApiDefinition, _}
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiDefinition.ServiceBaseUrl
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.Endpoint.*
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{Endpoint, StoredApiDefinition, *}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApiContext, ApiVersionNbr}
 
 class ApiDefinitionValidatorSpec extends AbstractValidatorSpec {
 
   private val calendarVersion = ApiVersion(
     ApiVersionNbr("1.0"),
-    ApiStatus.BETA,
-    ApiAccessType.PUBLIC,
-    List(Endpoint("/today", "Get Today's Date", HttpMethod.GET, AuthType.NONE, ResourceThrottlingTier.UNLIMITED)),
-    endpointsEnabled = true
+    ApiStatus.Beta,
+    ApiAccessType.Public,
+    List(Endpoint(UriPattern("/today"), Endpoint.Name("Get Today's Date"), HttpMethod.Get, AuthType.None, ResourceThrottlingTier.Unlimited, None, Nil)),
+    endpointsEnabled = true,
+    None,
+    ApiVersionSource.OAS
   )
 
   private val calendarApi = StoredApiDefinition(
     ServiceName("calendar"),
-    "http://calendar",
-    "Calendar API",
-    "My Calendar API",
+    ApiDefinition.ServiceBaseUrl("http://calendar"),
+    ApiDefinition.Name("Calendar API"),
+    ApiDefinition.Description("My Calendar API"),
     ApiContext("individuals/calendar"),
     List(calendarVersion),
     false,
-    categories = List(ApiCategory.OTHER)
+    None,
+    List(ApiCategory.Other)
   )
 
   "ApiDefinitionValidator" when {
@@ -47,7 +52,7 @@ class ApiDefinitionValidatorSpec extends AbstractValidatorSpec {
       }
 
       "fail when the description is empty" in {
-        failsToValidate(ApiDefinitionValidator.validateOtherFields(calendarApi.copy(description = "")))("Field 'description' should not be empty")
+        failsToValidate(ApiDefinitionValidator.validateOtherFields(calendarApi.copy(description = ApiDefinition.Description(""))))("Field 'description' should not be empty")
       }
 
       "fail when the categories are empty" in {
@@ -68,7 +73,7 @@ class ApiDefinitionValidatorSpec extends AbstractValidatorSpec {
         failsToValidate(
           ApiDefinitionValidator.validateOtherFields(
             calendarApi.copy(
-              description = "  ",
+              description = ApiDefinition.Description("  "),
               categories = List.empty,
               versions = List.empty
             )
@@ -107,10 +112,10 @@ class ApiDefinitionValidatorSpec extends AbstractValidatorSpec {
         failsToValidate(ApiDefinitionValidator.validateKeysArePresent(calendarApi.copy(context = ApiContext(""))))("Field 'context' should not be empty")
       }
       "fail when the serviceBaseUrl is empty" in {
-        failsToValidate(ApiDefinitionValidator.validateKeysArePresent(calendarApi.copy(serviceBaseUrl = "")))("Field 'serviceBaseUrl' should not be empty")
+        failsToValidate(ApiDefinitionValidator.validateKeysArePresent(calendarApi.copy(serviceBaseUrl = ServiceBaseUrl(""))))("Field 'serviceBaseUrl' should not be empty")
       }
       "fail when the name is empty" in {
-        failsToValidate(ApiDefinitionValidator.validateKeysArePresent(calendarApi.copy(name = "")))("Field 'name' should not be empty")
+        failsToValidate(ApiDefinitionValidator.validateKeysArePresent(calendarApi.copy(name = ApiDefinition.Name(""))))("Field 'name' should not be empty")
       }
     }
 
@@ -118,8 +123,8 @@ class ApiDefinitionValidatorSpec extends AbstractValidatorSpec {
       "the API already exists" should {
         "collect multiple errors about changes" in {
           val previousContext        = ApiContext("individuals/almanac")
-          val previousServiceBaseUrl = "http://almanac"
-          val previousName           = "Almanac API"
+          val previousServiceBaseUrl = ServiceBaseUrl("http://almanac")
+          val previousName           = ApiDefinition.Name("Almanac API")
           val deletedVersionNbr      = ApiVersionNbr("2.0")
 
           List(false, true).foreach { skipContextValidation =>
