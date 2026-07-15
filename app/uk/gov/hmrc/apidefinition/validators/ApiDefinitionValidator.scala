@@ -45,6 +45,7 @@ object ApiDefinitionValidator extends Validator[StoredApiDefinition] {
     oExistingApiDefn.fold(
       validateNewAPI(skipContextValidation)(requestedDefn, byContext, byServiceBaseUrl, byName, otherContextsWithSameTopLevel)
     )(c => validateExistingAPI(skipContextValidation)(requestedDefn, c))
+      .andThen(validateOtherFields)
   }
 
   def validateOtherFields(requestedDefn: StoredApiDefinition): HMRCValidatedNel[StoredApiDefinition] = {
