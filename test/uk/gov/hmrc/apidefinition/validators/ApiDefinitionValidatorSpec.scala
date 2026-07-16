@@ -18,7 +18,7 @@ package uk.gov.hmrc.apidefinition.validators
 
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.ApiDefinition.ServiceBaseUrl
 import uk.gov.hmrc.apiplatform.modules.apis.domain.models.Endpoint.*
-import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{Endpoint, StoredApiDefinition, *}
+import uk.gov.hmrc.apiplatform.modules.apis.domain.models.{Endpoint, QueryParameter, StoredApiDefinition, *}
 import uk.gov.hmrc.apiplatform.modules.common.domain.models.{ApiContext, ApiVersionNbr}
 
 class ApiDefinitionValidatorSpec extends AbstractValidatorSpec {
@@ -101,6 +101,26 @@ class ApiDefinitionValidatorSpec extends AbstractValidatorSpec {
           "Version 1.0 - Field 'versions.endpoints' must not be empty",
           "Version 2.0 - Field 'versions.endpoints' must not be empty"
         )
+      }
+    }
+
+    "validate the whole stack" should {
+      "succeed for a good API definition" in {
+        validates(ApiDefinitionValidator.validate(calendarApi, None, None, None, None, Nil, false))
+      }
+
+      "fail when there is a problem at the bottom of the tree" in {
+        val brokenEndpoint = calendarVersion.endpoints.head.copy(
+          queryParameters = List(QueryParameter("goodname"), QueryParameter(""))
+        )
+        val brokenVersion  = calendarVersion.copy(
+          endpoints = List(brokenEndpoint)
+        )
+        val brokenApi      = calendarApi.copy(
+          versions = List(brokenVersion)
+        )
+
+        failsToValidate(ApiDefinitionValidator.validate(brokenApi, None, None, None, None, Nil, false))("Version 1.0 - Get Today's Date - Field 'queryParameters.name")
       }
     }
 
