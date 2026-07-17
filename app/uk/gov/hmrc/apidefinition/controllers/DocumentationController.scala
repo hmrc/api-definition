@@ -45,9 +45,9 @@ class DocumentationController @Inject() (service: DocumentationService, cc: Cont
   private def recovery: PartialFunction[Throwable, Result] = {
     case e: NotFoundException =>
       logger.info(s"Unable to fetch resource: ${e.getMessage}", e)
-      NotFound(error(ErrorCode.API_DEFINITION_NOT_FOUND, e.getMessage))
+      NotFound(error(ErrorCode.ApiDefinitionNotFound, e.getMessage))
     case NonFatal(e)          =>
       logger.error(s"An unexpected error occurred: ${e.getMessage}", e)
-      InternalServerError(error(ErrorCode.INTERNAL_SERVER_ERROR, e.getMessage))
+      InternalServerError(error(ErrorCode.InternalServerError, e.getMessage))
   }
 }

@@ -36,7 +36,7 @@ import uk.gov.hmrc.apidefinition.config.AppConfig
 import uk.gov.hmrc.apidefinition.mocks.{APIEventRepositoryMockModule, ApiDefinitionServiceMockModule}
 import uk.gov.hmrc.apidefinition.models.*
 import uk.gov.hmrc.apidefinition.models.ApiEvents.{ApiCreated, NewApiVersion}
-import uk.gov.hmrc.apidefinition.models.ErrorCode.{API_INVALID_JSON, INVALID_REQUEST_PAYLOAD}
+import uk.gov.hmrc.apidefinition.models.ErrorCode.{ApiInvalidJson, InvalidRequestPayload}
 import uk.gov.hmrc.apidefinition.utils.AsyncHmrcSpec
 
 class APIDefinitionControllerSpec
@@ -111,7 +111,7 @@ class APIDefinitionControllerSpec
 
       status(result) shouldBe UNPROCESSABLE_ENTITY
       val responseBody = contentAsJson(result).as[ErrorResponse]
-      responseBody.code shouldBe API_INVALID_JSON
+      responseBody.code shouldBe ApiInvalidJson
       responseBody.message shouldBe "Json cannot be converted to API Definition"
       verifyZeroInteractions(ApiDefinitionServiceMock.aMock)
     }
@@ -132,7 +132,7 @@ class APIDefinitionControllerSpec
       val result = underTest.createOrUpdate()(request.withBody(Json.parse(calendarApiDefinition)))
 
       status(result) shouldBe UNPROCESSABLE_ENTITY
-      contentAsJson(result).as[ValidationErrors] shouldBe ValidationErrors(INVALID_REQUEST_PAYLOAD, errorMessages.toList)
+      contentAsJson(result).as[ValidationErrors] shouldBe ValidationErrors(InvalidRequestPayload, errorMessages.toList)
     }
   }
 
@@ -348,7 +348,7 @@ class APIDefinitionControllerSpec
       status(result) shouldBe UNPROCESSABLE_ENTITY
       contentAsJson(result) shouldEqual Json.toJson(
         ErrorResponse(
-          ErrorCode.API_INVALID_JSON,
+          ErrorCode.ApiInvalidJson,
           "Json cannot be converted to API Definition",
           Some(List(
             FieldErrorDescription("/description", "element is missing")
@@ -364,7 +364,7 @@ class APIDefinitionControllerSpec
       private val result = underTest.validate()(request.withBody(Json.parse(calendarApiDefinition)))
 
       status(result) shouldBe UNPROCESSABLE_ENTITY
-      contentAsJson(result).as[ValidationErrors] shouldBe ValidationErrors(INVALID_REQUEST_PAYLOAD, errorMessages.toList)
+      contentAsJson(result).as[ValidationErrors] shouldBe ValidationErrors(InvalidRequestPayload, errorMessages.toList)
     }
   }
 

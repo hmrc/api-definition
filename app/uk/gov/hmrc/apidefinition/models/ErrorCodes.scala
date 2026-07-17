@@ -20,7 +20,7 @@ import play.api.libs.json.{Format, Json, OFormat}
 import uk.gov.hmrc.apiplatform.modules.common.domain.services.SimpleEnumJsonFormatting
 
 enum ErrorCode {
-  case INVALID_REQUEST_PAYLOAD, INTERNAL_SERVER_ERROR, API_DEFINITION_NOT_FOUND, API_INVALID_JSON, CONTEXT_ALREADY_DEFINED, UNSUPPORTED_ACCESS_TYPE
+  case InvalidRequestPayload, InternalServerError, ApiDefinitionNotFound, ApiInvalidJson, ContextAlreadyDefined, UnsupportedAccessType
 }
 
 object ErrorCode {
@@ -28,7 +28,7 @@ object ErrorCode {
 
   def unsafeApply(text: String): ErrorCode = apply(text).getOrElse(throw new RuntimeException(s"$text is not a valid Error Code"))
 
-  given Format[ErrorCode] = SimpleEnumJsonFormatting.createStringFormatFor[ErrorCode]("Error Code", apply)
+  given Format[ErrorCode] = SimpleEnumJsonFormatting.createEnumFormatFor[ErrorCode]("Error Code", apply)
 }
 
 case class ValidationErrors(code: ErrorCode, messages: Seq[String])
