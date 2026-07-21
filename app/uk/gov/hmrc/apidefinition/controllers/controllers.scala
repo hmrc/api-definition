@@ -32,7 +32,7 @@ package object controllers {
     try {
       Right(request.body.validate[T])
     } catch {
-      case e: Throwable => Left(UnprocessableEntity(error(ErrorCode.INVALID_REQUEST_PAYLOAD, e.getMessage)))
+      case e: Throwable => Left(UnprocessableEntity(error(ErrorCode.InvalidRequestPayload, e.getMessage)))
     }
   }
 
@@ -63,7 +63,7 @@ package object controllers {
           FieldErrorDescription(jsPath.toString, message)
       }
     }
-    toJson(ErrorResponse(ErrorCode.API_INVALID_JSON, "Json cannot be converted to API Definition", Some(errs)))
+    toJson(ErrorResponse(ErrorCode.ApiInvalidJson, "Json cannot be converted to API Definition", Some(errs)))
   }
 
   def error(code: ErrorCode, message: String): JsValue = {

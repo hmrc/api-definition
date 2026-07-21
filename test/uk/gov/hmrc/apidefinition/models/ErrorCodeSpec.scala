@@ -29,17 +29,17 @@ class ErrorCodeSpec extends BaseJsonFormattersSpec with TableDrivenPropertyCheck
     import ErrorCode.*
     val values =
       Table(
-        ("Type"),
-        (INVALID_REQUEST_PAYLOAD),
-        (INTERNAL_SERVER_ERROR),
-        (API_DEFINITION_NOT_FOUND),
-        (API_INVALID_JSON),
-        (CONTEXT_ALREADY_DEFINED),
-        (UNSUPPORTED_ACCESS_TYPE)
+        ("Type", "Json"),
+        (InvalidRequestPayload, "INVALID_REQUEST_PAYLOAD"),
+        (InternalServerError, "INTERNAL_SERVER_ERROR"),
+        (ApiDefinitionNotFound, "API_DEFINITION_NOT_FOUND"),
+        (ApiInvalidJson, "API_INVALID_JSON"),
+        (ContextAlreadyDefined, "CONTEXT_ALREADY_DEFINED"),
+        (UnsupportedAccessType, "UNSUPPORTED_ACCESS_TYPE")
       )
 
     "convert lower case string to case object" in {
-      forAll(values) { (s) =>
+      forAll(values) { (s, _) =>
         ErrorCode.apply(s.toString().toLowerCase()) shouldBe Some(s)
         ErrorCode.unsafeApply(s.toString().toLowerCase()) shouldBe s
       }
@@ -57,21 +57,20 @@ class ErrorCodeSpec extends BaseJsonFormattersSpec with TableDrivenPropertyCheck
     }
 
     "read from Json" in {
-      forAll(values) { (s) =>
-        val t = s.toString()
-        testFromJson[ErrorCode](s""""$t"""")(s)
+      forAll(values) { (s, j) =>
+        testFromJson[ErrorCode](s""""$j"""")(s)
       }
     }
 
     "read with error from Json" in {
       intercept[Exception] {
-        testFromJson[ErrorCode](s"""123""")(ErrorCode.API_DEFINITION_NOT_FOUND)
+        testFromJson[ErrorCode](s"""123""")(ErrorCode.ApiDefinitionNotFound)
       }.getMessage() should include("Cannot parse Error Code from '123'")
     }
 
     "write to Json" in {
-      forAll(values) { (s) =>
-        Json.toJson[ErrorCode](s) shouldBe JsString(s.toString())
+      forAll(values) { (s, t) =>
+        Json.toJson[ErrorCode](s) shouldBe JsString(t)
       }
     }
   }

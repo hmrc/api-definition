@@ -53,7 +53,7 @@ class APIDefinitionController @Inject() (
     given OFormat[StoredApiDefinition] = TolerantJsonApiDefinition.tolerantFormatApiDefinition
 
     handleRequest[StoredApiDefinition](request) { requestBody =>
-      val asFailureResult: (NonEmptyList[String]) => Result = (in) => UnprocessableEntity(Json.toJson(ValidationErrors(INVALID_REQUEST_PAYLOAD, in.toList)))
+      val asFailureResult: (NonEmptyList[String]) => Result = (in) => UnprocessableEntity(Json.toJson(ValidationErrors(InvalidRequestPayload, in.toList)))
 
       val asValidRequest: (StoredApiDefinition) => Future[Result] = (api) => apiDefinitionService.createOrUpdate(api).map(_ => NoContent)
 
@@ -77,18 +77,18 @@ class APIDefinitionController @Inject() (
   def fetch(serviceName: ServiceName): Action[AnyContent] = Action.async { _ =>
     apiDefinitionService.fetchByServiceName(serviceName) map {
       case Some(apiDefinition) => Ok(Json.toJson(apiDefinition))
-      case _                   => NotFound(error(API_DEFINITION_NOT_FOUND, "No API Definition was found"))
+      case _                   => NotFound(error(ApiDefinitionNotFound, "No API Definition was found"))
     } recover recovery
   }
 
   private def recovery: PartialFunction[Throwable, Result] = {
     case NonFatal(e) =>
       logger.error(s"An unexpected error occurred: ${e.getMessage}", e)
-      InternalServerError(error(ErrorCode.INTERNAL_SERVER_ERROR, e.getMessage))
+      InternalServerError(error(ErrorCode.InternalServerError, e.getMessage))
   }
 
   def validate: Action[JsValue] = Action.async(parse.json) { implicit request =>
-    val asFailureResult: (NonEmptyList[String]) => Result = (in) => UnprocessableEntity(Json.toJson(ValidationErrors(INVALID_REQUEST_PAYLOAD, in.toList)))
+    val asFailureResult: (NonEmptyList[String]) => Result = (in) => UnprocessableEntity(Json.toJson(ValidationErrors(InvalidRequestPayload, in.toList)))
 
     val asSuccessResult: (StoredApiDefinition) => Result = (api) => Accepted(Json.toJson(api))
 
@@ -155,7 +155,7 @@ class APIDefinitionController @Inject() (
     apiDefinitionService
       .fetchByContext(context).map {
         case Some(api) => Ok(Json.toJson(api)).withHeaders(HeaderNames.CACHE_CONTROL -> s"max-age=$fetchByContextTtlInSeconds")
-        case _         => NotFound(error(API_DEFINITION_NOT_FOUND, "No API Definition was found"))
+        case _         => NotFound(error(ApiDefinitionNotFound, "No API Definition was found"))
       } recover recovery
   }
 
@@ -164,7 +164,7 @@ class APIDefinitionController @Inject() (
       case "public"  => fetchAllPublicAPIs(alsoIncludeControlledApis)
       case "private" => fetchAllNonPublicAPIs()
       case "all"     => fetchAll
-      case _         => Future(BadRequest(error(UNSUPPORTED_ACCESS_TYPE, s"$typeParam is not a supported access type")))
+      case _         => Future(BadRequest(error(UnsupportedAccessType, s"$typeParam is not a supported access type")))
     }
   }
 }

@@ -42,7 +42,7 @@ class EventsAdminController @Inject() (
   private def recovery: PartialFunction[Throwable, Result] = {
     case NonFatal(e) =>
       logger.error(s"An unexpected error occurred: ${e.getMessage}", e)
-      InternalServerError(error(ErrorCode.INTERNAL_SERVER_ERROR, e.getMessage))
+      InternalServerError(error(ErrorCode.InternalServerError, e.getMessage))
   }
 
   def deleteEvents(serviceName: ServiceName): Action[AnyContent] = Action.async { _ =>
