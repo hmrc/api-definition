@@ -149,7 +149,6 @@ class APIDefinitionControllerSpec
           ApiStatus.Beta,
           ApiAccessType.Public,
           List(Endpoint(UriPattern("/today"), Name("Get Today's Date"), HttpMethod.Get, AuthType.None, ResourceThrottlingTier.Unlimited, None, List.empty)),
-          true,
           None,
           ApiVersionSource.OAS
         )),
@@ -567,8 +566,7 @@ class APIDefinitionControllerSpec
       |      "authType": "NONE",
       |      "throttlingTier": "UNLIMITED"
       |    }
-      |    ],
-      |    "endpointsEnabled": true
+      |    ]
       |  }
       |  ]
       |}""".stripMargin.replaceAll("\n", " ")
@@ -591,8 +589,7 @@ class APIDefinitionControllerSpec
       |      "authType": "NONE",
       |      "throttlingTier": "UNLIMITED"
       |    }
-      |    ],
-      |    "endpointsEnabled": true
+      |    ]
       |  }
       |  ]
       |}""".stripMargin.replaceAll("\n", " ")

@@ -52,8 +52,8 @@ class AwsApiPublisher @Inject() (val awsAPIPublisherConnector: AWSAPIPublisherCo
         val apiName = awsApiGatewayName(apiVersion.versionNbr, apiDefinition)
 
         apiVersion.status match {
-          case ApiStatus.Retired => deleteAPIVersion(apiName)
-          case _                 => publishAPIVersion(apiName, apiDefinition.name, apiDefinition.serviceBaseUrl, apiDefinition.context, apiVersion)
+          case ApiStatus.Alpha | ApiStatus.Retired => deleteAPIVersion(apiName)
+          case _                                   => publishAPIVersion(apiName, apiDefinition.name, apiDefinition.serviceBaseUrl, apiDefinition.context, apiVersion)
         }
       }
     } map { _ =>

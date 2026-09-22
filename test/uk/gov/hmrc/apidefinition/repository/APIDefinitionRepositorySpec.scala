@@ -60,7 +60,6 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
     status = ApiStatus.Beta,
     access = ApiAccessType.Public,
     endpoints = List(Endpoint(UriPattern("/world"), Name("Say Hello to the World!"), HttpMethod.Get, AuthType.None, ResourceThrottlingTier.Unlimited, None, List.empty)),
-    true,
     None,
     ApiVersionSource.Unknown
   )
@@ -70,7 +69,6 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
     status = ApiStatus.Stable,
     access = ApiAccessType.Public,
     endpoints = List(Endpoint(UriPattern("/date"), Name("Check current date"), HttpMethod.Get, AuthType.None, ResourceThrottlingTier.Unlimited, None, List.empty)),
-    true,
     None,
     ApiVersionSource.OAS
   )
@@ -104,7 +102,6 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
     status = ApiStatus.Stable,
     access = ApiAccessType.Public,
     endpoints = List(Endpoint(UriPattern("/submit"), Name("Submit Income Tax Return"), HttpMethod.Post, AuthType.User, ResourceThrottlingTier.Unlimited, None, List.empty)),
-    true,
     None,
     ApiVersionSource.OAS
   )
@@ -126,7 +123,6 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
     status = ApiStatus.Stable,
     access = ApiAccessType.Public,
     endpoints = List(Endpoint(UriPattern("/submit"), Name("Submit National Insurance"), HttpMethod.Post, AuthType.User, ResourceThrottlingTier.Unlimited, None, List.empty)),
-    endpointsEnabled = true,
     awsRequestId = None,
     versionSource = ApiVersionSource.Unknown
   )
@@ -443,7 +439,6 @@ class APIDefinitionRepositorySpec extends AsyncHmrcSpec
 
       records.head.versions.head.access shouldBe ApiAccessType.Public
       records.head.versions.head.awsRequestId shouldBe None
-      records.head.versions.head.endpointsEnabled shouldBe true
       records.head.versions.head.versionSource shouldBe ApiVersionSource.Unknown
 
       records.head.versions.head.endpoints.head.queryParameters shouldBe List.empty

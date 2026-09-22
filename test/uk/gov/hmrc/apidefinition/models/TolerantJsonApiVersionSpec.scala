@@ -38,7 +38,7 @@ class TolerantJsonApiVersionSpec extends BaseJsonFormattersSpec {
 
   val endpoints = List(Endpoint(UriPattern("/today"), Name("Get Today's Date"), HttpMethod.Get, AuthType.None, ResourceThrottlingTier.Unlimited, None, List.empty))
 
-  val baseApiVersion = ApiVersion(ApiVersionNbr("1.0"), ApiStatus.Stable, ApiAccessType.Public, endpoints, true, None, ApiVersionSource.OAS)
+  val baseApiVersion = ApiVersion(ApiVersionNbr("1.0"), ApiStatus.Stable, ApiAccessType.Public, endpoints, None, ApiVersionSource.OAS)
 
   "TolerantJsonApiVersion" should {
 
@@ -48,7 +48,6 @@ class TolerantJsonApiVersionSpec extends BaseJsonFormattersSpec {
                     |    "status" : "STABLE",
                     |    "acccess" : "PUBLIC",
                     |    ${endpointsText},
-                    |    "endpointsEnabled": true,
                     |    "awsRequestId": "12345",
                     |    "versionSource": "OAS"
                     |}""".stripMargin
@@ -62,7 +61,6 @@ class TolerantJsonApiVersionSpec extends BaseJsonFormattersSpec {
                     |    "status" : "STABLE",
                     |    "acccess" : "PUBLIC",
                     |    ${endpointsText},
-                    |    "endpointsEnabled": true,
                     |    "awsRequestId": "12345",
                     |    "versionSource": "OAS"
                     |}""".stripMargin
@@ -87,8 +85,7 @@ class TolerantJsonApiVersionSpec extends BaseJsonFormattersSpec {
                     |    "version" : "1.0",
                     |    "status" : "STABLE",
                     |    "acccess" : "PUBLIC",
-                    |    ${endpointsText},
-                    |    "endpointsEnabled": "bob"
+                    |    ${endpointsText}
                     |}""".stripMargin
 
       intercept[RuntimeException] {

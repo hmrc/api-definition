@@ -31,7 +31,6 @@ trait TolerantJsonApiVersion extends TolerantJsonEndpoint with TolerantJsonApiSt
       (JsPath \ "status").read[ApiStatus] and
       ((JsPath \ "access").readNullable[ApiAccessType].map(_.getOrElse(ApiAccessType.Public))) and
       (JsPath \ "endpoints").read[List[Endpoint]] and
-      ((JsPath \ "endpointsEnabled").readNullable[Boolean].map(_.getOrElse(true))) and
       (JsPath \ "awsRequestId").readNullable[String] and
       ((JsPath \ "versionSource").readNullable[ApiVersionSource].map(_.getOrElse(ApiVersionSource.Unknown)))
   )(ApiVersion.apply)
@@ -41,10 +40,9 @@ trait TolerantJsonApiVersion extends TolerantJsonEndpoint with TolerantJsonApiSt
       (JsPath \ "status").write[ApiStatus] and
       (JsPath \ "access").write[ApiAccessType] and
       (JsPath \ "endpoints").write[List[Endpoint]] and
-      (JsPath \ "endpointsEnabled").write[Boolean] and
       (JsPath \ "awsRequestId").writeNullable[String] and
       (JsPath \ "versionSource").write[ApiVersionSource]
-  )(v => (v.versionNbr, v.status, v.access, v.endpoints, v.endpointsEnabled, v.awsRequestId, v.versionSource))
+  )(v => (v.versionNbr, v.status, v.access, v.endpoints, v.awsRequestId, v.versionSource))
 
   given OFormat[ApiVersion] = OFormat[ApiVersion](readsApiVersion, writesApiVersion)
 }

@@ -109,17 +109,15 @@ class APIDefinitionServiceSpec
     )
 
     val publicVersion1Availability =
-      ApiAvailability(publicVersion1.endpointsEnabled, ApiAccessType.Public, loggedIn = false, authorised = true)
+      ApiAvailability(ApiAccessType.Public, loggedIn = false, authorised = true)
 
     val publicVersionAvailability = ApiAvailability(
-      publicVersion2.endpointsEnabled,
       publicVersion2.access,
       loggedIn = false,
       authorised = true
     )
 
     val privateVersionAvailability = ApiAvailability(
-      internalVersion.endpointsEnabled,
       internalVersion.access,
       loggedIn = false,
       authorised = false
@@ -634,7 +632,6 @@ class APIDefinitionServiceSpec
       status,
       access,
       List(Endpoint(UriPattern("/test"), Endpoint.Name("test"), HttpMethod.Get, AuthType.None, ResourceThrottlingTier.Unlimited, None, Nil)),
-      true,
       None,
       ApiVersionSource.OAS
     )
@@ -662,7 +659,6 @@ class APIDefinitionServiceSpec
               queryParameters = List.empty
             )
           ),
-          true,
           None,
           ApiVersionSource.OAS
         )
@@ -695,7 +691,6 @@ class APIDefinitionServiceSpec
               queryParameters = List.empty
             )
           ),
-          true,
           None,
           ApiVersionSource.OAS
         ),
@@ -704,7 +699,6 @@ class APIDefinitionServiceSpec
           ApiStatus.Beta,
           ApiAccessType.Public,
           v2Endpoints,
-          true,
           None,
           ApiVersionSource.OAS
         )

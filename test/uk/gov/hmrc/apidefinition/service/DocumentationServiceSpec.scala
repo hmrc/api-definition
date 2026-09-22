@@ -56,40 +56,35 @@ class DocumentationServiceSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite {
   val serviceUrl  = "http://localhost"
 
   val productionV1Availability: ApiAvailability = ApiAvailability(
-    endpointsEnabled = true,
     ApiAccessType.Internal,
     loggedIn = false,
     authorised = false
   )
 
   val productionV2Availability: ApiAvailability = ApiAvailability(
-    endpointsEnabled = true,
     ApiAccessType.Internal,
     loggedIn = false,
     authorised = false
   )
 
   val sandboxV2Availability: ApiAvailability = ApiAvailability(
-    endpointsEnabled = true,
     ApiAccessType.Public,
     loggedIn = false,
     authorised = false
   )
 
   val sandboxV3Availability: ApiAvailability = ApiAvailability(
-    endpointsEnabled = false,
     ApiAccessType.Public,
     loggedIn = false,
     authorised = false
   )
 
-  def makeApiVersion(versionNbr: ApiVersionNbr, status: ApiStatus, enabled: Boolean = true): ApiVersion = {
+  def makeApiVersion(versionNbr: ApiVersionNbr, status: ApiStatus): ApiVersion = {
     ApiVersion(
       versionNbr,
       status,
       ApiAccessType.Public,
       Nil,
-      enabled,
       None,
       ApiVersionSource.OAS
     )
@@ -103,7 +98,7 @@ class DocumentationServiceSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite {
     context = ApiContext("hello"),
     isTestSupport = false,
     versions = List(
-      makeApiVersion(ApiVersionNbr("1.0"), ApiStatus.Stable, false),
+      makeApiVersion(ApiVersionNbr("1.0"), ApiStatus.Stable),
       makeApiVersion(ApiVersionNbr("2.0"), ApiStatus.Beta),
       makeApiVersion(ApiVersionNbr("3.0"), ApiStatus.Alpha)
     ),
