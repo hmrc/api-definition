@@ -45,7 +45,6 @@ class ApiRetirerSpec extends AsyncHmrcSpec {
     status = ApiStatus.Stable,
     access = ApiAccessType.Public,
     endpoints = List(Endpoint(UriPattern("/date"), Endpoint.Name("Check current date"), HttpMethod.Get, AuthType.None, ResourceThrottlingTier.Unlimited, None, List.empty)),
-    true,
     None,
     ApiVersionSource.OAS
   )
@@ -55,7 +54,6 @@ class ApiRetirerSpec extends AsyncHmrcSpec {
     status = ApiStatus.Stable,
     access = ApiAccessType.Public,
     endpoints = List(Endpoint(UriPattern("/date"), Endpoint.Name("Check current date"), HttpMethod.Get, AuthType.None, ResourceThrottlingTier.Unlimited, None, List.empty)),
-    true,
     None,
     ApiVersionSource.OAS
   )
@@ -65,7 +63,6 @@ class ApiRetirerSpec extends AsyncHmrcSpec {
     status = ApiStatus.Stable,
     access = ApiAccessType.Public,
     endpoints = List(Endpoint(UriPattern("/date"), Endpoint.Name("Check current date"), HttpMethod.Get, AuthType.None, ResourceThrottlingTier.Unlimited, None, List.empty)),
-    true,
     None,
     ApiVersionSource.OAS
   )
@@ -99,7 +96,6 @@ class ApiRetirerSpec extends AsyncHmrcSpec {
     status = ApiStatus.Retired,
     access = ApiAccessType.Public,
     endpoints = List(Endpoint(UriPattern("/date"), Endpoint.Name("Check current date"), HttpMethod.Get, AuthType.None, ResourceThrottlingTier.Unlimited, None, List.empty)),
-    true,
     None,
     ApiVersionSource.OAS
   )
@@ -109,7 +105,6 @@ class ApiRetirerSpec extends AsyncHmrcSpec {
     status = ApiStatus.Retired,
     access = ApiAccessType.Public,
     endpoints = List(Endpoint(UriPattern("/date"), Endpoint.Name("Check current date"), HttpMethod.Get, AuthType.None, ResourceThrottlingTier.Unlimited, None, List.empty)),
-    true,
     None,
     ApiVersionSource.OAS
   )
@@ -119,7 +114,6 @@ class ApiRetirerSpec extends AsyncHmrcSpec {
     status = ApiStatus.Retired,
     access = ApiAccessType.Public,
     endpoints = List(Endpoint(UriPattern("/date"), Endpoint.Name("Check current date"), HttpMethod.Get, AuthType.None, ResourceThrottlingTier.Unlimited, None, List.empty)),
-    true,
     None,
     ApiVersionSource.OAS
   )

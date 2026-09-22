@@ -62,7 +62,6 @@ class AWSPayloadHelperSpec extends AsyncHmrcSpec {
       status = ApiStatus.Stable,
       access = ApiAccessType.Public,
       endpoints = List(populatedEndpoint),
-      endpointsEnabled = true,
       awsRequestId = None,
       versionSource = ApiVersionSource.OAS
     )

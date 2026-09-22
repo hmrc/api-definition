@@ -52,7 +52,6 @@ class AwsAPIPublisherSpec extends AsyncHmrcSpec {
         queryParameters = queryParams
       )
     ),
-    true,
     None,
     ApiVersionSource.OAS
   )

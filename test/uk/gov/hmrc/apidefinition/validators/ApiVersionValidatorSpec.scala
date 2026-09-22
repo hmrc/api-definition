@@ -46,33 +46,6 @@ class ApiVersionValidatorSpec extends AbstractValidatorSpec with TableDrivenProp
       }
     }
 
-    "validateStatusAndEndpointsEnabled" should {
-      def validates(endpointsEnabled: Boolean, status: ApiStatus): Unit                                    = super.validates(
-        ApiVersionValidator.validateStatusAndEndpointsEnabled(endpointsEnabled, status),
-        clue = Some(s"""Should be invalid for a status of $status to be ${if (endpointsEnabled) "enabled" else "disabled"}""")
-      )
-      def failsToValidateCombo(endpointsEnabled: Boolean, status: ApiStatus)(implicit pos: Position): Unit =
-        failsToValidate(
-          ApiVersionValidator.validateStatusAndEndpointsEnabled(endpointsEnabled, status)
-        )("Field 'versions.endpointsEnabled' must be false for ALPHA status")
-
-      "succeed for alpha when disabled" in {
-        validates(false, ApiStatus.Alpha)
-      }
-
-      "fail for alpha when enabled" in {
-        failsToValidateCombo(true, ApiStatus.Alpha)
-      }
-
-      "succeed for others when enabled" in {
-        for {
-          status <- List(ApiStatus.Beta, ApiStatus.Stable, ApiStatus.Deprecated, ApiStatus.Retired)
-          bool   <- List(true, false)
-          _       = validates(bool, status)
-        } yield ()
-      }
-    }
-
     "validateAllEndpoints" should {
       val goodEndpoint1 =
         Endpoint(
@@ -172,17 +145,15 @@ class ApiVersionValidatorSpec extends AbstractValidatorSpec with TableDrivenProp
                 Nil
               )
             ),
-            endpointsEnabled = true,
             awsRequestId = None,
             versionSource = ApiVersionSource.Unknown
           )
         ),
-        numberOfErrors = 4
+        numberOfErrors = 3
       )(
         "Version  - Field 'versions.version' is required",
         "Version  -  - Field 'endpoints.endpointName' is required",
-        "Version  -  - Field 'endpoints.uriPattern' with value '/bad.pattern/{paramA}/abc' should match regular expression",
-        "Version  - Field 'versions.endpointsEnabled' must be false for ALPHA status"
+        "Version  -  - Field 'endpoints.uriPattern' with value '/bad.pattern/{paramA}/abc' should match regular expression"
       )
     }
 
@@ -203,7 +174,6 @@ class ApiVersionValidatorSpec extends AbstractValidatorSpec with TableDrivenProp
               Nil
             )
           ),
-          endpointsEnabled = false,
           awsRequestId = None,
           versionSource = ApiVersionSource.Unknown
         )

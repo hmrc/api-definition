@@ -40,7 +40,6 @@ class APIDefinitionToAWSJsonSpec extends AsyncHmrcSpec {
         queryParameters = queryParams
       )
     ),
-    true,
     None,
     ApiVersionSource.OAS
   )

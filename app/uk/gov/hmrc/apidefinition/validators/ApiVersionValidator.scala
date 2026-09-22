@@ -26,7 +26,6 @@ object ApiVersionValidator extends Validator[ApiVersion] {
   def validate(version: ApiVersion): HMRCValidatedNel[ApiVersion] = {
     (
       validateVersionNumber(version.versionNbr),
-      validateStatusAndEndpointsEnabled(version.endpointsEnabled, version.status),
       validateAllEndpoints(version.endpoints),
       validateUniqueEndpointPaths(version.endpoints.map(_.uriPattern))
     )
@@ -36,10 +35,6 @@ object ApiVersionValidator extends Validator[ApiVersion] {
 
   def validateVersionNumber(versionNbr: ApiVersionNbr): HMRCValidatedNel[ApiVersionNbr] = {
     versionNbr.valid.ensure("Field 'versions.version' is required")(_.value.nonBlank).toValidatedNel
-  }
-
-  def validateStatusAndEndpointsEnabled(endpointsEnabled: Boolean, status: ApiStatus): HMRCValidatedNel[ApiStatus] = {
-    status.valid.ensure("Field 'versions.endpointsEnabled' must be false for ALPHA status")(_ => !(endpointsEnabled && status == ApiStatus.Alpha)).toValidatedNel
   }
 
   def validateAllEndpoints(endpoints: List[Endpoint]): HMRCValidatedNel[List[Endpoint]] = {

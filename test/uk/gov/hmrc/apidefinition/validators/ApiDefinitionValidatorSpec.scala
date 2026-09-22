@@ -28,7 +28,6 @@ class ApiDefinitionValidatorSpec extends AbstractValidatorSpec {
     ApiStatus.Beta,
     ApiAccessType.Public,
     List(Endpoint(UriPattern("/today"), Endpoint.Name("Get Today's Date"), HttpMethod.Get, AuthType.None, ResourceThrottlingTier.Unlimited, None, Nil)),
-    endpointsEnabled = true,
     None,
     ApiVersionSource.OAS
   )

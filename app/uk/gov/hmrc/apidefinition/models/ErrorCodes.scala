@@ -28,7 +28,7 @@ object ErrorCode {
 
   def unsafeApply(text: String): ErrorCode = apply(text).getOrElse(throw new RuntimeException(s"$text is not a valid Error Code"))
 
-  given Format[ErrorCode] = SimpleEnumJsonFormatting.createEnumFormatFor[ErrorCode]("Error Code", apply)
+  given Format[ErrorCode] = SimpleEnumJsonFormatting.screamingSnakeCaseFormatFor[ErrorCode]("Error Code", apply)
 }
 
 case class ValidationErrors(code: ErrorCode, messages: Seq[String])
